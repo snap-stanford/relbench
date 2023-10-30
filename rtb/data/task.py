@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from enum import Enum
 import os
 
+import rtb
+
 
 class TaskType(Enum):
     r"""The type of a task."""
@@ -13,14 +15,12 @@ class TaskType(Enum):
 
 @dataclass
 class Task:
-    r"""A task on a database. Can represent tasks on single (v1) or multiple
-    (v2) entities."""
+    r"""A task on a database."""
 
+    table: rtb.data.table.Table
+    label_col: str
     task_type: TaskType
-    metric: str
-    time_stamps: list[int]  # time stamps to evaluate on
-    entities: dict[str, list[str]]  # table name -> list of primary key values
-    labels: list[int | float]  # list of labels
+    metrics: list[str]
     num_classes: int = 0  # number of classes for classification tasks
 
     def validate(self) -> bool:
@@ -34,14 +34,12 @@ class Task:
         raise NotImplementedError
 
     def save(self, path: str | os.PathLike) -> None:
-        r"""Saves the task as a json file."""
+        r"""Saves the task."""
 
-        assert str(path).endswith(".json")
         raise NotImplementedError
 
     @staticmethod
     def load(self, path: str | os.PathLike) -> Task:
-        r"""Loads a task from a json file."""
+        r"""Loads a task."""
 
-        assert str(path).endswith(".json")
         raise NotImplementedError
