@@ -6,7 +6,7 @@ import torch_geometric as pyg
 
 
 # XXX: maybe we can abstract out a class for tabular encoder + GNN models
-# and put it under rtb.nn.models
+# and put it under rtb.utils.models
 
 
 class Net(torch.nn.Module):
@@ -58,7 +58,7 @@ def main():
     node_col_stats = {}
     node_col_names_dict = {}
     for name, table in db_train.tables:
-        pyf_dataset = rtb.nn.to_pyf_dataset(table)
+        pyf_dataset = rtb.utils.to_pyf_dataset(table)
         node_col_stats[name] = pyf_dataset.col_stats
         # XXX: col_names_dict is not a pyf_dataset attribute, but maybe should be?
         node_col_names_dict[name] = pyf_dataset.col_names_dict
@@ -74,7 +74,7 @@ def main():
     task_val = dataset.task_splits["churn"]["val"]
     input_node_type = task_train.entities.keys()[0]
 
-    data = rtb.nn.make_graph(db)
+    data = rtb.utils.make_graph(db)
     net = Net(
         node_col_stats=node_col_stats,
         node_col_names_dict=node_col_names_dict,
@@ -94,7 +94,7 @@ def main():
         ),
         input_time=torch.tensor(task_train.time_stamps),
         time_attr=db.ctime_col,
-        transform=rtb.nn.AddTargetLabelTransform(task_train.labels),
+        transform=rtb.utils.AddTargetLabelTransform(task_train.labels),
     )
 
     val_loader = pyg.nn.NeighborLoader(
@@ -107,7 +107,7 @@ def main():
         ),
         input_time=torch.tensor(task_val.time_stamps),
         time_attr=db.ctime_col,
-        transform=rtb.nn.AddTargetLabelTransform(task_val.labels),
+        transform=rtb.utils.AddTargetLabelTransform(task_val.labels),
     )
 
     for epoch in range(100):
