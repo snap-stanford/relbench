@@ -12,7 +12,7 @@ def to_pyf_dataset(table: rtb.data.Table) -> pyf.data.Dataset:
     raise NotImplementedError
 
 
-def make_graph(db: rtb.data.Database) -> pyg.data.HeteroData:
+def make_pkey_fkey_graph(db: rtb.data.Database) -> pyg.data.HeteroData:
     """
     Models the database as a heterogeneous graph.
 
