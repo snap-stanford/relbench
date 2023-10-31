@@ -26,7 +26,6 @@ def make_pkey_fkey_graph(db: rtb.data.Database) -> pyg.data.HeteroData:
         pyf_dataset = to_pyf_dataset(table)
         pyf_dataset.materialize()
         data[name].tf = pyf_dataset.tensor_frame
-        data[name].col_stats = pyf_dataset.col_stats
 
         # add edges
         for col_name, pkey_name in table.fkeys.items():

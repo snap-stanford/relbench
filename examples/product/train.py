@@ -10,22 +10,18 @@ import torch_geometric as pyg
 
 
 class Net(torch.nn.Module):
-    def __init__(self, data: pyg.data.HeteroData):
-        r"""The intended use is for data obtained from rtb.nn.make_graph.
-        Hence, it is assumed that data[name].tf and data[name].col_stats
-        attributes exist."""
-
+    def __init__(self, node_col_stats, node_col_names_dict, hetero_metadata):
         super().__init__()
 
         # make node encoders (tabular encoders)
         self.encs = torch.nn.ModuleDict()
-        for name in data.node_types:
+        for name in node_col_stats.keys():
             self.encs[name] = pyf.nn.models.ResNet(
                 channels=64,
                 out_channels=64,
                 num_layers=4,
-                col_stats=data[name].col_stats,
-                col_names_dict=data[name].tf.col_names_dict,
+                col_stats=node_col_stats[name],
+                col_names_dict=node_col_names_dict[name],
             )
 
         # make hetero GNN
@@ -36,7 +32,7 @@ class Net(torch.nn.Module):
                 num_layers=2,
                 out_channels=2,
             ),
-            data.metadata(),
+            hetero_metadata(),
         )
 
     def forward(
@@ -56,10 +52,22 @@ class Net(torch.nn.Module):
 def main():
     dataset = rtb.get_dataset(name="mtb-product", task_names=["churn"], root="data/")
 
+    db_train = dataset.db_splits["train"]
+
+    # important: node col stats should be computed only over the train set
+    node_col_stats = {}
+    node_col_names_dict = {}
+    for name, table in db_train.tables:
+        pyf_dataset = rtb.nn.to_pyf_dataset(table)
+        node_col_stats[name] = pyf_dataset.col_stats
+        # XXX: col_names_dict is not a pyf_dataset attribute, but maybe should be?
+        node_col_names_dict[name] = pyf_dataset.col_names_dict
+
+    db_val = dataset.db_splits["val"]
+
     # at their own risk, users can merge the splits and make a graph directly
     # not really an issue since temporal sampling should not violate the splits anyway
-    db_train = dataset.db_splits["train"]
-    db_val = dataset.db_splits["val"]
+    # TODO: this might look different with the redesign of splitting
     db = db_train + db_val
 
     task_train = dataset.task_splits["churn"]["train"]
@@ -67,7 +75,11 @@ def main():
     input_node_type = task_train.entities.keys()[0]
 
     data = rtb.nn.make_graph(db)
-    net = Net(data)
+    net = Net(
+        node_col_stats=node_col_stats,
+        node_col_names_dict=node_col_names_dict,
+        hetero_metadata=data.metadata(),
+    )
 
     opt = torch.optim.Adam(net.parameters())
 
