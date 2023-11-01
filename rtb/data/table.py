@@ -21,9 +21,9 @@ class Table:
     r"""A table in a database."""
 
     df: pd.DataFrame
-    pkey: str  # name of primary key column
-    fkeys: dict[str, str]  # column name -> table name
     feat_cols: dict[str, SemanticType]  # column name -> semantic type
+    fkeys: dict[str, str]  # column name -> table name
+    pkey: str | None  # name of primary key column
     time_col: str | None = None  # name of column storing creation time
 
     def validate(self) -> bool:
