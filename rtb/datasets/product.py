@@ -7,16 +7,15 @@ def churn(db: rtb.data.Database, time_frame: str = "1W") -> rtb.data.Task:
     raise NotImplementedError
 
 
-def ltv(db: rtb.data.Database, time_frame: str = "1W") -> rtb.data.Task:
+def ltv(db: rtb.data.Database, start_time_stamp: int, time_frame: int) -> rtb.data.Task:
     r"""Create Task object for LTV.
 
     LTV (life-time value) for a customer is the sum of prices of products that
     the user reviews in the time_frame.
 
-    See:
-    https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
-    for time_frame strings.
-
+    Simply groups events into time windows of size time_frame. Windows do not
+    overlap, so this is not the same as a rolling window. Rolling window can
+    also be implemented, but we don't need it for now.
     """
 
     # select the relevant columns
@@ -26,30 +25,20 @@ def ltv(db: rtb.data.Database, time_frame: str = "1W") -> rtb.data.Task:
     # join the tables
     df = review.merge(product, on="product_id")
 
-    # remove the product_id column
-    df = df.drop(columns=["product_id"])
+    # filter out events that are before begin_time_stamp
+    df = df[df["time_stamp"] >= start_time_stamp]
 
-    # pandas rolling window works for datetime columns
-    assert is_datetime64_any_dtype(df.dtypes["time_stamp"])
-
-    # group by customer_id and sum the prices in each rolling window
-
-    # TODO: as is, this puts the value with the last time_stamp in the window
-    # we want the first time_stamp in the window, but didn't find a kwarg for this
-    df = (
-        df.groupby("customer_id")
-        .rolling(
-            window=time_frame,
-            on="time_stamp",
-            closed="right",  # skip the first time_stamp in the window
-        )
-        .sum()
+    # compute the left time stamp for each event
+    df["left_time_stamp"] = (
+        (df["time_stamp"] - start_time_stamp) // time_frame * time_frame
     )
 
-    # this does not support strided rolling windows, but we don't need that
-    # to get fewer datapoints just subsample the task table
+    # remove unnecessary columns
+    df = df.drop(columns=["product_id", "time_stamp"])
 
-    # df columns are: time_stamp, customer_id, price
+    df = df.groupby(["customer_id", "left_time_stamp"]).sum()
+
+    # columns of df: customer_id, left_time_stamp, price
 
     return rtb.data.task.Task(
         table=rtb.data.table.Table(
@@ -57,7 +46,7 @@ def ltv(db: rtb.data.Database, time_frame: str = "1W") -> rtb.data.Task:
             feat_cols={"price": rtb.data.table.SemanticType.NUMERICAL},
             fkeys={"customer_id": "customer"},
             pkey=None,
-            time_col="time_stamp",
+            time_col="left_time_stamp",
         ),
         label_col="price",
         task_type=rtb.data.task.TaskType.REGRESSION,

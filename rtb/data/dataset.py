@@ -88,10 +88,8 @@ class Dataset:
         self, db: rtb.data.database.Database
     ) -> rtb.data.database.Database:
         r"""
-        1. Add ctime column based on first temporal interaction if not present.
-        2. Sort by ctime.
-        3. Add primary key column if not present.
-        4. Re-index primary key column with 0-indexed ints, if required.
+        - Add primary key column if not present.
+        - Re-index primary key column with 0-indexed ints, if required.
         """
 
         raise NotImplementedError
