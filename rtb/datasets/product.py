@@ -7,7 +7,9 @@ def churn(db: rtb.data.Database, time_frame: str = "1W") -> rtb.data.Task:
     raise NotImplementedError
 
 
-def ltv(db: rtb.data.Database, start_time_stamp: int, time_frame: int) -> rtb.data.Task:
+def ltv(
+    db: rtb.data.Database, start_time_stamp: int, end_time_stamp: int, time_frame: int
+) -> rtb.data.Task:
     r"""Create Task object for LTV.
 
     LTV (life-time value) for a customer is the sum of prices of products that
@@ -25,13 +27,19 @@ def ltv(db: rtb.data.Database, start_time_stamp: int, time_frame: int) -> rtb.da
     # join the tables
     df = review.merge(product, on="product_id")
 
-    # filter out events that are before begin_time_stamp
-    df = df[df["time_stamp"] >= start_time_stamp]
+    # filter out events that are before begin_time_stamp or after end_time_stamp
+    df = df.query(
+        f"(time_stamp >= {start_time_stamp}) & (time_stamp < {end_time_stamp})"
+    )
 
     # compute the left time stamp for each event
     df["left_time_stamp"] = (
         (df["time_stamp"] - start_time_stamp) // time_frame * time_frame
     )
+
+    # remove left_time_stamp > end_time_stamp - time_frame because it's time window
+    # got truncated
+    df = df.query(f"left_time_stamp <= {end_time_stamp - time_frame}")
 
     # remove unnecessary columns
     df = df.drop(columns=["product_id", "time_stamp"])
