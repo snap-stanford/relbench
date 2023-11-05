@@ -72,7 +72,7 @@ class ProductDataset(rtb.data.Dataset):
 
         raise NotImplementedError
 
-    def download(self) -> None:
+    def download(self, path: str | os.PathLike) -> None:
         r"""Download the Amazon dataset raw files from the AWS server."""
 
         raise NotImplementedError
