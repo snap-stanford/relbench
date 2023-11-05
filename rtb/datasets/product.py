@@ -60,7 +60,7 @@ class LTV(rtb.data.Task):
 
 
 class ProductDataset(rtb.data.Dataset):
-    name = "mtb-product"
+    name = "rtb-product"
 
     def get_tasks(self) -> dict[str, rtb.data.Task]:
         r"""Returns a list of tasks defined on the dataset."""
