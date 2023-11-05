@@ -41,14 +41,19 @@ class Database:
     def get_time_range(self) -> tuple[int, int]:
         r"""Returns the earliest and latest timestamp in the database."""
 
-        global_min_time = float("inf")
-        global_max_time = 0
+        global_min_time = None
+        global_max_time = None
 
         for table in self.tables.values():
             if table.time_col is None:
                 continue
+
             min_time, max_time = table.get_time_range()
-            global_min_time = min(global_min_time, min_time)
-            global_max_time = max(global_max_time, max_time)
+
+            if global_min_time is None or min_time < global_min_time:
+                global_min_time = min_time
+
+            if global_max_time is None or max_time > global_max_time:
+                global_max_time = max_time
 
         return global_min_time, global_max_time
