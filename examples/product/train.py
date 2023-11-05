@@ -175,7 +175,7 @@ def main():
         print(f"Epoch {epoch}: accuracy={total_correct / total_examples}")
 
     # the user cannot query the final snapshot of the database directly
-    # to prevert leakage of test information
+    # to prevent leakage of test information
 
     # instead, we provide a method to create a test table through the dataset
     # here the sampler is not for the user to choose
