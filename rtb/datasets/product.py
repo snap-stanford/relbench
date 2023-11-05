@@ -1,70 +1,76 @@
+import duckdb
+import pandas as pd
+
 import rtb
 
 
-def churn(db: rtb.data.Database, time_frame: str = "1W") -> rtb.data.Task:
-    r"""Create Task object for churn."""
+class LTV(rtb.data.Task):
+    r"""LTV (life-time value) for a customer is the sum of prices of products
+    that the user reviews in the time_frame."""
 
-    raise NotImplementedError
+    def __init__(self):
+        super().__init__(
+            target_col="ltv",
+            task_type=rtb.data.TaskType.REGRESSION,
+            metrics=["mse", "smape"],
+        )
 
+    def make_table(db: rtb.data.Database, time_window_df: pd.DataFrame) -> rtb.Table:
+        r"""Create Task object for LTV."""
 
-def ltv(
-    db: rtb.data.Database, start_time_stamp: int, end_time_stamp: int, time_frame: int
-) -> rtb.data.Task:
-    r"""Create Task object for LTV.
+        # columns in time_window_df: offset, cutoff
 
-    LTV (life-time value) for a customer is the sum of prices of products that
-    the user reviews in the time_frame.
+        product = db.tables["product"]
+        review = db.tables["review"]
+        table = duckdb.sql(
+            r"""
+            select * from product, review
+            where product.product_id = review.product_id
+            """
+        )
 
-    Simply groups events into time windows of size time_frame. Windows do not
-    overlap, so this is not the same as a rolling window. Rolling window can
-    also be implemented, but we don't need it for now.
-    """
+        # due to query optimization and parallelization,
+        # this should be fast enough
+        # and doing sql queries is also flexible enough to easily implement
+        # a variety of other tasks
+        df = duckdb.sql(
+            r"""
+            select
+                customer_id,
+                offset,
+                cutoff,
+                sum(price) as ltv
+            from
+                table,
+                sampler_df
+            where
+                table.time_stamp > time_window_df.offset and
+                table.time_stamp <= time_window_df.cutoff and
+            group by customer_id, offset, cutoff
+        """
+        )
 
-    # select the relevant columns
-    product = db.tables["product"].df[["product_id", "price"]]
-    review = db.tables["review"].df[["time_stamp", "customer_id", "product_id"]]
-
-    # join the tables
-    df = review.merge(product, on="product_id")
-
-    # filter out events that are before begin_time_stamp or after end_time_stamp
-    df = df.query(
-        f"(time_stamp >= {start_time_stamp}) & (time_stamp < {end_time_stamp})"
-    )
-
-    # compute the left time stamp for each event
-    df["left_time_stamp"] = (
-        (df["time_stamp"] - start_time_stamp) // time_frame * time_frame
-    )
-
-    # remove left_time_stamp > end_time_stamp - time_frame because it's time window
-    # got truncated
-    df = df.query(f"left_time_stamp <= {end_time_stamp - time_frame}")
-
-    # remove unnecessary columns
-    df = df.drop(columns=["product_id", "time_stamp"])
-
-    df = df.groupby(["customer_id", "left_time_stamp"]).sum()
-
-    # columns of df: customer_id, left_time_stamp, price
-
-    return rtb.data.task.Task(
-        table=rtb.data.table.Table(
+        return rtb.Table(
             df=df,
-            feat_cols={"price": rtb.data.table.SemanticType.NUMERICAL},
+            feat_cols=["offset", "cutoff"],
             fkeys={"customer_id": "customer"},
             pkey=None,
-            time_col="left_time_stamp",
-        ),
-        label_col="price",
-        task_type=rtb.data.task.TaskType.REGRESSION,
-        metrics=["mse", "smape"],
-    )
+            time_col="offset",
+        )
 
 
 class ProductDataset(rtb.data.Dataset):
     name = "mtb-product"
-    task_fns = {"churn": churn, "ltv": ltv}
+
+    def get_tasks(self) -> dict[str, rtb.data.Task]:
+        r"""Returns a list of tasks defined on the dataset."""
+
+        return {"ltv": LTV()}
+
+    def get_cutoff_times(self) -> tuple[int, int]:
+        r"""Returns the train and val cutoff times."""
+
+        raise NotImplementedError
 
     def download(self) -> None:
         r"""Download the Amazon dataset raw files from the AWS server."""

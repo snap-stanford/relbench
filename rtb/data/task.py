@@ -13,23 +13,21 @@ class TaskType(Enum):
     REGRESSION = "regression"
 
 
-@dataclass
 class Task:
     r"""A task on a database."""
 
-    table: rtb.data.table.Table
-    label_col: str
-    task_type: TaskType
-    metrics: list[str]
-    num_classes: int = 0  # number of classes for classification tasks
+    def __init__(
+        self,
+        target_col: str,
+        task_type: TaskType,
+        metrics: list[str],
+    ) -> None:
+        self.label_col = label_col
+        self.task_type = task_type
+        self.metrics = metrics
 
     def validate(self) -> bool:
-        r"""Validate the task.
-
-        Check:
-        1. Lengths of time_stamps, entities[<name>], and labels match.
-        2. num_classes != 0 for classification tasks.
-        """
+        r"""Validate the task."""
 
         raise NotImplementedError
 
@@ -41,5 +39,10 @@ class Task:
     @staticmethod
     def load(self, path: str | os.PathLike) -> Task:
         r"""Loads a task."""
+
+        raise NotImplementedError
+
+    def create(db: rtb.data.Database, time_window_df: pd.DataFrame) -> rtb.data.Table:
+        r"""To be implemented by subclass."""
 
         raise NotImplementedError

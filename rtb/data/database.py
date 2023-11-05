@@ -33,22 +33,27 @@ class Database:
 
         raise NotImplementedError
 
-    def __add__(self, other: Database) -> Database:
-        r"""Combines two databases with the same schema be concatenating rows of
-        matching tables.
+    def time_cutoff(self, time: int) -> Database:
+        r"""Returns a database with all rows upto time."""
 
-        The input Database objects are not modified."""
+        return {name: table.time_cutoff(time) for name, table in self.tables.items()}
 
-        raise NotImplementedError
+    def get_time_range(self) -> tuple[int, int]:
+        r"""Returns the earliest and latest timestamp in the database."""
 
-    def time_of_split(self, frac: float) -> int:
-        r"""Returns the time stamp before which there are (roughly) frac
-        fractions of rows in the database."""
+        global_min_time = None
+        global_max_time = None
 
-        raise NotImplementedError
+        for table in self.tables.values():
+            if table.time_col is None:
+                continue
 
-    def split_at(self, time_stamp: int) -> tuple[Database, Database]:
-        r"""Splits the database into past (ctime <= time_stamp) and
-        future (ctime > time_stamp) databases."""
+            min_time, max_time = table.get_time_range()
 
-        raise NotImplementedError
+            if global_min_time is None or min_time < global_min_time:
+                global_min_time = min_time
+
+            if global_max_time is None or max_time > global_max_time:
+                global_max_time = max_time
+
+        return global_min_time, global_max_time

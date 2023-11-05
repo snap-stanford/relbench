@@ -1,4 +1,3 @@
-from collections import defaultdict
 import os
 from pathlib import Path
 
@@ -6,33 +5,14 @@ import rtb
 
 
 class Dataset:
-    r"""Base class for dataset.
-
-    Includes database, tasks, downloading, pre-processing and unified splitting.
-
-    task_fns are functions that take a Database and create a task. The input
-    database to these functions is only one split. This ensures that the task
-    table for a split only uses information available in that split."""
-
-    splits: dict[str, float] = {"train": 0.8, "val": 0.1, "test": 0.1}
+    r"""Base class for dataset. A dataset includes a database and tasks defined
+    on it."""
 
     # name of dataset, to be specified by subclass
     name: str
 
-    # task name -> task function, to be specified by subclass
-    task_fns: dict[str, callable[[rtb.data.database.Database], rtb.data.task.Task]]
-
-    def __init__(self, root: str, task_names: list[str] = []) -> None:
-        r"""Initializes the dataset.
-
-        Args:
-            root: root directory to store dataset.
-            task_names: list of tasks to create.
-
-        The Dataset class exposes the following attributes:
-            db_splits: split name -> Database
-            task_splits: task name -> split name -> Task
-        """
+    def __init__(self, root: str) -> None:
+        r"""Initializes the dataset."""
 
         # download
         path = f"{root}/{self.name}/raw"
@@ -40,37 +20,42 @@ class Dataset:
             self.download(path)
             Path(f"{path}/done").touch()
 
-        # process, standardize and split
         path = f"{root}/{name}/processed/db"
         if not Path(f"{path}/done").exists():
-            db = self.standardize_db(self.process_db())
+            # process db
+            db = self.process_db()
 
-            # save database splits independently
-            db_splits = self.split_db(db)
-            for split, db in db_splits.items():
-                db.save(f"{path}/{split}")
-            Path(f"{path}/done").touch()
+            # standardize db
+            db = self.standardize_db()
 
-        # load database splits
-        self.db_splits = {
-            split: rtb.data.database.Database.load(f"{path}/{split}")
-            for split in ["train", "val", "test"]
-        }
+            # process and standardize are separate because
+            # process_db() is implemented by each subclass, but
+            # standardize_db() is common to all subclasses
 
-        # create tasks for each split
-        self.task_splits = defaultdict(dict)
-        for task_name in task_names:
-            for split in ["train", "val", "test"]:
-                path = f"{root}/{name}/processed/tasks/{task_name}/{split}"
+            db.save(path)
 
-                # save task split independent of other splits and tasks
-                if not Path(f"{path}/done").exists():
-                    task = self.task_fns[task_name](self.db_splits[split])
-                    task.save(path)
-                    Path(f"{path}/done").touch()
+        # load database
+        self._db = rtb.data.Database.load(path)
 
-                # load task split
-                self.task_splits[task_name][split] = Task.load(path)
+        # we want to keep the database private, because it also contains
+        # test information
+
+        self.min_time, self.max_time = self._db.get_time_range()
+        self.train_cutoff_time, self.val_cutoff_time = self.get_cutoff_times()
+
+        self.tasks = self.get_tasks()
+
+    def get_tasks(self) -> dict[str, rtb.data.Task]:
+        r"""Returns a list of tasks defined on the dataset. To be implemented
+        by subclass."""
+
+        raise NotImplementedError
+
+    def get_cutoff_times(self) -> tuple[int, int]:
+        r"""Returns the train and val cutoff times. To be implemented by
+        subclass, but can implement a sensible default strategy here."""
+
+        raise NotImplementedError
 
     def download(self, path: str | os.PathLike) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by
@@ -90,23 +75,86 @@ class Dataset:
         r"""
         - Add primary key column if not present.
         - Re-index primary key column with 0-indexed ints, if required.
+        - Can still keep the original pkey column as a feature column (e.g. email).
         """
 
         raise NotImplementedError
 
-    def split_db(
-        self, db: rtb.data.database.Database
-    ) -> dict[str, rtb.data.database.Database]:
-        r"""Splits the database into train, val, and test splits."""
+    def db_snapshot(self, time_stamp: int) -> rtb.data.database.Database:
+        r"""Returns a database with all rows upto time_stamp (if table is
+        temporal, otherwise all rows)."""
 
-        assert sum(self.splits.values()) == 1.0
+        assert time_stamp <= self.val_cutoff_time
 
-        # get time stamps for splits
-        self.val_split_time = db.time_of_split(splits["train"])
-        self.test_split_time = db.time_of_split(splits["train"] + splits["val"])
+        return self._db.time_cutoff(time_stamp)
 
-        # split the database
-        db_train, db_val_test = db.split_at(self.val_split_time)
-        db_val, db_test = val_test.split_at(self.test_split_time)
+    @property
+    def db_train(self) -> rtb.data.Database:
+        return self.db_snapshot(self.train_cutoff_time)
 
-        return {"train": db_train, "val": db_val, "test": db_test}
+    @property
+    def db_val(self) -> rtb.data.Database:
+        return self.db_snapshot(self.val_cutoff_time)
+
+    def make_train_table(
+        self,
+        task_name: str,
+        window_size: int | None = None,
+        time_window_df: pd.DataFrame | None = None,
+    ) -> rtb.data.table.Table:
+        """Returns the train table for a task.
+
+        User can either provide the window_size and get the train table
+        generated by our default sampler, or explicitly provide the
+        time_window_df obtained by their sampling strategy."""
+
+        if time_window_df is None:
+            assert window_size is not None
+            # default sampler
+            time_window_df = rtb.utils.rolling_window_sampler(
+                self.min_time,
+                self.train_cutoff_time,
+                window_size,
+                stride=window_size,
+            )
+
+        task = self.tasks[task_name]
+        return task.make_table(self.db_train, time_window_df)
+
+    def make_val_table(
+        self,
+        task_name: str,
+        window_size: int | None = None,
+        time_window_df: pd.DataFrame | None = None,
+    ) -> rtb.data.table.Table:
+        r"""Returns the val table for a task.
+
+        User can either provide the window_size and get the train table
+        generated by our default sampler, or explicitly provide the
+        time_window_df obtained by their sampling strategy."""
+
+        if time_window_df is None:
+            assert window_size is not None
+            # default sampler
+            time_window_df = rtb.utils.one_window_sampler(
+                self.train_cutoff_time,
+                window_size,
+            )
+
+        task = self.tasks[task_name]
+        return task.make_table(self.db_val, time_window_df)
+
+    def make_test_table(self, task_name: str, window_size: int) -> rtb.data.table.Table:
+        r"""Returns the test table for a task."""
+
+        task = self.tasks[task_name]
+        time_window_df = rtb.utils.one_window_sampler(
+            self.val_cutoff_time,
+            window_size,
+        )
+        table = task.make_table(self._db, time_window_df)
+
+        # hide the label information
+        table.drop(columns=[task.target_col])
+
+        return table

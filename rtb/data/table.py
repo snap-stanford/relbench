@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass
 from enum import Enum
 import os
@@ -117,25 +118,21 @@ class Table:
             metadata["time_col"],
         )
 
-    def split_at(
-        self, time_stamp: Union[int, str, pd.Timestamp]
-    ) -> Tuple["Table", "Table"]:
-        """Splits the table into past (ctime <= time_stamp) and
-        future (ctime > time_stamp) tables."""
-        if not self.time_col:
-            raise ValueError("No time column specified for splitting.")
+    def time_cutoff(self, time_stamp: int) -> Table:
+        r"""Returns a table with all rows upto time."""
 
-        # Convert time_stamp to pd.Timestamp if it's not already
-        time_stamp = pd.Timestamp(time_stamp)
+        if self.time_col is None:
+            return self
 
-        past_df = self.df[self.df[self.time_col] <= time_stamp]
-        future_df = self.df[self.df[self.time_col] > time_stamp]
+        new_table = copy.copy(self)
+        new_table.df = new_table.df.query(f"{self.time_col} <= {time_stamp}")
 
-        past_table = Table(
-            past_df, self.feat_cols, self.fkeys, self.pkey, self.time_col
-        )
-        future_table = Table(
-            future_df, self.feat_cols, self.fkeys, self.pkey, self.time_col
-        )
+        return new_table
 
-        return past_table, future_table
+    def get_time_range(self) -> tuple[int, int]:
+        r"""Returns the earliest and latest timestamp in the table."""
+
+        assert self.time_col is not None
+
+        ts = self.df[self.time_col]
+        return ts.min(), ts.max()

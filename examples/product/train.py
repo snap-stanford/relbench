@@ -6,7 +6,7 @@ import torch_geometric as pyg
 
 
 # XXX: maybe we can abstract out a class for tabular encoder + GNN models
-# and put it under rtb.utils.models
+# and put it under rtb.models
 
 
 class Net(torch.nn.Module):
@@ -49,32 +49,30 @@ class Net(torch.nn.Module):
         return self.gnn(x_dict, edge_index_dict)
 
 
-def main():
-    dataset = rtb.get_dataset(name="mtb-product", task_names=["churn"], root="data/")
+WEEK = 7 * 24 * 60 * 60
 
-    db_train = dataset.db_splits["train"]
+
+def main():
+    # instantiate dataset. this downloads and processes it, if required.
+    # user does not directly interact with task objects, but through the dataset
+    dset = rtb.get_dataset(name="mtb-product", root="data/")
+
+    # will see later if we want to have one, multiple or no window_sizes
+    # directly tied to the task
+    # for now, window_size is supplied externally everywhere
+    window_size = WEEK
 
     # important: node col stats should be computed only over the train set
     node_col_stats = {}
     node_col_names_dict = {}
-    for name, table in db_train.tables:
+    for name, table in dset.db_train.tables:
         pyf_dataset = rtb.utils.to_pyf_dataset(table)
         node_col_stats[name] = pyf_dataset.col_stats
         # XXX: col_names_dict is not a pyf_dataset attribute, but maybe should be?
         node_col_names_dict[name] = pyf_dataset.col_names_dict
 
-    db_val = dataset.db_splits["val"]
-
-    # at their own risk, users can merge the splits and make a graph directly
-    # not really an issue since temporal sampling should not violate the splits anyway
-    # TODO: this might look different with the redesign of splitting
-    db = db_train + db_val
-
-    task_train = dataset.task_splits["churn"]["train"]
-    task_val = dataset.task_splits["churn"]["val"]
-    input_node_type = task_train.entities.keys()[0]
-
-    data = rtb.utils.make_graph(db)
+    # make graph only for the train snapshot for safety
+    data = rtb.utils.make_graph(dset.db_train)
     net = Net(
         node_col_stats=node_col_stats,
         node_col_names_dict=node_col_names_dict,
@@ -83,31 +81,37 @@ def main():
 
     opt = torch.optim.Adam(net.parameters())
 
-    # captures the temporal handling
+    # loaders capture temporal sampling
+
+    train_table = dset.make_train_table("ltv", window_size)
+    input_node_type = train_table.fkeys.values()[0]
     train_loader = pyg.nn.NeighborLoader(
         data,
         num_neighbors=[10] * 2,
         shuffle=True,
         input_nodes=(
             input_node_type,
-            torch.tensor(task_train.entities[input_node_type]),
+            torch.tensor(train_table.df[train_table.fkeys.keys()[0]]),
         ),
-        input_time=torch.tensor(task_train.time_stamps),
-        time_attr=db.ctime_col,
-        transform=rtb.utils.AddTargetLabelTransform(task_train.labels),
+        input_time=torch.tensor(train_table.df[train_table.time_col]),
+        time_attr="time_stamp",
+        transform=rtb.utils.AddTargetLabelTransform(
+            train_table.df[train_table.target_col]
+        ),
     )
 
+    val_table = dset.make_val_table("ltv", window_size)
     val_loader = pyg.nn.NeighborLoader(
         data,
         num_neighbors=[-1] * 2,
         shuffle=False,
         input_nodes=(
             input_node_type,
-            torch.tensor(task_val.entities[input_node_type]),
+            torch.tensor(val_table.df[val_table.fkeys.keys()[0]]),
         ),
-        input_time=torch.tensor(task_val.time_stamps),
-        time_attr=db.ctime_col,
-        transform=rtb.utils.AddTargetLabelTransform(task_val.labels),
+        input_time=torch.tensor(val_table.df[val_table.time_col]),
+        time_attr="time_stamp",
+        transform=rtb.utils.AddTargetLabelTransform(val_table.df[val_table.target_col]),
     )
 
     for epoch in range(100):
@@ -137,6 +141,47 @@ def main():
                 total_correct += int((yhat.argmax(-1) == batch.y).sum())
 
         print(f"Epoch {epoch}: accuracy={total_correct / total_examples}")
+
+    # the user cannot query the final snapshot of the database directly
+    # to prevent leakage of test information
+
+    # instead, we provide a method to create a test table through the dataset
+    # here the sampler is not for the user to choose
+    # the time window is fixed to be [val_cutoff_time, val_cutoff_time + time_window]
+    test_table = dset.make_test_table("ltv", WEEK)
+
+    # the input graph for the test is the snapshot of the database at val_cutoff_time
+    data = rtb.utils.make_graph(db_val)
+
+    test_loader = pyg.nn.NeighborLoader(
+        data,
+        num_neighbors=[-1] * 2,
+        shuffle=False,
+        input_nodes=(
+            input_node_type,
+            torch.tensor(test_table.df[test_table.fkeys.keys()[0]]),
+        ),
+        input_time=torch.tensor(test_table.df[test_table.time_col]),
+        time_attr="time_stamp",
+        # note that AddTargetLabelTransform is not used here
+    )
+
+    with torch.no_grad():
+        net.eval()
+
+        yhats = []
+        for batch in test_loader:
+            batch_size = batch[input_node_type].batch_size
+
+            out = net(batch.tf_dict, batch.edge_index_dict)
+            yhat = out[input_node_type][:batch_size]
+
+            yhats.append(yhat)
+
+        yhat = torch.cat(yhats, dim=0)
+
+    # the test ground-truth labels are also not exposed to the user
+    print(dset.evaluate("ltv", yhat))
 
 
 if __name__ == "__main__":

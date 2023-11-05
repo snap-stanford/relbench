@@ -27,6 +27,9 @@ def make_pkey_fkey_graph(db: rtb.data.Database) -> pyg.data.HeteroData:
         pyf_dataset.materialize()
         data[name].tf = pyf_dataset.tensor_frame
 
+        # add time attribute
+        data[name].time_stamp = torch.tensor(table.df[table.time_col])
+
         # add edges
         for col_name, pkey_name in table.fkeys.items():
             fkey_idx = torch.tensor(table.df[table.primary_key])
@@ -57,3 +60,25 @@ class AddTargetLabelTransform:
     def __call__(self, batch: pyg.data.Batch) -> pyg.data.Batch:
         batch.y = self.labels[batch.input_id]
         return batch
+
+
+def rolling_window_sampler(
+    start_time: int, end_time: int, window_size: int, stride: int
+) -> pd.DataFrame:
+    """Returns a DataFrame with columns offset and cutoff."""
+
+    df = pd.DataFrame()
+    df["offset"] = range(start_time, end_time - window_size, stride)
+    df["cutoff"] = df["offset"] + window_size
+
+    return df
+
+
+def one_window_sampler(start_time: int, window_size: int) -> pd.DataFrame:
+    """Returns a DataFrame with columns offset and cutoff."""
+
+    df = pd.DataFrame()
+    df["offset"] = [start_time]
+    df["cutoff"] = [start_time + window_size]
+
+    return df
