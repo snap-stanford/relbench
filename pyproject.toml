@@ -1,0 +1,36 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "rtb"
+version = "0.1.0"
+description = "Relational Tabular Benchmark"
+authors = [{name = "Rishabh Ranjan", email = "rishabhranjan0207@gmail.com"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = ["License :: OSI Approved :: MIT License"]
+requires-python=">=3.10"
+keywords=[]
+dependencies=[
+	"numpy",
+	"pandas",
+	"tqdm",
+]
+
+
+[project.optional-dependencies]
+test=[
+	"pytest",
+	"pytest-cov",
+]
+dev=[
+	"pre-commit",
+]
+
+[project.urls]
+Home = "https://rtb.stanford.edu"
+
+[tool.flit.module]
+name="rtb"
+
