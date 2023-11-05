@@ -54,61 +54,25 @@ WEEK = 7 * 24 * 60 * 60
 
 def main():
     # instantiate dataset. this downloads and processes it, if required.
+    # user does not directly interact with task objects, but through the dataset
     dset = rtb.get_dataset(name="mtb-product", root="data/")
-
-    # get the task. this does not create any task tables yet.
-    task = dset.tasks["ltv"]
 
     # will see later if we want to have one, multiple or no window_sizes
     # directly tied to the task
     # for now, window_size is supplied externally everywhere
     window_size = WEEK
 
-    # get snapshot of database visible at train_cutoff_time
-    db_train = dset.db_snapshot(dset.train_cutoff_time)
-
-    # also we don't use the terminology of "split" because that suggests
-    # partitioning, whereas here val is a superset of train,
-    # and test is a superset of val. hence, our terminology is "cutoff"
-
     # important: node col stats should be computed only over the train set
     node_col_stats = {}
     node_col_names_dict = {}
-    for name, table in db_train.tables:
+    for name, table in dset.db_train.tables:
         pyf_dataset = rtb.utils.to_pyf_dataset(table)
         node_col_stats[name] = pyf_dataset.col_stats
         # XXX: col_names_dict is not a pyf_dataset attribute, but maybe should be?
         node_col_names_dict[name] = pyf_dataset.col_names_dict
 
-    # we let the user sample the train and val time windows as they please
-
-    # here we do a rolling window, but stride=window_size means no overlap
-    # can do stride=DAY for more data, for example
-    time_window_df = rtb.utils.rolling_window_sampler(
-        dset.min_time, dset.train_cutoff_time, window_size, stride=window_size
-    )
-
-    # create the task table
-    train_table = task.create(db_train, time_window_df)
-
-    # need the db snapshot at val_cutoff_time to create the val table
-    db_val = dset.db_snapshot(dset.val_cutoff_time)
-    val_table = task.create(
-        db_val,
-        # just one time window into the future
-        # could also use rtb.utils.one_window_sampler here
-        pd.DataFrame(
-            {
-                "offset": [dset.train_cutoff_time],
-                "cutoff": [dset.train_cutoff_time + WEEK],
-            }
-        ),
-    )
-
-    input_node_type = train_table.fkeys.values()[0]
-
     # make graph only for the train snapshot for safety
-    data = rtb.utils.make_graph(db_train)
+    data = rtb.utils.make_graph(dset.db_train)
     net = Net(
         node_col_stats=node_col_stats,
         node_col_names_dict=node_col_names_dict,
@@ -117,7 +81,10 @@ def main():
 
     opt = torch.optim.Adam(net.parameters())
 
-    # captures the temporal sampling/masking of nodes
+    # loaders capture temporal sampling
+
+    train_table = dset.make_train_table("ltv", window_size)
+    input_node_type = train_table.fkeys.values()[0]
     train_loader = pyg.nn.NeighborLoader(
         data,
         num_neighbors=[10] * 2,
@@ -133,6 +100,7 @@ def main():
         ),
     )
 
+    val_table = dset.make_val_table("ltv", window_size)
     val_loader = pyg.nn.NeighborLoader(
         data,
         num_neighbors=[-1] * 2,
@@ -180,7 +148,7 @@ def main():
     # instead, we provide a method to create a test table through the dataset
     # here the sampler is not for the user to choose
     # the time window is fixed to be [val_cutoff_time, val_cutoff_time + time_window]
-    test_table = dset.get_test_table("ltv", WEEK)
+    test_table = dset.make_test_table("ltv", WEEK)
 
     # the input graph for the test is the snapshot of the database at val_cutoff_time
     data = rtb.utils.make_graph(db_val)
