@@ -1,16 +1,16 @@
-from dataclasses import dataclass
 import os
 
 import rtb
 
 
-# TODO: convert to ordinary class
-@dataclass
 class Database:
     r"""A database is a collection of named tables linked by foreign key -
     primary key connections."""
 
-    tables: dict[str, rtb.data.table.Table]
+    def __init__(self, tables: dict[str, rtb.data.Table]):
+        r"""Creates a database from a dictionary of tables."""
+
+        self.tables = tables
 
     def validate(self) -> bool:
         r"""Validate the database.
