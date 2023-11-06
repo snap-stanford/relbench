@@ -30,14 +30,14 @@ class Dataset:
         path = f"{root}/{self.name}/processed/db"
         if not Path(f"{path}/done").exists():
             # process db
-            db = self.process_db()
+            db = self.process()
 
             # standardize db
             db = self.standardize_db()
 
             # process and standardize are separate because
-            # process_db() is implemented by each subclass, but
-            # standardize_db() is common to all subclasses
+            # process() is implemented by each subclass, but
+            # standardize() is common to all subclasses
 
             db.save(path)
 
@@ -62,7 +62,7 @@ class Dataset:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
-        raise NotImplementedError
+        raise NotImplementedErroa
 
     def download(self, path: str | os.PathLike) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by
@@ -70,7 +70,7 @@ class Dataset:
 
         raise NotImplementedError
 
-    def process_db(self) -> Database:
+    def process(self) -> Database:
         r"""Processes the raw data into a database. To be implemented by
         subclass."""
 

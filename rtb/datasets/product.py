@@ -1,5 +1,4 @@
 import json
-import multiprocessing as mp
 import os
 import re
 
@@ -68,43 +67,6 @@ class LTV(Task):
         )
 
 
-price_re = re.compile(r"\$(\d+\.\d+)")
-price_range_re = re.compile(r"\$(\d+\.\d+) - \$(\d+\.\d+)")
-
-
-def process_price(price_str: str) -> float:
-    r"""Process the raw price string into a float."""
-
-    m = price_range_re.match(price_str)
-
-    if m is not None:
-        lb = float(m.group(1))
-        ub = float(m.group(2))
-        return (lb + ub) / 2
-
-    m = price_re.match(price_str)
-
-    if m:
-        return float(m.group(1))
-    else:
-        raise ValueError(f"Invalid price string: {price_str}")
-
-
-def decode_product_line(line):
-    raw = json.loads(line)
-    try:
-        return {
-            "category": raw["category"][0],
-            "price": process_price(raw["price"]),
-            "product_id": raw["asin"],
-            "brand": raw["brand"],
-            "title": raw["title"],
-            "description": raw["description"],
-        }
-    except (ValueError, IndexError):
-        return None
-
-
 class ProductDataset(Dataset):
     name = "rtb-product"
 
@@ -113,8 +75,16 @@ class ProductDataset(Dataset):
     review_file_name = "All_Amazon_Review.json"
 
     # number of lines in the raw files
-    product_lines = 15_023_059
-    review_lines = 233_055_327
+    # product_lines = 15_023_059
+    # review_lines = 233_055_327
+
+    # for now I am playing with smaller files
+    product_lines = 150_000
+    review_lines = 2_000_000
+
+    # regex for parsing price
+    price_re = re.compile(r"\$(\d+\.\d+)")
+    price_range_re = re.compile(r"\$(\d+\.\d+) - \$(\d+\.\d+)")
 
     def get_tasks(self) -> dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
@@ -132,39 +102,35 @@ class ProductDataset(Dataset):
 
         raise NotImplementedError
 
-    def process_db(self) -> Database:
+    def parse_price(self, price_str: str) -> float:
+        r"""Parse the raw price string into a float."""
+
+        m = self.price_range_re.match(price_str)
+
+        if m is not None:
+            lb = float(m.group(1))
+            ub = float(m.group(2))
+            return (lb + ub) / 2
+
+        m = self.price_re.match(price_str)
+
+        if m:
+            return float(m.group(1))
+        else:
+            raise ValueError(f"Invalid price string: {price_str}")
+
+    def process(self) -> Database:
         r"""Process the raw files into a database."""
 
-        mp.set_start_method("forkserver")
+        # tried speeding up the json decoding with multiprocessing and others,
+        # but that was just a big waste of time and gave no significant gain
 
         tables = {}
 
         # product table
+        products = []
         path = f"{self.root}/{self.name}/raw/{self.product_file_name}"
-        products = []
-        num_workers = min(64, os.cpu_count())
-        with mp.Pool(num_workers) as pool, open(path, "r") as f:
-            products = [
-                product
-                for product in tqdm(
-                    # determinism is not important because of temporal splits
-                    pool.imap_unordered(
-                        decode_product_line,
-                        f,
-                        chunksize=1_000,
-                    ),
-                    total=self.product_lines,
-                )
-                if product is not None
-            ]
-
-        print(len(products))
-        breakpoint()
-
-        # product table
-        products = []
-        skip_ctr = 0
-        with open(f"{self.root}/{self.name}/raw/{self.product_file_name}", "r") as f:
+        with open(path, "r") as f:
             for l in tqdm(f, total=self.product_lines):
                 raw = json.loads(l)
                 try:
@@ -175,13 +141,12 @@ class ProductDataset(Dataset):
                             "brand": raw["brand"],
                             "title": raw["title"],
                             "description": raw["description"],
-                            "price": self.process_price(raw["price"]),
+                            "price": self.parse_price(raw["price"]),
                         }
                     )
                 except (ValueError, IndexError):
-                    skip_ctr += 1
-
-        print(f"Skipped {skip_ctr} products.")
+                    # ignoring invalid prices and empty categories for now
+                    pass
 
         tables["product"] = Table(
             df=pd.DataFrame(products),
@@ -200,21 +165,26 @@ class ProductDataset(Dataset):
         # review table
         customers = {}
         reviews = []
-        with open(self.review_file_name, "r") as f:
+        path = f"{self.root}/{self.name}/raw/{self.review_file_name}"
+        with open(path, "r") as f:
             for l in tqdm(f, total=self.review_lines):
                 raw = json.loads(l)
-                customers[raw["reviewerID"]] = raw["reviewerName"]
-                reviews.append(
-                    {
-                        "review_time": raw["unixReviewTime"],
-                        "customer_id": raw["reviewerID"],
-                        "product_id": raw["asin"],
-                        "rating": raw["overall"],
-                        "verified": raw["verified"],
-                        "review_text": raw["reviewText"],
-                        "summary": raw["summary"],
-                    }
-                )
+                try:
+                    reviews.append(
+                        {
+                            "review_time": raw["unixReviewTime"],
+                            "customer_id": raw["reviewerID"],
+                            "product_id": raw["asin"],
+                            "rating": raw["overall"],
+                            "verified": raw["verified"],
+                            "review_text": raw["reviewText"],
+                            "summary": raw["summary"],
+                        }
+                    )
+                    customers[raw["reviewerID"]] = raw["reviewerName"]
+                except KeyError:
+                    # ignoring missing data rows for now
+                    pass
 
         tables["customer"] = Table(
             df=pd.DataFrame(
@@ -224,7 +194,7 @@ class ProductDataset(Dataset):
                 }
             ),
             feat_cols={
-                "name": TEXT,
+                "name": SemanticType.TEXT,
             },
             fkeys={},
             pkey="customer_id",
