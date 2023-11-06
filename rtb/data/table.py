@@ -2,6 +2,7 @@ import copy
 from dataclasses import dataclass
 from enum import Enum
 import os
+from pathlib import Path
 from typing import Dict, Union, Optional, Tuple
 from typing_extensions import Self
 
@@ -78,7 +79,8 @@ class Table:
         parquet metadata."""
         assert str(path).endswith(".parquet")
         metadata = {
-            "feat_cols": self.feat_cols,
+            # convert SemanticType to string
+            "feat_cols": {k: v.name for k, v in self.feat_cols.items()},
             "fkeys": self.fkeys,
             "pkey": self.pkey,
             "time_col": self.time_col,
@@ -91,13 +93,15 @@ class Table:
         metadata_bytes = {
             key: json.dumps(value).encode("utf-8") for key, value in metadata.items()
         }
+        # XXX: instead of replacing metadata, we should add to it
         table = table.replace_schema_metadata(metadata_bytes)
 
         # Write the PyArrow Table to a Parquet file using pyarrow.parquet
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
         pq.write_table(table, path)
 
-    @staticmethod
-    def load(path: Union[str, os.PathLike]) -> Self:
+    @classmethod
+    def load(cls, path: Union[str, os.PathLike]) -> Self:
         """Loads a table from a parquet file."""
         assert str(path).endswith(".parquet")
 
@@ -111,12 +115,13 @@ class Table:
             key.decode("utf-8"): json.loads(value.decode("utf-8"))
             for key, value in metadata_bytes.items()
         }
-        return Table(
-            df,
-            metadata["feat_cols"],
-            metadata["fkeys"],
-            metadata["pkey"],
-            metadata["time_col"],
+        return cls(
+            df=df,
+            # convert string to SemanticType
+            feat_cols={k: SemanticType[v] for k, v in metadata["feat_cols"].items()},
+            fkeys=metadata["fkeys"],
+            pkey=metadata["pkey"],
+            time_col=metadata["time_col"],
         )
 
     def time_cutoff(self, time_stamp: int) -> Self:

@@ -26,7 +26,7 @@ class Task:
         task_type: TaskType,
         metrics: list[str],
     ) -> None:
-        self.label_col = label_col
+        self.target_col = target_col
         self.task_type = task_type
         self.metrics = metrics
 

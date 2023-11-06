@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing_extensions import Self
 
 from rtb.data.table import Table
@@ -27,13 +28,19 @@ class Database:
         r"""Saves the database to a directory. Simply saves each table
         individually with the table name as base name of file."""
 
-        raise NotImplementedError
+        for name, table in self.tables.items():
+            table.save(f"{path}/{name}.parquet")
 
-    @staticmethod
-    def load(self, path: str | os.PathLike) -> Self:
+    @classmethod
+    def load(cls, path: str | os.PathLike) -> Self:
         r"""Loads a database from a directory of tables in parquet files."""
 
-        raise NotImplementedError
+        tables = {}
+        for table_path in Path(path).glob("*.parquet"):
+            table = Table.load(table_path)
+            tables[table_path.stem] = table
+
+        return cls(tables)
 
     def time_cutoff(self, time: int) -> Self:
         r"""Returns a database with all rows upto time."""

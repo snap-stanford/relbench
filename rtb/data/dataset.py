@@ -33,7 +33,7 @@ class Dataset:
             db = self.process()
 
             # standardize db
-            db = self.standardize_db()
+            # db = self.standardize_db()
 
             # process and standardize are separate because
             # process() is implemented by each subclass, but
@@ -62,7 +62,9 @@ class Dataset:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
-        raise NotImplementedErroa
+        train_cutoff_time = self.min_time + 0.8 * (self.max_time - self.min_time)
+        val_cutoff_time = self.min_time + 0.9 * (self.max_time - self.min_time)
+        return train_cutoff_time, val_cutoff_time
 
     def download(self, path: str | os.PathLike) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by

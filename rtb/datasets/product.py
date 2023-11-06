@@ -79,8 +79,8 @@ class ProductDataset(Dataset):
     # review_lines = 233_055_327
 
     # for now I am playing with smaller files
-    product_lines = 150_000
-    review_lines = 2_000_000
+    product_lines = 15_000
+    review_lines = 200_000
 
     # regex for parsing price
     price_re = re.compile(r"\$(\d+\.\d+)")
@@ -91,10 +91,7 @@ class ProductDataset(Dataset):
 
         return {"ltv": LTV()}
 
-    def get_cutoff_times(self) -> tuple[int, int]:
-        r"""Returns the train and val cutoff times."""
-
-        raise NotImplementedError
+    # TODO: implement get_cutoff_times()
 
     def download(self, path: str | os.PathLike) -> None:
         r"""Download the Amazon dataset raw files from the AWS server and
