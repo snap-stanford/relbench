@@ -1,4 +1,5 @@
 import json
+import multiprocessing as mp
 import os
 import re
 
@@ -67,6 +68,43 @@ class LTV(Task):
         )
 
 
+price_re = re.compile(r"\$(\d+\.\d+)")
+price_range_re = re.compile(r"\$(\d+\.\d+) - \$(\d+\.\d+)")
+
+
+def process_price(price_str: str) -> float:
+    r"""Process the raw price string into a float."""
+
+    m = price_range_re.match(price_str)
+
+    if m is not None:
+        lb = float(m.group(1))
+        ub = float(m.group(2))
+        return (lb + ub) / 2
+
+    m = price_re.match(price_str)
+
+    if m:
+        return float(m.group(1))
+    else:
+        raise ValueError(f"Invalid price string: {price_str}")
+
+
+def decode_product_line(line):
+    raw = json.loads(line)
+    try:
+        return {
+            "category": raw["category"][0],
+            "price": process_price(raw["price"]),
+            "product_id": raw["asin"],
+            "brand": raw["brand"],
+            "title": raw["title"],
+            "description": raw["description"],
+        }
+    except (ValueError, IndexError):
+        return None
+
+
 class ProductDataset(Dataset):
     name = "rtb-product"
 
@@ -77,15 +115,6 @@ class ProductDataset(Dataset):
     # number of lines in the raw files
     product_lines = 15_023_059
     review_lines = 233_055_327
-
-    price_re = re.compile(r"\$(\d+\.\d+)")
-    price_range_re = re.compile(r"\$(\d+\.\d+) - \$(\d+\.\d+)")
-
-    def __init__(self, root: str | os.PathLike) -> None:
-        super().__init__(root)
-
-        p = r"\$(\d+\.\d+)"
-        self.price_re = re.compile(rf"{p}|{p} - {p}")
 
     def get_tasks(self) -> dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
@@ -103,39 +132,56 @@ class ProductDataset(Dataset):
 
         raise NotImplementedError
 
-    def process_price(self, price_str: str) -> float:
-        r"""Process the raw price string into a float."""
-
-        m = self.price_range_re.match(raw_price)
-
-        if m is not None:
-            lb = float(m.group(1))
-            ub = float(m.group(2))
-            return (lb + ub) / 2
-
-        m = self.price_re.match(raw_price)
-        return float(m.group(1))
-
     def process_db(self) -> Database:
         r"""Process the raw files into a database."""
+
+        mp.set_start_method("forkserver")
 
         tables = {}
 
         # product table
+        path = f"{self.root}/{self.name}/raw/{self.product_file_name}"
         products = []
-        with open(self.product_file_name, "r") as f:
+        num_workers = min(64, os.cpu_count())
+        with mp.Pool(num_workers) as pool, open(path, "r") as f:
+            products = [
+                product
+                for product in tqdm(
+                    # determinism is not important because of temporal splits
+                    pool.imap_unordered(
+                        decode_product_line,
+                        f,
+                        chunksize=1_000,
+                    ),
+                    total=self.product_lines,
+                )
+                if product is not None
+            ]
+
+        print(len(products))
+        breakpoint()
+
+        # product table
+        products = []
+        skip_ctr = 0
+        with open(f"{self.root}/{self.name}/raw/{self.product_file_name}", "r") as f:
             for l in tqdm(f, total=self.product_lines):
                 raw = json.loads(l)
-                products.append(
-                    {
-                        "product_id": raw["asin"],
-                        "category": raw["category"][0],
-                        "brand": raw["brand"],
-                        "title": raw["title"],
-                        "description": raw["description"],
-                        "price": self.process_price(raw["price"]),
-                    }
-                )
+                try:
+                    products.append(
+                        {
+                            "product_id": raw["asin"],
+                            "category": raw["category"][0],
+                            "brand": raw["brand"],
+                            "title": raw["title"],
+                            "description": raw["description"],
+                            "price": self.process_price(raw["price"]),
+                        }
+                    )
+                except (ValueError, IndexError):
+                    skip_ctr += 1
+
+        print(f"Skipped {skip_ctr} products.")
 
         tables["product"] = Table(
             df=pd.DataFrame(products),

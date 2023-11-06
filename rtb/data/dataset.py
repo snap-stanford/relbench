@@ -19,6 +19,8 @@ class Dataset:
     def __init__(self, root: str | os.PathLike) -> None:
         r"""Initializes the dataset."""
 
+        self.root = root
+
         # download
         path = f"{root}/{self.name}/raw"
         if not Path(f"{path}/done").exists():
