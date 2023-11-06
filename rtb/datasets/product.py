@@ -1,25 +1,28 @@
 import json
 import re
 
-import duckdb
+# import duckdb
 import pandas as pd
 from tqdm.auto import tqdm
 
-import rtb
+from rtb.data.table import SemanticType, Table
+from rtb.data.database import Database
+from rtb.data.task import TaskType, Task
+from rtb.data.dataset import Dataset
 
 
-class LTV(rtb.data.Task):
+class LTV(Task):
     r"""LTV (life-time value) for a customer is the sum of prices of products
     that the user reviews in the time_frame."""
 
     def __init__(self):
         super().__init__(
             target_col="ltv",
-            task_type=rtb.data.TaskType.REGRESSION,
+            task_type=TaskType.REGRESSION,
             metrics=["mse", "smape"],
         )
 
-    def make_table(db: rtb.data.Database, time_window_df: pd.DataFrame) -> rtb.Table:
+    def make_table(db: Database, time_window_df: pd.DataFrame) -> Table:
         r"""Create Task object for LTV."""
 
         # columns in time_window_df: offset, cutoff
@@ -54,7 +57,7 @@ class LTV(rtb.data.Task):
         """
         )
 
-        return rtb.Table(
+        return Table(
             df=df,
             feat_cols=["offset", "cutoff"],
             fkeys={"customer_id": "customer"},
@@ -63,7 +66,7 @@ class LTV(rtb.data.Task):
         )
 
 
-class ProductDataset(rtb.data.Dataset):
+class ProductDataset(Dataset):
     name = "rtb-product"
 
     # raw file names
@@ -83,7 +86,7 @@ class ProductDataset(rtb.data.Dataset):
         p = r"\$(\d+\.\d+)"
         self.price_re = re.compile(rf"{p}|{p} - {p}")
 
-    def get_tasks(self) -> dict[str, rtb.data.Task]:
+    def get_tasks(self) -> dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
 
         return {"ltv": LTV()}
@@ -112,7 +115,7 @@ class ProductDataset(rtb.data.Dataset):
         m = self.price_re.match(raw_price)
         return float(m.group(1))
 
-    def process_db(self) -> rtb.data.Database:
+    def process_db(self) -> Database:
         r"""Process the raw files into a database."""
 
         tables = {}
@@ -133,14 +136,14 @@ class ProductDataset(rtb.data.Dataset):
                     }
                 )
 
-        tables["product"] = rtb.data.Table(
+        tables["product"] = Table(
             df=pd.DataFrame(products),
             feat_cols={
-                "category": rtb.data.CATEGORICAL,
-                "brand": rtb.data.TEXT,  # can also be categorical
-                "title": rtb.data.TEXT,
-                "description": rtb.data.TEXT,
-                "price": rtb.data.NUMERICAL,
+                "category": SemanticType.CATEGORICAL,
+                "brand": SemanticType.TEXT,  # can also be categorical
+                "title": SemanticType.TEXT,
+                "description": SemanticType.TEXT,
+                "price": SemanticType.NUMERICAL,
             },
             fkeys={},
             pkey="product_id",
@@ -166,7 +169,7 @@ class ProductDataset(rtb.data.Dataset):
                     }
                 )
 
-        tables["customer"] = rtb.data.Table(
+        tables["customer"] = Table(
             df=pd.DataFrame(
                 {
                     "customer_id": list(customers.keys()),
@@ -174,21 +177,21 @@ class ProductDataset(rtb.data.Dataset):
                 }
             ),
             feat_cols={
-                "name": rtb.data.TEXT,
+                "name": TEXT,
             },
             fkeys={},
             pkey="customer_id",
             time_col=None,
         )
 
-        tables["review"] = rtb.data.Table(
+        tables["review"] = Table(
             df=pd.DataFrame(reviews),
             feat_cols={
-                "review_time": rtb.data.TIME,
-                "rating": rtb.data.NUMERICAL,
-                "verified": rtb.data.CATEGORICAL,
-                "review_text": rtb.data.TEXT,
-                "summary": rtb.data.TEXT,
+                "review_time": SemanticType.TIME,
+                "rating": SemanticType.NUMERICAL,
+                "verified": SemanticType.CATEGORICAL,
+                "review_text": SemanticType.TEXT,
+                "summary": SemanticType.TEXT,
             },
             fkeys={
                 "customer_id": "customer",
@@ -198,4 +201,4 @@ class ProductDataset(rtb.data.Dataset):
             time_col="review_time",
         )
 
-        return rtb.data.Database(tables)
+        return Database(tables)

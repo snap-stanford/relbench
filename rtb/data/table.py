@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 import os
 from typing import Dict, Union, Optional, Tuple
+from typing_extensions import Self
 
 import pandas as pd
 import pyarrow as pa
@@ -96,7 +97,7 @@ class Table:
         pq.write_table(table, path)
 
     @staticmethod
-    def load(path: Union[str, os.PathLike]) -> "Table":
+    def load(path: Union[str, os.PathLike]) -> Self:
         """Loads a table from a parquet file."""
         assert str(path).endswith(".parquet")
 
@@ -118,7 +119,7 @@ class Table:
             metadata["time_col"],
         )
 
-    def time_cutoff(self, time_stamp: int) -> Table:
+    def time_cutoff(self, time_stamp: int) -> Self:
         r"""Returns a table with all rows upto time."""
 
         if self.time_col is None:

@@ -1,7 +1,9 @@
 import os
 from pathlib import Path
 
-import rtb
+from rtb.data.database import Database
+from rtb.data.task import Task
+from rtb.utils import rolling_window_sampler, one_window_sampler
 
 
 class Dataset:
@@ -35,7 +37,7 @@ class Dataset:
             db.save(path)
 
         # load database
-        self._db = rtb.data.Database.load(path)
+        self._db = Database.load(path)
 
         # we want to keep the database private, because it also contains
         # test information
@@ -45,7 +47,7 @@ class Dataset:
 
         self.tasks = self.get_tasks()
 
-    def get_tasks(self) -> dict[str, rtb.data.Task]:
+    def get_tasks(self) -> dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset. To be implemented
         by subclass."""
 
@@ -63,15 +65,13 @@ class Dataset:
 
         raise NotImplementedError
 
-    def process_db(self) -> rtb.data.database.Database:
+    def process_db(self) -> Database:
         r"""Processes the raw data into a database. To be implemented by
         subclass."""
 
         raise NotImplementedError
 
-    def standardize_db(
-        self, db: rtb.data.database.Database
-    ) -> rtb.data.database.Database:
+    def standardize_db(self, db: Database) -> Database:
         r"""
         - Add primary key column if not present.
         - Re-index primary key column with 0-indexed ints, if required.
@@ -80,7 +80,7 @@ class Dataset:
 
         raise NotImplementedError
 
-    def db_snapshot(self, time_stamp: int) -> rtb.data.database.Database:
+    def db_snapshot(self, time_stamp: int) -> Database:
         r"""Returns a database with all rows upto time_stamp (if table is
         temporal, otherwise all rows)."""
 
@@ -89,11 +89,11 @@ class Dataset:
         return self._db.time_cutoff(time_stamp)
 
     @property
-    def db_train(self) -> rtb.data.Database:
+    def db_train(self) -> Database:
         return self.db_snapshot(self.train_cutoff_time)
 
     @property
-    def db_val(self) -> rtb.data.Database:
+    def db_val(self) -> Database:
         return self.db_snapshot(self.val_cutoff_time)
 
     def make_train_table(
@@ -101,7 +101,7 @@ class Dataset:
         task_name: str,
         window_size: int | None = None,
         time_window_df: pd.DataFrame | None = None,
-    ) -> rtb.data.table.Table:
+    ) -> Table:
         """Returns the train table for a task.
 
         User can either provide the window_size and get the train table
@@ -111,7 +111,7 @@ class Dataset:
         if time_window_df is None:
             assert window_size is not None
             # default sampler
-            time_window_df = rtb.utils.rolling_window_sampler(
+            time_window_df = rolling_window_sampler(
                 self.min_time,
                 self.train_cutoff_time,
                 window_size,
@@ -126,7 +126,7 @@ class Dataset:
         task_name: str,
         window_size: int | None = None,
         time_window_df: pd.DataFrame | None = None,
-    ) -> rtb.data.table.Table:
+    ) -> Table:
         r"""Returns the val table for a task.
 
         User can either provide the window_size and get the train table
@@ -136,7 +136,7 @@ class Dataset:
         if time_window_df is None:
             assert window_size is not None
             # default sampler
-            time_window_df = rtb.utils.one_window_sampler(
+            time_window_df = one_window_sampler(
                 self.train_cutoff_time,
                 window_size,
             )
@@ -144,11 +144,11 @@ class Dataset:
         task = self.tasks[task_name]
         return task.make_table(self.db_val, time_window_df)
 
-    def make_test_table(self, task_name: str, window_size: int) -> rtb.data.table.Table:
+    def make_test_table(self, task_name: str, window_size: int) -> Table:
         r"""Returns the test table for a task."""
 
         task = self.tasks[task_name]
-        time_window_df = rtb.utils.one_window_sampler(
+        time_window_df = one_window_sampler(
             self.val_cutoff_time,
             window_size,
         )

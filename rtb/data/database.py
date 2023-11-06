@@ -1,13 +1,14 @@
 import os
+from typing_extensions import Self
 
-import rtb
+from rtb.data.table import Table
 
 
 class Database:
     r"""A database is a collection of named tables linked by foreign key -
     primary key connections."""
 
-    def __init__(self, tables: dict[str, rtb.data.Table]):
+    def __init__(self, tables: dict[str, Table]) -> None:
         r"""Creates a database from a dictionary of tables."""
 
         self.tables = tables
@@ -29,12 +30,12 @@ class Database:
         raise NotImplementedError
 
     @staticmethod
-    def load(self, path: str | os.PathLike) -> Database:
+    def load(self, path: str | os.PathLike) -> Self:
         r"""Loads a database from a directory of tables in parquet files."""
 
         raise NotImplementedError
 
-    def time_cutoff(self, time: int) -> Database:
+    def time_cutoff(self, time: int) -> Self:
         r"""Returns a database with all rows upto time."""
 
         return {name: table.time_cutoff(time) for name, table in self.tables.items()}
