@@ -11,7 +11,7 @@ class Dataset:
     # name of dataset, to be specified by subclass
     name: str
 
-    def __init__(self, root: str) -> None:
+    def __init__(self, root: str | os.PathLike) -> None:
         r"""Initializes the dataset."""
 
         # download

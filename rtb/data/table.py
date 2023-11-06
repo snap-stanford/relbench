@@ -18,7 +18,7 @@ class SemanticType(Enum):
     MULTI_CATEGORICAL = "multi_categorical"
     TEXT = "text"
     IMAGE = "image"
-    TIME = "time"
+    TIME = "time"  # if PyF does not support map TIME to numerical stype
 
 
 import os
@@ -31,10 +31,10 @@ class Table:
     def __init__(
         self,
         df: pd.DataFrame,
-        feat_cols: Dict[str, str],
-        fkeys: Dict[str, str],
-        pkey: Optional[str],
-        time_col: Optional[str] = None,
+        feat_cols: dict[str, SemanticType],
+        fkeys: dict[str, str],
+        pkey: str | None,
+        time_col: str | None = None,
     ):
         self.df = df
         self.feat_cols = feat_cols

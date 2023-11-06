@@ -4,6 +4,7 @@ import os
 import rtb
 
 
+# TODO: convert to ordinary class
 @dataclass
 class Database:
     r"""A database is a collection of named tables linked by foreign key -
