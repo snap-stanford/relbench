@@ -17,6 +17,7 @@ dependencies=[
 	"pandas",
 	"pyarrow",
 	"pytorch_frame",
+	"torch_geometric",
 	"tqdm",
 ]
 

@@ -1,6 +1,9 @@
 import os
 from pathlib import Path
 
+import pandas as pd
+
+from rtb.data.table import Table
 from rtb.data.database import Database
 from rtb.data.task import Task
 from rtb.utils import rolling_window_sampler, one_window_sampler
@@ -22,7 +25,7 @@ class Dataset:
             self.download(path)
             Path(f"{path}/done").touch()
 
-        path = f"{root}/{name}/processed/db"
+        path = f"{root}/{self.name}/processed/db"
         if not Path(f"{path}/done").exists():
             # process db
             db = self.process_db()

@@ -1,10 +1,12 @@
+import pandas as pd
 import torch_frame as pyf
 import torch_geometric as pyg
 
-import rtb
+from rtb.data.table import Table
+from rtb.data.database import Database
 
 
-def to_pyf_dataset(table: rtb.data.Table) -> pyf.data.Dataset:
+def to_pyf_dataset(table: Table) -> pyf.data.Dataset:
     r"""Converts a Table to a PyF Dataset.
 
     Primary key and foreign keys are removed in this process."""
@@ -12,7 +14,7 @@ def to_pyf_dataset(table: rtb.data.Table) -> pyf.data.Dataset:
     raise NotImplementedError
 
 
-def make_pkey_fkey_graph(db: rtb.data.Database) -> pyg.data.HeteroData:
+def make_pkey_fkey_graph(db: Database) -> pyg.data.HeteroData:
     """
     Models the database as a heterogeneous graph.
 
