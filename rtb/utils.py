@@ -67,20 +67,20 @@ class AddTargetLabelTransform:
 def rolling_window_sampler(
     start_time: int, end_time: int, window_size: int, stride: int
 ) -> pd.DataFrame:
-    """Returns a DataFrame with columns offset and cutoff."""
+    """Returns a DataFrame with columns time_offset and time_cutoff."""
 
     df = pd.DataFrame()
-    df["offset"] = range(start_time, end_time - window_size, stride)
-    df["cutoff"] = df["offset"] + window_size
+    df["time_offset"] = range(start_time, end_time - window_size, stride)
+    df["time_cutoff"] = df["time_offset"] + window_size
 
     return df
 
 
 def one_window_sampler(start_time: int, window_size: int) -> pd.DataFrame:
-    """Returns a DataFrame with columns offset and cutoff."""
+    """Returns a DataFrame with columns time_offset and time_cutoff."""
 
     df = pd.DataFrame()
-    df["offset"] = [start_time]
-    df["cutoff"] = [start_time + window_size]
+    df["time_offset"] = [start_time]
+    df["time_cutoff"] = [start_time + window_size]
 
     return df

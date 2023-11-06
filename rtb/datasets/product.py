@@ -26,18 +26,14 @@ class LTV(Task):
     def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
         r"""Create Task object for LTV."""
 
-        # columns in time_window_df: offset, cutoff
+        # XXX: If this is not fast enough, we can try using duckdb to query the
+        # parquet files directly.
 
+        # columns in time_window_df: time_offset, time_cutoff
+
+        # XXX: can we directly access tables in the sql string?
         product = db.tables["product"].df
         review = db.tables["review"].df
-        table = duckdb.sql(
-            r"""
-            SELECT * FROM product, review
-            WHERE product.product_id = review.product_id
-            """
-        )
-
-        breakpoint()
 
         # due to query optimization and parallelization,
         # this should be fast enough
@@ -45,25 +41,47 @@ class LTV(Task):
         # a variety of other tasks
         df = duckdb.sql(
             r"""
-            SELECT customer_id, offset, cutoff, SUM(price) AS ltv
-            FROM table, time_window_df
+            SELECT
+                time_offset,
+                time_cutoff,
+                customer_id,
+                SUM(price) AS ltv
+            FROM
+                time_window_df,
+                (
+                    SELECT
+                        review_time,
+                        customer_id,
+                        price
+                    FROM
+                        product,
+                        review
+                    WHERE
+                        product.product_id = review.product_id
+                ) AS tmp
             WHERE
-                table.review_time > time_window_df.offset AND
-                table.review_time <= time_window_df.cutoff
-            GROUP BY customer_id, offset, cutoff
+                tmp.review_time > time_window_df.time_offset AND
+                tmp.review_time <= time_window_df.time_cutoff
+            GROUP BY customer_id, time_offset, time_cutoff
             """
-        )
+        ).df()
 
         return Table(
             df=df,
-            feat_cols={"offset": SemanticType.TIME, "cutoff": SemanticType.TIME},
+            feat_cols={
+                "time_offset": SemanticType.TIME,
+                "time_cutoff": SemanticType.TIME,
+            },
             fkeys={"customer_id": "customer"},
             pkey=None,
-            time_col="offset",
+            time_col="time_offset",
         )
 
 
 class ProductDataset(Dataset):
+    # TODO: pandas is interpreting the time_stamps wrong
+    # I think its a unit issue (unix time is in secs but expected in ns)
+
     name = "rtb-product"
 
     # raw file names
@@ -76,7 +94,7 @@ class ProductDataset(Dataset):
 
     # for now I am playing with smaller files
     # product_lines = 1_500_000
-    review_lines = 2_000_000
+    review_lines = 20_000_000
 
     # regex for parsing price
     price_re = re.compile(r"\$(\d+\.\d+)")
@@ -121,39 +139,45 @@ class ProductDataset(Dataset):
         tables = {}
 
         # product table
-        products = []
-        path = f"{self.root}/{self.name}/raw/{self.product_file_name}"
-        with open(path, "r") as f:
-            for l in tqdm(f, total=self.product_lines):
-                raw = json.loads(l)
-                try:
-                    products.append(
-                        {
-                            "product_id": raw["asin"],
-                            "category": raw["category"][0],
-                            "brand": raw["brand"],
-                            "title": raw["title"],
-                            "description": raw["description"],
-                            "price": self.parse_price(raw["price"]),
-                        }
-                    )
-                except (ValueError, IndexError):
-                    # ignoring invalid prices and empty categories for now
-                    pass
+        # products = []
+        # path = f"{self.root}/{self.name}/raw/{self.product_file_name}"
+        # with open(path, "r") as f:
+        #     for l in tqdm(f, total=self.product_lines):
+        #         raw = json.loads(l)
+        #         try:
+        #             products.append(
+        #                 {
+        #                     "product_id": raw["asin"],
+        #                     "category": raw["category"][0],
+        #                     "brand": raw["brand"],
+        #                     "title": raw["title"],
+        #                     "description": raw["description"],
+        #                     "price": self.parse_price(raw["price"]),
+        #                 }
+        #             )
+        #         except (ValueError, IndexError):
+        #             # ignoring invalid prices and empty categories for now
+        #             pass
 
-        tables["product"] = Table(
-            df=pd.DataFrame(products),
-            feat_cols={
-                "category": SemanticType.CATEGORICAL,
-                "brand": SemanticType.TEXT,  # can also be categorical
-                "title": SemanticType.TEXT,
-                "description": SemanticType.TEXT,
-                "price": SemanticType.NUMERICAL,
-            },
-            fkeys={},
-            pkey="product_id",
-            time_col=None,
+        # tables["product"] = Table(
+        #     df=pd.DataFrame(products),
+        #     feat_cols={
+        #         "category": SemanticType.CATEGORICAL,
+        #         "brand": SemanticType.TEXT,  # can also be categorical
+        #         "title": SemanticType.TEXT,
+        #         "description": SemanticType.TEXT,
+        #         "price": SemanticType.NUMERICAL,
+        #     },
+        #     fkeys={},
+        #     pkey="product_id",
+        #     time_col=None,
+        # )
+
+        tables["product"] = Table.load(
+            f"{self.root}/{self.name}/processed/db/product.parquet"
         )
+
+        product_ids = set(tables["product"].df["product_id"])
 
         # review table
         customers = {}
@@ -162,6 +186,11 @@ class ProductDataset(Dataset):
         with open(path, "r") as f:
             for l in tqdm(f, total=self.review_lines):
                 raw = json.loads(l)
+
+                # only keep reviews for products in product table
+                if raw["asin"] not in product_ids:
+                    continue
+
                 try:
                     reviews.append(
                         {
