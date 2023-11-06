@@ -1,8 +1,12 @@
 from dataclasses import dataclass
 from enum import Enum
 import os
+from typing_extensions import Self
 
-import rtb
+import pandas as pd
+
+from rtb.data.table import Table
+from rtb.data.database import Database
 
 
 class TaskType(Enum):
@@ -22,7 +26,7 @@ class Task:
         task_type: TaskType,
         metrics: list[str],
     ) -> None:
-        self.label_col = label_col
+        self.target_col = target_col
         self.task_type = task_type
         self.metrics = metrics
 
@@ -37,12 +41,12 @@ class Task:
         raise NotImplementedError
 
     @staticmethod
-    def load(self, path: str | os.PathLike) -> Task:
+    def load(self, path: str | os.PathLike) -> Self:
         r"""Loads a task."""
 
         raise NotImplementedError
 
-    def create(db: rtb.data.Database, time_window_df: pd.DataFrame) -> rtb.data.Table:
+    def make_table(db: Database, time_window_df: pd.DataFrame) -> Table:
         r"""To be implemented by subclass."""
 
         raise NotImplementedError

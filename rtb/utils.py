@@ -1,10 +1,12 @@
+import pandas as pd
 import torch_frame as pyf
 import torch_geometric as pyg
 
-import rtb
+from rtb.data.table import Table
+from rtb.data.database import Database
 
 
-def to_pyf_dataset(table: rtb.data.Table) -> pyf.data.Dataset:
+def to_pyf_dataset(table: Table) -> pyf.data.Dataset:
     r"""Converts a Table to a PyF Dataset.
 
     Primary key and foreign keys are removed in this process."""
@@ -12,7 +14,7 @@ def to_pyf_dataset(table: rtb.data.Table) -> pyf.data.Dataset:
     raise NotImplementedError
 
 
-def make_pkey_fkey_graph(db: rtb.data.Database) -> pyg.data.HeteroData:
+def make_pkey_fkey_graph(db: Database) -> pyg.data.HeteroData:
     """
     Models the database as a heterogeneous graph.
 
@@ -65,20 +67,20 @@ class AddTargetLabelTransform:
 def rolling_window_sampler(
     start_time: int, end_time: int, window_size: int, stride: int
 ) -> pd.DataFrame:
-    """Returns a DataFrame with columns offset and cutoff."""
+    """Returns a DataFrame with columns time_offset and time_cutoff."""
 
     df = pd.DataFrame()
-    df["offset"] = range(start_time, end_time - window_size, stride)
-    df["cutoff"] = df["offset"] + window_size
+    df["time_offset"] = range(start_time, end_time - window_size, stride)
+    df["time_cutoff"] = df["time_offset"] + window_size
 
     return df
 
 
 def one_window_sampler(start_time: int, window_size: int) -> pd.DataFrame:
-    """Returns a DataFrame with columns offset and cutoff."""
+    """Returns a DataFrame with columns time_offset and time_cutoff."""
 
     df = pd.DataFrame()
-    df["offset"] = [start_time]
-    df["cutoff"] = [start_time + window_size]
+    df["time_offset"] = [start_time]
+    df["time_cutoff"] = [start_time + window_size]
 
     return df
