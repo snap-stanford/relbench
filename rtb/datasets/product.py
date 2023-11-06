@@ -2,7 +2,7 @@ import json
 import os
 import re
 
-# import duckdb
+import duckdb
 import pandas as pd
 from tqdm.auto import tqdm
 
@@ -23,19 +23,21 @@ class LTV(Task):
             metrics=["mse", "smape"],
         )
 
-    def make_table(db: Database, time_window_df: pd.DataFrame) -> Table:
+    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
         r"""Create Task object for LTV."""
 
         # columns in time_window_df: offset, cutoff
 
-        product = db.tables["product"]
-        review = db.tables["review"]
+        product = db.tables["product"].df
+        review = db.tables["review"].df
         table = duckdb.sql(
             r"""
-            select * from product, review
-            where product.product_id = review.product_id
+            SELECT * FROM product, review
+            WHERE product.product_id = review.product_id
             """
         )
+
+        breakpoint()
 
         # due to query optimization and parallelization,
         # this should be fast enough
@@ -43,24 +45,18 @@ class LTV(Task):
         # a variety of other tasks
         df = duckdb.sql(
             r"""
-            select
-                customer_id,
-                offset,
-                cutoff,
-                sum(price) as ltv
-            from
-                table,
-                sampler_df
-            where
-                table.time_stamp > time_window_df.offset and
-                table.time_stamp <= time_window_df.cutoff and
-            group by customer_id, offset, cutoff
-        """
+            SELECT customer_id, offset, cutoff, SUM(price) AS ltv
+            FROM table, time_window_df
+            WHERE
+                table.review_time > time_window_df.offset AND
+                table.review_time <= time_window_df.cutoff
+            GROUP BY customer_id, offset, cutoff
+            """
         )
 
         return Table(
             df=df,
-            feat_cols=["offset", "cutoff"],
+            feat_cols={"offset": SemanticType.TIME, "cutoff": SemanticType.TIME},
             fkeys={"customer_id": "customer"},
             pkey=None,
             time_col="offset",
@@ -75,12 +71,12 @@ class ProductDataset(Dataset):
     review_file_name = "All_Amazon_Review.json"
 
     # number of lines in the raw files
-    # product_lines = 15_023_059
+    product_lines = 15_023_059
     # review_lines = 233_055_327
 
     # for now I am playing with smaller files
-    product_lines = 15_000
-    review_lines = 200_000
+    # product_lines = 1_500_000
+    review_lines = 2_000_000
 
     # regex for parsing price
     price_re = re.compile(r"\$(\d+\.\d+)")
