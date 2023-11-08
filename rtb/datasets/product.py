@@ -1,10 +1,13 @@
 import json
 import os
 import re
+import time
 
 import duckdb
 import pandas as pd
-from tqdm.auto import tqdm
+import pyarrow as pa
+import pyarrow.compute as pc
+from pyarrow.json import read_json, ParseOptions
 
 from rtb.data.table import SemanticType, Table
 from rtb.data.database import Database
@@ -78,10 +81,11 @@ class LTV(Task):
         )
 
 
-class ProductDataset(Dataset):
-    # TODO: pandas is interpreting the time_stamps wrong
-    # I think its a unit issue (unix time is in secs but expected in ns)
+def clean_up(rows):
+    breakpoint()
 
+
+class ProductDataset(Dataset):
     name = "rtb-product"
 
     # raw file names
@@ -90,11 +94,7 @@ class ProductDataset(Dataset):
 
     # number of lines in the raw files
     product_lines = 15_023_059
-    # review_lines = 233_055_327
-
-    # for now I am playing with smaller files
-    # product_lines = 1_500_000
-    review_lines = 20_000_000
+    review_lines = 233_055_327
 
     # regex for parsing price
     price_re = re.compile(r"\$(\d+\.\d+)")
@@ -133,10 +133,37 @@ class ProductDataset(Dataset):
     def process(self) -> Database:
         r"""Process the raw files into a database."""
 
-        # tried speeding up the json decoding with multiprocessing and others,
-        # but that was just a big waste of time and gave no significant gain
-
         tables = {}
+
+        print("read product file... [takes ~1 min on 256 cores, ~10 mins on 1 core]")
+        tic = time.time()
+
+        raw = read_json(
+            f"{self.root}/{self.name}/raw/{self.product_file_name}",
+            parse_options=ParseOptions(
+                explicit_schema=pa.schema(
+                    [
+                        ("category", pa.list_(pa.string())),
+                        # ("description", pa.list_(pa.string())),
+                        ("asin", pa.string()),
+                        ("brand", pa.string()),
+                        ("title", pa.string()),
+                        # ("price", pa.string()),
+                    ]
+                ),
+                unexpected_field_behavior="ignore",
+            ),
+        )
+
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        raw = raw.set_column(
+            1,
+            "category",
+            pc.take(raw.column("category"), [0]),
+        )
+        breakpoint()
 
         # product table
         # products = []
