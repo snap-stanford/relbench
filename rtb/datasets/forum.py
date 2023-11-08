@@ -59,13 +59,13 @@ class ForumDataset(Dataset):
         posts.drop(columns=['LasActivityDate'], inplace=True)
 
         ## change time column to unix time
-        comments['CreationDate'] = to_unix_time(comments['CreationDate'])
-        badges['Date'] = to_unix_time(badges['Date'])
-        postLinks['CreationDate'] = to_unix_time(postLinks['CreationDate'])
+        comments['CreationDate_unix'] = to_unix_time(comments['CreationDate'])
+        badges['Date_unix'] = to_unix_time(badges['Date'])
+        postLinks['CreationDate_unix'] = to_unix_time(postLinks['CreationDate'])
         
-        postHistory['CreationDate'] = to_unix_time(postHistory['CreationDate'])
-        votes['CreationDate'] = to_unix_time(votes['CreationDate'])
-        posts['CreaionDate'] = to_unix_time(posts['CreaionDate'])
+        postHistory['CreationDate_unix'] = to_unix_time(postHistory['CreationDate'])
+        votes['CreationDate_unix'] = to_unix_time(votes['CreationDate'])
+        posts['CreaionDate_unix'] = to_unix_time(posts['CreaionDate'])
         
         tables = {}
 
@@ -76,7 +76,7 @@ class ForumDataset(Dataset):
                 "PostId": "posts",
             },
             pkey="Id",
-            time_col="CreationDate",
+            time_col="CreationDate_unix",
         )
 
         tables["badges"] = Table(
@@ -85,7 +85,7 @@ class ForumDataset(Dataset):
                 "UserId": "users",
             },
             pkey="Id",
-            time_col="Date",
+            time_col="Date_unix",
         )
 
 
@@ -96,7 +96,7 @@ class ForumDataset(Dataset):
                 "RelatedPostId": "posts", ## is this allowed? two foreign keys into the same primary
             },
             pkey="Id",
-            time_col="CreationDate",
+            time_col="CreationDate_unix",
         )
 
 
@@ -107,7 +107,7 @@ class ForumDataset(Dataset):
                 "UserId": "users"
             },
             pkey="Id",
-            time_col="CreationDate",
+            time_col="CreationDate_unix",
         )
 
         tables["votes"] = Table(
@@ -117,7 +117,7 @@ class ForumDataset(Dataset):
                 "UserId": "users"
             },
             pkey="Id",
-            time_col="CreationDate",
+            time_col="CreationDate_unix",
         )
 
         tables["users"] = Table(
@@ -136,7 +136,7 @@ class ForumDataset(Dataset):
                 "ParentId": "posts" # notice the self-reference
             },
             pkey="Id",
-            time_col="CreaionDate",
+            time_col="CreaionDate_unix",
         )
         
         return Database(tables)
