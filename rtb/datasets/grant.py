@@ -134,9 +134,9 @@ class GrantDataset(Dataset):
         tables["investigator_awards"] = Table(
             df=pd.DataFrame(investigator_awards),
             feat_cols={
-                "start_date": SemanticType.Time,
-                "end_date": SemanticType.Time, ## ?? 
-                "role_code": SemanticType.TEXT
+                "start_date": SemanticType.TIME,
+                "end_date": SemanticType.TIME, ## ?? 
+                "role_code": SemanticType.CATEGORICAL
             },
             fkeys={
                 "email_id": "investigator",
@@ -151,14 +151,14 @@ class GrantDataset(Dataset):
             df=pd.DataFrame(awards),
             feat_cols={
                 "award_title": SemanticType.TEXT,
-                "award_effective_date": SemanticType.Time,
-                "award_expiration_date": SemanticType.Time,
+                "award_effective_date": SemanticType.TIME,
+                "award_expiration_date": SemanticType.TIME,
                 "award_amount": SemanticType.NUMERICAL,
                 "award_instrument": SemanticType.TEXT,
                 "program_officer": SemanticType.TEXT,
                 "abstract_narration": SemanticType.TEXT,
-                "min_amd_letter_date": SemanticType.Time,
-                "max_amd_letter_date": SemanticType.Time,
+                "min_amd_letter_date": SemanticType.TIME,
+                "max_amd_letter_date": SemanticType.TIME,
                 "arra_amount": SemanticType.NUMERICAL
             },
             fkeys={
@@ -238,6 +238,6 @@ class GrantDataset(Dataset):
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
-        train_cutoff_time = 2010
-        val_cutoff_time = 2012
+        train_cutoff_time = 2008
+        val_cutoff_time = 2013
         return train_cutoff_time, val_cutoff_time
