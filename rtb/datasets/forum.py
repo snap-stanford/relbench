@@ -10,6 +10,7 @@ from rtb.data.table import SemanticType, Table
 from rtb.data.database import Database
 from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
+from rtb.utils import to_unix_time
 
 
 class ForumDataset(Dataset):
@@ -49,20 +50,27 @@ class ForumDataset(Dataset):
         postHistory = pd.read_csv(os.path.join(path, "postHistory.csv"))
         postLinks = pd.read_csv(os.path.join(path, "postLinks.csv"))
         posts = pd.read_csv(os.path.join(path, "posts.csv"))
-        tags = pd.read_csv(os.path.join(path, "tags.csv"))
+        #tags = pd.read_csv(os.path.join(path, "tags.csv")) we remove tag table here since after removing time leakage columns, all information are kept in the posts tags columns
         users = pd.read_csv(os.path.join(path, "users.csv"))
         votes = pd.read_csv(os.path.join(path, "votes.csv"))
 
+        ## remove time leakage columns
+        users.drop(columns=['Views', 'UpVotes', 'DownVotes', 'LastAccessDate'], inplace=True)
+        posts.drop(columns=['LasActivityDate'], inplace=True)
+
+        ## change time column to unix time
+        comments['CreationDate'] = to_unix_time(comments['CreationDate'])
+        badges['Date'] = to_unix_time(badges['Date'])
+        postLinks['CreationDate'] = to_unix_time(postLinks['CreationDate'])
+        
+        postHistory['CreationDate'] = to_unix_time(postHistory['CreationDate'])
+        votes['CreationDate'] = to_unix_time(votes['CreationDate'])
+        posts['CreaionDate'] = to_unix_time(posts['CreaionDate'])
+        
         tables = {}
 
         tables["comments"] = Table(
             df=pd.DataFrame(comments),
-            feat_cols={
-                "Score": SemanticType.NUMERICAL,
-                "Text": SemanticType.TEXT,
-                "UserDisplayName": SemanticType.TEXT,
-                "CreationDate": SemanticType.TIME
-            },
             fkeys={
                 "UserId": "users",
                 "PostId": "posts",
@@ -73,10 +81,6 @@ class ForumDataset(Dataset):
 
         tables["badges"] = Table(
             df=pd.DataFrame(badges),
-            feat_cols={
-                "Name": SemanticType.TEXT,
-                "Date": SemanticType.TIME,
-            },
             fkeys={
                 "UserId": "users",
             },
@@ -84,27 +88,9 @@ class ForumDataset(Dataset):
             time_col="Date",
         )
 
-        ## for tags, should we remove the count, excerptPostId and WikiPostId, for potential time leakage?
-        
-        tables["tags"] = Table(
-            df=pd.DataFrame(tags),
-            feat_cols={
-                "Count": SemanticType.NUMERICAL,
-            },
-            fkeys={
-                "ExcerptPostId": "posts", ## is this allowed? two foreign keys into the same primary
-                "WikiPostId": "posts",
-            },
-            pkey="Id",
-            time_col=None,
-        )
-
 
         tables["postLinks"] = Table(
             df=pd.DataFrame(postLinks),
-            feat_cols={
-                "LinkTypeId": SemanticType.CATEGORICAL,
-            },
             fkeys={
                 "PostId": "posts", 
                 "RelatedPostId": "posts", ## is this allowed? two foreign keys into the same primary
@@ -116,13 +102,6 @@ class ForumDataset(Dataset):
 
         tables["postHistory"] = Table(
             df=pd.DataFrame(postHistory),
-            feat_cols={
-                "PostHistoryTypeId": SemanticType.CATEGORICAL,
-                "RevisionGUID": SemanticType.TEXT,
-                "Text": SemanticType.TEXT,
-                "Comment": SemanticType.TEXT,
-                "UserDisplayName": SemanticType.TEXT,
-            },
             fkeys={
                 "PostId": "posts",
                 "UserId": "users"
@@ -133,10 +112,6 @@ class ForumDataset(Dataset):
 
         tables["votes"] = Table(
             df=pd.DataFrame(votes),
-            feat_cols={
-                "VoteTypeId": SemanticType.CATEGORICAL,
-                "BountyAmount": SemanticType.NUMERICAL,
-            },
             fkeys={
                 "PostId": "posts",
                 "UserId": "users"
@@ -147,20 +122,6 @@ class ForumDataset(Dataset):
 
         tables["users"] = Table(
             df=pd.DataFrame(users),
-            feat_cols={
-                "Reputation": SemanticType.NUMERICAL,
-                "DisplayName": SemanticType.TEXT,
-                "LastAccessDate": SemanticType.TIME, ## should this be used as time_col?
-                "WebsiteUrl": SemanticType.TEXT,
-                "Location": SemanticType.TEXT,
-                "AboutMe": SemanticType.TEXT,
-                "Views": SemanticType.NUMERICAL, ## is this time leakage?
-                "UpVotes": SemanticType.NUMERICAL, ## is this time leakage?
-                "DownVotes": SemanticType.NUMERICAL, ## is this time leakage?
-                "AccountId": SemanticType.NUMERICAL,
-                "Age": SemanticType.NUMERICAL, 
-                "ProfileImageUrl": SemanticType.TEXT,
-            },
             fkeys={},
             pkey="Id",
             time_col=None,
@@ -168,32 +129,14 @@ class ForumDataset(Dataset):
 
 
         tables["posts"] = Table(
-            df=pd.DataFrame(users),
-            feat_cols={
-                "CreaionDate": SemanticType.TIME,
-                "Score": SemanticType.NUMERICAL,
-                "ViewCount": SemanticType.NUMERICAL,
-                "Body": SemanticType.TEXT,
-                "LasActivityDate": SemanticType.TIME,## should this be used as time_col?
-                "Title": SemanticType.TEXT,
-                "Tags": SemanticType.TEXT, ## should we refer it back to the tags table? currently it is tagName, not tag id, also, if refer, there will be multiple tag IDs.
-                "AnswerCount": SemanticType.NUMERICAL,
-                "CommentCount": SemanticType.NUMERICAL,
-                "FavoriteCount": SemanticType.NUMERICAL,
-                "LastEditDate": SemanticType.TIME,
-                "CommunityOwnedDate": SemanticType.TIME,
-                "ClosedDate": SemanticType.TIME,
-                "OwnerDisplayName": SemanticType.TEXT,
-                "LastEditorDisplayName": SemanticType.TEXT,
-                "ParentId": SemanticType.TEXT, ## should this be used? self-reference 
-                "PostTypeId": SemanticType.CATEGORICAL,                
-            },
+            df=pd.DataFrame(posts),
             fkeys={
                 "OwnerUserId": "users",
                 "LastEditorUserId": "users",
+                "ParentId": "posts" # notice the self-reference
             },
             pkey="Id",
-            time_col="CreationDate",
+            time_col="CreaionDate",
         )
         
         return Database(tables)
@@ -201,7 +144,7 @@ class ForumDataset(Dataset):
     def get_cutoff_times(self) -> tuple[int, int]:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
-
-        train_cutoff_time = 2008
-        val_cutoff_time = 2013
+        
+        train_cutoff_time = 1379152453 # 2013-09-14 02:54:13, 6+6 months before the max_time 
+        val_cutoff_time = 1394790853 # 2014-03-14 02:54:13, 6 months before the max_time
         return train_cutoff_time, val_cutoff_time
