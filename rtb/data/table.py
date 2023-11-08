@@ -1,6 +1,5 @@
 import copy
 from dataclasses import dataclass
-from enum import Enum
 import os
 from pathlib import Path
 from typing import Dict, Union, Optional, Tuple
@@ -12,34 +11,17 @@ import pyarrow.parquet as pq
 import json
 
 
-class SemanticType(Enum):
-    r"""The semantic type of a database column."""
-
-    NUMERICAL = "numerical"
-    CATEGORICAL = "categorical"
-    MULTI_CATEGORICAL = "multi_categorical"
-    TEXT = "text"
-    IMAGE = "image"
-    TIME = "time"  # if PyF does not support map TIME to numerical stype
-
-
-import os
-import pandas as pd
-
-
 class Table:
     r"""A table in a database."""
 
     def __init__(
         self,
         df: pd.DataFrame,
-        feat_cols: dict[str, SemanticType],
         fkeys: dict[str, str],
         pkey: str | None,
         time_col: str | None = None,
     ):
         self.df = df
-        self.feat_cols = feat_cols
         self.fkeys = fkeys
         self.pkey = pkey
         self.time_col = time_col
@@ -51,7 +33,7 @@ class Table:
 
     def __repr__(self):
         return (
-            f"Table(df={self.df.head()}, feat_cols={self.feat_cols}, fkeys={self.fkeys}, "
+            f"Table(df={self.df.head()}, fkeys={self.fkeys}, "
             f"pkey={self.pkey}, time_col={self.time_col})"
         )
 
@@ -64,10 +46,6 @@ class Table:
         # Check if pkey exists
         if self.pkey and self.pkey not in self.df.columns:
             return False
-        # Check if feat_cols exist
-        for col in self.feat_cols:
-            if col not in self.df.columns:
-                return False
         # Check if fkeys columns exist
         for col in self.fkeys:
             if col not in self.df.columns:
@@ -79,8 +57,6 @@ class Table:
         parquet metadata."""
         assert str(path).endswith(".parquet")
         metadata = {
-            # convert SemanticType to string
-            "feat_cols": {k: v.name for k, v in self.feat_cols.items()},
             "fkeys": self.fkeys,
             "pkey": self.pkey,
             "time_col": self.time_col,
@@ -117,8 +93,6 @@ class Table:
         }
         return cls(
             df=df,
-            # convert string to SemanticType
-            feat_cols={k: SemanticType[v] for k, v in metadata["feat_cols"].items()},
             fkeys=metadata["fkeys"],
             pkey=metadata["pkey"],
             time_col=metadata["time_col"],

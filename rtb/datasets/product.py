@@ -6,7 +6,7 @@ import duckdb
 import pandas as pd
 from tqdm.auto import tqdm
 
-from rtb.data.table import SemanticType, Table
+from rtb.data.table import Table
 from rtb.data.database import Database
 from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
@@ -68,10 +68,6 @@ class LTV(Task):
 
         return Table(
             df=df,
-            feat_cols={
-                "time_offset": SemanticType.TIME,
-                "time_cutoff": SemanticType.TIME,
-            },
             fkeys={"customer_id": "customer"},
             pkey=None,
             time_col="time_offset",
@@ -161,13 +157,6 @@ class ProductDataset(Dataset):
 
         # tables["product"] = Table(
         #     df=pd.DataFrame(products),
-        #     feat_cols={
-        #         "category": SemanticType.CATEGORICAL,
-        #         "brand": SemanticType.TEXT,  # can also be categorical
-        #         "title": SemanticType.TEXT,
-        #         "description": SemanticType.TEXT,
-        #         "price": SemanticType.NUMERICAL,
-        #     },
         #     fkeys={},
         #     pkey="product_id",
         #     time_col=None,
@@ -215,9 +204,6 @@ class ProductDataset(Dataset):
                     "name": list(customers.values()),
                 }
             ),
-            feat_cols={
-                "name": SemanticType.TEXT,
-            },
             fkeys={},
             pkey="customer_id",
             time_col=None,
@@ -225,13 +211,6 @@ class ProductDataset(Dataset):
 
         tables["review"] = Table(
             df=pd.DataFrame(reviews),
-            feat_cols={
-                "review_time": SemanticType.TIME,
-                "rating": SemanticType.NUMERICAL,
-                "verified": SemanticType.CATEGORICAL,
-                "review_text": SemanticType.TEXT,
-                "summary": SemanticType.TEXT,
-            },
             fkeys={
                 "customer_id": "customer",
                 "product_id": "product",
