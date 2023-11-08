@@ -23,10 +23,48 @@ class grant_five_years(Task):
         )
 
     def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
-        r"""Create Task object for LTV."""
+        r"""Create Task object for grant_five_years."""
+        awards = db["awards"].df
+        investigator_awards = db["investigator_awards"].df
+        import duckdb
+        df = duckdb.sql(
+            r"""
+            SELECT
+                time_offset,
+                time_cutoff,
+                email_id,
+                SUM(award_amount) AS award_sum
+            FROM
+                time_window_df,
+                (
+                    SELECT
+                        email_id,
+                        start_date,
+                        award_amount
+                    FROM
+                        awards,
+                        investigator_awards
+                    WHERE
+                        awards.award_id = investigator_awards.award_id
+                ) AS tmp
+            WHERE
+                tmp.start_date > time_window_df.time_offset AND
+                tmp.start_date <= time_window_df.time_cutoff
+            GROUP BY email_id, time_offset, time_cutoff
+            """
+        ).df()
 
-        pass
 
+        return Table(
+            df=df,
+            feat_cols={
+                "time_offset": SemanticType.TIME,
+                "time_cutoff": SemanticType.TIME,
+            },
+            fkeys={"email_id": "investigator"},
+            pkey=None,
+            time_col="time_offset",
+        )
 
 class GrantDataset(Dataset):
 
