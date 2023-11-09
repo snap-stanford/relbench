@@ -58,7 +58,7 @@ class Dataset:
 
         raise NotImplementedError
 
-    def get_cutoff_times(self) -> tuple[int, int]:
+    def get_cutoff_times(self) -> tuple[pd.Timestamp, pd.Timestamp]:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 

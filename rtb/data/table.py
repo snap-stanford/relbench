@@ -100,8 +100,9 @@ class Table:
             return self
 
         new_table = copy.copy(self)
-        new_table.df = new_table.df.query(f"{self.time_col} <= {time_stamp}")
-
+        df = new_table.df
+        df = df[df[self.time_col] <= time_stamp]
+        new_table.df = df
         return new_table
 
     def get_time_range(self) -> tuple[int, int]:

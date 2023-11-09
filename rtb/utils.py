@@ -65,14 +65,18 @@ class AddTargetLabelTransform:
 
 
 def rolling_window_sampler(
-    start_time: int, end_time: int, window_size: int, stride: int
+    start_time: pd.Timestamp, end_time: pd.Timestamp, window_size: int, stride: int
 ) -> pd.DataFrame:
     """Returns a DataFrame with columns time_offset and time_cutoff."""
+    
+    df = pd.DataFrame()  
+    start_time = int(start_time.timestamp())
+    end_time = int(end_time.timestamp())
 
-    df = pd.DataFrame()
     df["time_offset"] = range(start_time, end_time - window_size, stride)
     df["time_cutoff"] = df["time_offset"] + window_size
-
+    df["time_offset"] = df["time_offset"].astype("datetime64[s]")
+    df["time_cutoff"] = df["time_cutoff"].astype("datetime64[s]")
     return df
 
 
@@ -88,5 +92,5 @@ def one_window_sampler(start_time: int, window_size: int) -> pd.DataFrame:
 
 def to_unix_time(column: pd.Series) -> pd.Series:
     """convert a timestamp column to unix time"""
-    return pd.to_datetime(column).astype('int64') // 10**9
-    
+    #return pd.to_datetime(column).astype('int64') // 10**9
+    return pd.to_datetime(column).astype("datetime64[s]")
