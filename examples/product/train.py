@@ -4,6 +4,7 @@ import torch
 import torch_frame as pyf
 import torch_geometric as pyg
 
+from typing import Dict
 
 # XXX: maybe we can abstract out a class for tabular encoder + GNN models
 # and put it under rtb.models
@@ -37,8 +38,8 @@ class Net(torch.nn.Module):
 
     def forward(
         self,
-        tf_dict: dict[str, pyf.data.TensorFrame],
-        edge_index_dict: dict[str, torch.Tensor],
+        tf_dict: Dict[str, pyf.data.TensorFrame],
+        edge_index_dict: Dict[str, torch.Tensor],
     ):
         # encode node features from tensor frames
         x_dict = {}

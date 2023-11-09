@@ -2,6 +2,7 @@ import json
 import os
 import re
 
+from typing import Dict, Union, Tuple
 import duckdb
 import pandas as pd
 from tqdm.auto import tqdm
@@ -17,13 +18,13 @@ class ForumDataset(Dataset):
 
     name = "rtb-forum"
 
-    def get_tasks(self) -> dict[str, Task]:
+    def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
         ## needs to brainstorm a bit about meaningful tasks
         #return {"post_views_one_week": grant_five_years()}
         return
         
-    def download(self, path: str | os.PathLike) -> None:
+    def download(self, path: Union[str, os.PathLike]) -> None:
 
         """
         Download a file from an S3 bucket.
@@ -141,7 +142,7 @@ class ForumDataset(Dataset):
         
         return Database(tables)
 
-    def get_cutoff_times(self) -> tuple[int, int]:
+    def get_cutoff_times(self) -> Tuple[int, int]:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
         
