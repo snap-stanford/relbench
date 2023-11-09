@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import re
@@ -6,8 +7,10 @@ import time
 import duckdb
 import pandas as pd
 import pyarrow as pa
-import pyarrow.compute as pc
-from pyarrow.json import read_json, ParseOptions
+import pyarrow.json
+from tqdm.auto import tqdm
+
+tqdm.pandas()
 
 from rtb.data.table import Table
 from rtb.data.database import Database
@@ -77,24 +80,55 @@ class LTV(Task):
         )
 
 
-def clean_up(rows):
-    breakpoint()
+def product_process(row):
+    r"""Process a row in the product table."""
+    ret = copy.copy(row)
+
+    # convert description from list[str] to str
+    if row["description"] is not None:
+        try:
+            # most are 0 or 1 length lists
+            ret["description"] = row["description"][0]
+        except IndexError:
+            # empty list
+            ret["description"] = None
+
+    # parse price from string
+    try:
+        # if there's a price range, this simply parses the lower bound
+        ret["price"] = float(row["price"].split(" ")[0][1:])
+    except ValueError:
+        # invalid price string
+        ret["price"] = None
+
+    return ret
+
+
+def pa_read_json(path):
+    return read_json(
+        path,
+        parse_options=ParseOptions(
+            explicit_schema=pa.schema(
+                [
+                    ("category", pa.list_(pa.string())),
+                    ("description", pa.list_(pa.string())),
+                    ("asin", pa.string()),
+                    ("brand", pa.string()),
+                    ("title", pa.string()),
+                    ("price", pa.string()),
+                ]
+            ),
+            unexpected_field_behavior="ignore",
+        ),
+    )
 
 
 class ProductDataset(Dataset):
     name = "rtb-product"
 
     # raw file names
-    product_file_name = "All_Amazon_Meta.json"
-    review_file_name = "All_Amazon_Review.json"
-
-    # number of lines in the raw files
-    product_lines = 15_023_059
-    review_lines = 233_055_327
-
-    # regex for parsing price
-    price_re = re.compile(r"\$(\d+\.\d+)")
-    price_range_re = re.compile(r"\$(\d+\.\d+) - \$(\d+\.\d+)")
+    product_file_name = "meta_Books.json"
+    review_file_name = "Books.json"
 
     def get_tasks(self) -> dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
@@ -109,91 +143,62 @@ class ProductDataset(Dataset):
 
         raise NotImplementedError
 
-    def parse_price(self, price_str: str) -> float:
-        r"""Parse the raw price string into a float."""
-
-        m = self.price_range_re.match(price_str)
-
-        if m is not None:
-            lb = float(m.group(1))
-            ub = float(m.group(2))
-            return (lb + ub) / 2
-
-        m = self.price_re.match(price_str)
-
-        if m:
-            return float(m.group(1))
-        else:
-            raise ValueError(f"Invalid price string: {price_str}")
-
     def process(self) -> Database:
         r"""Process the raw files into a database."""
 
         tables = {}
 
-        print("read product file... [takes ~1 min on 256 cores, ~10 mins on 1 core]")
+        print(f"reading product info from {self.product_file_name}...")
         tic = time.time()
-
-        raw = read_json(
+        pa_table = pa.json.read_json(
             f"{self.root}/{self.name}/raw/{self.product_file_name}",
-            parse_options=ParseOptions(
+            parse_options=pa.json.ParseOptions(
                 explicit_schema=pa.schema(
                     [
-                        ("category", pa.list_(pa.string())),
-                        # ("description", pa.list_(pa.string())),
                         ("asin", pa.string()),
+                        ("category", pa.list_(pa.string())),
                         ("brand", pa.string()),
                         ("title", pa.string()),
-                        # ("price", pa.string()),
+                        ("description", pa.list_(pa.string())),
+                        ("price", pa.string()),
                     ]
                 ),
                 unexpected_field_behavior="ignore",
             ),
         )
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        print(f"converting to pandas dataframe...")
+        tic = time.time()
+        df = pa_table.to_pandas()
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        print(f"processing product info...")
+        tic = time.time()
+
+        # remove products with missing price
+        df = df.query("price != ''")
+
+        df.progress_apply(product_process, axis=1)
+
+        # some more prices may be detected as missing on failure to parse price string
+        df.dropna(subset=["price"], inplace=True)
 
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        raw = raw.set_column(
-            1,
-            "category",
-            pc.take(raw.column("category"), [0]),
-        )
-        breakpoint()
+        asins = set(df["asin"])
 
-        # product table
-        # products = []
-        # path = f"{self.root}/{self.name}/raw/{self.product_file_name}"
-        # with open(path, "r") as f:
-        #     for l in tqdm(f, total=self.product_lines):
-        #         raw = json.loads(l)
-        #         try:
-        #             products.append(
-        #                 {
-        #                     "product_id": raw["asin"],
-        #                     "category": raw["category"][0],
-        #                     "brand": raw["brand"],
-        #                     "title": raw["title"],
-        #                     "description": raw["description"],
-        #                     "price": self.parse_price(raw["price"]),
-        #                 }
-        #             )
-        #         except (ValueError, IndexError):
-        #             # ignoring invalid prices and empty categories for now
-        #             pass
-
-        # tables["product"] = Table(
-        #     df=pd.DataFrame(products),
-        #     fkeys={},
-        #     pkey="product_id",
-        #     time_col=None,
-        # )
-
-        tables["product"] = Table.load(
-            f"{self.root}/{self.name}/processed/db/product.parquet"
+        tables["product"] = Table(
+            df=df,
+            fkeys={},
+            pkey="asin",
+            time_col=None,
         )
 
-        product_ids = set(tables["product"].df["product_id"])
+        # TODO: refactor below
 
         # review table
         customers = {}
