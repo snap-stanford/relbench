@@ -31,7 +31,6 @@ class Dataset:
         if not Path(f"{path}/done").exists():
             # process db
             db = self.process()
-
             # standardize db
             # db = self.standardize_db()
 
