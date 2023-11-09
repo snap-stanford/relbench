@@ -8,9 +8,6 @@ import duckdb
 import pandas as pd
 import pyarrow as pa
 import pyarrow.json
-from tqdm.auto import tqdm
-
-tqdm.pandas()
 
 from rtb.data.table import Table
 from rtb.data.database import Database
@@ -80,49 +77,6 @@ class LTV(Task):
         )
 
 
-def product_process(row):
-    r"""Process a row in the product table."""
-    ret = copy.copy(row)
-
-    # convert description from list[str] to str
-    if row["description"] is not None:
-        try:
-            # most are 0 or 1 length lists
-            ret["description"] = row["description"][0]
-        except IndexError:
-            # empty list
-            ret["description"] = None
-
-    # parse price from string
-    try:
-        # if there's a price range, this simply parses the lower bound
-        ret["price"] = float(row["price"].split(" ")[0][1:])
-    except ValueError:
-        # invalid price string
-        ret["price"] = None
-
-    return ret
-
-
-def pa_read_json(path):
-    return read_json(
-        path,
-        parse_options=ParseOptions(
-            explicit_schema=pa.schema(
-                [
-                    ("category", pa.list_(pa.string())),
-                    ("description", pa.list_(pa.string())),
-                    ("asin", pa.string()),
-                    ("brand", pa.string()),
-                    ("title", pa.string()),
-                    ("price", pa.string()),
-                ]
-            ),
-            unexpected_field_behavior="ignore",
-        ),
-    )
-
-
 class ProductDataset(Dataset):
     name = "rtb-product"
 
@@ -144,14 +98,36 @@ class ProductDataset(Dataset):
         raise NotImplementedError
 
     def process(self) -> Database:
-        r"""Process the raw files into a database."""
+        r"""Process the raw files into a database.
+
+        Sample output to give an idea of the processing time:
+
+        reading product info from data/rtb-product/raw/meta_Books.json...
+        done in 1.12 seconds.
+        converting to pandas dataframe...
+        done in 5.88 seconds.
+        processing product info...
+        done in 1.44 seconds.
+        reading review and reviewer info from data/rtb-product/raw/Books.json...
+        done in 13.94 seconds.
+        converting to pandas dataframe...
+        done in 77.43 seconds.
+        processing review and customer info...
+        done in 83.75 seconds.
+
+        It gets stuck after this for a long time,
+        on saving dataframe to parquet file (I think).
+        """
 
         tables = {}
 
-        print(f"reading product info from {self.product_file_name}...")
+        ### product table ###
+
+        path = f"{self.root}/{self.name}/raw/{self.product_file_name}"
+        print(f"reading product info from {path}...")
         tic = time.time()
         pa_table = pa.json.read_json(
-            f"{self.root}/{self.name}/raw/{self.product_file_name}",
+            path,
             parse_options=pa.json.ParseOptions(
                 explicit_schema=pa.schema(
                     [
@@ -178,18 +154,21 @@ class ProductDataset(Dataset):
         print(f"processing product info...")
         tic = time.time()
 
+        # asin is not intuitive / recognizable
+        df.rename(columns={"asin": "product_id"}, inplace=True)
+
         # remove products with missing price
         df = df.query("price != ''")
 
-        df.progress_apply(product_process, axis=1)
+        # price is like "$x,xxx.xx"
+        df.loc[:, "price"] = df["price"].apply(
+            lambda x: float(x[1:].replace(",", "")) if x[0] == "$" else None
+        )
 
-        # some more prices may be detected as missing on failure to parse price string
-        df.dropna(subset=["price"], inplace=True)
-
-        toc = time.time()
-        print(f"done in {toc - tic:.2f} seconds.")
-
-        asins = set(df["asin"])
+        # description is either [] or ["some description"]
+        df.loc[:, "description"] = df["description"].apply(
+            lambda x: None if len(x) == 0 else x[0]
+        )
 
         tables["product"] = Table(
             df=df,
@@ -198,51 +177,68 @@ class ProductDataset(Dataset):
             time_col=None,
         )
 
-        # TODO: refactor below
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
 
-        # review table
-        customers = {}
-        reviews = []
+        ### review table ###
+
         path = f"{self.root}/{self.name}/raw/{self.review_file_name}"
-        with open(path, "r") as f:
-            for l in tqdm(f, total=self.review_lines):
-                raw = json.loads(l)
-
-                # only keep reviews for products in product table
-                if raw["asin"] not in product_ids:
-                    continue
-
-                try:
-                    reviews.append(
-                        {
-                            "review_time": raw["unixReviewTime"],
-                            "customer_id": raw["reviewerID"],
-                            "product_id": raw["asin"],
-                            "rating": raw["overall"],
-                            "verified": raw["verified"],
-                            "review_text": raw["reviewText"],
-                            "summary": raw["summary"],
-                        }
-                    )
-                    customers[raw["reviewerID"]] = raw["reviewerName"]
-                except KeyError:
-                    # ignoring missing data rows for now
-                    pass
-
-        tables["customer"] = Table(
-            df=pd.DataFrame(
-                {
-                    "customer_id": list(customers.keys()),
-                    "name": list(customers.values()),
-                }
+        print(f"reading review and reviewer info from {path}...")
+        tic = time.time()
+        pa_table = pa.json.read_json(
+            path,
+            parse_options=pa.json.ParseOptions(
+                explicit_schema=pa.schema(
+                    [
+                        ("unixReviewTime", pa.int32()),
+                        ("reviewerID", pa.string()),
+                        ("reviewerName", pa.string()),
+                        ("asin", pa.string()),
+                        ("overall", pa.float32()),
+                        ("verified", pa.bool_()),
+                        ("reviewText", pa.string()),
+                        ("summary", pa.string()),
+                    ]
+                ),
+                unexpected_field_behavior="ignore",
             ),
+        )
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        print(f"converting to pandas dataframe...")
+        tic = time.time()
+        df = pa_table.to_pandas()
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        print(f"processing review and customer info...")
+        tic = time.time()
+
+        df.rename(
+            columns={
+                "unixReviewTime": "review_time",
+                "reviewerID": "customer_id",
+                "reviewerName": "customer_name",
+                "asin": "product_id",
+                "overall": "rating",
+                "reviewText": "review_text",
+            },
+            inplace=True,
+        )
+
+        # XXX: can we speed this up?
+        cdf = df[["customer_id", "customer_name"]].drop_duplicates()
+        tables["customer"] = Table(
+            df=cdf,
             fkeys={},
             pkey="customer_id",
             time_col=None,
         )
 
+        df.drop(columns=["customer_name"], inplace=True)
         tables["review"] = Table(
-            df=pd.DataFrame(reviews),
+            df=df,
             fkeys={
                 "customer_id": "customer",
                 "product_id": "product",
@@ -250,5 +246,8 @@ class ProductDataset(Dataset):
             pkey=None,
             time_col="review_time",
         )
+
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
 
         return Database(tables)
