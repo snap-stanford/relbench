@@ -40,6 +40,7 @@ class Dataset:
             # standardize() is common to all subclasses
 
             db.save(path)
+            Path(f"{path}/done").touch()
 
         # load database
         self._db = Database.load(path)
