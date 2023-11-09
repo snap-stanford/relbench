@@ -4,6 +4,7 @@ import os
 import re
 import time
 
+from typing import Dict, Union
 import duckdb
 import pandas as pd
 import pyarrow as pa
@@ -85,14 +86,14 @@ class ProductDataset(Dataset):
     product_file_name = "meta_Books.json"
     review_file_name = "Books.json"
 
-    def get_tasks(self) -> dict[str, Task]:
+    def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
 
         return {"ltv": LTV()}
 
     # TODO: implement get_cutoff_times()
 
-    def download(self, path: str | os.PathLike) -> None:
+    def download(self, path: Union[str, os.PathLike]) -> None:
         r"""Download the Amazon dataset raw files from the AWS server and
         decompresses it."""
 
