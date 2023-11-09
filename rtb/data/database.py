@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import time
 from typing_extensions import Self
+from typing import Dict, Union, Tuple
 
 from rtb.data.table import Table
 
@@ -10,7 +11,7 @@ class Database:
     r"""A database is a collection of named tables linked by foreign key -
     primary key connections."""
 
-    def __init__(self, tables: dict[str, Table]) -> None:
+    def __init__(self, tables: Dict[str, Table]) -> None:
         r"""Creates a database from a dictionary of tables."""
 
         self.tables = tables
@@ -25,7 +26,7 @@ class Database:
 
         raise NotImplementedError
 
-    def save(self, path: str | os.PathLike) -> None:
+    def save(self, path: Union[str, os.PathLike]) -> None:
         r"""Saves the database to a directory. Simply saves each table
         individually with the table name as base name of file."""
 
@@ -37,7 +38,7 @@ class Database:
             print(f"done in {toc - tic:.2f} seconds.")
 
     @classmethod
-    def load(cls, path: str | os.PathLike) -> Self:
+    def load(cls, path: Union[str, os.PathLike]) -> Self:
         r"""Loads a database from a directory of tables in parquet files."""
 
         tables = {}
@@ -52,7 +53,7 @@ class Database:
 
         return {name: table.time_cutoff(time) for name, table in self.tables.items()}
 
-    def get_time_range(self) -> tuple[int, int]:
+    def get_time_range(self) -> Tuple[int, int]:
         r"""Returns the earliest and latest timestamp in the database."""
 
         global_min_time = None

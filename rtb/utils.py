@@ -1,3 +1,5 @@
+from typing import List, Union
+
 import pandas as pd
 import torch_frame as pyf
 import torch_geometric as pyg
@@ -56,7 +58,7 @@ class AddTargetLabelTransform:
     labels cannot be stored in the Data object directly, and must be attached
     to the batch after the batch is created."""
 
-    def __init__(self, labels: list[int | float]):
+    def __init__(self, labels: List[Union[int, float]]):
         self.labels = torch.tensor(labels)
 
     def __call__(self, batch: pyg.data.Batch) -> pyg.data.Batch:

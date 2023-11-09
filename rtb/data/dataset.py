@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+from typing import Dict, Union, Tuple
 
 from rtb.data.table import Table
 from rtb.data.database import Database
@@ -16,7 +17,7 @@ class Dataset:
     # name of dataset, to be specified by subclass
     name: str
 
-    def __init__(self, root: str | os.PathLike) -> None:
+    def __init__(self, root: Union[str, os.PathLike]) -> None:
         r"""Initializes the dataset."""
 
         self.root = root
@@ -52,13 +53,13 @@ class Dataset:
 
         self.tasks = self.get_tasks()
 
-    def get_tasks(self) -> dict[str, Task]:
+    def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset. To be implemented
         by subclass."""
 
         raise NotImplementedError
 
-    def get_cutoff_times(self) -> tuple[int, int]:
+    def get_cutoff_times(self) -> Tuple[int, int]:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
@@ -66,7 +67,7 @@ class Dataset:
         val_cutoff_time = self.min_time + 0.9 * (self.max_time - self.min_time)
         return train_cutoff_time, val_cutoff_time
 
-    def download(self, path: str | os.PathLike) -> None:
+    def download(self, path: Union[str, os.PathLike]) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by
         subclass."""
 
@@ -106,8 +107,8 @@ class Dataset:
     def make_train_table(
         self,
         task_name: str,
-        window_size: int | None = None,
-        time_window_df: pd.DataFrame | None = None,
+        window_size: Union[int, None] = None,
+        time_window_df: Union[pd.DataFrame, None] = None,
     ) -> Table:
         """Returns the train table for a task.
 
@@ -131,8 +132,8 @@ class Dataset:
     def make_val_table(
         self,
         task_name: str,
-        window_size: int | None = None,
-        time_window_df: pd.DataFrame | None = None,
+        window_size: Union[int, None] = None,
+        time_window_df: Union[pd.DataFrame, None] = None,
     ) -> Table:
         r"""Returns the val table for a task.
 

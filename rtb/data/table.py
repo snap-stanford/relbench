@@ -17,9 +17,9 @@ class Table:
     def __init__(
         self,
         df: pd.DataFrame,
-        fkeys: dict[str, str],
-        pkey: str | None,
-        time_col: str | None = None,
+        fkeys: Dict[str, str],
+        pkey: Union[str, None],
+        time_col: Union[str, None] = None,
     ):
         self.df = df
         self.fkeys = fkeys
@@ -104,7 +104,7 @@ class Table:
 
         return new_table
 
-    def get_time_range(self) -> tuple[int, int]:
+    def get_time_range(self) -> Tuple[int, int]:
         r"""Returns the earliest and latest timestamp in the table."""
 
         assert self.time_col is not None

@@ -2,11 +2,12 @@ import json
 import os
 import re
 
+from typing import Dict, Union, Tuple
 import duckdb
 import pandas as pd
 from tqdm.auto import tqdm
 
-from rtb.data.table import SemanticType, Table
+from rtb.data.table import Table
 from rtb.data.database import Database
 from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
@@ -20,6 +21,7 @@ class grant_three_years(Task):
         super().__init__(
             target_col="grant_three_years",
             task_type=TaskType.REGRESSION,
+            test_time_window_sizes=[3 * 365 * 24 * 60 * 60],
             metrics=["mse", "smape"],
         )
 
@@ -69,13 +71,13 @@ class GrantDataset(Dataset):
 
     name = "rtb-grant"
 
-    def get_tasks(self) -> dict[str, Task]:
+    def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
 
         return {"grant_three_years": grant_three_years()}
 
 
-    def download(self, path: str | os.PathLike) -> None:
+    def download(self, path: Union[str, os.PathLike]) -> None:
 
         """
         Download a file from an S3 bucket.
@@ -234,7 +236,7 @@ class GrantDataset(Dataset):
 
         return Database(tables)
 
-    def get_cutoff_times(self) -> tuple[int, int]:
+    def get_cutoff_times(self) -> Tuple[int, int]:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
