@@ -6,7 +6,7 @@ import duckdb
 import pandas as pd
 from tqdm.auto import tqdm
 
-from rtb.data.table import SemanticType, Table
+from rtb.data.table import Table
 from rtb.data.database import Database
 from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
@@ -20,6 +20,7 @@ class grant_three_years(Task):
         super().__init__(
             target_col="grant_three_years",
             task_type=TaskType.REGRESSION,
+            test_time_window_sizes=[3 * 365 * 24 * 60 * 60],
             metrics=["mse", "smape"],
         )
 

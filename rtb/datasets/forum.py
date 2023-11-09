@@ -6,7 +6,7 @@ import duckdb
 import pandas as pd
 from tqdm.auto import tqdm
 
-from rtb.data.table import SemanticType, Table
+from rtb.data.table import Table
 from rtb.data.database import Database
 from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
