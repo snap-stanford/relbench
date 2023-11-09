@@ -84,3 +84,9 @@ def one_window_sampler(start_time: int, window_size: int) -> pd.DataFrame:
     df["time_cutoff"] = [start_time + window_size]
 
     return df
+
+
+def to_unix_time(column: pd.Series) -> pd.Series:
+    """convert a timestamp column to unix time"""
+    return pd.to_datetime(column).astype('int64') // 10**9
+    
