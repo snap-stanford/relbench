@@ -24,10 +24,12 @@ class Task:
         self,
         target_col: str,
         task_type: TaskType,
+        test_time_window_sizes: list[int],
         metrics: list[str],
     ) -> None:
         self.target_col = target_col
         self.task_type = task_type
+        self.test_time_window_sizes = test_time_window_sizes
         self.metrics = metrics
 
     def validate(self) -> bool:

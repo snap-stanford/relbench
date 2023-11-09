@@ -57,10 +57,7 @@ def main():
     # user does not directly interact with task objects, but through the dataset
     dset = rtb.get_dataset(name="mtb-product", root="data/")
 
-    # will see later if we want to have one, multiple or no window_sizes
-    # directly tied to the task
-    # for now, window_size is supplied externally everywhere
-    window_size = WEEK
+    window_size = rtb.tasks["ltv"].test_time_window_sizes[0]
 
     # important: node col stats should be computed only over the train set
     node_col_stats = {}

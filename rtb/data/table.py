@@ -26,11 +26,6 @@ class Table:
         self.pkey = pkey
         self.time_col = time_col
 
-        # Check if time_col is a timestamp column, if not convert it
-        if self.time_col:
-            if not pd.api.types.is_datetime64_any_dtype(self.df[self.time_col]):
-                self.df[self.time_col] = pd.to_datetime(self.df[self.time_col])
-
     def __repr__(self):
         return (
             f"Table(df={self.df.head()}, fkeys={self.fkeys}, "

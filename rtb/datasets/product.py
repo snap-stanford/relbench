@@ -23,6 +23,7 @@ class LTV(Task):
         super().__init__(
             target_col="ltv",
             task_type=TaskType.REGRESSION,
+            test_time_window_sizes=[7 * 24 * 60 * 60],
             metrics=["mse", "smape"],
         )
 
