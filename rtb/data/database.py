@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import time
 from typing_extensions import Self
 
 from rtb.data.table import Table
@@ -29,7 +30,11 @@ class Database:
         individually with the table name as base name of file."""
 
         for name, table in self.tables.items():
+            print(f"saving table {name}...")
+            tic = time.time()
             table.save(f"{path}/{name}.parquet")
+            toc = time.time()
+            print(f"done in {toc - tic:.2f} seconds.")
 
     @classmethod
     def load(cls, path: str | os.PathLike) -> Self:
