@@ -25,8 +25,10 @@ class grant_three_years(Task):
 
     def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
         r"""Create Task object for grant_three_years."""
+
         awards = db["awards"].df
         investigator_awards = db["investigator_awards"].df
+        investigator_awards = investigator_awards[investigator_awards.email_id.notnull()] # 89367/635810 have missing email_ids
         import duckdb
         df = duckdb.sql(
             r"""
@@ -40,7 +42,7 @@ class grant_three_years(Task):
                 (
                     SELECT
                         email_id,
-                        start_date,
+                        award_effective_date_unix,
                         award_amount
                     FROM
                         awards,
@@ -49,8 +51,8 @@ class grant_three_years(Task):
                         awards.award_id = investigator_awards.award_id
                 ) AS tmp
             WHERE
-                tmp.start_date > time_window_df.time_offset AND
-                tmp.start_date <= time_window_df.time_cutoff
+                tmp.award_effective_date_unix > time_window_df.time_offset AND
+                tmp.award_effective_date_unix <= time_window_df.time_cutoff
             GROUP BY email_id, time_offset, time_cutoff
             """
         ).df()
@@ -236,6 +238,6 @@ class GrantDataset(Dataset):
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
-        train_cutoff_time = 1199174400 ## year 2008-01-01
-        val_cutoff_time = 1357027200 ## year 2013-01-01
+        train_cutoff_time = 1293782400 ## year 2010-12-31 (3+3 years before max time)
+        val_cutoff_time = 1388476800 ## year 2013-12-31 (3 years before max time)
         return train_cutoff_time, val_cutoff_time
