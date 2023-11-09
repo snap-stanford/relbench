@@ -63,7 +63,7 @@ class Table:
         }
 
         # Convert DataFrame to a PyArrow Table
-        table = pa.Table.from_pandas(self.df)
+        table = pa.Table.from_pandas(self.df, preserve_index=False)
 
         # Add metadata to the PyArrow Table
         metadata_bytes = {

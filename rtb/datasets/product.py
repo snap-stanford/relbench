@@ -113,10 +113,16 @@ class ProductDataset(Dataset):
         converting to pandas dataframe...
         done in 77.43 seconds.
         processing review and customer info...
-        done in 83.75 seconds.
+        done in 41.19 seconds.
 
-        It gets stuck after this for a long time,
-        on saving dataframe to parquet file (I think).
+        # beyond this comes from another function
+
+        saving table product...
+        done in 6.15 seconds.
+        saving table customer...
+        done in 16.68 seconds.
+        saving table review...
+        done in 150.98 seconds.
         """
 
         tables = {}
@@ -163,6 +169,12 @@ class ProductDataset(Dataset):
         # price is like "$x,xxx.xx"
         df.loc[:, "price"] = df["price"].apply(
             lambda x: float(x[1:].replace(",", "")) if x[0] == "$" else None
+        )
+
+        # remove Books from category because it's redundant
+        # and empty list actually means missing category because atleast Books should be there
+        df.loc[:, "category"] = df["category"].apply(
+            lambda x: None if len(x) == 0 else [c for c in x if c != "Books"]
         )
 
         # description is either [] or ["some description"]
@@ -227,8 +239,12 @@ class ProductDataset(Dataset):
             inplace=True,
         )
 
+        df.loc[:, "review_time"] = pd.to_datetime(df["review_time"], unit="s")
+
         # XXX: can we speed this up?
-        cdf = df[["customer_id", "customer_name"]].drop_duplicates()
+        cdf = df.loc[
+            df.duplicated(subset=["customer_id"]), ["customer_id", "customer_name"]
+        ]
         tables["customer"] = Table(
             df=cdf,
             fkeys={},
