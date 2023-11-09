@@ -44,7 +44,7 @@ class grant_three_years(Task):
                 (
                     SELECT
                         email_id,
-                        award_effective_date_unix,
+                        award_effective_date,
                         award_amount
                     FROM
                         awards,
@@ -53,8 +53,8 @@ class grant_three_years(Task):
                         awards.award_id = investigator_awards.award_id
                 ) AS tmp
             WHERE
-                tmp.award_effective_date_unix > time_window_df.time_offset AND
-                tmp.award_effective_date_unix <= time_window_df.time_cutoff
+                tmp.award_effective_date > time_window_df.time_offset AND
+                tmp.award_effective_date <= time_window_df.time_cutoff
             GROUP BY email_id, time_offset, time_cutoff
             """
         ).df()
@@ -113,18 +113,17 @@ class GrantDataset(Dataset):
         program_reference_awards = pd.read_csv(os.path.join(path, "program_reference_awards.csv"))
 
         ## turn date to unix time
-        investigator_awards["start_date_unix"] = to_unix_time(investigator_awards["start_date"])
-        awards["award_effective_date_unix"] = to_unix_time(awards["award_effective_date"])
+        investigator_awards["start_date"] = to_unix_time(investigator_awards["start_date"])
+        awards["award_effective_date"] = to_unix_time(awards["award_effective_date"])
 
         ## set to 1976 forward
-        #print('length of investigator_awards table, ', len(investigator_awards))
-        #print('length of awards table, ', len(awards))
-
-        investigator_awards = investigator_awards[investigator_awards.start_date_unix > 189331200].reset_index(drop = True)
-        awards = awards[awards.award_effective_date_unix > 189331200].reset_index(drop = True)
-
-        #print('after 1976, length of investigator_awards table, ', len(investigator_awards))
-        #print('after 1976, length of awards table, ', len(awards))
+        #print('length of investigator_awards table, ', len(investigator_awards)) 635810
+        #print('length of awards table, ', len(awards)) 430339
+       
+        investigator_awards = investigator_awards[investigator_awards.start_date > pd.Timestamp('1976-01-01')].reset_index(drop = True)
+        awards = awards[awards.award_effective_date > pd.Timestamp('1976-01-01')].reset_index(drop = True)
+        #print('after 1976, length of investigator_awards table, ', len(investigator_awards)) 620021
+        #print('after 1976, length of awards table, ', len(awards)) 415838
 
         
         tables = {}
@@ -173,7 +172,7 @@ class GrantDataset(Dataset):
                 "award_id": "awards",
             },
             pkey=None,
-            time_col="start_date_unix",
+            time_col="start_date",
         )
 
 
@@ -183,7 +182,7 @@ class GrantDataset(Dataset):
                 "organisation_code": "organization"
             },
             pkey="award_id",
-            time_col="award_effective_date_unix",
+            time_col="award_effective_date",
         )
 
         tables["organization"] = Table(
@@ -236,10 +235,12 @@ class GrantDataset(Dataset):
 
         return Database(tables)
 
-    def get_cutoff_times(self) -> Tuple[int, int]:
+    def get_cutoff_times(self) -> tuple[pd.Timestamp, pd.Timestamp]:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
-        train_cutoff_time = 1293782400 ## year 2010-12-31 (3+3 years before max time)
-        val_cutoff_time = 1388476800 ## year 2013-12-31 (3 years before max time)
+        #train_cutoff_time = 1293782400 ## year 2010-12-31 (3+3 years before max time)
+        #val_cutoff_time = 1388476800 ## year 2013-12-31 (3 years before max time)
+        train_cutoff_time = pd.Timestamp('2010-12-31')
+        val_cutoff_time = pd.Timestamp('2013-12-31')
         return train_cutoff_time, val_cutoff_time
