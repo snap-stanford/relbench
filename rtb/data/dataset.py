@@ -160,8 +160,9 @@ class Dataset:
             window_size,
         )
         table = task.make_table(self._db, time_window_df)
-
+        
         # hide the label information
-        table.drop(columns=[task.target_col])
-
+        df = table.df
+        df.drop(columns=[task.target_col], inplace = True)
+        table.df = df
         return table
