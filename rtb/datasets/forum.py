@@ -60,13 +60,13 @@ class ForumDataset(Dataset):
         posts.drop(columns=['LasActivityDate'], inplace=True)
 
         ## change time column to unix time
-        comments['CreationDate_unix'] = to_unix_time(comments['CreationDate'])
-        badges['Date_unix'] = to_unix_time(badges['Date'])
-        postLinks['CreationDate_unix'] = to_unix_time(postLinks['CreationDate'])
+        comments['CreationDate'] = to_unix_time(comments['CreationDate'])
+        badges['Date'] = to_unix_time(badges['Date'])
+        postLinks['CreationDate'] = to_unix_time(postLinks['CreationDate'])
         
-        postHistory['CreationDate_unix'] = to_unix_time(postHistory['CreationDate'])
-        votes['CreationDate_unix'] = to_unix_time(votes['CreationDate'])
-        posts['CreaionDate_unix'] = to_unix_time(posts['CreaionDate'])
+        postHistory['CreationDate'] = to_unix_time(postHistory['CreationDate'])
+        votes['CreationDate'] = to_unix_time(votes['CreationDate'])
+        posts['CreaionDate'] = to_unix_time(posts['CreaionDate'])
         
         tables = {}
 
@@ -77,7 +77,7 @@ class ForumDataset(Dataset):
                 "PostId": "posts",
             },
             pkey="Id",
-            time_col="CreationDate_unix",
+            time_col="CreationDate",
         )
 
         tables["badges"] = Table(
@@ -86,7 +86,7 @@ class ForumDataset(Dataset):
                 "UserId": "users",
             },
             pkey="Id",
-            time_col="Date_unix",
+            time_col="Date",
         )
 
 
@@ -97,7 +97,7 @@ class ForumDataset(Dataset):
                 "RelatedPostId": "posts", ## is this allowed? two foreign keys into the same primary
             },
             pkey="Id",
-            time_col="CreationDate_unix",
+            time_col="CreationDate",
         )
 
 
@@ -108,7 +108,7 @@ class ForumDataset(Dataset):
                 "UserId": "users"
             },
             pkey="Id",
-            time_col="CreationDate_unix",
+            time_col="CreationDate",
         )
 
         tables["votes"] = Table(
@@ -118,7 +118,7 @@ class ForumDataset(Dataset):
                 "UserId": "users"
             },
             pkey="Id",
-            time_col="CreationDate_unix",
+            time_col="CreationDate",
         )
 
         tables["users"] = Table(
@@ -137,7 +137,7 @@ class ForumDataset(Dataset):
                 "ParentId": "posts" # notice the self-reference
             },
             pkey="Id",
-            time_col="CreaionDate_unix",
+            time_col="CreaionDate",
         )
         
         return Database(tables)
@@ -146,6 +146,6 @@ class ForumDataset(Dataset):
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
         
-        train_cutoff_time = 1379152453 # 2013-09-14 02:54:13, 6+6 months before the max_time 
-        val_cutoff_time = 1394790853 # 2014-03-14 02:54:13, 6 months before the max_time
+        train_cutoff_time = pd.Timestamp('2013-09-14') # 2013-09-14 02:54:13, 6+6 months before the max_time 
+        val_cutoff_time = pd.Timestamp('2014-03-14') # 2014-03-14 02:54:13, 6 months before the max_time
         return train_cutoff_time, val_cutoff_time
