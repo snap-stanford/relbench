@@ -14,12 +14,12 @@ from rtb.data.dataset import Dataset
 from rtb.utils import to_unix_time
 
 
-class grant_three_years(Task):
+class investigator_three_years(Task):
     r"""Predict the sum of grant amount in the next 3 years for an investigator."""
 
     def __init__(self):
         super().__init__(
-            target_col="grant_three_years",
+            target_col="award_sum",
             task_type=TaskType.REGRESSION,
             test_time_window_sizes=[3 * 365 * 24 * 60 * 60],
             metrics=["mse", "smape"],
@@ -28,8 +28,8 @@ class grant_three_years(Task):
     def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
         r"""Create Task object for grant_three_years."""
 
-        awards = db["awards"].df
-        investigator_awards = db["investigator_awards"].df
+        awards = db.tables["awards"].df
+        investigator_awards = db.tables["investigator_awards"].df
         investigator_awards = investigator_awards[investigator_awards.email_id.notnull()] # 89367/635810 have missing email_ids
         import duckdb
         df = duckdb.sql(
@@ -67,15 +67,127 @@ class grant_three_years(Task):
             time_col="time_offset",
         )
 
+
+class institution_one_year(Task):
+    r"""Predict the sum of grant amount in the next year for an institution."""
+
+    def __init__(self):
+        super().__init__(
+            target_col="award_sum",
+            task_type=TaskType.REGRESSION,
+            test_time_window_sizes=[365 * 24 * 60 * 60],
+            metrics=["mse", "smape"],
+        )
+
+    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
+        r"""Create Task object for institution_one_year."""
+
+        awards = db.tables["awards"].df
+        institution_awards = db.tables["institution_awards"].df
+        #institution_awards = institution_awards[institution_awards.name.notnull()] # zero null
+        import duckdb
+        df = duckdb.sql(
+            r"""
+            SELECT
+                time_offset,
+                time_cutoff,
+                name,
+                SUM(award_amount) AS award_sum
+            FROM
+                time_window_df,
+                (
+                    SELECT
+                        name,
+                        award_effective_date,
+                        award_amount
+                    FROM
+                        awards,
+                        institution_awards
+                    WHERE
+                        awards.award_id = institution_awards.award_id
+                ) AS tmp
+            WHERE
+                tmp.award_effective_date > time_window_df.time_offset AND
+                tmp.award_effective_date <= time_window_df.time_cutoff
+            GROUP BY name, time_offset, time_cutoff
+            """
+        ).df()
+
+
+        return Table(
+            df=df,
+            fkeys={"name": "institution"},
+            pkey=None,
+            time_col="time_offset",
+        )
+
+
+class program_three_years(Task):
+    r"""Predict the sum of grant amount in the next three year for a program (research direction)."""
+
+    def __init__(self):
+        super().__init__(
+            target_col="award_sum",
+            task_type=TaskType.REGRESSION,
+            test_time_window_sizes=[3 * 365 * 24 * 60 * 60],
+            metrics=["mse", "smape"],
+        )
+
+    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
+        r"""Create Task object for program_three_years."""
+
+        awards = db.tables["awards"].df
+        program_element_awards = db.tables["program_element_awards"].df
+        #program_element_awards = program_element_awards[program_element_awards.name.notnull()] # zero null
+        import duckdb
+        df = duckdb.sql(
+            r"""
+            SELECT
+                time_offset,
+                time_cutoff,
+                code,
+                SUM(award_amount) AS award_sum
+            FROM
+                time_window_df,
+                (
+                    SELECT
+                        code,
+                        award_effective_date,
+                        award_amount
+                    FROM
+                        awards,
+                        program_element_awards
+                    WHERE
+                        awards.award_id = program_element_awards.award_id
+                ) AS tmp
+            WHERE
+                tmp.award_effective_date > time_window_df.time_offset AND
+                tmp.award_effective_date <= time_window_df.time_cutoff
+            GROUP BY code, time_offset, time_cutoff
+            """
+        ).df()
+
+
+        return Table(
+            df=df,
+            fkeys={"code": "program_element"},
+            pkey=None,
+            time_col="time_offset",
+        )
+
 class GrantDataset(Dataset):
 
     name = "rtb-grant"
 
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
-
-        return {"grant_three_years": grant_three_years()}
-
+        tasks = {"investigator_three_years": investigator_three_years(), 
+                "institution_one_year": institution_one_year(),
+                "program_three_years": program_three_years()}
+        
+        self.tasks_window_size = {i: j.test_time_window_sizes[0] for i,j in tasks.items()}
+        return tasks
+    
 
     def download(self, path: Union[str, os.PathLike]) -> None:
 
@@ -95,7 +207,7 @@ class GrantDataset(Dataset):
         s3.download_file(bucket_name, file_key, path)   
         """
         pass
-
+    
     def process(self) -> Database:
         r"""Process the raw files into a database."""
         path = f"{self.root}/{self.name}/raw/"

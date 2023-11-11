@@ -51,7 +51,7 @@ class Database:
     def time_cutoff(self, time: int) -> Self:
         r"""Returns a database with all rows upto time."""
 
-        return {name: table.time_cutoff(time) for name, table in self.tables.items()}
+        return Database({name: table.time_cutoff(time) for name, table in self.tables.items()})
 
     def get_time_range(self) -> Tuple[int, int]:
         r"""Returns the earliest and latest timestamp in the database."""
