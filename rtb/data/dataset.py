@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import shutil
 
 import pandas as pd
 
@@ -16,7 +17,7 @@ class Dataset:
     # name of dataset, to be specified by subclass
     name: str
 
-    def __init__(self, root: str | os.PathLike) -> None:
+    def __init__(self, root: str | os.PathLike, process=False) -> None:
         r"""Initializes the dataset."""
 
         self.root = root
@@ -28,7 +29,10 @@ class Dataset:
             Path(f"{path}/done").touch()
 
         path = f"{root}/{self.name}/processed/db"
-        if not Path(f"{path}/done").exists():
+        if process or not Path(f"{path}/done").exists():
+            # delete processed db dir if exists to avoid possibility of corruption
+            shutil.rmtree(path, ignore_errors=True)
+
             # process db
             db = self.process()
             # standardize db
