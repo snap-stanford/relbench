@@ -16,6 +16,9 @@ class Database:
 
         self.tables = tables
 
+    def __repr__(self):
+        raise NotImplementedError
+
     def validate(self) -> bool:
         r"""Validate the database.
 
@@ -43,8 +46,12 @@ class Database:
 
         tables = {}
         for table_path in Path(path).glob("*.parquet"):
+            print(f"loading table {table_path}...")
+            tic = time.time()
             table = Table.load(table_path)
             tables[table_path.stem] = table
+            toc = time.time()
+            print(f"done in {toc - tic:.2f} seconds.")
 
         return cls(tables)
 

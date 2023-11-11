@@ -1,10 +1,12 @@
-import rtb
+import time
+from typing import Dict
 
 import torch
 import torch_frame as pyf
 import torch_geometric as pyg
 
-from typing import Dict
+from rtb.datasets import get_dataset
+
 
 # XXX: maybe we can abstract out a class for tabular encoder + GNN models
 # and put it under rtb.models
@@ -50,15 +52,18 @@ class Net(torch.nn.Module):
         return self.gnn(x_dict, edge_index_dict)
 
 
-WEEK = 7 * 24 * 60 * 60
-
-
 def main():
     # instantiate dataset. this downloads and processes it, if required.
     # user does not directly interact with task objects, but through the dataset
-    dset = rtb.get_dataset(name="mtb-product", root="data/")
 
-    window_size = rtb.tasks["ltv"].test_time_window_sizes[0]
+    print("loading dataset...")
+    tic = time.time()
+    dset = get_dataset(name="rtb-product", root="data/")
+    toc = time.time()
+    print(f"done in {toc - tic:.2f} seconds.")
+
+    window_size = dset.tasks["ltv"].test_time_window_sizes[0]
+    print(f"{window_size = }")
 
     # important: node col stats should be computed only over the train set
     node_col_stats = {}

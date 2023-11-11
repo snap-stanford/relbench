@@ -27,10 +27,7 @@ class Table:
         self.time_col = time_col
 
     def __repr__(self):
-        return (
-            f"Table(df={self.df.head()}, fkeys={self.fkeys}, "
-            f"pkey={self.pkey}, time_col={self.time_col})"
-        )
+        return f"Table(df=\n{self.df},\nfkeys={self.fkeys},\npkey={self.pkey},\ntime_col={self.time_col})"
 
     def __len__(self) -> int:
         """Returns the number of rows in the table (DataFrame)."""
@@ -64,8 +61,10 @@ class Table:
         metadata_bytes = {
             key: json.dumps(value).encode("utf-8") for key, value in metadata.items()
         }
-        # XXX: instead of replacing metadata, we should add to it
-        table = table.replace_schema_metadata(metadata_bytes)
+
+        table = table.replace_schema_metadata(
+            {**table.schema.metadata, **metadata_bytes}
+        )
 
         # Write the PyArrow Table to a Parquet file using pyarrow.parquet
         Path(path).parent.mkdir(parents=True, exist_ok=True)
@@ -85,6 +84,7 @@ class Table:
         metadata = {
             key.decode("utf-8"): json.loads(value.decode("utf-8"))
             for key, value in metadata_bytes.items()
+            if key in [b"fkeys", b"pkey", b"time_col"]
         }
         return cls(
             df=df,
