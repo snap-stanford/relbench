@@ -84,11 +84,12 @@ def rolling_window_sampler(
 
 def one_window_sampler(start_time: int, window_size: int) -> pd.DataFrame:
     """Returns a DataFrame with columns time_offset and time_cutoff."""
-
+    start_time = int(start_time.timestamp())
     df = pd.DataFrame()
     df["time_offset"] = [start_time]
     df["time_cutoff"] = [start_time + window_size]
-
+    df["time_offset"] = df["time_offset"].astype("datetime64[s]")
+    df["time_cutoff"] = df["time_cutoff"].astype("datetime64[s]")
     return df
 
 
