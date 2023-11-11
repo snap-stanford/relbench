@@ -30,13 +30,16 @@ class investigator_three_years(Task):
 
         awards = db.tables["awards"].df
         investigator_awards = db.tables["investigator_awards"].df
-        investigator_awards = investigator_awards[investigator_awards.email_id.notnull()] # 89367/635810 have missing email_ids
+        investigator_awards = investigator_awards[
+            investigator_awards.email_id.notnull()
+        ]  # 89367/635810 have missing email_ids
         import duckdb
+
         df = duckdb.sql(
             r"""
             SELECT
-                time_offset,
-                time_cutoff,
+                window_min_time,
+                window_max_time,
                 email_id,
                 SUM(award_amount) AS award_sum
             FROM
@@ -53,18 +56,17 @@ class investigator_three_years(Task):
                         awards.award_id = investigator_awards.award_id
                 ) AS tmp
             WHERE
-                tmp.award_effective_date > time_window_df.time_offset AND
-                tmp.award_effective_date <= time_window_df.time_cutoff
-            GROUP BY email_id, time_offset, time_cutoff
+                tmp.award_effective_date > time_window_df.window_min_time AND
+                tmp.award_effective_date <= time_window_df.window_max_time
+            GROUP BY email_id, window_min_time, window_max_time
             """
         ).df()
-
 
         return Table(
             df=df,
             fkeys={"email_id": "investigator"},
             pkey=None,
-            time_col="time_offset",
+            time_col="window_min_time",
         )
 
 
@@ -84,13 +86,14 @@ class institution_one_year(Task):
 
         awards = db.tables["awards"].df
         institution_awards = db.tables["institution_awards"].df
-        #institution_awards = institution_awards[institution_awards.name.notnull()] # zero null
+        # institution_awards = institution_awards[institution_awards.name.notnull()] # zero null
         import duckdb
+
         df = duckdb.sql(
             r"""
             SELECT
-                time_offset,
-                time_cutoff,
+                window_min_time,
+                window_max_time,
                 name,
                 SUM(award_amount) AS award_sum
             FROM
@@ -107,18 +110,17 @@ class institution_one_year(Task):
                         awards.award_id = institution_awards.award_id
                 ) AS tmp
             WHERE
-                tmp.award_effective_date > time_window_df.time_offset AND
-                tmp.award_effective_date <= time_window_df.time_cutoff
-            GROUP BY name, time_offset, time_cutoff
+                tmp.award_effective_date > time_window_df.window_min_time AND
+                tmp.award_effective_date <= time_window_df.window_max_time
+            GROUP BY name, window_min_time, window_max_time
             """
         ).df()
-
 
         return Table(
             df=df,
             fkeys={"name": "institution"},
             pkey=None,
-            time_col="time_offset",
+            time_col="window_min_time",
         )
 
 
@@ -138,13 +140,14 @@ class program_three_years(Task):
 
         awards = db.tables["awards"].df
         program_element_awards = db.tables["program_element_awards"].df
-        #program_element_awards = program_element_awards[program_element_awards.name.notnull()] # zero null
+        # program_element_awards = program_element_awards[program_element_awards.name.notnull()] # zero null
         import duckdb
+
         df = duckdb.sql(
             r"""
             SELECT
-                time_offset,
-                time_cutoff,
+                window_min_time,
+                window_max_time,
                 code,
                 SUM(award_amount) AS award_sum
             FROM
@@ -161,53 +164,54 @@ class program_three_years(Task):
                         awards.award_id = program_element_awards.award_id
                 ) AS tmp
             WHERE
-                tmp.award_effective_date > time_window_df.time_offset AND
-                tmp.award_effective_date <= time_window_df.time_cutoff
-            GROUP BY code, time_offset, time_cutoff
+                tmp.award_effective_date > time_window_df.window_min_time AND
+                tmp.award_effective_date <= time_window_df.window_max_time
+            GROUP BY code, window_min_time, window_max_time
             """
         ).df()
-
 
         return Table(
             df=df,
             fkeys={"code": "program_element"},
             pkey=None,
-            time_col="time_offset",
+            time_col="window_min_time",
         )
 
-class GrantDataset(Dataset):
 
+class GrantDataset(Dataset):
     name = "rtb-grant"
 
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
-        tasks = {"investigator_three_years": investigator_three_years(), 
-                "institution_one_year": institution_one_year(),
-                "program_three_years": program_three_years()}
-        
-        self.tasks_window_size = {i: j.test_time_window_sizes[0] for i,j in tasks.items()}
+        tasks = {
+            "investigator_three_years": investigator_three_years(),
+            "institution_one_year": institution_one_year(),
+            "program_three_years": program_three_years(),
+        }
+
+        self.tasks_window_size = {
+            i: j.test_time_window_sizes[0] for i, j in tasks.items()
+        }
         return tasks
-    
 
     def download(self, path: Union[str, os.PathLike]) -> None:
-
         """
         Download a file from an S3 bucket.
         Parameters:
         - path (str): Local path where the file should be saved.
         Returns:
         None
-        
+
         file_key = f"{self.root}/{self.name}"
         bucket_name = 'XXX' ## TBD
         region_name='us-west-2' ## TBD
         # Create an S3 client
         s3 = boto3.client('s3', region_name=region_name)
         # Download the file
-        s3.download_file(bucket_name, file_key, path)   
+        s3.download_file(bucket_name, file_key, path)
         """
         pass
-    
+
     def process(self) -> Database:
         r"""Process the raw files into a database."""
         path = f"{self.root}/{self.name}/raw/"
@@ -221,23 +225,32 @@ class GrantDataset(Dataset):
         investigator = pd.read_csv(os.path.join(path, "investigator.csv"))
         program_element = pd.read_csv(os.path.join(path, "program_element.csv"))
         program_reference = pd.read_csv(os.path.join(path, "program_reference.csv"))
-        program_element_awards = pd.read_csv(os.path.join(path, "program_element_awards.csv"))
-        program_reference_awards = pd.read_csv(os.path.join(path, "program_reference_awards.csv"))
+        program_element_awards = pd.read_csv(
+            os.path.join(path, "program_element_awards.csv")
+        )
+        program_reference_awards = pd.read_csv(
+            os.path.join(path, "program_reference_awards.csv")
+        )
 
         ## turn date to unix time
-        investigator_awards["start_date"] = to_unix_time(investigator_awards["start_date"])
+        investigator_awards["start_date"] = to_unix_time(
+            investigator_awards["start_date"]
+        )
         awards["award_effective_date"] = to_unix_time(awards["award_effective_date"])
 
         ## set to 1976 forward
-        #print('length of investigator_awards table, ', len(investigator_awards)) 635810
-        #print('length of awards table, ', len(awards)) 430339
-       
-        investigator_awards = investigator_awards[investigator_awards.start_date > pd.Timestamp('1976-01-01')].reset_index(drop = True)
-        awards = awards[awards.award_effective_date > pd.Timestamp('1976-01-01')].reset_index(drop = True)
-        #print('after 1976, length of investigator_awards table, ', len(investigator_awards)) 620021
-        #print('after 1976, length of awards table, ', len(awards)) 415838
+        # print('length of investigator_awards table, ', len(investigator_awards)) 635810
+        # print('length of awards table, ', len(awards)) 430339
 
-        
+        investigator_awards = investigator_awards[
+            investigator_awards.start_date > pd.Timestamp("1976-01-01")
+        ].reset_index(drop=True)
+        awards = awards[
+            awards.award_effective_date > pd.Timestamp("1976-01-01")
+        ].reset_index(drop=True)
+        # print('after 1976, length of investigator_awards table, ', len(investigator_awards)) 620021
+        # print('after 1976, length of awards table, ', len(awards)) 415838
+
         tables = {}
 
         tables["foa_info_awards"] = Table(
@@ -250,14 +263,12 @@ class GrantDataset(Dataset):
             time_col=None,
         )
 
-
         tables["foa_info"] = Table(
             df=pd.DataFrame(foa_info),
             fkeys={},
             pkey="code",
             time_col=None,
         )
-
 
         tables["institution_awards"] = Table(
             df=pd.DataFrame(institution_awards),
@@ -276,7 +287,6 @@ class GrantDataset(Dataset):
             time_col=None,
         )
 
-
         tables["investigator_awards"] = Table(
             df=pd.DataFrame(investigator_awards),
             fkeys={
@@ -287,12 +297,9 @@ class GrantDataset(Dataset):
             time_col="start_date",
         )
 
-
         tables["awards"] = Table(
             df=pd.DataFrame(awards),
-            fkeys={
-                "organisation_code": "organization"
-            },
+            fkeys={"organisation_code": "organization"},
             pkey="award_id",
             time_col="award_effective_date",
         )
@@ -351,8 +358,8 @@ class GrantDataset(Dataset):
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
-        #train_cutoff_time = 1293782400 ## year 2010-12-31 (3+3 years before max time)
-        #val_cutoff_time = 1388476800 ## year 2013-12-31 (3 years before max time)
-        train_cutoff_time = pd.Timestamp('2010-12-31')
-        val_cutoff_time = pd.Timestamp('2013-12-31')
+        # train_cutoff_time = 1293782400 ## year 2010-12-31 (3+3 years before max time)
+        # val_cutoff_time = 1388476800 ## year 2013-12-31 (3 years before max time)
+        train_cutoff_time = pd.Timestamp("2010-12-31")
+        val_cutoff_time = pd.Timestamp("2013-12-31")
         return train_cutoff_time, val_cutoff_time
