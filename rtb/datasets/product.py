@@ -24,7 +24,7 @@ class LTV(Task):
         super().__init__(
             target_col="ltv",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[7 * 24 * 60 * 60],
+            test_time_window_sizes=[pd.Timedelta("1W")],
             metrics=["mse", "smape"],
         )
 
@@ -83,8 +83,15 @@ class ProductDataset(Dataset):
     name = "rtb-product"
 
     # raw file names
-    product_file_name = "meta_Books.json"
-    review_file_name = "Books.json"
+    # product_file_name = "meta_Books.json"
+    # review_file_name = "Books.json"
+    # we use the 5-core version for now
+    # the original has 51M reviews for 35M distinct customers
+    # will have to think/discuss if using that is a good idea
+    # review_file_name = "Books_5.json"
+
+    product_file_name = "meta_AMAZON_FASHION.json"
+    review_file_name = "AMAZON_FASHION.json"
 
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
@@ -100,41 +107,14 @@ class ProductDataset(Dataset):
         raise NotImplementedError
 
     def process(self) -> Database:
-        r"""Process the raw files into a database.
-
-        Sample output to give an idea of the processing time:
-
-        reading product info from data/rtb-product/raw/meta_Books.json...
-        done in 1.12 seconds.
-        converting to pandas dataframe...
-        done in 5.88 seconds.
-        processing product info...
-        done in 1.44 seconds.
-        reading review and reviewer info from data/rtb-product/raw/Books.json...
-        done in 13.94 seconds.
-        converting to pandas dataframe...
-        done in 77.43 seconds.
-        processing review and customer info...
-        done in 41.19 seconds.
-
-        # beyond this comes from another function
-
-        saving table product...
-        done in 6.15 seconds.
-        saving table customer...
-        done in 16.68 seconds.
-        saving table review...
-        done in 150.98 seconds.
-        """
-
-        tables = {}
+        r"""Process the raw files into a database."""
 
         ### product table ###
 
         path = f"{self.root}/{self.name}/raw/{self.product_file_name}"
         print(f"reading product info from {path}...")
         tic = time.time()
-        pa_table = pa.json.read_json(
+        ptable = pa.json.read_json(
             path,
             parse_options=pa.json.ParseOptions(
                 explicit_schema=pa.schema(
@@ -155,7 +135,7 @@ class ProductDataset(Dataset):
 
         print(f"converting to pandas dataframe...")
         tic = time.time()
-        df = pa_table.to_pandas()
+        pdf = ptable.to_pandas()
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
@@ -163,32 +143,29 @@ class ProductDataset(Dataset):
         tic = time.time()
 
         # asin is not intuitive / recognizable
-        df.rename(columns={"asin": "product_id"}, inplace=True)
+        pdf.rename(columns={"asin": "product_id"}, inplace=True)
 
         # remove products with missing price
-        df = df.query("price != ''")
+        pdf = pdf.query("price != '' and not price.isnull()")
 
-        # price is like "$x,xxx.xx"
-        df.loc[:, "price"] = df["price"].apply(
-            lambda x: float(x[1:].replace(",", "")) if x[0] == "$" else None
+        # price is like "$x,xxx.xx", "$xx.xx", or "$xx.xx - $xx.xx", or garbage html
+        # if it's a range, we take the first value
+        pdf.loc[:, "price"] = pdf["price"].apply(
+            lambda x: None
+            if x is None or x[0] != "$"
+            else float(x.split(" ")[0][1:].replace(",", ""))
         )
 
-        # remove Books from category because it's redundant
-        # and empty list actually means missing category because atleast Books should be there
-        df.loc[:, "category"] = df["category"].apply(
-            lambda x: None if len(x) == 0 else [c for c in x if c != "Books"]
+        # remove products with missing price
+        pdf = pdf.dropna(subset=["price"])
+
+        pdf.loc[:, "category"] = pdf["category"].apply(
+            lambda x: None if x is None or len(x) == 0 else x
         )
 
         # description is either [] or ["some description"]
-        df.loc[:, "description"] = df["description"].apply(
-            lambda x: None if len(x) == 0 else x[0]
-        )
-
-        tables["product"] = Table(
-            df=df,
-            fkeys={},
-            pkey="asin",
-            time_col=None,
+        pdf.loc[:, "description"] = pdf["description"].apply(
+            lambda x: None if x is None or len(x) == 0 else x[0]
         )
 
         toc = time.time()
@@ -197,9 +174,9 @@ class ProductDataset(Dataset):
         ### review table ###
 
         path = f"{self.root}/{self.name}/raw/{self.review_file_name}"
-        print(f"reading review and reviewer info from {path}...")
+        print(f"reading review and customer info from {path}...")
         tic = time.time()
-        pa_table = pa.json.read_json(
+        rtable = pa.json.read_json(
             path,
             parse_options=pa.json.ParseOptions(
                 explicit_schema=pa.schema(
@@ -222,14 +199,14 @@ class ProductDataset(Dataset):
 
         print(f"converting to pandas dataframe...")
         tic = time.time()
-        df = pa_table.to_pandas()
+        rdf = rtable.to_pandas()
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
         print(f"processing review and customer info...")
         tic = time.time()
 
-        df.rename(
+        rdf.rename(
             columns={
                 "unixReviewTime": "review_time",
                 "reviewerID": "customer_id",
@@ -241,31 +218,48 @@ class ProductDataset(Dataset):
             inplace=True,
         )
 
-        df.loc[:, "review_time"] = pd.to_datetime(df["review_time"], unit="s")
+        rdf.loc[:, "review_time"] = pd.to_datetime(rdf["review_time"], unit="s")
 
-        # XXX: can we speed this up?
-        cdf = df.loc[
-            df.duplicated(subset=["customer_id"]), ["customer_id", "customer_name"]
+        cdf = rdf.loc[
+            rdf.duplicated(subset=["customer_id"]), ["customer_id", "customer_name"]
         ]
-        tables["customer"] = Table(
-            df=cdf,
-            fkeys={},
-            pkey="customer_id",
-            time_col=None,
-        )
-
-        df.drop(columns=["customer_name"], inplace=True)
-        tables["review"] = Table(
-            df=df,
-            fkeys={
-                "customer_id": "customer",
-                "product_id": "product",
-            },
-            pkey=None,
-            time_col="review_time",
-        )
+        rdf.drop(columns=["customer_name"], inplace=True)
 
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        return Database(tables)
+        print(f"removing products not in review table (#products={len(pdf)})...")
+        tic = time.time()
+        pdf = pd.merge(
+            rdf["product_id"].drop_duplicates(),
+            pdf.drop_duplicates(subset=["product_id"]),
+            on="product_id",
+        )
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds (#products={len(pdf)}).")
+
+        return Database(
+            tables={
+                "product": Table(
+                    df=pdf,
+                    fkeys={},
+                    pkey="product_id",
+                    time_col=None,
+                ),
+                "customer": Table(
+                    df=cdf,
+                    fkeys={},
+                    pkey="customer_id",
+                    time_col=None,
+                ),
+                "review": Table(
+                    df=rdf,
+                    fkeys={
+                        "customer_id": "customer",
+                        "product_id": "product",
+                    },
+                    pkey=None,
+                    time_col="review_time",
+                ),
+            }
+        )

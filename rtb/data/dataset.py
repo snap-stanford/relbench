@@ -56,6 +56,19 @@ class Dataset:
 
         self.tasks = self.get_tasks()
 
+    def __repr__(self):
+        return (
+            f"Dataset(\n"
+            f"root={self.root},\n\n"
+            f"min_time={self.min_time},\n\n"
+            f"max_time={self.max_time},\n\n"
+            f"train_cutoff_time={self.train_cutoff_time},\n\n"
+            f"val_cutoff_time={self.val_cutoff_time},\n\n"
+            f"tasks={self.tasks},\n\n"
+            f"db_train={self.db_train}\n"
+            f")"
+        )
+
     def get_tasks(self) -> dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset. To be implemented
         by subclass."""

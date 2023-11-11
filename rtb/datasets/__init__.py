@@ -6,3 +6,5 @@ def get_dataset(name: str, *args, **kwargs):
 
     if name == "rtb-product":
         return ProductDataset(*args, **kwargs)
+
+    raise ValueError(f"Unknown dataset name: {name}")
