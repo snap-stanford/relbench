@@ -358,8 +358,8 @@ class GrantDataset(Dataset):
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
-        # train_cutoff_time = 1293782400 ## year 2010-12-31 (3+3 years before max time)
-        # val_cutoff_time = 1388476800 ## year 2013-12-31 (3 years before max time)
-        train_cutoff_time = pd.Timestamp("2010-12-31")
-        val_cutoff_time = pd.Timestamp("2013-12-31")
-        return train_cutoff_time, val_cutoff_time
+        # train_max_time = 1293782400 ## year 2010-12-31 (3+3 years before max time)
+        # val_max_time = 1388476800 ## year 2013-12-31 (3 years before max time)
+        train_max_time = pd.Timestamp("2010-12-31")
+        val_max_time = pd.Timestamp("2013-12-31")
+        return train_max_time, val_max_time
