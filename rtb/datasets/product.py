@@ -16,9 +16,61 @@ from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
 
 
-class LTV(Task):
+class ChurnTask(Task):
     r"""LTV (life-time value) for a customer is the sum of prices of products
     that the user reviews in the time_frame."""
+
+    def __init__(self):
+        super().__init__(
+            target_col="ltv",
+            task_type=TaskType.BINARY_CLASSIFICATION,
+            test_time_window_sizes=[pd.Timedelta("1W")],
+            metrics=["auprc"],
+        )
+
+    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
+        product = db.tables["product"].df
+        review = db.tables["review"].df
+
+        # TODO
+        df = duckdb.sql(
+            r"""
+            SELECT
+                window_min_time,
+                window_max_time,
+                customer_id,
+                SUM(price) AS ltv
+            FROM
+                time_window_df,
+                (
+                    SELECT
+                        review_time,
+                        customer_id,
+                        price
+                    FROM
+                        product,
+                        review
+                    WHERE
+                        product.product_id = review.product_id
+                ) AS tmp
+            WHERE
+                tmp.review_time > time_window_df.window_min_time AND
+                tmp.review_time <= time_window_df.window_max_time
+            GROUP BY customer_id, window_min_time, window_max_time
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkeys={"customer_id": "customer"},
+            pkey=None,
+            time_col="window_min_time",
+        )
+
+
+class LTVTask(Task):
+    r"""LTV (life-time value) for a customer is the sum of prices of products
+    that the user reviews in the time window."""
 
     def __init__(self):
         super().__init__(
@@ -29,6 +81,7 @@ class LTV(Task):
         )
 
     def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
+<<<<<<< Updated upstream
         r"""Create Task object for LTV."""
 
         # XXX: If this is not fast enough, we can try using duckdb to query the
@@ -37,13 +90,11 @@ class LTV(Task):
         # columns in time_window_df: time_offset, time_cutoff
 
         # XXX: can we directly access tables in the sql string?
+=======
+>>>>>>> Stashed changes
         product = db.tables["product"].df
         review = db.tables["review"].df
 
-        # due to query optimization and parallelization,
-        # this should be fast enough
-        # and doing sql queries is also flexible enough to easily implement
-        # a variety of other tasks
         df = duckdb.sql(
             r"""
             SELECT
@@ -96,7 +147,7 @@ class ProductDataset(Dataset):
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
 
-        return {"ltv": LTV()}
+        return {"ltv": LTVTask()}
 
     # TODO: implement get_cutoff_times()
 
