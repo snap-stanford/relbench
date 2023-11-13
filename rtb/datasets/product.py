@@ -24,6 +24,8 @@ class ChurnTask(Task):
         super().__init__(
             target_col="ltv",
             task_type=TaskType.BINARY_CLASSIFICATION,
+<<<<<<< Updated upstream
+=======
             test_time_window_sizes=[pd.Timedelta("1W")],
             metrics=["auprc"],
         )
@@ -33,6 +35,62 @@ class ChurnTask(Task):
         review = db.tables["review"].df
 
         # TODO
+        df = duckdb.sql(
+            r"""
+            SELECT
+                window_min_time,
+                window_max_time,
+                customer_id,
+                SUM(price) AS ltv
+            FROM
+                time_window_df,
+                (
+                    SELECT
+                        review_time,
+                        customer_id,
+                        price
+                    FROM
+                        product,
+                        review
+                    WHERE
+                        product.product_id = review.product_id
+                ) AS tmp
+            WHERE
+                tmp.review_time > time_window_df.window_min_time AND
+                tmp.review_time <= time_window_df.window_max_time
+            GROUP BY customer_id, window_min_time, window_max_time
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkeys={"customer_id": "customer"},
+            pkey=None,
+            time_col="window_min_time",
+        )
+
+
+class LTVTask(Task):
+    r"""LTV (life-time value) for a customer is the sum of prices of products
+    that the user reviews in the time window."""
+
+    def __init__(self):
+        super().__init__(
+            target_col="ltv",
+            task_type=TaskType.REGRESSION,
+>>>>>>> Stashed changes
+            test_time_window_sizes=[pd.Timedelta("1W")],
+            metrics=["auprc"],
+        )
+
+    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
+        product = db.tables["product"].df
+        review = db.tables["review"].df
+
+<<<<<<< Updated upstream
+        # TODO
+=======
+>>>>>>> Stashed changes
         df = duckdb.sql(
             r"""
             SELECT
