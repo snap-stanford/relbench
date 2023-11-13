@@ -24,8 +24,6 @@ class ChurnTask(Task):
         super().__init__(
             target_col="ltv",
             task_type=TaskType.BINARY_CLASSIFICATION,
-<<<<<<< Updated upstream
-=======
             test_time_window_sizes=[pd.Timedelta("1W")],
             metrics=["auprc"],
         )
@@ -78,7 +76,6 @@ class LTVTask(Task):
         super().__init__(
             target_col="ltv",
             task_type=TaskType.REGRESSION,
->>>>>>> Stashed changes
             test_time_window_sizes=[pd.Timedelta("1W")],
             metrics=["auprc"],
         )
@@ -87,10 +84,6 @@ class LTVTask(Task):
         product = db.tables["product"].df
         review = db.tables["review"].df
 
-<<<<<<< Updated upstream
-        # TODO
-=======
->>>>>>> Stashed changes
         df = duckdb.sql(
             r"""
             SELECT
@@ -139,7 +132,6 @@ class LTVTask(Task):
         )
 
     def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
-<<<<<<< Updated upstream
         r"""Create Task object for LTV."""
 
         # XXX: If this is not fast enough, we can try using duckdb to query the
@@ -148,8 +140,6 @@ class LTVTask(Task):
         # columns in time_window_df: window_min_time, window_max_time
 
         # XXX: can we directly access tables in the sql string?
-=======
->>>>>>> Stashed changes
         product = db.tables["product"].df
         review = db.tables["review"].df
 
