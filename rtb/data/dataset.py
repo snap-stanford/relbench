@@ -7,7 +7,7 @@ import pandas as pd
 from rtb.data.table import Table
 from rtb.data.database import Database
 from rtb.data.task import Task
-from rtb.utils import rolling_window_sampler, one_window_sampler
+from rtb.utils import rolling_window_sampler, one_window_sampler, download_url, unzip
 
 
 class Dataset:
@@ -23,10 +23,9 @@ class Dataset:
         self.root = root
 
         # download
-        path = f"{root}/{self.name}/raw"
-        if not Path(f"{path}/done").exists():
-            self.download(path)
-            Path(f"{path}/done").touch()
+        if not os.path.exists(os.path.join(root, self.name)):
+            url = f'http://ogb-data.stanford.edu/data/rtb/{self.name}.zip'
+            self.download(url, root)
 
         path = f"{root}/{self.name}/processed/db"
         if process or not Path(f"{path}/done").exists():
@@ -83,11 +82,12 @@ class Dataset:
         val_max_time = self.min_time + 0.9 * (self.max_time - self.min_time)
         return train_max_time, val_max_time
 
-    def download(self, path: str | os.PathLike) -> None:
+    def download(self,url: str, path: str | os.PathLike) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by
         subclass."""
 
-        raise NotImplementedError
+        download_path = download_url(url, path)
+        unzip(download_path, path)
 
     def process(self) -> Database:
         r"""Processes the raw data into a database. To be implemented by

@@ -194,24 +194,6 @@ class GrantDataset(Dataset):
         }
         return tasks
 
-    def download(self, path: Union[str, os.PathLike]) -> None:
-        """
-        Download a file from an S3 bucket.
-        Parameters:
-        - path (str): Local path where the file should be saved.
-        Returns:
-        None
-
-        file_key = f"{self.root}/{self.name}"
-        bucket_name = 'XXX' ## TBD
-        region_name='us-west-2' ## TBD
-        # Create an S3 client
-        s3 = boto3.client('s3', region_name=region_name)
-        # Download the file
-        s3.download_file(bucket_name, file_key, path)
-        """
-        pass
-
     def process(self) -> Database:
         r"""Process the raw files into a database."""
         path = f"{self.root}/{self.name}/raw/"
