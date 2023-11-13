@@ -52,7 +52,7 @@ class Dataset:
         # test information
 
         self.min_time, self.max_time = self._db.get_time_range()
-        self.train_cutoff_time, self.val_cutoff_time = self.get_cutoff_times()
+        self.train_max_time, self.val_max_time = self.get_cutoff_times()
 
         self.tasks = self.get_tasks()
 
@@ -62,8 +62,8 @@ class Dataset:
             f"root={self.root},\n\n"
             f"min_time={self.min_time},\n\n"
             f"max_time={self.max_time},\n\n"
-            f"train_cutoff_time={self.train_cutoff_time},\n\n"
-            f"val_cutoff_time={self.val_cutoff_time},\n\n"
+            f"train_max_time={self.train_max_time},\n\n"
+            f"val_max_time={self.val_max_time},\n\n"
             f"tasks={self.tasks},\n\n"
             f"db_train={self.db_train}\n"
             f")"
@@ -79,9 +79,9 @@ class Dataset:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
-        train_cutoff_time = self.min_time + 0.8 * (self.max_time - self.min_time)
-        val_cutoff_time = self.min_time + 0.9 * (self.max_time - self.min_time)
-        return train_cutoff_time, val_cutoff_time
+        train_max_time = self.min_time + 0.8 * (self.max_time - self.min_time)
+        val_max_time = self.min_time + 0.9 * (self.max_time - self.min_time)
+        return train_max_time, val_max_time
 
     def download(self, path: str | os.PathLike) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by
@@ -104,21 +104,13 @@ class Dataset:
 
         raise NotImplementedError
 
-    def db_snapshot(self, time_stamp: int) -> Database:
-        r"""Returns a database with all rows upto time_stamp (if table is
-        temporal, otherwise all rows)."""
-
-        assert time_stamp <= self.val_cutoff_time
-
-        return self._db.time_cutoff(time_stamp)
-
     @property
     def db_train(self) -> Database:
-        return self.db_snapshot(self.train_cutoff_time)
+        return self._db.time_cutoff(self.train_max_time)
 
     @property
     def db_val(self) -> Database:
-        return self.db_snapshot(self.val_cutoff_time)
+        return self._db.time_cutoff(self.val_max_time)
 
     def make_train_table(
         self,
@@ -137,7 +129,7 @@ class Dataset:
             # default sampler
             time_window_df = rolling_window_sampler(
                 self.min_time,
-                self.train_cutoff_time,
+                self.train_max_time,
                 window_size,
                 stride=window_size,
             )
@@ -161,7 +153,7 @@ class Dataset:
             assert window_size is not None
             # default sampler
             time_window_df = one_window_sampler(
-                self.train_cutoff_time,
+                self.train_max_time,
                 window_size,
             )
 
@@ -173,13 +165,13 @@ class Dataset:
 
         task = self.tasks[task_name]
         time_window_df = one_window_sampler(
-            self.val_cutoff_time,
+            self.val_max_time,
             window_size,
         )
         table = task.make_table(self._db, time_window_df)
-        
+
         # hide the label information
         df = table.df
-        df.drop(columns=[task.target_col], inplace = True)
+        df.drop(columns=[task.target_col], inplace=True)
         table.df = df
         return table

@@ -145,7 +145,7 @@ class LTVTask(Task):
         # XXX: If this is not fast enough, we can try using duckdb to query the
         # parquet files directly.
 
-        # columns in time_window_df: time_offset, time_cutoff
+        # columns in time_window_df: window_min_time, window_max_time
 
         # XXX: can we directly access tables in the sql string?
 =======
@@ -156,8 +156,8 @@ class LTVTask(Task):
         df = duckdb.sql(
             r"""
             SELECT
-                time_offset,
-                time_cutoff,
+                window_min_time,
+                window_max_time,
                 customer_id,
                 SUM(price) AS ltv
             FROM
@@ -174,9 +174,9 @@ class LTVTask(Task):
                         product.product_id = review.product_id
                 ) AS tmp
             WHERE
-                tmp.review_time > time_window_df.time_offset AND
-                tmp.review_time <= time_window_df.time_cutoff
-            GROUP BY customer_id, time_offset, time_cutoff
+                tmp.review_time > time_window_df.window_min_time AND
+                tmp.review_time <= time_window_df.window_max_time
+            GROUP BY customer_id, window_min_time, window_max_time
             """
         ).df()
 
@@ -184,7 +184,7 @@ class LTVTask(Task):
             df=df,
             fkeys={"customer_id": "customer"},
             pkey=None,
-            time_col="time_offset",
+            time_col="window_min_time",
         )
 
 

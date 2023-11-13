@@ -72,7 +72,7 @@ def rolling_window_sampler(
     window_size: pd.Timedelta,
     stride: pd.Timedelta,
 ) -> pd.DataFrame:
-    """Returns a DataFrame with columns time_offset and time_cutoff."""
+    """Returns a DataFrame with columns window_min_time and window_max_time."""
 
     df = pd.DataFrame()
     start_time = int(start_time.timestamp())
@@ -80,24 +80,29 @@ def rolling_window_sampler(
     window_size = int(window_size.total_seconds())
     stride = int(stride.total_seconds())
 
-    df["time_offset"] = range(start_time, end_time - window_size, stride)
-    df["time_cutoff"] = df["time_offset"] + window_size
-    df["time_offset"] = df["time_offset"].astype("datetime64[s]")
-    df["time_cutoff"] = df["time_cutoff"].astype("datetime64[s]")
+    df["window_min_time"] = range(
+        # start_time should be excluded
+        start_time + pd.Timedelta("1s"),
+        end_time - window_size,
+        stride,
+    )
+    df["window_max_time"] = df["window_min_time"] + window_size
+    df["window_min_time"] = df["window_min_time"].astype("datetime64[s]")
+    df["window_max_time"] = df["window_max_time"].astype("datetime64[s]")
     return df
 
 
 def one_window_sampler(
     start_time: pd.Timestamp, window_size: pd.Timestamp
 ) -> pd.DataFrame:
-    """Returns a DataFrame with columns time_offset and time_cutoff."""
+    """Returns a DataFrame with columns window_min_time and window_max_time."""
     start_time = int(start_time.timestamp())
     window_size = int(window_size.total_seconds())
     df = pd.DataFrame()
-    df["time_offset"] = [start_time]
-    df["time_cutoff"] = [start_time + window_size]
-    df["time_offset"] = df["time_offset"].astype("datetime64[s]")
-    df["time_cutoff"] = df["time_cutoff"].astype("datetime64[s]")
+    df["window_min_time"] = [start_time + pd.Timedelta("1s")]
+    df["window_max_time"] = [start_time + window_size]
+    df["window_min_time"] = df["window_min_time"].astype("datetime64[s]")
+    df["window_max_time"] = df["window_max_time"].astype("datetime64[s]")
     return df
 
 
