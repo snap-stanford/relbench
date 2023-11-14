@@ -24,7 +24,7 @@ class Dataset:
 
         # download
         if not os.path.exists(os.path.join(root, self.name)):
-            url = f'http://ogb-data.stanford.edu/data/rtb/{self.name}.zip'
+            url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
             self.download(url, root)
 
         path = f"{root}/{self.name}/processed/db"
@@ -32,10 +32,8 @@ class Dataset:
             # delete processed db dir if exists to avoid possibility of corruption
             shutil.rmtree(path, ignore_errors=True)
 
-            # process db
-            db = self.process()
-            # standardize db
-            # db = self.standardize_db()
+            # process and standardize db
+            db = self.standardize(self.process())
 
             # process and standardize are separate because
             # process() is implemented by each subclass, but
@@ -82,7 +80,7 @@ class Dataset:
         val_max_time = self.min_time + 0.9 * (self.max_time - self.min_time)
         return train_max_time, val_max_time
 
-    def download(self,url: str, path: str | os.PathLike) -> None:
+    def download(self, url: str, path: str | os.PathLike) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by
         subclass."""
 
@@ -95,14 +93,25 @@ class Dataset:
 
         raise NotImplementedError
 
-    def standardize_db(self, db: Database) -> Database:
-        r"""
-        - Add primary key column if not present.
-        - Re-index primary key column with 0-indexed ints, if required.
-        - Can still keep the original pkey column as a feature column (e.g. email).
-        """
+    def standardize(self, db: Database) -> None:
+        # get pkey to idx mapping
+        pkey_to_idx = {}
+        for name, table in db.tables.items():
+            if table.pkey_col is not None:
+                pkey_to_idx[name] = {
+                    pkey: idx for idx, pkey in enumerate(table.df[table.pkey_col])
+                }
+                # replace pkey with idx
+                table.df[table.pkey_col] = table.df.index
 
-        raise NotImplementedError
+        # replace fkeys with pkey idxs
+        for name, table in db.tables.items():
+            for fkey_col, pkey_table_name in table.fkeys.items():
+                table.df[fkey_col] = table.df[fkey_col].apply(
+                    lambda x: pkey_to_idx[pkey_table_name][x]
+                )
+
+        return db
 
     @property
     def db_train(self) -> Database:
