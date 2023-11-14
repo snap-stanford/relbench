@@ -177,12 +177,12 @@ class ProductDataset(Dataset):
     name = "rtb-product"
 
     # raw file names
-    # product_file_name = "meta_Books.json"
+    product_file_name = "meta_Books.json"
     # review_file_name = "Books.json"
     # we use the 5-core version for now
     # the original has 51M reviews for 35M distinct customers
     # will have to think/discuss if using that is a good idea
-    # review_file_name = "Books_5.json"
+    review_file_name = "Books_5.json"
 
     # product_file_name = "meta_AMAZON_FASHION.json"
     # review_file_name = "AMAZON_FASHION.json"
@@ -190,8 +190,8 @@ class ProductDataset(Dataset):
     # product_file_name = "meta_Video_Games.json"
     # review_file_name = "Video_Games_5.json"
 
-    product_file_name = "meta_Pet_Supplies.json"
-    review_file_name = "Pet_Supplies_5.json"
+    # product_file_name = "meta_Pet_Supplies.json"
+    # review_file_name = "Pet_Supplies_5.json"
 
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
