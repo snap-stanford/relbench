@@ -1,14 +1,13 @@
 import copy
-from dataclasses import dataclass
+import json
 import os
 from pathlib import Path
-from typing import Dict, Union, Optional, Tuple
-from typing_extensions import Self
+from typing import Dict, Optional, Tuple, Union
 
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-import json
+from typing_extensions import Self
 
 
 class Table:
@@ -18,7 +17,7 @@ class Table:
         self,
         df: pd.DataFrame,
         fkeys: Dict[str, str],
-        pkey: Union[str, None],
+        pkey: Optional[str] = None,
         time_col: Union[str, None] = None,
     ):
         self.df = df
@@ -26,8 +25,11 @@ class Table:
         self.pkey = pkey
         self.time_col = time_col
 
-    def __repr__(self):
-        return f"Table(df=\n{self.df},\nfkeys={self.fkeys},\npkey={self.pkey},\ntime_col={self.time_col})"
+    def __repr__(self) -> str:
+        return (
+            f"Table(df=\n{self.df},\nfkeys={self.fkeys},"
+            f"\npkey={self.pkey},\ntime_col={self.time_col})"
+        )
 
     def __len__(self) -> int:
         """Returns the number of rows in the table (DataFrame)."""
