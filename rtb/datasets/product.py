@@ -168,7 +168,7 @@ class LTVTask(Task):
         return Table(
             df=df,
             fkeys={"customer_id": "customer"},
-            pkey=None,
+            pkey_col=None,
             time_col="window_min_time",
         )
 
@@ -320,13 +320,10 @@ class ProductDataset(Dataset):
 
         rdf.loc[:, "review_time"] = pd.to_datetime(rdf["review_time"], unit="s")
 
-        cdf = rdf.loc[
-            rdf.duplicated(subset=["customer_id"]), ["customer_id", "customer_name"]
-        ]
-        rdf.drop(columns=["customer_name"], inplace=True)
-
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
+
+        # TODO: refactor
 
         print(f"removing products not in review table (#products={len(pdf)})...")
         tic = time.time()
@@ -335,6 +332,11 @@ class ProductDataset(Dataset):
             pdf.drop_duplicates(subset=["product_id"]),
             on="product_id",
         )
+        rdf = pd.merge(rdf, pdf[["product_id"]], on="product_id")
+        cdf = rdf[["customer_id", "customer_name"]].drop_duplicates(
+            subset=["customer_id"]
+        )
+        rdf.drop(columns=["customer_name"], inplace=True)
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds (#products={len(pdf)}).")
 
@@ -343,13 +345,13 @@ class ProductDataset(Dataset):
                 "product": Table(
                     df=pdf,
                     fkeys={},
-                    pkey="product_id",
+                    pkey_col="product_id",
                     time_col=None,
                 ),
                 "customer": Table(
                     df=cdf,
                     fkeys={},
-                    pkey="customer_id",
+                    pkey_col="customer_id",
                     time_col=None,
                 ),
                 "review": Table(
@@ -358,7 +360,7 @@ class ProductDataset(Dataset):
                         "customer_id": "customer",
                         "product_id": "product",
                     },
-                    pkey=None,
+                    pkey_col=None,
                     time_col="review_time",
                 ),
             }

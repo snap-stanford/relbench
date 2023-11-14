@@ -1,15 +1,17 @@
+import os
+import zipfile
 from typing import List, Union
 
-import requests
-import os, sys
-from tqdm import tqdm
-import zipfile
 import pandas as pd
+import requests
+import torch
 import torch_frame as pyf
 import torch_geometric as pyg
+from torch_geometric.utils import sort_edge_index
+from tqdm import tqdm
 
-from rtb.data.table import Table
 from rtb.data.database import Database
+from rtb.data.table import Table
 
 
 def to_pyf_dataset(table: Table) -> pyf.data.Dataset:
@@ -26,31 +28,37 @@ def make_pkey_fkey_graph(db: Database) -> pyg.data.HeteroData:
 
     Instead of node embeddings in data.x, we store the tensor frames in data.tf.
     """
-
     data = pyg.data.HeteroData()
 
-    for name, table in db.tables.items():
-        # materialize the tables
-        pyf_dataset = to_pyf_dataset(table)
-        pyf_dataset.materialize()
-        data[name].tf = pyf_dataset.tensor_frame
+    for table_name, table in db.tables.items():
+        # Materialize the tables:
+        # TODO Convert to PyTorch Frame (needs stype information though)
+        # TODO automate stype inference from tables
+        data[table_name].df = table.df
 
-        # add time attribute
-        data[name].time_stamp = torch.tensor(table.df[table.time_col])
+        # Add time attribute:
+        if table.time_col is not None:
+            time = table.df[table.time_col].values
+            data[table_name].time = torch.from_numpy(time)
 
-        # add edges
-        for col_name, pkey_name in table.fkeys.items():
-            fkey_idx = torch.tensor(table.df[table.primary_key])
-            pkey_idx = torch.tensor(table.df[col_name])
+        # Add edges:
+        for fkey_name, dst_table_name in table.fkeys.items():
+            dst_table = db.tables[dst_table_name]
+
+            fkey_idx = torch.from_numpy(table.df[fkey_name].values)
+            pkey_idx = torch.from_numpy(dst_table.df[dst_table.pkey].values)
 
             # fkey -> pkey edges
-            data[name, "f2p::" + col_name, pkey_name].edge_index = torch.stack(
-                [fkey_idx, pkey_idx]
-            )
+            edge_index = torch.stack([fkey_idx, pkey_idx], dim=0)
+            edge_index = sort_edge_index(edge_index, sort_by_row=False)
+            edge_type = (table_name, f"f2p_{fkey_name}", dst_table_name)
+            data[edge_type].edge_index = edge_index
+
             # pkey -> fkey edges
-            data[pkey_name, "p2f::" + col_name, name].edge_index = torch.stack(
-                [pkey_idx, fkey_idx]
-            )
+            edge_index = torch.stack([pkey_idx, fkey_idx], dim=0)
+            edge_index = sort_edge_index(edge_index, sort_by_row=False)
+            edge_type = (dst_table_name, f"p2f_{fkey_name}", table_name)
+            data[edge_type].edge_index = edge_index
 
     return data
 

@@ -13,6 +13,7 @@ from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
 from rtb.utils import to_unix_time
 
+
 class user_posts_next_three_months(Task):
     r"""Predict the number of posts a user will make in the next 3 months."""
 
@@ -28,8 +29,10 @@ class user_posts_next_three_months(Task):
         r"""Create Task object for user_posts_next_three_months."""
 
         posts = db.tables["posts"].df
-        posts = posts[posts.OwnerUserId != -1] ## when user id is -1, it is stats exchange community, not a real person
-        posts = posts[posts.OwnerUserId.notnull()] ## 1153 null posts
+        posts = posts[
+            posts.OwnerUserId != -1
+        ]  ## when user id is -1, it is stats exchange community, not a real person
+        posts = posts[posts.OwnerUserId.notnull()]  ## 1153 null posts
         import duckdb
 
         df = duckdb.sql(
@@ -59,7 +62,7 @@ class user_posts_next_three_months(Task):
         return Table(
             df=df,
             fkeys={"OwnerUserId": "users"},
-            pkey=None,
+            pkey_col=None,
             time_col="window_min_time",
         )
 
@@ -79,8 +82,10 @@ class comment_scores_next_six_months(Task):
         r"""Create Task object for post_next_three_months."""
 
         comments = db.tables["comments"].df
-        comments = comments[comments.UserId != -1] ## when user id is -1, it is stats exchange community, not a real person
-        comments = comments[comments.UserId.notnull()] ## 2439 null comments
+        comments = comments[
+            comments.UserId != -1
+        ]  ## when user id is -1, it is stats exchange community, not a real person
+        comments = comments[comments.UserId.notnull()]  ## 2439 null comments
         import duckdb
 
         df = duckdb.sql(
@@ -110,7 +115,7 @@ class comment_scores_next_six_months(Task):
         return Table(
             df=df,
             fkeys={"UserId": "users"},
-            pkey=None,
+            pkey_col=None,
             time_col="window_min_time",
         )
 
@@ -122,7 +127,7 @@ class post_upvotes_next_week(Task):
         super().__init__(
             target_col="num_upvotes",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta('1W')],
+            test_time_window_sizes=[pd.Timedelta("1W")],
             metrics=["mse", "smape"],
         )
 
@@ -131,7 +136,7 @@ class post_upvotes_next_week(Task):
 
         votes = db.tables["votes"].df
         votes = votes[votes.PostId.notnull()]
-        votes = votes[votes.VoteTypeId == 2] ## upvotes
+        votes = votes[votes.VoteTypeId == 2]  ## upvotes
         import duckdb
 
         df = duckdb.sql(
@@ -161,11 +166,9 @@ class post_upvotes_next_week(Task):
         return Table(
             df=df,
             fkeys={"PostId": "posts"},
-            pkey=None,
+            pkey_col=None,
             time_col="window_min_time",
         )
-
-
 
 
 class ForumDataset(Dataset):
@@ -174,15 +177,17 @@ class ForumDataset(Dataset):
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
         ## needs to brainstorm a bit about meaningful tasks
-        
-        tasks = {"user_posts_next_three_months": user_posts_next_three_months(),
-                "comment_scores_next_six_months": comment_scores_next_six_months(),
-                "post_upvotes_next_week": post_upvotes_next_week()}
+
+        tasks = {
+            "user_posts_next_three_months": user_posts_next_three_months(),
+            "comment_scores_next_six_months": comment_scores_next_six_months(),
+            "post_upvotes_next_week": post_upvotes_next_week(),
+        }
         self.tasks_window_size = {
             i: j.test_time_window_sizes[0] for i, j in tasks.items()
         }
         return tasks
-        
+
     def process(self) -> Database:
         r"""Process the raw files into a database."""
         path = f"{self.root}/{self.name}/raw/"
@@ -218,7 +223,7 @@ class ForumDataset(Dataset):
                 "UserId": "users",
                 "PostId": "posts",
             },
-            pkey="Id",
+            pkey_col="Id",
             time_col="CreationDate",
         )
 
@@ -227,7 +232,7 @@ class ForumDataset(Dataset):
             fkeys={
                 "UserId": "users",
             },
-            pkey="Id",
+            pkey_col="Id",
             time_col="Date",
         )
 
@@ -237,28 +242,28 @@ class ForumDataset(Dataset):
                 "PostId": "posts",
                 "RelatedPostId": "posts",  ## is this allowed? two foreign keys into the same primary
             },
-            pkey="Id",
+            pkey_col="Id",
             time_col="CreationDate",
         )
 
         tables["postHistory"] = Table(
             df=pd.DataFrame(postHistory),
             fkeys={"PostId": "posts", "UserId": "users"},
-            pkey="Id",
+            pkey_col="Id",
             time_col="CreationDate",
         )
 
         tables["votes"] = Table(
             df=pd.DataFrame(votes),
             fkeys={"PostId": "posts", "UserId": "users"},
-            pkey="Id",
+            pkey_col="Id",
             time_col="CreationDate",
         )
 
         tables["users"] = Table(
             df=pd.DataFrame(users),
             fkeys={},
-            pkey="Id",
+            pkey_col="Id",
             time_col=None,
         )
 
@@ -269,7 +274,7 @@ class ForumDataset(Dataset):
                 "LastEditorUserId": "users",
                 "ParentId": "posts",  # notice the self-reference
             },
-            pkey="Id",
+            pkey_col="Id",
             time_col="CreaionDate",
         )
 
