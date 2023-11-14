@@ -108,9 +108,9 @@ class Dataset:
         for name, table in db.tables.items():
             for fkey_col, pkey_table_name in table.fkeys.items():
                 table.df[fkey_col] = table.df[fkey_col].apply(
-                    lambda x: pkey_to_idx[pkey_table_name][x]
+                    lambda x: pkey_to_idx[pkey_table_name][x] if x in pkey_to_idx[pkey_table_name] else None
                 )
-
+                table.df = table.df[table.df[fkey_col].notnull()].reset_index(drop = True)
         return db
 
     @property
