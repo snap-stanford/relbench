@@ -18,7 +18,7 @@ class Table:
         df: pd.DataFrame,
         fkeys: Dict[str, str],
         pkey: Optional[str] = None,
-        time_col: Union[str, None] = None,
+        time_col: Optional[str] = None,
     ):
         self.df = df
         self.fkeys = fkeys
@@ -27,8 +27,8 @@ class Table:
 
     def __repr__(self) -> str:
         return (
-            f"Table(df=\n{self.df},\nfkeys={self.fkeys},"
-            f"\npkey={self.pkey},\ntime_col={self.time_col})"
+            f"Table(df=\n{self.df},\nfkeys={self.fkeys},\n"
+            f"pkey={self.pkey},\ntime_col={self.time_col})"
         )
 
     def __len__(self) -> int:
@@ -38,12 +38,14 @@ class Table:
     def validate(self) -> bool:
         r"""Validate the table."""
         # Check if pkey exists
-        if self.pkey and self.pkey not in self.df.columns:
+        if self.pkey is not None and self.pkey not in self.df.columns:
             return False
         # Check if fkeys columns exist
         for col in self.fkeys:
             if col not in self.df.columns:
                 return False
+        if self.time_col is not None and self.time_col not in self.df.columns:
+            return False
         return True
 
     def save(self, path: Union[str, os.PathLike]) -> None:
