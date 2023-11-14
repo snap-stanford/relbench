@@ -33,6 +33,7 @@ def make_pkey_fkey_graph(db: Database) -> pyg.data.HeteroData:
     for table_name, table in db.tables.items():
         # Materialize the tables:
         # TODO Convert to PyTorch Frame (needs stype information though)
+        # TODO automate stype inference from tables
         data[table_name].df = table.df
 
         # Add time attribute:
@@ -44,7 +45,6 @@ def make_pkey_fkey_graph(db: Database) -> pyg.data.HeteroData:
         for fkey_name, dst_table_name in table.fkeys.items():
             dst_table = db.tables[dst_table_name]
 
-            # TODO Needs standardized integer-based links.
             fkey_idx = torch.from_numpy(table.df[fkey_name].values)
             pkey_idx = torch.from_numpy(dst_table.df[dst_table.pkey].values)
 
