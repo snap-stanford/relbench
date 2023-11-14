@@ -21,7 +21,7 @@ class investigator_three_years(Task):
         super().__init__(
             target_col="award_sum",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[3 * 365 * 24 * 60 * 60],
+            test_time_window_sizes=[pd.Timedelta(days=3 * 365.25)],
             metrics=["mse", "smape"],
         )
 
@@ -77,7 +77,7 @@ class institution_one_year(Task):
         super().__init__(
             target_col="award_sum",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[365 * 24 * 60 * 60],
+            test_time_window_sizes=[pd.Timedelta(days=365.25)],
             metrics=["mse", "smape"],
         )
 
@@ -131,7 +131,7 @@ class program_three_years(Task):
         super().__init__(
             target_col="award_sum",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[3 * 365 * 24 * 60 * 60],
+            test_time_window_sizes=[pd.Timedelta(days=3*365.25)],
             metrics=["mse", "smape"],
         )
 
@@ -193,24 +193,6 @@ class GrantDataset(Dataset):
             i: j.test_time_window_sizes[0] for i, j in tasks.items()
         }
         return tasks
-
-    def download(self, path: Union[str, os.PathLike]) -> None:
-        """
-        Download a file from an S3 bucket.
-        Parameters:
-        - path (str): Local path where the file should be saved.
-        Returns:
-        None
-
-        file_key = f"{self.root}/{self.name}"
-        bucket_name = 'XXX' ## TBD
-        region_name='us-west-2' ## TBD
-        # Create an S3 client
-        s3 = boto3.client('s3', region_name=region_name)
-        # Download the file
-        s3.download_file(bucket_name, file_key, path)
-        """
-        pass
 
     def process(self) -> Database:
         r"""Process the raw files into a database."""

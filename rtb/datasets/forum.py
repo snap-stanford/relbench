@@ -13,6 +13,160 @@ from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
 from rtb.utils import to_unix_time
 
+class user_posts_next_three_months(Task):
+    r"""Predict the number of posts a user will make in the next 3 months."""
+
+    def __init__(self):
+        super().__init__(
+            target_col="num_posts",
+            task_type=TaskType.REGRESSION,
+            test_time_window_sizes=[pd.Timedelta(days=90)],
+            metrics=["mse", "smape"],
+        )
+
+    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
+        r"""Create Task object for user_posts_next_three_months."""
+
+        posts = db.tables["posts"].df
+        posts = posts[posts.OwnerUserId != -1] ## when user id is -1, it is stats exchange community, not a real person
+        posts = posts[posts.OwnerUserId.notnull()] ## 1153 null posts
+        import duckdb
+
+        df = duckdb.sql(
+            r"""
+            SELECT
+                window_min_time,
+                window_max_time,
+                OwnerUserId,
+                COUNT(Id) AS num_posts
+            FROM
+                time_window_df,
+                (
+                    SELECT
+                        OwnerUserId,
+                        CreaionDate,
+                        Id
+                    FROM
+                        posts
+                ) AS tmp
+            WHERE
+                tmp.CreaionDate > time_window_df.window_min_time AND
+                tmp.CreaionDate <= time_window_df.window_max_time
+            GROUP BY OwnerUserId, window_min_time, window_max_time
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkeys={"OwnerUserId": "users"},
+            pkey=None,
+            time_col="window_min_time",
+        )
+
+
+class comment_scores_next_six_months(Task):
+    r"""Predict the sum of scores of comments that a user will make in the next 6 months."""
+
+    def __init__(self):
+        super().__init__(
+            target_col="comment_scores",
+            task_type=TaskType.REGRESSION,
+            test_time_window_sizes=[pd.Timedelta(days=180)],
+            metrics=["mse", "smape"],
+        )
+
+    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
+        r"""Create Task object for post_next_three_months."""
+
+        comments = db.tables["comments"].df
+        comments = comments[comments.UserId != -1] ## when user id is -1, it is stats exchange community, not a real person
+        comments = comments[comments.UserId.notnull()] ## 2439 null comments
+        import duckdb
+
+        df = duckdb.sql(
+            r"""
+            SELECT
+                window_min_time,
+                window_max_time,
+                UserId,
+                SUM(Score) AS comment_scores
+            FROM
+                time_window_df,
+                (
+                    SELECT
+                        UserId,
+                        CreationDate,
+                        Score
+                    FROM
+                        comments
+                ) AS tmp
+            WHERE
+                tmp.CreationDate > time_window_df.window_min_time AND
+                tmp.CreationDate <= time_window_df.window_max_time
+            GROUP BY UserId, window_min_time, window_max_time
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkeys={"UserId": "users"},
+            pkey=None,
+            time_col="window_min_time",
+        )
+
+
+class post_upvotes_next_week(Task):
+    r"""Predict the number of upvotes that a post will receive in the next week."""
+
+    def __init__(self):
+        super().__init__(
+            target_col="num_upvotes",
+            task_type=TaskType.REGRESSION,
+            test_time_window_sizes=[pd.Timedelta('1W')],
+            metrics=["mse", "smape"],
+        )
+
+    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
+        r"""Create Task object for post_votes_next_month."""
+
+        votes = db.tables["votes"].df
+        votes = votes[votes.PostId.notnull()]
+        votes = votes[votes.VoteTypeId == 2] ## upvotes
+        import duckdb
+
+        df = duckdb.sql(
+            r"""
+            SELECT
+                window_min_time,
+                window_max_time,
+                PostId,
+                COUNT(Id) AS num_upvotes
+            FROM
+                time_window_df,
+                (
+                    SELECT
+                        PostId,
+                        CreationDate,
+                        Id
+                    FROM
+                        votes
+                ) AS tmp
+            WHERE
+                tmp.CreationDate > time_window_df.window_min_time AND
+                tmp.CreationDate <= time_window_df.window_max_time
+            GROUP BY PostId, window_min_time, window_max_time
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkeys={"PostId": "posts"},
+            pkey=None,
+            time_col="window_min_time",
+        )
+
+
+
 
 class ForumDataset(Dataset):
     name = "rtb-forum"
@@ -20,27 +174,15 @@ class ForumDataset(Dataset):
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
         ## needs to brainstorm a bit about meaningful tasks
-        # return {"post_views_one_week": grant_five_years()}
-        return
-
-    def download(self, path: Union[str, os.PathLike]) -> None:
-        """
-        Download a file from an S3 bucket.
-        Parameters:
-        - path (str): Local path where the file should be saved.
-        Returns:
-        None
-
-        file_key = f"{self.root}/{self.name}"
-        bucket_name = 'XXX' ## TBD
-        region_name='us-west-2' ## TBD
-        # Create an S3 client
-        s3 = boto3.client('s3', region_name=region_name)
-        # Download the file
-        s3.download_file(bucket_name, file_key, path)
-        """
-        pass
-
+        
+        tasks = {"user_posts_next_three_months": user_posts_next_three_months(),
+                "comment_scores_next_six_months": comment_scores_next_six_months(),
+                "post_upvotes_next_week": post_upvotes_next_week()}
+        self.tasks_window_size = {
+            i: j.test_time_window_sizes[0] for i, j in tasks.items()
+        }
+        return tasks
+        
     def process(self) -> Database:
         r"""Process the raw files into a database."""
         path = f"{self.root}/{self.name}/raw/"
