@@ -1,10 +1,10 @@
 import os
-from pathlib import Path
 import time
-from typing_extensions import Self
-from typing import Dict, Union, Tuple
+from pathlib import Path
+from typing import Dict, Tuple, Union
 
 from rtb.data.table import Table
+from typing_extensions import Self
 
 
 class Database:
@@ -16,8 +16,8 @@ class Database:
 
         self.tables = tables
 
-    def __repr__(self):
-        raise NotImplementedError
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}()"
 
     def validate(self) -> bool:
         r"""Validate the database.
@@ -58,7 +58,9 @@ class Database:
     def time_cutoff(self, time: int) -> Self:
         r"""Returns a database with all rows upto time."""
 
-        return Database({name: table.time_cutoff(time) for name, table in self.tables.items()})
+        return Database(
+            {name: table.time_cutoff(time) for name, table in self.tables.items()}
+        )
 
     def get_time_range(self) -> Tuple[int, int]:
         r"""Returns the earliest and latest timestamp in the database."""
