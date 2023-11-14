@@ -94,14 +94,17 @@ class Dataset:
         raise NotImplementedError
 
     def standardize(self, db: Database) -> None:
+        # get pkey to idx mapping
         pkey_to_idx = {}
-
         for name, table in db.tables.items():
             if table.pkey_col is not None:
                 pkey_to_idx[name] = {
                     pkey: idx for idx, pkey in enumerate(table.df[table.pkey_col])
                 }
+                # replace pkey with idx
+                table.df[table.pkey_col] = table.df.index
 
+        # replace fkeys with pkey idxs
         for name, table in db.tables.items():
             for fkey_col, pkey_table_name in table.fkeys.items():
                 table.df[fkey_col] = table.df[fkey_col].apply(
