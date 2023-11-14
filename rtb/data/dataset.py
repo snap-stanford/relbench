@@ -24,7 +24,7 @@ class Dataset:
 
         # download
         if not os.path.exists(os.path.join(root, self.name)):
-            url = f'http://ogb-data.stanford.edu/data/rtb/{self.name}.zip'
+            url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
             self.download(url, root)
 
         path = f"{root}/{self.name}/processed/db"
@@ -82,7 +82,7 @@ class Dataset:
         val_max_time = self.min_time + 0.9 * (self.max_time - self.min_time)
         return train_max_time, val_max_time
 
-    def download(self,url: str, path: str | os.PathLike) -> None:
+    def download(self, url: str, path: str | os.PathLike) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by
         subclass."""
 
@@ -97,6 +97,7 @@ class Dataset:
 
     def standardize_db(self, db: Database) -> Database:
         r"""
+        TODO:
         - Add primary key column if not present.
         - Re-index primary key column with 0-indexed ints, if required.
         - Can still keep the original pkey column as a feature column (e.g. email).
