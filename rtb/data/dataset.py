@@ -97,9 +97,9 @@ class Dataset:
         pkey_to_idx = {}
 
         for name, table in db.tables.items():
-            if table.pkey is not None:
+            if table.pkey_col is not None:
                 pkey_to_idx[name] = {
-                    pkey: idx for idx, pkey in enumerate(table.df[table.pkey])
+                    pkey: idx for idx, pkey in enumerate(table.df[table.pkey_col])
                 }
 
         for name, table in db.tables.items():

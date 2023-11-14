@@ -65,7 +65,7 @@ class investigator_three_years(Task):
         return Table(
             df=df,
             fkeys={"email_id": "investigator"},
-            pkey=None,
+            pkey_col=None,
             time_col="window_min_time",
         )
 
@@ -119,7 +119,7 @@ class institution_one_year(Task):
         return Table(
             df=df,
             fkeys={"name": "institution"},
-            pkey=None,
+            pkey_col=None,
             time_col="window_min_time",
         )
 
@@ -131,7 +131,7 @@ class program_three_years(Task):
         super().__init__(
             target_col="award_sum",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta(days=3*365.25)],
+            test_time_window_sizes=[pd.Timedelta(days=3 * 365.25)],
             metrics=["mse", "smape"],
         )
 
@@ -173,7 +173,7 @@ class program_three_years(Task):
         return Table(
             df=df,
             fkeys={"code": "program_element"},
-            pkey=None,
+            pkey_col=None,
             time_col="window_min_time",
         )
 
@@ -241,14 +241,14 @@ class GrantDataset(Dataset):
                 "award_id": "awards",
                 "code": "foa_info",
             },
-            pkey=None,
+            pkey_col=None,
             time_col=None,
         )
 
         tables["foa_info"] = Table(
             df=pd.DataFrame(foa_info),
             fkeys={},
-            pkey="code",
+            pkey_col="code",
             time_col=None,
         )
 
@@ -258,14 +258,14 @@ class GrantDataset(Dataset):
                 "name": "institution",
                 "award_id": "awards",
             },
-            pkey=None,
+            pkey_col=None,
             time_col=None,
         )
 
         tables["institution"] = Table(
             df=pd.DataFrame(institution),
             fkeys={},
-            pkey="name",
+            pkey_col="name",
             time_col=None,
         )
 
@@ -275,42 +275,42 @@ class GrantDataset(Dataset):
                 "email_id": "investigator",
                 "award_id": "awards",
             },
-            pkey=None,
+            pkey_col=None,
             time_col="start_date",
         )
 
         tables["awards"] = Table(
             df=pd.DataFrame(awards),
             fkeys={"organisation_code": "organization"},
-            pkey="award_id",
+            pkey_col="award_id",
             time_col="award_effective_date",
         )
 
         tables["organization"] = Table(
             df=pd.DataFrame(organization),
             fkeys={},
-            pkey="code",
+            pkey_col="code",
             time_col=None,
         )
 
         tables["investigator"] = Table(
             df=pd.DataFrame(investigator),
             fkeys={},
-            pkey="email_id",
+            pkey_col="email_id",
             time_col=None,
         )
 
         tables["program_element"] = Table(
             df=pd.DataFrame(program_element),
             fkeys={},
-            pkey="code",
+            pkey_col="code",
             time_col=None,
         )
 
         tables["program_reference"] = Table(
             df=pd.DataFrame(program_reference),
             fkeys={},
-            pkey="code",
+            pkey_col="code",
             time_col=None,
         )
 
@@ -320,7 +320,7 @@ class GrantDataset(Dataset):
                 "code": "program_element",
                 "award_id": "awards",
             },
-            pkey=None,
+            pkey_col=None,
             time_col=None,
         )
 
@@ -330,7 +330,7 @@ class GrantDataset(Dataset):
                 "code": "program_reference",
                 "award_id": "awards",
             },
-            pkey=None,
+            pkey_col=None,
             time_col=None,
         )
 

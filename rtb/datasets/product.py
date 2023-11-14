@@ -74,7 +74,7 @@ class LTV(Task):
         return Table(
             df=df,
             fkeys={"customer_id": "customer"},
-            pkey=None,
+            pkey_col=None,
             time_col="window_min_time",
         )
 
@@ -243,13 +243,13 @@ class ProductDataset(Dataset):
                 "product": Table(
                     df=pdf,
                     fkeys={},
-                    pkey="product_id",
+                    pkey_col="product_id",
                     time_col=None,
                 ),
                 "customer": Table(
                     df=cdf,
                     fkeys={},
-                    pkey="customer_id",
+                    pkey_col="customer_id",
                     time_col=None,
                 ),
                 "review": Table(
@@ -258,7 +258,7 @@ class ProductDataset(Dataset):
                         "customer_id": "customer",
                         "product_id": "product",
                     },
-                    pkey=None,
+                    pkey_col=None,
                     time_col="review_time",
                 ),
             }
