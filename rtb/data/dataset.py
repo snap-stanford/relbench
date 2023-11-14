@@ -32,10 +32,8 @@ class Dataset:
             # delete processed db dir if exists to avoid possibility of corruption
             shutil.rmtree(path, ignore_errors=True)
 
-            # process db
-            db = self.process()
-            # standardize db
-            # db = self.standardize_db()
+            # process and standardize db
+            db = self.standardize(self.process())
 
             # process and standardize are separate because
             # process() is implemented by each subclass, but
@@ -95,15 +93,22 @@ class Dataset:
 
         raise NotImplementedError
 
-    def standardize_db(self, db: Database) -> Database:
-        r"""
-        TODO:
-        - Add primary key column if not present.
-        - Re-index primary key column with 0-indexed ints, if required.
-        - Can still keep the original pkey column as a feature column (e.g. email).
-        """
+    def standardize(self, db: Database) -> None:
+        pkey_to_idx = {}
 
-        raise NotImplementedError
+        for name, table in db.tables.items():
+            if table.pkey is not None:
+                pkey_to_idx[name] = {
+                    pkey: idx for idx, pkey in enumerate(table.df[table.pkey])
+                }
+
+        for name, table in db.tables.items():
+            for fkey_col, pkey_table_name in table.fkeys.items():
+                table.df[fkey_col] = table.df[fkey_col].apply(
+                    lambda x: pkey_to_idx[pkey_table_name][x]
+                )
+
+        return db
 
     @property
     def db_train(self) -> Database:
