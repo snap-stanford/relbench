@@ -17,12 +17,12 @@ from rtb.data.dataset import Dataset
 
 
 class ChurnTask(Task):
-    r"""LTV (life-time value) for a customer is the sum of prices of products
-    that the user reviews in the time_frame."""
+    r"""Churn for a customer is 1 if the customer does not review any product
+    in the time window, else 0."""
 
     def __init__(self):
         super().__init__(
-            target_col="ltv",
+            target_col="churn",
             task_type=TaskType.BINARY_CLASSIFICATION,
             test_time_window_sizes=[pd.Timedelta("1W")],
             metrics=["auprc"],
@@ -32,26 +32,21 @@ class ChurnTask(Task):
         product = db.tables["product"].df
         review = db.tables["review"].df
 
-        # TODO
         df = duckdb.sql(
             r"""
             SELECT
                 window_min_time,
                 window_max_time,
                 customer_id,
-                SUM(price) AS ltv
+                NOT EXISTS (review_time)
             FROM
                 time_window_df,
                 (
                     SELECT
                         review_time,
                         customer_id,
-                        price
                     FROM
-                        product,
-                        review
-                    WHERE
-                        product.product_id = review.product_id
+                        customer LEFT JOIN review ON customer_id
                 ) AS tmp
             WHERE
                 tmp.review_time > time_window_df.window_min_time AND
@@ -70,7 +65,7 @@ class ChurnTask(Task):
 
 class LTVTask(Task):
     r"""LTV (life-time value) for a customer is the sum of prices of products
-    that the user reviews in the time window."""
+    that the customer reviews in the time window."""
 
     def __init__(self):
         super().__init__(
@@ -189,8 +184,14 @@ class ProductDataset(Dataset):
     # will have to think/discuss if using that is a good idea
     # review_file_name = "Books_5.json"
 
-    product_file_name = "meta_AMAZON_FASHION.json"
-    review_file_name = "AMAZON_FASHION.json"
+    # product_file_name = "meta_AMAZON_FASHION.json"
+    # review_file_name = "AMAZON_FASHION.json"
+
+    # product_file_name = "meta_Video_Games.json"
+    # review_file_name = "Video_Games_5.json"
+
+    product_file_name = "meta_Pet_Supplies.json"
+    review_file_name = "Pet_Supplies_5.json"
 
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
