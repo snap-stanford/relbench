@@ -201,7 +201,7 @@ class ProductDataset(Dataset):
 
     # TODO: implement get_cutoff_times()
 
-    def download(self, path: Union[str, os.PathLike]) -> None:
+    def download_raw(self, path: Union[str, os.PathLike]) -> None:
         r"""Download the Amazon dataset raw files from the AWS server and
         decompresses it."""
 

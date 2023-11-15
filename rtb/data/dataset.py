@@ -19,24 +19,27 @@ class Dataset:
     # name of dataset, to be specified by subclass
     name: str
 
-    def __init__(self, root: str | os.PathLike, process=False) -> None:
-        r"""Initializes the dataset."""
+    def __init__(self, root: str | os.PathLike, process=False, download=False) -> None:
+        r"""Initializes the dataset.
+
+        process=True wil force pre-processing data from raw files.
+        download=True will force downloading raw files if process=True, or
+        processed files if process=False.
+
+        By default, tries to download (if required) and use already processed data.
+        """
 
         self.root = root
 
-        # download
-        # if not os.path.exists(os.path.join(root, self.name)):
-        #     url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
-        #     self.download(url, root)
+        process_path = f"{root}/{self.name}/processed/db"
 
-        # download
-        path = f"{root}/{self.name}/raw"
-        if not Path(f"{path}/done").exists():
-            self.download(path)
-            Path(f"{path}/done").touch()
+        if process:
+            # download
+            raw_path = f"{root}/{self.name}/raw"
+            if download or not Path(f"{raw_path}/done").exists():
+                self.download_raw(path)
+                Path(f"{path}/done").touch()
 
-        path = f"{root}/{self.name}/processed/db"
-        if process or not Path(f"{path}/done").exists():
             # delete processed db dir if exists to avoid possibility of corruption
             shutil.rmtree(path, ignore_errors=True)
 
@@ -64,8 +67,17 @@ class Dataset:
             self._db = db
 
         else:
+            # download
+            if download or not Path(f"{process_path}/done").exists():
+                url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
+                # TODO: should be Path(f"{root}/{self.name}/") but that will break
+                # current workflow for grant dataset
+                # TODO: fix it together with a new zip file
+                download_path = download_url(url, root)
+                unzip(download_path, root)
+
             # load database
-            self._db = Database.load(path)
+            self._db = Database.load(process_path)
 
         # we want to keep the database private, because it also contains
         # test information
@@ -102,12 +114,11 @@ class Dataset:
         val_max_time = self.min_time + 0.9 * (self.max_time - self.min_time)
         return train_max_time, val_max_time
 
-    def download(self, url: str, path: str | os.PathLike) -> None:
+    def download_raw(self, path: str | os.PathLike) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by
         subclass."""
 
-        download_path = download_url(url, path)
-        unzip(download_path, path)
+        raise NotImplementedError
 
     def process(self) -> Database:
         r"""Processes the raw data into a database. To be implemented by
