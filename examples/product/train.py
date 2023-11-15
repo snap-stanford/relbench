@@ -7,7 +7,6 @@ import torch_geometric as pyg
 
 from rtb.datasets import get_dataset
 
-
 # XXX: maybe we can abstract out a class for tabular encoder + GNN models
 # and put it under rtb.models
 

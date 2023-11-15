@@ -1,7 +1,7 @@
 import argparse
 
-import rtb
 from rtb.datasets import GrantDataset
+from rtb.utils import make_pkey_fkey_graph
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -26,4 +26,4 @@ train_table = dataset.make_train_table(args.task, window_size)
 val_table = dataset.make_val_table(args.task, window_size)
 test_table = dataset.make_test_table(args.task, window_size)
 
-data = rtb.utils.make_pkey_fkey_graph(dataset._db)
+data = make_pkey_fkey_graph(dataset.db_train)

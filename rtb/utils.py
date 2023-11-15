@@ -1,81 +1,9 @@
 import os
 import zipfile
-from typing import List, Union
 
 import pandas as pd
 import requests
-import torch
-import torch_frame as pyf
-import torch_geometric as pyg
-from torch_geometric.utils import sort_edge_index
 from tqdm import tqdm
-
-from rtb.data.database import Database
-from rtb.data.table import Table
-
-
-def to_pyf_dataset(table: Table) -> pyf.data.Dataset:
-    r"""Converts a Table to a PyF Dataset.
-
-    Primary key and foreign keys are removed in this process."""
-
-    raise NotImplementedError
-
-
-def make_pkey_fkey_graph(db: Database) -> pyg.data.HeteroData:
-    """
-    Models the database as a heterogeneous graph.
-
-    Instead of node embeddings in data.x, we store the tensor frames in data.tf.
-    """
-    data = pyg.data.HeteroData()
-
-    for table_name, table in db.tables.items():
-        # Materialize the tables:
-        # TODO Convert to PyTorch Frame (needs stype information though)
-        # TODO automate stype inference from tables
-        data[table_name].df = table.df
-
-        # Add time attribute:
-        if table.time_col is not None:
-            time = table.df[table.time_col].values
-            data[table_name].time = torch.from_numpy(time)
-
-        # Add edges:
-        for fkey_name, dst_table_name in table.fkeys.items():
-            dst_table = db.tables[dst_table_name]
-
-            fkey_idx = torch.from_numpy(table.df[fkey_name].values)
-            pkey_idx = torch.from_numpy(dst_table.df[dst_table.pkey].values)
-
-            # fkey -> pkey edges
-            edge_index = torch.stack([fkey_idx, pkey_idx], dim=0)
-            edge_index = sort_edge_index(edge_index, sort_by_row=False)
-            edge_type = (table_name, f"f2p_{fkey_name}", dst_table_name)
-            data[edge_type].edge_index = edge_index
-
-            # pkey -> fkey edges
-            edge_index = torch.stack([pkey_idx, fkey_idx], dim=0)
-            edge_index = sort_edge_index(edge_index, sort_by_row=False)
-            edge_type = (dst_table_name, f"p2f_{fkey_name}", table_name)
-            data[edge_type].edge_index = edge_index
-
-    return data
-
-
-class AddTargetLabelTransform:
-    r"""Adds the target label to the batch. The batch consists of disjoint
-    subgraphs loaded via temporal sampling. The same input node can occur twice
-    with different timestamps, and thus different subgraphs and labels. Hence
-    labels cannot be stored in the Data object directly, and must be attached
-    to the batch after the batch is created."""
-
-    def __init__(self, labels: List[Union[int, float]]):
-        self.labels = torch.tensor(labels)
-
-    def __call__(self, batch: pyg.data.Batch) -> pyg.data.Batch:
-        batch.y = self.labels[batch.input_id]
-        return batch
 
 
 def rolling_window_sampler(

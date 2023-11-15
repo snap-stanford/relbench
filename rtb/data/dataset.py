@@ -1,13 +1,13 @@
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
+from typing import Any, Dict
 
 import pandas as pd
-
-from rtb.data.table import Table
 from rtb.data.database import Database
+from rtb.data.table import Table
 from rtb.data.task import Task
-from rtb.utils import rolling_window_sampler, one_window_sampler, download_url, unzip
+from rtb.utils import download_url, one_window_sampler, rolling_window_sampler, unzip
 
 
 class Dataset:
@@ -53,16 +53,15 @@ class Dataset:
 
         self.tasks = self.get_tasks()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
-            f"Dataset(\n"
-            f"root={self.root},\n\n"
-            f"min_time={self.min_time},\n\n"
-            f"max_time={self.max_time},\n\n"
-            f"train_max_time={self.train_max_time},\n\n"
-            f"val_max_time={self.val_max_time},\n\n"
-            f"tasks={self.tasks},\n\n"
-            f"db_train={self.db_train}\n"
+            f"{self.__class__.__name__}(\n"
+            f"  tables={list(self._db.tables.keys())},\n"
+            f"  tasks={list(self.tasks.keys())},\n"
+            f"  min_time={self.min_time},\n"
+            f"  max_time={self.max_time},\n"
+            f"  train_max_time={self.train_max_time},\n"
+            f"  val_max_time={self.val_max_time},\n"
             f")"
         )
 
@@ -108,9 +107,11 @@ class Dataset:
         for name, table in db.tables.items():
             for fkey_col, pkey_table_name in table.fkeys.items():
                 table.df[fkey_col] = table.df[fkey_col].apply(
-                    lambda x: pkey_to_idx[pkey_table_name][x] if x in pkey_to_idx[pkey_table_name] else None
+                    lambda x: pkey_to_idx[pkey_table_name][x]
+                    if x in pkey_to_idx[pkey_table_name]
+                    else None
                 )
-                table.df = table.df[table.df[fkey_col].notnull()].reset_index(drop = True)
+                table.df = table.df[table.df[fkey_col].notnull()].reset_index(drop=True)
         return db
 
     @property
@@ -184,3 +185,8 @@ class Dataset:
         df.drop(columns=[task.target_col], inplace=True)
         table.df = df
         return table
+
+    def get_stype_proposal(self) -> Dict[str, Dict[str, Any]]:
+        r"""Returns a proposal of mapping column names to their semantic
+        types, to be further consumed by :obj:`pytorch-frame`."""
+        raise NotImplementedError

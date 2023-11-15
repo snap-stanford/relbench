@@ -11,7 +11,16 @@ from typing_extensions import Self
 
 
 class Table:
-    r"""A table in a database."""
+    r"""A table in a database.
+
+    Args:
+        df (pandas.DataFrame): The underyling data frame of the table.
+        fkeys (Dict[str, str]): A dictionary mapping the foreign key names into
+            the table name that contains them as primary keys.
+        pkey_col (str, optional): The primary key column if it exists.
+            (default: :obj:`None`)
+        time_col (str, optional): The time column. (default: :obj:`None`)
+    """
 
     def __init__(
         self,
@@ -27,12 +36,15 @@ class Table:
 
     def __repr__(self) -> str:
         return (
-            f"Table(df=\n{self.df},\nfkeys={self.fkeys},\n"
-            f"pkey_col={self.pkey_col},\ntime_col={self.time_col})"
+            f"Table(df=\n{self.df},\n"
+            f"  fkeys={self.fkeys},\n"
+            f"  pkey_col={self.pkey_col},\n"
+            f"  time_col={self.time_col}"
+            f")"
         )
 
     def __len__(self) -> int:
-        """Returns the number of rows in the table (DataFrame)."""
+        r"""Returns the number of rows in the table."""
         return len(self.df)
 
     def validate(self) -> bool:
@@ -49,7 +61,7 @@ class Table:
         return True
 
     def save(self, path: Union[str, os.PathLike]) -> None:
-        """Saves the table to a parquet file. Stores other attributes as
+        r"""Saves the table to a parquet file. Stores other attributes as
         parquet metadata."""
         assert str(path).endswith(".parquet")
         metadata = {
@@ -76,7 +88,7 @@ class Table:
 
     @classmethod
     def load(cls, path: Union[str, os.PathLike]) -> Self:
-        """Loads a table from a parquet file."""
+        r"""Loads a table from a parquet file."""
         assert str(path).endswith(".parquet")
 
         # Read the Parquet file using pyarrow
