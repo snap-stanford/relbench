@@ -1,55 +1,72 @@
 import copy
-from dataclasses import dataclass
+import json
 import os
 from pathlib import Path
-from typing import Dict, Union, Optional, Tuple
-from typing_extensions import Self
+from typing import Dict, Optional, Tuple, Union
 
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-import json
+from typing_extensions import Self
 
 
 class Table:
-    r"""A table in a database."""
+    r"""A table in a database.
+
+    Args:
+        df (pandas.DataFrame): The underyling data frame of the table.
+        fkey_col_to_pkey_table (Dict[str, str]): A dictionary mapping
+            foreign key names to table names that contain the foreign keys as
+            primary keys.
+        pkey_col (str, optional): The primary key column if it exists.
+            (default: :obj:`None`)
+        time_col (str, optional): The time column. (default: :obj:`None`)
+    """
 
     def __init__(
         self,
         df: pd.DataFrame,
-        fkeys: Dict[str, str],
-        pkey_col: Union[str, None],
-        time_col: Union[str, None] = None,
+        fkey_col_to_pkey_table: Dict[str, str],
+        pkey_col: Optional[str] = None,
+        time_col: Optional[str] = None,
     ):
         self.df = df
-        self.fkeys = fkeys
+        self.fkey_col_to_pkey_table = fkey_col_to_pkey_table
         self.pkey_col = pkey_col
         self.time_col = time_col
 
-    def __repr__(self):
-        return f"Table(df=\n{self.df},\nfkeys={self.fkeys},\npkey_col={self.pkey_col},\ntime_col={self.time_col})"
+    def __repr__(self) -> str:
+        return (
+            f"Table(df=\n{self.df},\n"
+            f"  fkey_col_to_pkey_table={self.fkey_col_to_pkey_table},\n"
+            f"  pkey_col={self.pkey_col},\n"
+            f"  time_col={self.time_col}"
+            f")"
+        )
 
     def __len__(self) -> int:
-        """Returns the number of rows in the table (DataFrame)."""
+        r"""Returns the number of rows in the table."""
         return len(self.df)
 
     def validate(self) -> bool:
         r"""Validate the table."""
-        # Check if pkey_col exists
-        if self.pkey_col and self.pkey_col not in self.df.columns:
+
+        if self.pkey_col is not None and self.pkey not in self.df.columns:
             return False
-        # Check if fkeys columns exist
-        for col in self.fkeys:
+        # Check if fkey_col_to_pkey_table columns exist
+        for col in self.fkey_col_to_pkey_table:
             if col not in self.df.columns:
                 return False
+        if self.time_col is not None and self.time_col not in self.df.columns:
+            return False
         return True
 
     def save(self, path: Union[str, os.PathLike]) -> None:
-        """Saves the table to a parquet file. Stores other attributes as
+        r"""Saves the table to a parquet file. Stores other attributes as
         parquet metadata."""
         assert str(path).endswith(".parquet")
         metadata = {
-            "fkeys": self.fkeys,
+            "fkey_col_to_pkey_table": self.fkey_col_to_pkey_table,
             "pkey_col": self.pkey_col,
             "time_col": self.time_col,
         }
@@ -72,7 +89,7 @@ class Table:
 
     @classmethod
     def load(cls, path: Union[str, os.PathLike]) -> Self:
-        """Loads a table from a parquet file."""
+        r"""Loads a table from a parquet file."""
         assert str(path).endswith(".parquet")
 
         # Read the Parquet file using pyarrow
@@ -84,11 +101,11 @@ class Table:
         metadata = {
             key.decode("utf-8"): json.loads(value.decode("utf-8"))
             for key, value in metadata_bytes.items()
-            if key in [b"fkeys", b"pkey_col", b"time_col"]
+            if key in [b"fkey_col_to_pkey_table", b"pkey_col", b"time_col"]
         }
         return cls(
             df=df,
-            fkeys=metadata["fkeys"],
+            fkey_col_to_pkey_table=metadata["fkey_col_to_pkey_table"],
             pkey_col=metadata["pkey_col"],
             time_col=metadata["time_col"],
         )

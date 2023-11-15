@@ -1,7 +1,4 @@
-import copy
-import json
 import os
-import re
 import time
 
 from typing import Dict, Union
@@ -102,7 +99,7 @@ class LTVTask(Task):
 
         return Table(
             df=df,
-            fkeys={"customer_id": "customer"},
+            fkey_col_to_pkey_table={"customer_id": "customer"},
             pkey_col=None,
             time_col="window_min_time",
         )
@@ -185,13 +182,13 @@ class ProductDataset(Dataset):
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        print(f"converting to pandas dataframe...")
+        print("converting to pandas dataframe...")
         tic = time.time()
         pdf = ptable.to_pandas()
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        print(f"processing product info...")
+        print("processing product info...")
         tic = time.time()
 
         # asin is not intuitive / recognizable
@@ -249,13 +246,13 @@ class ProductDataset(Dataset):
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        print(f"converting to pandas dataframe...")
+        print("converting to pandas dataframe...")
         tic = time.time()
         rdf = rtable.to_pandas()
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        print(f"processing review and customer info...")
+        print("processing review and customer info...")
         tic = time.time()
 
         rdf.rename(
@@ -298,19 +295,19 @@ class ProductDataset(Dataset):
             tables={
                 "product": Table(
                     df=pdf,
-                    fkeys={},
+                    fkey_col_to_pkey_table={},
                     pkey_col="product_id",
                     time_col=None,
                 ),
                 "customer": Table(
                     df=cdf,
-                    fkeys={},
+                    fkey_col_to_pkey_table={},
                     pkey_col="customer_id",
                     time_col=None,
                 ),
                 "review": Table(
                     df=rdf,
-                    fkeys={
+                    fkey_col_to_pkey_table={
                         "customer_id": "customer",
                         "product_id": "product",
                     },

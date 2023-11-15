@@ -1,15 +1,15 @@
 import os
-from pathlib import Path
 import shutil
 import time
+from pathlib import Path
+from typing import Any, Dict, Union, Optional
 
 import numpy as np
 import pandas as pd
-
-from rtb.data.table import Table
 from rtb.data.database import Database
+from rtb.data.table import Table
 from rtb.data.task import Task
-from rtb.utils import rolling_window_sampler, one_window_sampler, download_url, unzip
+from rtb.utils import download_url, one_window_sampler, rolling_window_sampler, unzip
 
 
 class Dataset:
@@ -51,15 +51,15 @@ class Dataset:
             print(f"processing db took {toc - tic:.2f} seconds.")
 
             # standardize db
-            print(f"standardizing db...")
+            print(f"reindexing pkeys and fkeys...")
             tic = time.time()
-            db = self.standardize(db)
+            db = self.reindex_pkeys_and_fkeys(db)
             toc = time.time()
-            print(f"standardizing db took {toc - tic:.2f} seconds.")
+            print(f"reindexing pkeys and fkeys took {toc - tic:.2f} seconds.")
 
-            # process and standardize are separate because
+            # process and reindex_pkeys_and_fkeys are separate because
             # process() is implemented by each subclass, but
-            # standardize() is common to all subclasses
+            # reindex_pkeys_and_fkeys() is common to all subclasses
 
             db.save(path)
             Path(f"{path}/done").touch()
@@ -87,16 +87,15 @@ class Dataset:
 
         self.tasks = self.get_tasks()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
-            f"Dataset(\n"
-            f"root={self.root},\n\n"
-            f"min_time={self.min_time},\n\n"
-            f"max_time={self.max_time},\n\n"
-            f"train_max_time={self.train_max_time},\n\n"
-            f"val_max_time={self.val_max_time},\n\n"
-            f"tasks={self.tasks},\n\n"
-            f"db_train={self.db_train}\n"
+            f"{self.__class__.__name__}(\n"
+            f"  tables={sorted(list(self._db.tables.keys()))},\n"
+            f"  tasks={sorted(list(self.tasks.keys()))},\n"
+            f"  min_time={self.min_time},\n"
+            f"  max_time={self.max_time},\n"
+            f"  train_max_time={self.train_max_time},\n"
+            f"  val_max_time={self.val_max_time},\n"
             f")"
         )
 
@@ -126,29 +125,46 @@ class Dataset:
 
         raise NotImplementedError
 
-    def standardize(self, db: Database) -> None:
-        idx_dict = {}
-        for name, table in db.tables.items():
-            if table.pkey_col is None:
-                continue
-            s = table.df[table.pkey_col].reset_index(drop=True)
-            # swap index and values, will be used to join later
-            idx_dict[name] = pd.Series(
-                s.index.values, index=s.values, name="__pkey_idx__"
-            )
-            # replace pkey col with index
-            table.df[table.pkey_col] = s.index.values
+    def reindex_pkeys_and_fkeys(self, db: Database) -> None:
+        r"""Mapping primary and foreign keys into indices according to
+        the ordering in the primary key tables.
 
-        # replace fkeys with index of pkey table
-        for name, table in db.tables.items():
-            for fkey_col, pkey_table_name in table.fkeys.items():
-                # inner join removes rows with fkeys that are not in pkey table
-                # XXX: do we want this here? might hide preprocessing bugs
-                table.df = table.df.join(
-                    idx_dict[pkey_table_name], on=fkey_col, how="inner"
+        Args:
+            db (Database): The database object containing a set of tables.
+
+        Returns:
+            Database: Mapped database.
+        """
+        # Get pkey to idx mapping:
+        index_map_dict: Dict[str, pd.Series] = {}
+        for table_name, table in db.tables.items():
+            if table.pkey_col is not None:
+                ser = table.df[table.pkey_col]
+                if ser.nunique() != len(ser):
+                    raise RuntimeError(
+                        f"The primary key '{table.pkey_col}' "
+                        f"of table '{table_name}' contains "
+                        "duplicated elements"
+                    )
+                arange_ser = pd.RangeIndex(len(ser)).astype("Int64")
+                index_map_dict[table_name] = pd.Series(
+                    index=ser,
+                    data=arange_ser,
+                    name="index",
                 )
-                table.df.drop(columns=[fkey_col], inplace=True)
-                table.df.rename(columns={"__pkey_idx__": fkey_col}, inplace=True)
+                table.df[table.pkey_col] = arange_ser
+
+        # Replace fkey_col_to_pkey_table with indices.
+        for table in db.tables.values():
+            for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items():
+                out = pd.merge(
+                    table.df[fkey_col],
+                    index_map_dict[pkey_table_name],
+                    how="left",
+                    left_on=fkey_col,
+                    right_index=True,
+                )
+                table.df[fkey_col] = out["index"]
 
         return db
 
@@ -163,8 +179,8 @@ class Dataset:
     def make_train_table(
         self,
         task_name: str,
-        window_size: int | None = None,
-        time_window_df: pd.DataFrame | None = None,
+        window_size: Optional[int] = None,
+        time_window_df: Optional[pd.DataFrame] = None,
     ) -> Table:
         """Returns the train table for a task.
 
@@ -188,8 +204,8 @@ class Dataset:
     def make_val_table(
         self,
         task_name: str,
-        window_size: int | None = None,
-        time_window_df: pd.DataFrame | None = None,
+        window_size: Optional[int] = None,
+        time_window_df: Optional[pd.DataFrame] = None,
     ) -> Table:
         r"""Returns the val table for a task.
 
@@ -225,3 +241,8 @@ class Dataset:
         df.drop(columns=[task.target_col], inplace=True)
         table.df = df
         return table
+
+    def get_stype_proposal(self) -> Dict[str, Dict[str, Any]]:
+        r"""Returns a proposal of mapping column names to their semantic
+        types, to be further consumed by :obj:`pytorch-frame`."""
+        raise NotImplementedError

@@ -1,11 +1,7 @@
-import json
 import os
-import re
 
-from typing import Dict, Union, Tuple
-import duckdb
+from typing import Dict, Tuple
 import pandas as pd
-from tqdm.auto import tqdm
 
 from rtb.data.table import Table
 from rtb.data.database import Database
@@ -61,7 +57,7 @@ class user_posts_next_three_months(Task):
 
         return Table(
             df=df,
-            fkeys={"OwnerUserId": "users"},
+            fkey_col_to_pkey_table={"OwnerUserId": "users"},
             pkey_col=None,
             time_col="window_min_time",
         )
@@ -114,7 +110,7 @@ class comment_scores_next_six_months(Task):
 
         return Table(
             df=df,
-            fkeys={"UserId": "users"},
+            fkey_col_to_pkey_table={"UserId": "users"},
             pkey_col=None,
             time_col="window_min_time",
         )
@@ -165,7 +161,7 @@ class post_upvotes_next_week(Task):
 
         return Table(
             df=df,
-            fkeys={"PostId": "posts"},
+            fkey_col_to_pkey_table={"PostId": "posts"},
             pkey_col=None,
             time_col="window_min_time",
         )
@@ -217,7 +213,7 @@ class ForumDataset(Dataset):
 
         tables["comments"] = Table(
             df=pd.DataFrame(comments),
-            fkeys={
+            fkey_col_to_pkey_table={
                 "UserId": "users",
                 "PostId": "posts",
             },
@@ -227,7 +223,7 @@ class ForumDataset(Dataset):
 
         tables["badges"] = Table(
             df=pd.DataFrame(badges),
-            fkeys={
+            fkey_col_to_pkey_table={
                 "UserId": "users",
             },
             pkey_col="Id",
@@ -236,7 +232,7 @@ class ForumDataset(Dataset):
 
         tables["postLinks"] = Table(
             df=pd.DataFrame(postLinks),
-            fkeys={
+            fkey_col_to_pkey_table={
                 "PostId": "posts",
                 "RelatedPostId": "posts",  ## is this allowed? two foreign keys into the same primary
             },
@@ -246,28 +242,28 @@ class ForumDataset(Dataset):
 
         tables["postHistory"] = Table(
             df=pd.DataFrame(postHistory),
-            fkeys={"PostId": "posts", "UserId": "users"},
+            fkey_col_to_pkey_table={"PostId": "posts", "UserId": "users"},
             pkey_col="Id",
             time_col="CreationDate",
         )
 
         tables["votes"] = Table(
             df=pd.DataFrame(votes),
-            fkeys={"PostId": "posts", "UserId": "users"},
+            fkey_col_to_pkey_table={"PostId": "posts", "UserId": "users"},
             pkey_col="Id",
             time_col="CreationDate",
         )
 
         tables["users"] = Table(
             df=pd.DataFrame(users),
-            fkeys={},
+            fkey_col_to_pkey_table={},
             pkey_col="Id",
             time_col=None,
         )
 
         tables["posts"] = Table(
             df=pd.DataFrame(posts),
-            fkeys={
+            fkey_col_to_pkey_table={
                 "OwnerUserId": "users",
                 "LastEditorUserId": "users",
                 "ParentId": "posts",  # notice the self-reference

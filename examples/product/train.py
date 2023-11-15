@@ -7,7 +7,6 @@ import torch_geometric as pyg
 
 from rtb.datasets import get_dataset
 
-
 # XXX: maybe we can abstract out a class for tabular encoder + GNN models
 # and put it under rtb.models
 
@@ -87,14 +86,14 @@ def main():
     # loaders capture temporal sampling
 
     train_table = dset.make_train_table("ltv", window_size)
-    input_node_type = train_table.fkeys.values()[0]
+    input_node_type = train_table.fkey_col_to_pkey_table.values()[0]
     train_loader = pyg.nn.NeighborLoader(
         data,
         num_neighbors=[10] * 2,
         shuffle=True,
         input_nodes=(
             input_node_type,
-            torch.tensor(train_table.df[train_table.fkeys.keys()[0]]),
+            torch.tensor(train_table.df[train_table.fkey_col_to_pkey_table.keys()[0]]),
         ),
         input_time=torch.tensor(train_table.df[train_table.time_col]),
         time_attr="time_stamp",
@@ -110,7 +109,7 @@ def main():
         shuffle=False,
         input_nodes=(
             input_node_type,
-            torch.tensor(val_table.df[val_table.fkeys.keys()[0]]),
+            torch.tensor(val_table.df[val_table.fkey_col_to_pkey_table.keys()[0]]),
         ),
         input_time=torch.tensor(val_table.df[val_table.time_col]),
         time_attr="time_stamp",
@@ -162,7 +161,7 @@ def main():
         shuffle=False,
         input_nodes=(
             input_node_type,
-            torch.tensor(test_table.df[test_table.fkeys.keys()[0]]),
+            torch.tensor(test_table.df[test_table.fkey_col_to_pkey_table.keys()[0]]),
         ),
         input_time=torch.tensor(test_table.df[test_table.time_col]),
         time_attr="time_stamp",
