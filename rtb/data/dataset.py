@@ -218,6 +218,8 @@ class Dataset:
         )
         table = task.make_table(self._db, time_window_df)
 
+        # TODO: need to hide all other columns
+        # we do add extra columns with meta info for analysis!
         # hide the label information
         df = table.df
         df.drop(columns=[task.target_col], inplace=True)

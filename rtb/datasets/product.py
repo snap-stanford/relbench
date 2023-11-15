@@ -55,7 +55,7 @@ class ChurnTask(Task):
         return Table(
             df=df,
             fkeys={"customer_id": "customer"},
-            pkey=None,
+            pkey_col=None,
             time_col="window_min_time",
         )
 
@@ -103,7 +103,7 @@ class LTVTask(Task):
         return Table(
             df=df,
             fkeys={"customer_id": "customer"},
-            pkey=None,
+            pkey_col=None,
             time_col="window_min_time",
         )
 
@@ -131,7 +131,7 @@ class ProductDataset(Dataset):
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
 
-        return {"ltv": LTVTask()}
+        return {"ltv": LTVTask(), "churn": ChurnTask()}
 
     # TODO: implement get_cutoff_times()
 
