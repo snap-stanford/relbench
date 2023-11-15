@@ -176,22 +176,17 @@ class LTVTask(Task):
 class ProductDataset(Dataset):
     name = "rtb-product"
 
-    # raw file names
-    product_file_name = "meta_Books.json"
-    # review_file_name = "Books.json"
-    # we use the 5-core version for now
-    # the original has 51M reviews for 35M distinct customers
-    # will have to think/discuss if using that is a good idea
-    review_file_name = "Books_5.json"
+    def __init__(
+        self,
+        root: str | os.PathLike,
+        process=False,
+        product_file_name="meta_Books.json",
+        review_file_name="Books_5.json",
+    ):
+        self.product_file_name = product_file_name
+        self.review_file_name = review_file_name
 
-    # product_file_name = "meta_AMAZON_FASHION.json"
-    # review_file_name = "AMAZON_FASHION.json"
-
-    # product_file_name = "meta_Video_Games.json"
-    # review_file_name = "Video_Games_5.json"
-
-    # product_file_name = "meta_Pet_Supplies.json"
-    # review_file_name = "Pet_Supplies_5.json"
+        super().__init__(root, process)
 
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
@@ -245,14 +240,11 @@ class ProductDataset(Dataset):
         # asin is not intuitive / recognizable
         pdf.rename(columns={"asin": "product_id"}, inplace=True)
 
-        # remove products with missing price
-        pdf = pdf.query("price != '' and not price.isnull()")
-
         # price is like "$x,xxx.xx", "$xx.xx", or "$xx.xx - $xx.xx", or garbage html
         # if it's a range, we take the first value
         pdf.loc[:, "price"] = pdf["price"].apply(
             lambda x: None
-            if x is None or x[0] != "$"
+            if x is None or x == "" or x[0] != "$"
             else float(x.split(" ")[0][1:].replace(",", ""))
         )
 
@@ -323,22 +315,24 @@ class ProductDataset(Dataset):
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        # TODO: refactor
-
-        print(f"removing products not in review table (#products={len(pdf)})...")
+        print(f"keeping only products common to product and review tables...")
         tic = time.time()
-        pdf = pd.merge(
-            rdf["product_id"].drop_duplicates(),
-            pdf.drop_duplicates(subset=["product_id"]),
-            on="product_id",
-        )
-        rdf = pd.merge(rdf, pdf[["product_id"]], on="product_id")
-        cdf = rdf[["customer_id", "customer_name"]].drop_duplicates(
-            subset=["customer_id"]
+        plist = list(set(pdf["product_id"]) & set(rdf["product_id"]))
+        pdf.query("product_id in @plist", inplace=True)
+        rdf.query("product_id in @plist", inplace=True)
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        print(f"extracting customer table...")
+        tic = time.time()
+        cdf = (
+            rdf[["customer_id", "customer_name"]]
+            .drop_duplicates(subset=["customer_id"])
+            .copy()
         )
         rdf.drop(columns=["customer_name"], inplace=True)
         toc = time.time()
-        print(f"done in {toc - tic:.2f} seconds (#products={len(pdf)}).")
+        print(f"done in {toc - tic:.2f} seconds.")
 
         return Database(
             tables={

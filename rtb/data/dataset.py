@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import shutil
+import time
 
 import numpy as np
 import pandas as pd
@@ -33,8 +34,19 @@ class Dataset:
             # delete processed db dir if exists to avoid possibility of corruption
             shutil.rmtree(path, ignore_errors=True)
 
-            # process and standardize db
-            db = self.standardize(self.process())
+            # process db
+            print(f"processing db...")
+            tic = time.time()
+            db = self.process()
+            toc = time.time()
+            print(f"processing db took {toc - tic:.2f} seconds.")
+
+            # standardize db
+            print(f"standardizing db...")
+            tic = time.time()
+            db = self.standardize(db)
+            toc = time.time()
+            print(f"standardizing db took {toc - tic:.2f} seconds.")
 
             # process and standardize are separate because
             # process() is implemented by each subclass, but
@@ -100,13 +112,18 @@ class Dataset:
             if table.pkey_col is None:
                 continue
             s = table.df[table.pkey_col].reset_index(drop=True)
+            # swap index and values, will be used to join later
             idx_dict[name] = pd.Series(
                 s.index.values, index=s.values, name="__pkey_idx__"
             )
+            # replace pkey col with index
             table.df[table.pkey_col] = s.index.values
 
+        # replace fkeys with index of pkey table
         for name, table in db.tables.items():
             for fkey_col, pkey_table_name in table.fkeys.items():
+                # inner join removes rows with fkeys that are not in pkey table
+                # XXX: do we want this here? might hide preprocessing bugs
                 table.df = table.df.join(
                     idx_dict[pkey_table_name], on=fkey_col, how="inner"
                 )
