@@ -17,18 +17,18 @@ class Table:
         self,
         df: pd.DataFrame,
         fkeys: Dict[str, str],
-        pkey: Optional[str] = None,
+        pkey_col: Optional[str] = None,
         time_col: Optional[str] = None,
     ):
         self.df = df
         self.fkeys = fkeys
-        self.pkey = pkey
+        self.pkey_col = pkey_col
         self.time_col = time_col
 
     def __repr__(self) -> str:
         return (
             f"Table(df=\n{self.df},\nfkeys={self.fkeys},\n"
-            f"pkey={self.pkey},\ntime_col={self.time_col})"
+            f"pkey_col={self.pkey_col},\ntime_col={self.time_col})"
         )
 
     def __len__(self) -> int:
@@ -37,8 +37,8 @@ class Table:
 
     def validate(self) -> bool:
         r"""Validate the table."""
-        # Check if pkey exists
-        if self.pkey is not None and self.pkey not in self.df.columns:
+
+        if self.pkey_col is not None and self.pkey not in self.df.columns:
             return False
         # Check if fkeys columns exist
         for col in self.fkeys:
@@ -54,7 +54,7 @@ class Table:
         assert str(path).endswith(".parquet")
         metadata = {
             "fkeys": self.fkeys,
-            "pkey": self.pkey,
+            "pkey_col": self.pkey_col,
             "time_col": self.time_col,
         }
 
@@ -88,12 +88,12 @@ class Table:
         metadata = {
             key.decode("utf-8"): json.loads(value.decode("utf-8"))
             for key, value in metadata_bytes.items()
-            if key in [b"fkeys", b"pkey", b"time_col"]
+            if key in [b"fkeys", b"pkey_col", b"time_col"]
         }
         return cls(
             df=df,
             fkeys=metadata["fkeys"],
-            pkey=metadata["pkey"],
+            pkey_col=metadata["pkey_col"],
             time_col=metadata["time_col"],
         )
 
