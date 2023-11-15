@@ -106,6 +106,8 @@ class LTVTask(Task):
 
 
 class ProductDataset(Dataset):
+    name = "rtb-product"
+
     cat_to_raw = {
         "books": "Books",
         "fashion": "AMAZON_FASHION",
@@ -121,7 +123,7 @@ class ProductDataset(Dataset):
         self.category = category
         self.use_5_core = use_5_core
 
-        self.name = f"rtb-product/{self.category}{'-5-core' if self.use_5_core else ''}"
+        self.name = f"{self.__class__.name}/{self.category}{'-5-core' if self.use_5_core else ''}"
 
         super().__init__(root, process)
 
@@ -193,6 +195,9 @@ class ProductDataset(Dataset):
 
         # asin is not intuitive / recognizable
         pdf.rename(columns={"asin": "product_id"}, inplace=True)
+
+        # somehow the raw data has duplicate product_id's
+        pdf.drop_duplicates(subset=["product_id"], inplace=True)
 
         # price is like "$x,xxx.xx", "$xx.xx", or "$xx.xx - $xx.xx", or garbage html
         # if it's a range, we take the first value
@@ -275,8 +280,8 @@ class ProductDataset(Dataset):
         print(f"keeping only products common to product and review tables...")
         tic = time.time()
         plist = list(set(pdf["product_id"]) & set(rdf["product_id"]))
-        pdf.query("product_id in @plist", inplace=True)
-        rdf.query("product_id in @plist", inplace=True)
+        pdf.query("product_id == @plist", inplace=True)
+        rdf.query("product_id == @plist", inplace=True)
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
