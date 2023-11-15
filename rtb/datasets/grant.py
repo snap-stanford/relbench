@@ -233,6 +233,11 @@ class GrantDataset(Dataset):
         # print('after 1976, length of investigator_awards table, ', len(investigator_awards)) 620021
         # print('after 1976, length of awards table, ', len(awards)) 415838
 
+        ## add pkey columns
+        
+        institution['institution_name'] = institution['name']
+        investigator['email'] = investigator['email_id']
+        
         tables = {}
 
         tables["foa_info_awards"] = Table(
