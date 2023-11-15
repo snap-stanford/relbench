@@ -15,8 +15,8 @@ class Table:
 
     Args:
         df (pandas.DataFrame): The underyling data frame of the table.
-        fkey_col_to_pkey_table (Dict[str, str]): A dictionary mapping the
-            foreign key names to table names that contains the foreign keys as
+        fkey_col_to_pkey_table (Dict[str, str]): A dictionary mapping
+            foreign key names to table names that contain the foreign keys as
             primary keys.
         pkey_col (str, optional): The primary key column if it exists.
             (default: :obj:`None`)
