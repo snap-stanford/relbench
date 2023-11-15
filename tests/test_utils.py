@@ -9,3 +9,4 @@ def test_make_pkey_fkey_graph():
     hetero_data, col_stats_dict = make_pkey_fkey_graph(
         dataset.db_train, dataset.col_to_stype_dict
     )
+    # TODO: add some tests.
