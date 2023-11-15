@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import shutil
 
+import numpy as np
 import pandas as pd
 
 from rtb.data.table import Table
@@ -94,23 +95,24 @@ class Dataset:
         raise NotImplementedError
 
     def standardize(self, db: Database) -> None:
-        # get pkey to idx mapping
-        pkey_to_idx = {}
+        idx_dict = {}
         for name, table in db.tables.items():
-            if table.pkey_col is not None:
-                pkey_to_idx[name] = {
-                    pkey: idx for idx, pkey in enumerate(table.df[table.pkey_col])
-                }
-                # replace pkey with idx
-                table.df[table.pkey_col] = table.df.index
+            if table.pkey_col is None:
+                continue
+            s = table.df[table.pkey_col].reset_index(drop=True)
+            idx_dict[name] = pd.Series(
+                s.index.values, index=s.values, name="__pkey_idx__"
+            )
+            table.df[table.pkey_col] = s.index.values
 
-        # replace fkeys with pkey idxs
         for name, table in db.tables.items():
             for fkey_col, pkey_table_name in table.fkeys.items():
-                table.df[fkey_col] = table.df[fkey_col].apply(
-                    lambda x: pkey_to_idx[pkey_table_name][x] if x in pkey_to_idx[pkey_table_name] else None
+                table.df = table.df.join(
+                    idx_dict[pkey_table_name], on=fkey_col, how="inner"
                 )
-                table.df = table.df[table.df[fkey_col].notnull()].reset_index(drop = True)
+                table.df.drop(columns=[fkey_col], inplace=True)
+                table.df.rename(columns={"__pkey_idx__": fkey_col}, inplace=True)
+
         return db
 
     @property
