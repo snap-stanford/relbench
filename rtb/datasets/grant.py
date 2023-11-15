@@ -21,7 +21,7 @@ class investigator_three_years(Task):
         super().__init__(
             target_col="award_sum",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta(days=3 * 365.25)],
+            window_sizes=[pd.Timedelta(days=3 * 365.25)],
             metrics=["mse", "smape"],
         )
 
@@ -77,7 +77,7 @@ class institution_one_year(Task):
         super().__init__(
             target_col="award_sum",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta(days=365.25)],
+            window_sizes=[pd.Timedelta(days=365.25)],
             metrics=["mse", "smape"],
         )
 
@@ -131,7 +131,7 @@ class program_three_years(Task):
         super().__init__(
             target_col="award_sum",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta(days=3 * 365.25)],
+            window_sizes=[pd.Timedelta(days=3 * 365.25)],
             metrics=["mse", "smape"],
         )
 
@@ -189,9 +189,7 @@ class GrantDataset(Dataset):
             "program_three_years": program_three_years(),
         }
 
-        self.tasks_window_size = {
-            i: j.test_time_window_sizes[0] for i, j in tasks.items()
-        }
+        self.tasks_window_size = {i: j.window_sizes[0] for i, j in tasks.items()}
         return tasks
 
     def process(self) -> Database:

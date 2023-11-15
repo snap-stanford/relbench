@@ -25,7 +25,7 @@ class ChurnTask(Task):
         super().__init__(
             target_col="churn",
             task_type=TaskType.BINARY_CLASSIFICATION,
-            test_time_window_sizes=[pd.Timedelta("52W")],
+            window_sizes=[pd.Timedelta("52W")],
             metrics=["auprc"],
         )
 
@@ -68,7 +68,7 @@ class LTVTask(Task):
         super().__init__(
             target_col="ltv",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta("52W")],
+            window_sizes=[pd.Timedelta("52W")],
             metrics=["auprc"],
         )
 
@@ -96,7 +96,7 @@ class LTVTask(Task):
                         review.customer_id = customer.customer_id AND
                         review.product_id = product.product_id AND
                         review.review_time BETWEEN window_min_time AND window_max_time
-                ) subq
+                )
         """
         ).df()
 
@@ -104,65 +104,6 @@ class LTVTask(Task):
             df=df,
             fkeys={"customer_id": "customer"},
             pkey=None,
-            time_col="window_min_time",
-        )
-
-
-class LTVTask(Task):
-    r"""LTV (life-time value) for a customer is the sum of prices of products
-    that the user reviews in the time window."""
-
-    def __init__(self):
-        super().__init__(
-            target_col="ltv",
-            task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta("1W")],
-            metrics=["mse", "smape"],
-        )
-
-    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
-        r"""Create Task object for LTV."""
-
-        # XXX: If this is not fast enough, we can try using duckdb to query the
-        # parquet files directly.
-
-        # columns in time_window_df: window_min_time, window_max_time
-
-        # XXX: can we directly access tables in the sql string?
-        product = db.tables["product"].df
-        review = db.tables["review"].df
-
-        df = duckdb.sql(
-            r"""
-            SELECT
-                window_min_time,
-                window_max_time,
-                customer_id,
-                SUM(price) AS ltv
-            FROM
-                time_window_df,
-                (
-                    SELECT
-                        review_time,
-                        customer_id,
-                        price
-                    FROM
-                        product,
-                        review
-                    WHERE
-                        product.product_id = review.product_id
-                ) AS tmp
-            WHERE
-                tmp.review_time > time_window_df.window_min_time AND
-                tmp.review_time <= time_window_df.window_max_time
-            GROUP BY customer_id, window_min_time, window_max_time
-            """
-        ).df()
-
-        return Table(
-            df=df,
-            fkeys={"customer_id": "customer"},
-            pkey_col=None,
             time_col="window_min_time",
         )
 
