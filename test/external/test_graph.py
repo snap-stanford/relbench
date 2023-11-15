@@ -1,5 +1,5 @@
 from rtb.datasets import FakeEcommerceDataset
-from rtb.external.pyg import make_pkey_fkey_graph
+from rtb.external.graph import make_pkey_fkey_graph
 from torch_frame import TensorFrame
 
 
@@ -10,7 +10,7 @@ def test_make_pkey_fkey_graph(tmp_path):
         dataset.db_train,
         dataset.get_stype_proposal(),
     )
-    assert data.node_types == ["customer", "transaction", "product"]
+    assert set(data.node_types) == {"customer", "transaction", "product"}
 
     data.validate()
 

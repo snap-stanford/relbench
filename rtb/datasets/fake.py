@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import random
 import duckdb
@@ -72,13 +72,13 @@ class FakeEcommerceDataset(Dataset):
 
     name = "rtb-fake-ecommerce"
 
-    def __init__(self, root: str | os.PathLike, process: bool = False) -> None:
+    def __init__(self, root: Union[str, os.PathLike], process: bool = False) -> None:
         super().__init__(root, process)
 
     def get_tasks(self) -> Dict[str, Task]:
         return {"ltv": LTV()}
 
-    def download(self, url: str, path: str | os.PathLike) -> None:
+    def download(self, url: str, path: Union[str, os.PathLike]) -> None:
         pass
 
     def process(self) -> Database:
