@@ -17,7 +17,7 @@ keywords=[]
 dependencies=[
 	"duckdb",
 	"numpy",
-	"pandas>=2.0.0",
+	"pandas",
 	"pyarrow",
 	"tqdm",
 ]
