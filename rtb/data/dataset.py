@@ -34,12 +34,8 @@ class Dataset:
             # delete processed db dir if exists to avoid possibility of corruption
             shutil.rmtree(path, ignore_errors=True)
 
-            # process and standardize db
-            db = self.standardize(self.process())
-
-            # process and standardize are separate because
-            # process() is implemented by each subclass, but
-            # standardize() is common to all subclasses
+            # process
+            db = self.process()
 
             db.save(path)
             Path(f"{path}/done").touch()
@@ -93,28 +89,6 @@ class Dataset:
         subclass."""
 
         raise NotImplementedError
-
-    def standardize(self, db: Database) -> None:
-        # get pkey to idx mapping
-        pkey_to_idx = {}
-        for name, table in db.tables.items():
-            if table.pkey_col is not None:
-                pkey_to_idx[name] = {
-                    pkey: idx for idx, pkey in enumerate(table.df[table.pkey_col])
-                }
-                # replace pkey with idx
-                table.df[table.pkey_col] = table.df.index
-
-        # replace fkeys with pkey idxs
-        for name, table in db.tables.items():
-            for fkey_col, pkey_table_name in table.fkeys.items():
-                table.df[fkey_col] = table.df[fkey_col].apply(
-                    lambda x: pkey_to_idx[pkey_table_name][x]
-                    if x in pkey_to_idx[pkey_table_name]
-                    else None
-                )
-                table.df = table.df[table.df[fkey_col].notnull()].reset_index(drop=True)
-        return db
 
     @property
     def db_train(self) -> Database:
