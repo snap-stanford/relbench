@@ -2,32 +2,11 @@ from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
 import torch
-from rtb.data import Table
 from rtb.data.database import Database
 from torch_frame import stype
 from torch_frame.data import Dataset, StatType
 from torch_geometric.data import Batch, HeteroData
 from torch_geometric.utils import sort_edge_index
-
-
-def _drop_pkey_fkey(table: Table) -> pd.DataFrame:
-    drop_keys = []
-    if table.pkey_col is not None:
-        drop_keys.append(table.pkey_col)
-    drop_keys.extend(list(table.fkeys.keys()))
-    return table.df.drop(drop_keys, axis=1)
-
-
-def _map_index(index_map: pd.Series, ser: pd.Series) -> torch.Tensor:
-    return torch.from_numpy(
-        pd.merge(
-            ser.rename("data"),
-            index_map,
-            how="left",
-            left_on="data",
-            right_index=True,
-        )["index"].values
-    )
 
 
 def make_pkey_fkey_graph(
@@ -50,31 +29,16 @@ def make_pkey_fkey_graph(
             mapping table name into column stats.
     """
     data = HeteroData()
-    # Obtain index mapping of primary keys
-    index_map_dict: Dict[str, Tuple[str, pd.Series]] = {}
-    for table_name, table in db.tables.items():
-        if table.pkey_col is not None:
-            table_pkey_col = table.df[table.pkey_col]
-            if table_pkey_col.nunique() != len(table_pkey_col):
-                raise RuntimeError(
-                    f"The primary key '{table_pkey_col}' of "
-                    f"table {table_name} contains duplicated elements."
-                )
-            index_map: pd.Series = pd.Series(
-                index=table.df[table.pkey_col],
-                data=pd.RangeIndex(0, len(table.df[table.pkey_col])),
-                name="index",
-            )
-            index_map_dict[table_name] = index_map
 
-    col_stats_dict = {}
     for table_name, table in db.tables.items():
-        # Materialize the tables:
+        # Materialize the tables into tensor frames:
         dataset = Dataset(
-            df=_drop_pkey_fkey(table), col_to_stype=col_to_stype_dict[table_name]
+            df=table.df,
+            col_to_stype=col_to_stype_dict[table_name],
         ).materialize()
-        data[table_name] = dataset.tensor_frame
-        col_stats_dict[table_name] = dataset.col_stats
+
+        data[table_name].tf = dataset.tensor_frame
+        data[table_name].col_stats = dataset.col_stats
 
         # Add time attribute:
         if table.time_col is not None:
@@ -83,22 +47,21 @@ def make_pkey_fkey_graph(
 
         # Add edges:
         for fkey_name, dst_table_name in table.fkeys.items():
-            pkey_idx = _map_index(index_map_dict[dst_table_name], table.df[fkey_name])
-            fkey_idx = torch.arange(len(pkey_idx))
+            pkey_index = torch.from_numpy(table.df[fkey_name].values)
+            fkey_index = torch.arange(pkey_index.numel())
 
             # fkey -> pkey edges
-            edge_index = torch.stack([fkey_idx, pkey_idx], dim=0)
+            edge_index = torch.stack([fkey_index, pkey_index], dim=0)
             edge_index = sort_edge_index(edge_index, sort_by_row=False)
             edge_type = (table_name, f"f2p_{fkey_name}", dst_table_name)
             data[edge_type].edge_index = edge_index
 
             # pkey -> fkey edges
-            edge_index = torch.stack([pkey_idx, fkey_idx], dim=0)
-            edge_index = sort_edge_index(edge_index, sort_by_row=False)
+            edge_index = torch.stack([pkey_index, fkey_index], dim=0)
             edge_type = (dst_table_name, f"p2f_{fkey_name}", table_name)
             data[edge_type].edge_index = edge_index
 
-    return data, col_stats_dict
+    return data
 
 
 class AddTargetLabelTransform:

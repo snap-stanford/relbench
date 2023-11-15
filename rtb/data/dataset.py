@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 from typing import Any, Dict
 
+import numpy as np
 import pandas as pd
 from rtb.data.database import Database
 from rtb.data.table import Table
@@ -93,25 +94,45 @@ class Dataset:
         raise NotImplementedError
 
     def standardize(self, db: Database) -> None:
-        # get pkey to idx mapping
-        pkey_to_idx = {}
-        for name, table in db.tables.items():
+        # Get pkey to idx mapping:
+        index_map_dict: Dict[str, pd.Series] = {}
+        for table_name, table in db.tables.items():
             if table.pkey_col is not None:
-                pkey_to_idx[name] = {
-                    pkey: idx for idx, pkey in enumerate(table.df[table.pkey_col])
-                }
-                # replace pkey with idx
-                table.df[table.pkey_col] = table.df.index
-
-        # replace fkeys with pkey idxs
-        for name, table in db.tables.items():
-            for fkey_col, pkey_table_name in table.fkeys.items():
-                table.df[fkey_col] = table.df[fkey_col].apply(
-                    lambda x: pkey_to_idx[pkey_table_name][x]
-                    if x in pkey_to_idx[pkey_table_name]
-                    else None
+                ser = table.df[table.pkey_col]
+                if ser.nunique() != len(ser):
+                    raise RuntimeError(
+                        f"The primary key '{table.pkey_col}' "
+                        f"of table '{table_name}' contains "
+                        "duplicated elements"
+                    )
+                index_map_dict[table_name] = pd.Series(
+                    index=ser,
+                    data=pd.RangeIndex(len(ser)).astype("Int64"),
+                    name="index",
                 )
-                table.df = table.df[table.df[fkey_col].notnull()].reset_index(drop=True)
+
+        # Replace fkeys with indices.
+        # We currently drop a row in case there exists any dangling foreign key
+        for name, table in db.tables.items():
+            mask = np.ones((len(table),), dtype=bool)
+            for fkey_col, dst_table_name in table.fkeys.items():
+                ser = table.df[fkey_col]
+                out = pd.merge(
+                    ser,
+                    index_map_dict[dst_table_name],
+                    how="left",
+                    left_on=fkey_col,
+                    right_index=True,
+                )
+                table.df[fkey_col] = out["index"]
+                mask &= ~out["index"].isna().values
+
+            if mask.sum() < mask.shape[0]:
+                table.df = table.df[mask]
+
+            for fkey_col, dst_table_name in table.fkeys.items():
+                table.df[fkey_col] = table.df[fkey_col].astype(int)
+
         return db
 
     @property

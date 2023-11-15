@@ -98,10 +98,11 @@ class FakeEcommerceDataset(Dataset):
                 "gender": ["male", "female"] * (num_customers // 2),
             }
         )
+        # Add some dangling foreign keys:
         transaction_df = pd.DataFrame(
             {
                 "customer_id": np.random.randint(
-                    0, num_customers, size=(num_transactions,)
+                    0, num_customers + 5, size=(num_transactions,)
                 ),
                 "product_id": np.random.randint(
                     0, num_products, size=(num_transactions,)
