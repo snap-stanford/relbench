@@ -14,6 +14,7 @@ from rtb.data.table import Table
 from rtb.data.database import Database
 from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
+from rtb.utils import download_url, unzip
 
 
 class ChurnTask(Task):
@@ -174,17 +175,22 @@ class LTVTask(Task):
 
 
 class ProductDataset(Dataset):
-    name = "rtb-product"
+    cat_to_raw = {
+        "books": "Books",
+        "fashion": "AMAZON_FASHION",
+    }
 
     def __init__(
         self,
         root: str | os.PathLike,
         process=False,
-        product_file_name="meta_Books.json",
-        review_file_name="Books_5.json",
+        category: str = "books",
+        use_5_core: bool = True,
     ):
-        self.product_file_name = product_file_name
-        self.review_file_name = review_file_name
+        self.category = category
+        self.use_5_core = use_5_core
+
+        self.name = f"rtb-product/{self.category}{'-5-core' if self.use_5_core else ''}"
 
         super().__init__(root, process)
 
@@ -199,14 +205,31 @@ class ProductDataset(Dataset):
         r"""Download the Amazon dataset raw files from the AWS server and
         decompresses it."""
 
-        raise NotImplementedError
+        raw = self.cat_to_raw[self.category]
+
+        # download review file
+        if self.use_5_core:
+            url = f"https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2/categoryFilesSmall/{raw}_5.json.gz"
+        else:
+            url = f"https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2/categoryFiles/{raw}.json.gz"
+
+        download_path = download_url(url, path)
+        # TODO: this doesn't work, need gunzip
+        unzip(download_path, path)
+
+        # download product file
+        url = f"https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2/categoryFilesSmall/meta_{raw}.json.gz"
+        download_path = download_url(url, path)
+        # TODO: this doesn't work, need gunzip
+        unzip(download_path, path)
 
     def process(self) -> Database:
         r"""Process the raw files into a database."""
 
         ### product table ###
 
-        path = f"{self.root}/{self.name}/raw/{self.product_file_name}"
+        file_name = f"meta_{self.cat_to_raw[self.category]}.json"
+        path = f"{self.root}/{self.name}/raw/{file_name}"
         print(f"reading product info from {path}...")
         tic = time.time()
         ptable = pa.json.read_json(
@@ -265,7 +288,10 @@ class ProductDataset(Dataset):
 
         ### review table ###
 
-        path = f"{self.root}/{self.name}/raw/{self.review_file_name}"
+        file_name = (
+            f"{self.cat_to_raw[self.category]}{'_5' if self.use_5_core else ''}.json"
+        )
+        path = f"{self.root}/{self.name}/raw/{file_name}"
         print(f"reading review and customer info from {path}...")
         tic = time.time()
         rtable = pa.json.read_json(

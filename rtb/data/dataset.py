@@ -25,9 +25,15 @@ class Dataset:
         self.root = root
 
         # download
-        if not os.path.exists(os.path.join(root, self.name)):
-            url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
-            self.download(url, root)
+        # if not os.path.exists(os.path.join(root, self.name)):
+        #     url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
+        #     self.download(url, root)
+
+        # download
+        path = f"{root}/{self.name}/raw"
+        if not Path(f"{path}/done").exists():
+            self.download(path)
+            Path(f"{path}/done").touch()
 
         path = f"{root}/{self.name}/processed/db"
         if process or not Path(f"{path}/done").exists():
@@ -55,8 +61,11 @@ class Dataset:
             db.save(path)
             Path(f"{path}/done").touch()
 
-        # load database
-        self._db = Database.load(path)
+            self._db = db
+
+        else:
+            # load database
+            self._db = Database.load(path)
 
         # we want to keep the database private, because it also contains
         # test information
