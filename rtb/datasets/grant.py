@@ -231,6 +231,9 @@ class GrantDataset(Dataset):
         
         institution['institution_name'] = institution['name']
         investigator['email'] = investigator['email_id']
+
+        ## for each table, drop duplicated pkeys
+        investigator = investigator[investigator.email_id.notnull()].reset_index(drop = True) ## 3 have NaN email_ids, duplicating rows
         
         tables = {}
 

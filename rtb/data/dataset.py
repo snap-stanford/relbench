@@ -38,10 +38,10 @@ class Dataset:
             raw_path = f"{root}/{self.name}/raw"
             if download or not Path(f"{raw_path}/done").exists():
                 self.download_raw(path)
-                Path(f"{path}/done").touch()
+                Path(f"{raw_path}/done").touch()
 
             # delete processed db dir if exists to avoid possibility of corruption
-            shutil.rmtree(path, ignore_errors=True)
+            shutil.rmtree(process_path, ignore_errors=True)
 
             # process db
             print(f"processing db...")
@@ -61,8 +61,8 @@ class Dataset:
             # process() is implemented by each subclass, but
             # reindex_pkeys_and_fkeys() is common to all subclasses
 
-            db.save(path)
-            Path(f"{path}/done").touch()
+            db.save(process_path)
+            Path(f"{process_path}/done").touch()
 
             self._db = db
 
