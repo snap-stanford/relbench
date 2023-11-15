@@ -3,7 +3,6 @@ import shutil
 from pathlib import Path
 from typing import Any, Dict
 
-import numpy as np
 import pandas as pd
 from rtb.data.database import Database
 from rtb.data.table import Table
@@ -33,19 +32,18 @@ class Dataset:
             # delete processed db dir if exists to avoid possibility of corruption
             shutil.rmtree(path, ignore_errors=True)
 
-            # process and standardize db
-            db = self.standardize(self.process())
+            # process and reindex_pkeys_and_fkeys db
+            db = self.reindex_pkeys_and_fkeys(self.process())
 
-            # process and standardize are separate because
+            # process and reindex_pkeys_and_fkeys are separate because
             # process() is implemented by each subclass, but
-            # standardize() is common to all subclasses
+            # reindex_pkeys_and_fkeys() is common to all subclasses
 
             db.save(path)
             Path(f"{path}/done").touch()
 
         # load database
         self._db = Database.load(path)
-
         # we want to keep the database private, because it also contains
         # test information
 
@@ -57,8 +55,8 @@ class Dataset:
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(\n"
-            f"  tables={list(self._db.tables.keys())},\n"
-            f"  tasks={list(self.tasks.keys())},\n"
+            f"  tables={sorted(list(self._db.tables.keys()))},\n"
+            f"  tasks={sorted(list(self.tasks.keys()))},\n"
             f"  min_time={self.min_time},\n"
             f"  max_time={self.max_time},\n"
             f"  train_max_time={self.train_max_time},\n"
@@ -93,7 +91,16 @@ class Dataset:
 
         raise NotImplementedError
 
-    def standardize(self, db: Database) -> None:
+    def reindex_pkeys_and_fkeys(self, db: Database) -> None:
+        r"""Mapping primary and foreign keys into indices according to
+        the ordering in the primary key tables.
+
+        Args:
+            db (Database): The database object containing a set of tables.
+
+        Returns:
+            Database: Mapped database.
+        """
         # Get pkey to idx mapping:
         index_map_dict: Dict[str, pd.Series] = {}
         for table_name, table in db.tables.items():
@@ -105,18 +112,20 @@ class Dataset:
                         f"of table '{table_name}' contains "
                         "duplicated elements"
                     )
+                arange_ser = pd.RangeIndex(len(ser)).astype("Int64")
                 index_map_dict[table_name] = pd.Series(
                     index=ser,
-                    data=pd.RangeIndex(len(ser)).astype("Int64"),
+                    data=arange_ser,
                     name="index",
                 )
+                table.df[table.pkey_col] = arange_ser
 
-        # Replace fkeys with indices.
-        for name, table in db.tables.items():
-            for fkey_col, dst_table_name in table.fkeys.items():
+        # Replace fkey_col_to_pkey_table with indices.
+        for table in db.tables.values():
+            for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items():
                 out = pd.merge(
                     table.df[fkey_col],
-                    index_map_dict[dst_table_name],
+                    index_map_dict[pkey_table_name],
                     how="left",
                     left_on=fkey_col,
                     right_index=True,
