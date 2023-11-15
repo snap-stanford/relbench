@@ -1,11 +1,7 @@
-import json
 import os
-import re
 
-from typing import Dict, Union, Tuple
-import duckdb
+from typing import Dict
 import pandas as pd
-from tqdm.auto import tqdm
 
 from rtb.data.table import Table
 from rtb.data.database import Database
@@ -64,7 +60,7 @@ class investigator_three_years(Task):
 
         return Table(
             df=df,
-            fkeys={"email_id": "investigator"},
+            fkey_col_to_pkey_table={"email_id": "investigator"},
             pkey_col=None,
             time_col="window_min_time",
         )
@@ -118,7 +114,7 @@ class institution_one_year(Task):
 
         return Table(
             df=df,
-            fkeys={"name": "institution"},
+            fkey_col_to_pkey_table={"name": "institution"},
             pkey_col=None,
             time_col="window_min_time",
         )
@@ -172,7 +168,7 @@ class program_three_years(Task):
 
         return Table(
             df=df,
-            fkeys={"code": "program_element"},
+            fkey_col_to_pkey_table={"code": "program_element"},
             pkey_col=None,
             time_col="window_min_time",
         )
@@ -233,11 +229,16 @@ class GrantDataset(Dataset):
         # print('after 1976, length of investigator_awards table, ', len(investigator_awards)) 620021
         # print('after 1976, length of awards table, ', len(awards)) 415838
 
+        ## add pkey columns
+        
+        institution['institution_name'] = institution['name']
+        investigator['email'] = investigator['email_id']
+        
         tables = {}
 
         tables["foa_info_awards"] = Table(
             df=pd.DataFrame(foa_info_awards),
-            fkeys={
+            fkey_col_to_pkey_table={
                 "award_id": "awards",
                 "code": "foa_info",
             },
@@ -247,14 +248,14 @@ class GrantDataset(Dataset):
 
         tables["foa_info"] = Table(
             df=pd.DataFrame(foa_info),
-            fkeys={},
+            fkey_col_to_pkey_table={},
             pkey_col="code",
             time_col=None,
         )
 
         tables["institution_awards"] = Table(
             df=pd.DataFrame(institution_awards),
-            fkeys={
+            fkey_col_to_pkey_table={
                 "name": "institution",
                 "award_id": "awards",
             },
@@ -264,14 +265,14 @@ class GrantDataset(Dataset):
 
         tables["institution"] = Table(
             df=pd.DataFrame(institution),
-            fkeys={},
+            fkey_col_to_pkey_table={},
             pkey_col="name",
             time_col=None,
         )
 
         tables["investigator_awards"] = Table(
             df=pd.DataFrame(investigator_awards),
-            fkeys={
+            fkey_col_to_pkey_table={
                 "email_id": "investigator",
                 "award_id": "awards",
             },
@@ -281,42 +282,42 @@ class GrantDataset(Dataset):
 
         tables["awards"] = Table(
             df=pd.DataFrame(awards),
-            fkeys={"organisation_code": "organization"},
+            fkey_col_to_pkey_table={"organisation_code": "organization"},
             pkey_col="award_id",
             time_col="award_effective_date",
         )
 
         tables["organization"] = Table(
             df=pd.DataFrame(organization),
-            fkeys={},
+            fkey_col_to_pkey_table={},
             pkey_col="code",
             time_col=None,
         )
 
         tables["investigator"] = Table(
             df=pd.DataFrame(investigator),
-            fkeys={},
+            fkey_col_to_pkey_table={},
             pkey_col="email_id",
             time_col=None,
         )
 
         tables["program_element"] = Table(
             df=pd.DataFrame(program_element),
-            fkeys={},
+            fkey_col_to_pkey_table={},
             pkey_col="code",
             time_col=None,
         )
 
         tables["program_reference"] = Table(
             df=pd.DataFrame(program_reference),
-            fkeys={},
+            fkey_col_to_pkey_table={},
             pkey_col="code",
             time_col=None,
         )
 
         tables["program_element_awards"] = Table(
             df=pd.DataFrame(program_element_awards),
-            fkeys={
+            fkey_col_to_pkey_table={
                 "code": "program_element",
                 "award_id": "awards",
             },
@@ -326,7 +327,7 @@ class GrantDataset(Dataset):
 
         tables["program_reference_awards"] = Table(
             df=pd.DataFrame(program_reference_awards),
-            fkeys={
+            fkey_col_to_pkey_table={
                 "code": "program_reference",
                 "award_id": "awards",
             },
