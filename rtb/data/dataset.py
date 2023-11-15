@@ -114,9 +114,8 @@ class Dataset:
         # Replace fkeys with indices.
         for name, table in db.tables.items():
             for fkey_col, dst_table_name in table.fkeys.items():
-                ser = table.df[fkey_col]
                 out = pd.merge(
-                    ser,
+                    table.df[fkey_col],
                     index_map_dict[dst_table_name],
                     how="left",
                     left_on=fkey_col,
