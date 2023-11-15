@@ -25,7 +25,7 @@ class ChurnTask(Task):
         super().__init__(
             target_col="churn",
             task_type=TaskType.BINARY_CLASSIFICATION,
-            test_time_window_sizes=[pd.Timedelta("1W")],
+            test_time_window_sizes=[pd.Timedelta("52W")],
             metrics=["auprc"],
         )
 
@@ -34,26 +34,22 @@ class ChurnTask(Task):
         review = db.tables["review"].df
 
         df = duckdb.sql(
-            r"""
+            """
             SELECT
                 window_min_time,
                 window_max_time,
                 customer_id,
-                NOT EXISTS (review_time)
+                NOT EXISTS (
+                    SELECT 1
+                    FROM review
+                    WHERE
+                        review.customer_id = customer.customer_id AND
+                        review.review_time BETWEEN window_min_time AND window_max_time
+                ) AS churn
             FROM
                 time_window_df,
-                (
-                    SELECT
-                        review_time,
-                        customer_id,
-                    FROM
-                        customer LEFT JOIN review ON customer_id
-                ) AS tmp
-            WHERE
-                tmp.review_time > time_window_df.window_min_time AND
-                tmp.review_time <= time_window_df.window_max_time
-            GROUP BY customer_id, window_min_time, window_max_time
-            """
+                customer
+        """
         ).df()
 
         return Table(
@@ -72,7 +68,7 @@ class LTVTask(Task):
         super().__init__(
             target_col="ltv",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta("1W")],
+            test_time_window_sizes=[pd.Timedelta("52W")],
             metrics=["auprc"],
         )
 
@@ -81,30 +77,27 @@ class LTVTask(Task):
         review = db.tables["review"].df
 
         df = duckdb.sql(
-            r"""
+            """
             SELECT
                 window_min_time,
                 window_max_time,
                 customer_id,
-                SUM(price) AS ltv
+                ltv,
+                count
             FROM
                 time_window_df,
+                customer,
                 (
                     SELECT
-                        review_time,
-                        customer_id,
-                        price
-                    FROM
-                        product,
-                        review
+                        COALESCE(SUM(price), 0) as ltv,
+                        COALESCE(COUNT(price), 0) as count
+                    FROM review, product
                     WHERE
-                        product.product_id = review.product_id
-                ) AS tmp
-            WHERE
-                tmp.review_time > time_window_df.window_min_time AND
-                tmp.review_time <= time_window_df.window_max_time
-            GROUP BY customer_id, window_min_time, window_max_time
-            """
+                        review.customer_id = customer.customer_id AND
+                        review.product_id = product.product_id AND
+                        review.review_time BETWEEN window_min_time AND window_max_time
+                ) subq
+        """
         ).df()
 
         return Table(
