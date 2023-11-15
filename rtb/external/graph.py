@@ -45,7 +45,7 @@ def make_pkey_fkey_graph(
             data[table_name].time = torch.from_numpy(time)
 
         # Add edges:
-        for fkey_name, dst_table_name in table.fkeys.items():
+        for fkey_name, pkey_table_name in table.fkey_col_to_pkey_table.items():
             pkey_index = table.df[fkey_name]
             mask = ~pkey_index.isna()
             fkey_index = torch.arange(len(pkey_index))
@@ -57,12 +57,12 @@ def make_pkey_fkey_graph(
             # fkey -> pkey edges
             edge_index = torch.stack([fkey_index, pkey_index], dim=0)
             edge_index = sort_edge_index(edge_index, sort_by_row=False)
-            edge_type = (table_name, f"f2p_{fkey_name}", dst_table_name)
+            edge_type = (table_name, f"f2p_{fkey_name}", pkey_table_name)
             data[edge_type].edge_index = edge_index
 
             # pkey -> fkey edges
             edge_index = torch.stack([pkey_index, fkey_index], dim=0)
-            edge_type = (dst_table_name, f"p2f_{fkey_name}", table_name)
+            edge_type = (pkey_table_name, f"p2f_{fkey_name}", table_name)
             data[edge_type].edge_index = edge_index
 
     return data

@@ -1,6 +1,7 @@
 import os
 from typing import Any, Dict, Union
 
+import random
 import duckdb
 import numpy as np
 import pandas as pd
@@ -60,7 +61,7 @@ class LTV(Task):
 
         return Table(
             df=df,
-            fkeys={"customer_id": "customer"},
+            fkey_col_to_pkey_table={"customer_id": "customer"},
             pkey_col=None,
             time_col="window_min_time",
         )
@@ -87,13 +88,13 @@ class FakeEcommerceDataset(Dataset):
 
         product_df = pd.DataFrame(
             {
-                "product_id": np.arange(num_products),
+                "product_id": [f"product_id_{i}" for i in range(num_products)],
                 "category": ["toy", "health", "digital"] * (num_products // 3),
             }
         )
         customer_df = pd.DataFrame(
             {
-                "customer_id": np.arange(num_customers),
+                "customer_id": [f"customer_id_{i}" for i in range(num_customers)],
                 "age": np.random.randint(10, 50, size=(num_customers,)),
                 "gender": ["male", "female"] * (num_customers // 2),
             }
@@ -101,12 +102,14 @@ class FakeEcommerceDataset(Dataset):
         # Add some dangling foreign keys:
         transaction_df = pd.DataFrame(
             {
-                "customer_id": np.random.randint(
-                    0, num_customers + 5, size=(num_transactions,)
-                ),
-                "product_id": np.random.randint(
-                    0, num_products, size=(num_transactions,)
-                ),
+                "customer_id": [
+                    f"customer_id_{random.randint(0, num_customers+5)}"
+                    for _ in range(num_transactions)
+                ],
+                "product_id": [
+                    f"product_id_{random.randint(0, num_products-1)}"
+                    for _ in range(num_transactions)
+                ],
                 "timestamp": pd.to_datetime(10 * np.arange(num_transactions), unit="d"),
                 "price": np.random.rand(num_transactions) * 10,
             }
@@ -116,17 +119,17 @@ class FakeEcommerceDataset(Dataset):
 
         tables["product"] = Table(
             df=product_df,
-            fkeys={},
+            fkey_col_to_pkey_table={},
             pkey_col="product_id",
         )
         tables["customer"] = Table(
             df=customer_df,
-            fkeys={},
+            fkey_col_to_pkey_table={},
             pkey_col="customer_id",
         )
         tables["transaction"] = Table(
             df=transaction_df,
-            fkeys={
+            fkey_col_to_pkey_table={
                 "customer_id": "customer",
                 "product_id": "product",
             },

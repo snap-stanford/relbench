@@ -15,8 +15,9 @@ class Table:
 
     Args:
         df (pandas.DataFrame): The underyling data frame of the table.
-        fkeys (Dict[str, str]): A dictionary mapping the foreign key names into
-            the table name that contains them as primary keys.
+        fkey_col_to_pkey_table (Dict[str, str]): A dictionary mapping
+            foreign key names to table names that contain the foreign keys as
+            primary keys.
         pkey_col (str, optional): The primary key column if it exists.
             (default: :obj:`None`)
         time_col (str, optional): The time column. (default: :obj:`None`)
@@ -25,19 +26,19 @@ class Table:
     def __init__(
         self,
         df: pd.DataFrame,
-        fkeys: Dict[str, str],
+        fkey_col_to_pkey_table: Dict[str, str],
         pkey_col: Optional[str] = None,
         time_col: Optional[str] = None,
     ):
         self.df = df
-        self.fkeys = fkeys
+        self.fkey_col_to_pkey_table = fkey_col_to_pkey_table
         self.pkey_col = pkey_col
         self.time_col = time_col
 
     def __repr__(self) -> str:
         return (
             f"Table(df=\n{self.df},\n"
-            f"  fkeys={self.fkeys},\n"
+            f"  fkey_col_to_pkey_table={self.fkey_col_to_pkey_table},\n"
             f"  pkey_col={self.pkey_col},\n"
             f"  time_col={self.time_col}"
             f")"
@@ -52,8 +53,8 @@ class Table:
 
         if self.pkey_col is not None and self.pkey not in self.df.columns:
             return False
-        # Check if fkeys columns exist
-        for col in self.fkeys:
+        # Check if fkey_col_to_pkey_table columns exist
+        for col in self.fkey_col_to_pkey_table:
             if col not in self.df.columns:
                 return False
         if self.time_col is not None and self.time_col not in self.df.columns:
@@ -65,7 +66,7 @@ class Table:
         parquet metadata."""
         assert str(path).endswith(".parquet")
         metadata = {
-            "fkeys": self.fkeys,
+            "fkey_col_to_pkey_table": self.fkey_col_to_pkey_table,
             "pkey_col": self.pkey_col,
             "time_col": self.time_col,
         }
@@ -100,11 +101,11 @@ class Table:
         metadata = {
             key.decode("utf-8"): json.loads(value.decode("utf-8"))
             for key, value in metadata_bytes.items()
-            if key in [b"fkeys", b"pkey_col", b"time_col"]
+            if key in [b"fkey_col_to_pkey_table", b"pkey_col", b"time_col"]
         }
         return cls(
             df=df,
-            fkeys=metadata["fkeys"],
+            fkey_col_to_pkey_table=metadata["fkey_col_to_pkey_table"],
             pkey_col=metadata["pkey_col"],
             time_col=metadata["time_col"],
         )

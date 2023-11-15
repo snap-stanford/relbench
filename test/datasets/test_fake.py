@@ -3,7 +3,6 @@ from rtb.datasets import FakeEcommerceDataset
 
 def test_fake_ecommerce_dataset(tmp_path):
     dataset = FakeEcommerceDataset(root=tmp_path)
-
     assert str(dataset) == (
         "FakeEcommerceDataset(\n"
         "  tables=['customer', 'product', 'transaction'],\n"
