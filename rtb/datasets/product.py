@@ -51,7 +51,7 @@ class ChurnTask(Task):
 
         return Table(
             df=df,
-            fkeys={"customer_id": "customer"},
+            fkey_col_to_pkey_table={"customer_id": "customer"},
             pkey_col=None,
             time_col="window_min_time",
         )
