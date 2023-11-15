@@ -112,7 +112,6 @@ class Dataset:
                 )
 
         # Replace fkeys with indices.
-        # We currently drop a row in case there exists any dangling foreign key
         for name, table in db.tables.items():
             for fkey_col, dst_table_name in table.fkeys.items():
                 ser = table.df[fkey_col]
