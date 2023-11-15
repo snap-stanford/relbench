@@ -1,8 +1,10 @@
+from typing import Dict
 import os
 from pathlib import Path
 import shutil
 
 import pandas as pd
+from torch_frame import stype
 
 from rtb.data.table import Table
 from rtb.data.database import Database
@@ -185,3 +187,16 @@ class Dataset:
         df.drop(columns=[task.target_col], inplace=True)
         table.df = df
         return table
+
+    @property
+    def col_to_stype_dict(self) -> Dict[str, Dict[stype, str]]:
+        r"""Specifies col_to_stype for each table. Used as input to
+        utils.make_pkey_fkey_graph"""
+        if not hasattr(self, "_col_to_stype_dict"):
+            raise RuntimeError("col_to_stype_dict has not been set.")
+        else:
+            return self._col_to_stype_dict
+
+    @col_to_stype_dict.setter
+    def col_to_stype_dict(self, col_to_stype_dict: Dict[str, Dict[stype, str]]):
+        self._col_to_stype_dict = col_to_stype_dict

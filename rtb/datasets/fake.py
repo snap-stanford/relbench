@@ -4,7 +4,7 @@ import numpy as np
 from typing import Dict
 import duckdb
 import pandas as pd
-
+from torch_frame import stype
 
 from rtb.data.table import Table
 from rtb.data.database import Database
@@ -73,6 +73,21 @@ class FakeEcommerceDataset(Dataset):
 
     name = "rtb-fake-ecommerce"
 
+    def __init__(self, root: str | os.PathLike, process=False) -> None:
+        super().__init__(root, process)
+        col_to_stype_dict = {}
+        col_to_stype_dict["product"] = {"category": stype.categorical}
+        col_to_stype_dict["customer"] = {
+            "age": stype.numerical,
+            "gender": stype.categorical,
+        }
+        col_to_stype_dict["transaction"] = {
+            # TODO: add back when timestamp gets supported in torch-frame
+            # "timestamp": stype.timestamp,
+            "price": stype.numerical,
+        }
+        self._col_to_stype_dict = col_to_stype_dict
+
     def get_tasks(self) -> Dict[str, Task]:
         return {"ltv": LTV()}
 
@@ -83,6 +98,7 @@ class FakeEcommerceDataset(Dataset):
         num_products = 30
         num_customers = 100
         num_transactions = 500
+
         product_df = pd.DataFrame(
             {
                 "product_id": np.arange(num_products),
@@ -108,7 +124,6 @@ class FakeEcommerceDataset(Dataset):
                 "price": np.random.rand(num_transactions) * 10,
             }
         )
-
         return Database(
             tables={
                 "product": Table(

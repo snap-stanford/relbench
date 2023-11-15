@@ -7,7 +7,6 @@ from typing import Dict, Tuple, Optional, Union
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-from typing_extensions import Self
 
 
 class Table:
@@ -85,7 +84,7 @@ class Table:
         pq.write_table(table, path)
 
     @classmethod
-    def load(cls, path: Union[str, os.PathLike]) -> Self:
+    def load(cls, path: Union[str, os.PathLike]) -> "Table":
         r"""Loads a table from a parquet file."""
         assert str(path).endswith(".parquet")
 

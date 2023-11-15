@@ -1,37 +1,96 @@
 import os
 import zipfile
-from typing import List, Union
+from typing import List, Union, Tuple, Dict, Any
 
 import pandas as pd
 import requests
 import torch
+from torch_frame.data import StatType
+from torch_frame.data import Dataset
 from torch_geometric.data import HeteroData, Batch
 from torch_geometric.utils import sort_edge_index
+from torch_frame import stype
 from tqdm import tqdm
+from rtb.data import Table
 
 from rtb.data.database import Database
 
 
-def make_pkey_fkey_graph(db: Database) -> HeteroData:
-    r"""Given a :class:`Database` object, construct a heterogeneous graph with
-    primary-foreign key relationships."""
-    data = HeteroData()
+def _drop_pkey_fkey(table: Table) -> pd.DataFrame:
+    drop_keys = []
+    if table.pkey_col is not None:
+        drop_keys.append(table.pkey_col)
+    drop_keys.extend(list(table.fkeys.keys()))
+    return table.df.drop(drop_keys, axis=1)
 
+
+def _map_index(index_map: pd.Series, ser: pd.Series) -> torch.Tensor:
+    return torch.from_numpy(
+        pd.merge(
+            ser.rename("data"),
+            index_map,
+            how="left",
+            left_on="data",
+            right_index=True,
+        )["index"].values
+    )
+
+
+def make_pkey_fkey_graph(
+    db: Database,
+    col_to_stype_dict: Dict[str, Dict[str, stype]],
+) -> Tuple[HeteroData, Dict[str, Dict[str, Dict[StatType, Any]]]]:
+    r"""Given a :class:`Database` object, construct a heterogeneous graph with
+    primary-foreign key relationships, together with the column stats of each
+    table.
+
+    Args:
+        db (Database): A database object containing a set of tables.
+        col_to_stype_dict (Dict[str, Dict[str, stype]]): Column to stype for
+            each table.
+
+    Returns:
+        HeteroData: The heterogeneous :class:`PyG` object with
+            :class:`TensorFrame` feature.
+        Dict[str, Dict[str, Dict[StatType, Any]]]: Column stats dictionary,
+            mapping table name into column stats.
+    """
+    data = HeteroData()
+    # Obtain index mapping of primary keys
+    index_map_dict: Dict[str, Tuple[str, pd.Series]] = {}
+    for table_name, table in db.tables.items():
+        if table.pkey_col is not None:
+            table_pkey_col = table.df[table.pkey_col]
+            if table_pkey_col.nunique() != len(table_pkey_col):
+                raise RuntimeError(
+                    f"The primary key '{table_pkey_col}' of "
+                    f"table {table_name} contains duplicated elements."
+                )
+            index_map: pd.Series = pd.Series(
+                index=table.df[table.pkey_col],
+                data=pd.RangeIndex(0, len(table.df[table.pkey_col])),
+                name="index",
+            )
+            index_map_dict[table_name] = index_map
+
+    col_stats_dict = {}
     for table_name, table in db.tables.items():
         # Materialize the tables:
-        data[table_name].df = table.df
+        dataset = Dataset(
+            df=_drop_pkey_fkey(table), col_to_stype=col_to_stype_dict[table_name]
+        ).materialize()
+        data[table_name] = dataset.tensor_frame
+        col_stats_dict[table_name] = dataset.col_stats
 
         # Add time attribute:
         if table.time_col is not None:
-            time = table.df[table.time_col].values
+            time = table.df[table.time_col].astype(int).values / 10**9
             data[table_name].time = torch.from_numpy(time)
 
         # Add edges:
         for fkey_name, dst_table_name in table.fkeys.items():
-            dst_table = db.tables[dst_table_name]
-
-            fkey_idx = torch.from_numpy(table.df[fkey_name].values)
-            pkey_idx = torch.from_numpy(dst_table.df[dst_table.pkey_col].values)
+            pkey_idx = _map_index(index_map_dict[dst_table_name], table.df[fkey_name])
+            fkey_idx = torch.arange(len(pkey_idx))
 
             # fkey -> pkey edges
             edge_index = torch.stack([fkey_idx, pkey_idx], dim=0)
@@ -45,7 +104,7 @@ def make_pkey_fkey_graph(db: Database) -> HeteroData:
             edge_type = (dst_table_name, f"p2f_{fkey_name}", table_name)
             data[edge_type].edge_index = edge_index
 
-    return data
+    return data, col_stats_dict
 
 
 class AddTargetLabelTransform:
