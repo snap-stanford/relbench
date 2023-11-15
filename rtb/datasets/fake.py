@@ -110,7 +110,7 @@ class FakeEcommerceDataset(Dataset):
                     f"product_id_{random.randint(0, num_products-1)}"
                     for _ in range(num_transactions)
                 ],
-                "timestamp": pd.to_datetime(10 * np.arange(num_transactions), unit="d"),
+                "timestamp": pd.to_datetime(10 * np.arange(num_transactions), unit="D"),
                 "price": np.random.rand(num_transactions) * 10,
             }
         )
