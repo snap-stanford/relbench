@@ -5,35 +5,20 @@ from typing import List, Union
 import pandas as pd
 import requests
 import torch
-import torch_frame as pyf
-import torch_geometric as pyg
+from torch_geometric.data import HeteroData, Batch
 from torch_geometric.utils import sort_edge_index
 from tqdm import tqdm
 
 from rtb.data.database import Database
-from rtb.data.table import Table
 
 
-def to_pyf_dataset(table: Table) -> pyf.data.Dataset:
-    r"""Converts a Table to a PyF Dataset.
-
-    Primary key and foreign keys are removed in this process."""
-
-    raise NotImplementedError
-
-
-def make_pkey_fkey_graph(db: Database) -> pyg.data.HeteroData:
-    """
-    Models the database as a heterogeneous graph.
-
-    Instead of node embeddings in data.x, we store the tensor frames in data.tf.
-    """
-    data = pyg.data.HeteroData()
+def make_pkey_fkey_graph(db: Database) -> HeteroData:
+    r"""Given a :class:`Database` object, construct a heterogeneous graph with
+    primary-foreign key relationships."""
+    data = HeteroData()
 
     for table_name, table in db.tables.items():
         # Materialize the tables:
-        # TODO Convert to PyTorch Frame (needs stype information though)
-        # TODO automate stype inference from tables
         data[table_name].df = table.df
 
         # Add time attribute:
@@ -46,7 +31,7 @@ def make_pkey_fkey_graph(db: Database) -> pyg.data.HeteroData:
             dst_table = db.tables[dst_table_name]
 
             fkey_idx = torch.from_numpy(table.df[fkey_name].values)
-            pkey_idx = torch.from_numpy(dst_table.df[dst_table.pkey].values)
+            pkey_idx = torch.from_numpy(dst_table.df[dst_table.pkey_col].values)
 
             # fkey -> pkey edges
             edge_index = torch.stack([fkey_idx, pkey_idx], dim=0)
@@ -73,7 +58,7 @@ class AddTargetLabelTransform:
     def __init__(self, labels: List[Union[int, float]]):
         self.labels = torch.tensor(labels)
 
-    def __call__(self, batch: pyg.data.Batch) -> pyg.data.Batch:
+    def __call__(self, batch: Batch) -> Batch:
         batch.y = self.labels[batch.input_id]
         return batch
 

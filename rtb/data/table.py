@@ -1,25 +1,33 @@
 import copy
-from dataclasses import dataclass
+import json
 import os
 from pathlib import Path
-from typing import Dict, Union, Optional, Tuple
-from typing_extensions import Self
+from typing import Dict, Tuple, Optional, Union
 
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-import json
+from typing_extensions import Self
 
 
 class Table:
-    r"""A table in a database."""
+    r"""A table in a database.
+
+    Args:
+        df (DataFrame): The table represented as :class:`pandas.DataFrame`.
+        fkeys (Dict[str, str]): A dictionary mapping the foreign key names into
+            the table name that contains them as primary keys.
+        pkey_col (str, optional): The primary key column if it exists.
+            Otherwise, :obj:`None`.
+        time_col (str, optional): The time column. (default: :obj:`None`)
+    """
 
     def __init__(
         self,
         df: pd.DataFrame,
         fkeys: Dict[str, str],
-        pkey_col: Union[str, None],
-        time_col: Union[str, None] = None,
+        pkey_col: Optional[str],
+        time_col: Optional[str] = None,
     ):
         self.df = df
         self.fkeys = fkeys
@@ -27,10 +35,16 @@ class Table:
         self.time_col = time_col
 
     def __repr__(self):
-        return f"Table(df=\n{self.df},\nfkeys={self.fkeys},\npkey_col={self.pkey_col},\ntime_col={self.time_col})"
+        return (
+            f"Table(df=\n{self.df},\n"
+            f"  fkeys={self.fkeys},\n"
+            f"  pkey_col={self.pkey_col},\n"
+            f"  time_col={self.time_col}"
+            f")"
+        )
 
     def __len__(self) -> int:
-        """Returns the number of rows in the table (DataFrame)."""
+        r"""Returns the number of rows in the table (DataFrame)."""
         return len(self.df)
 
     def validate(self) -> bool:
@@ -45,7 +59,7 @@ class Table:
         return True
 
     def save(self, path: Union[str, os.PathLike]) -> None:
-        """Saves the table to a parquet file. Stores other attributes as
+        r"""Saves the table to a parquet file. Stores other attributes as
         parquet metadata."""
         assert str(path).endswith(".parquet")
         metadata = {
@@ -72,7 +86,7 @@ class Table:
 
     @classmethod
     def load(cls, path: Union[str, os.PathLike]) -> Self:
-        """Loads a table from a parquet file."""
+        r"""Loads a table from a parquet file."""
         assert str(path).endswith(".parquet")
 
         # Read the Parquet file using pyarrow
@@ -93,7 +107,7 @@ class Table:
             time_col=metadata["time_col"],
         )
 
-    def time_cutoff(self, time_stamp: int) -> Self:
+    def time_cutoff(self, time_stamp: int) -> "Table":
         r"""Returns a table with all rows upto time."""
 
         if self.time_col is None:

@@ -1,6 +1,7 @@
 from rtb.datasets.forum import ForumDataset
 from rtb.datasets.grant import GrantDataset
 from rtb.datasets.product import ProductDataset
+from rtb.datasets.fake import FakeEcommerceDataset
 
 
 def get_dataset(name: str, *args, **kwargs):
@@ -20,5 +21,6 @@ __all__ = [
     "ProductDataset",
     "GrantDataset",
     "ForumDataset",
+    "FakeEcommerceDataset",
     "get_dataset",
 ]
