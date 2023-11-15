@@ -1,14 +1,13 @@
 import copy
-from dataclasses import dataclass
+import json
 import os
 from pathlib import Path
-from typing import Dict, Union, Optional, Tuple
-from typing_extensions import Self
+from typing import Dict, Optional, Tuple, Union
 
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-import json
+from typing_extensions import Self
 
 
 class Table:
@@ -18,16 +17,19 @@ class Table:
         self,
         df: pd.DataFrame,
         fkeys: Dict[str, str],
-        pkey_col: Union[str, None],
-        time_col: Union[str, None] = None,
+        pkey_col: Optional[str] = None,
+        time_col: Optional[str] = None,
     ):
         self.df = df
         self.fkeys = fkeys
         self.pkey_col = pkey_col
         self.time_col = time_col
 
-    def __repr__(self):
-        return f"Table(df=\n{self.df},\nfkeys={self.fkeys},\npkey_col={self.pkey_col},\ntime_col={self.time_col})"
+    def __repr__(self) -> str:
+        return (
+            f"Table(df=\n{self.df},\nfkeys={self.fkeys},\n"
+            f"pkey_col={self.pkey_col},\ntime_col={self.time_col})"
+        )
 
     def __len__(self) -> int:
         """Returns the number of rows in the table (DataFrame)."""
@@ -35,13 +37,15 @@ class Table:
 
     def validate(self) -> bool:
         r"""Validate the table."""
-        # Check if pkey_col exists
-        if self.pkey_col and self.pkey_col not in self.df.columns:
+
+        if self.pkey_col is not None and self.pkey not in self.df.columns:
             return False
         # Check if fkeys columns exist
         for col in self.fkeys:
             if col not in self.df.columns:
                 return False
+        if self.time_col is not None and self.time_col not in self.df.columns:
+            return False
         return True
 
     def save(self, path: Union[str, os.PathLike]) -> None:

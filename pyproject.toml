@@ -9,21 +9,25 @@ description = "Relational Tabular Benchmark"
 authors = [{name = "Rishabh Ranjan", email = "rishabhranjan0207@gmail.com"}]
 readme = "README.md"
 license = {file = "LICENSE"}
-classifiers = ["License :: OSI Approved :: MIT License"]
-requires-python=">=3.10"
+classifiers = [
+	"License :: OSI Approved :: MIT License",
+]
+requires-python=">=3.8"
 keywords=[]
 dependencies=[
 	"duckdb",
 	"numpy",
 	"pandas",
 	"pyarrow",
-	"pytorch_frame",
-	"torch_geometric",
 	"tqdm",
 ]
 
-
 [project.optional-dependencies]
+example=[
+	"torch",
+	"pytorch_frame",
+	"torch_geometric",
+]
 test=[
 	"pytest",
 	"pytest-cov",
