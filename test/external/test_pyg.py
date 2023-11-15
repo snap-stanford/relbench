@@ -28,6 +28,7 @@ def test_make_pkey_fkey_graph(tmp_path):
         src, _, dst = edge_type
 
         edge_index = data[edge_type].edge_index
-        assert edge_index.size() == (2, data["transaction"].num_nodes)
+        assert edge_index.size(0) == 2
+        assert edge_index.size(1) <= data["transaction"].num_nodes
         assert edge_index[0].max() <= data[src].num_nodes
         assert edge_index[1].max() <= data[dst].num_nodes

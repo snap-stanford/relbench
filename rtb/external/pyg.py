@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Tuple, Union
 
-import pandas as pd
 import torch
 from rtb.data.database import Database
 from torch_frame import stype
@@ -47,8 +46,13 @@ def make_pkey_fkey_graph(
 
         # Add edges:
         for fkey_name, dst_table_name in table.fkeys.items():
-            pkey_index = torch.from_numpy(table.df[fkey_name].values)
-            fkey_index = torch.arange(pkey_index.numel())
+            pkey_index = table.df[fkey_name]
+            mask = ~pkey_index.isna()
+            fkey_index = torch.arange(len(pkey_index))
+
+            # Filter dangling foreign keys:
+            pkey_index = torch.from_numpy(pkey_index[mask].astype(int).values)
+            fkey_index = fkey_index[torch.from_numpy(mask.values)]
 
             # fkey -> pkey edges
             edge_index = torch.stack([fkey_index, pkey_index], dim=0)

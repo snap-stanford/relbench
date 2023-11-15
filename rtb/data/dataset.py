@@ -114,7 +114,6 @@ class Dataset:
         # Replace fkeys with indices.
         # We currently drop a row in case there exists any dangling foreign key
         for name, table in db.tables.items():
-            mask = np.ones((len(table),), dtype=bool)
             for fkey_col, dst_table_name in table.fkeys.items():
                 ser = table.df[fkey_col]
                 out = pd.merge(
@@ -125,13 +124,6 @@ class Dataset:
                     right_index=True,
                 )
                 table.df[fkey_col] = out["index"]
-                mask &= ~out["index"].isna().values
-
-            if mask.sum() < mask.shape[0]:
-                table.df = table.df[mask]
-
-            for fkey_col, dst_table_name in table.fkeys.items():
-                table.df[fkey_col] = table.df[fkey_col].astype(int)
 
         return db
 
