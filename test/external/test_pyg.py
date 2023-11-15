@@ -10,7 +10,7 @@ def test_make_pkey_fkey_graph(tmp_path):
         dataset.db_train,
         dataset.get_stype_proposal(),
     )
-    assert data.node_types == ["customer", "transaction", "product"]
+    assert set(data.node_types) == {"customer", "transaction", "product"}
 
     data.validate()
 

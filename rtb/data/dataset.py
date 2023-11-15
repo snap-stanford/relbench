@@ -1,9 +1,8 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Union, Optional
 
-import numpy as np
 import pandas as pd
 from rtb.data.database import Database
 from rtb.data.table import Table
@@ -18,7 +17,7 @@ class Dataset:
     # name of dataset, to be specified by subclass
     name: str
 
-    def __init__(self, root: str | os.PathLike, process=False) -> None:
+    def __init__(self, root: Union[str, os.PathLike], process: bool = False) -> None:
         r"""Initializes the dataset."""
 
         self.root = root
@@ -57,8 +56,8 @@ class Dataset:
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(\n"
-            f"  tables={list(self._db.tables.keys())},\n"
-            f"  tasks={list(self.tasks.keys())},\n"
+            f"  tables={sorted(list(self._db.tables.keys()))},\n"
+            f"  tasks={sorted(list(self.tasks.keys()))},\n"
             f"  min_time={self.min_time},\n"
             f"  max_time={self.max_time},\n"
             f"  train_max_time={self.train_max_time},\n"
@@ -80,7 +79,7 @@ class Dataset:
         val_max_time = self.min_time + 0.9 * (self.max_time - self.min_time)
         return train_max_time, val_max_time
 
-    def download(self, url: str, path: str | os.PathLike) -> None:
+    def download(self, url: str, path: Union[str, os.PathLike]) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by
         subclass."""
 
@@ -136,8 +135,8 @@ class Dataset:
     def make_train_table(
         self,
         task_name: str,
-        window_size: int | None = None,
-        time_window_df: pd.DataFrame | None = None,
+        window_size: Optional[int] = None,
+        time_window_df: Optional[pd.DataFrame] = None,
     ) -> Table:
         """Returns the train table for a task.
 
@@ -161,8 +160,8 @@ class Dataset:
     def make_val_table(
         self,
         task_name: str,
-        window_size: int | None = None,
-        time_window_df: pd.DataFrame | None = None,
+        window_size: Optional[int] = None,
+        time_window_df: Optional[pd.DataFrame] = None,
     ) -> Table:
         r"""Returns the val table for a task.
 

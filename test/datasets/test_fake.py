@@ -6,7 +6,7 @@ def test_fake_ecommerce_dataset(tmp_path):
 
     assert str(dataset) == (
         "FakeEcommerceDataset(\n"
-        "  tables=['customer', 'transaction', 'product'],\n"
+        "  tables=['customer', 'product', 'transaction'],\n"
         "  tasks=['ltv'],\n"
         "  min_time=1970-01-01 00:00:00,\n"
         "  max_time=1983-08-31 00:00:00,\n"
