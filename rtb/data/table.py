@@ -14,11 +14,11 @@ class Table:
     r"""A table in a database.
 
     Args:
-        df (DataFrame): The table represented as :class:`pandas.DataFrame`.
+        df (pandas.DataFrame): The underyling data frame of the table.
         fkeys (Dict[str, str]): A dictionary mapping the foreign key names into
             the table name that contains them as primary keys.
         pkey_col (str, optional): The primary key column if it exists.
-            Otherwise, :obj:`None`.
+            (default: :obj:`None`)
         time_col (str, optional): The time column. (default: :obj:`None`)
     """
 
@@ -44,7 +44,7 @@ class Table:
         )
 
     def __len__(self) -> int:
-        r"""Returns the number of rows in the table (DataFrame)."""
+        r"""Returns the number of rows in the table."""
         return len(self.df)
 
     def validate(self) -> bool:
@@ -87,7 +87,7 @@ class Table:
         pq.write_table(table, path)
 
     @classmethod
-    def load(cls, path: Union[str, os.PathLike]) -> "Table":
+    def load(cls, path: Union[str, os.PathLike]) -> Self:
         r"""Loads a table from a parquet file."""
         assert str(path).endswith(".parquet")
 
@@ -109,7 +109,7 @@ class Table:
             time_col=metadata["time_col"],
         )
 
-    def time_cutoff(self, time_stamp: int) -> "Table":
+    def time_cutoff(self, time_stamp: int) -> Self:
         r"""Returns a table with all rows upto time."""
 
         if self.time_col is None:

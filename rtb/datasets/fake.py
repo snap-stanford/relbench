@@ -1,20 +1,18 @@
 import os
-import numpy as np
+from typing import Any, Dict
 
-from typing import Dict
 import duckdb
+import numpy as np
 import pandas as pd
-from torch_frame import stype
-
-from rtb.data.table import Table
 from rtb.data.database import Database
-from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
+from rtb.data.table import Table
+from rtb.data.task import Task, TaskType
 
 
 class LTV(Task):
     r"""LTV (life-time value) for a customer is the sum of prices of products
-    that the user has made transactions in the time_frame."""
+    that the user has made transactions in a given time frame."""
 
     def __init__(self):
         super().__init__(
@@ -73,20 +71,8 @@ class FakeEcommerceDataset(Dataset):
 
     name = "rtb-fake-ecommerce"
 
-    def __init__(self, root: str | os.PathLike, process=False) -> None:
+    def __init__(self, root: str | os.PathLike, process: bool = False) -> None:
         super().__init__(root, process)
-        col_to_stype_dict = {}
-        col_to_stype_dict["product"] = {"category": stype.categorical}
-        col_to_stype_dict["customer"] = {
-            "age": stype.numerical,
-            "gender": stype.categorical,
-        }
-        col_to_stype_dict["transaction"] = {
-            # TODO: add back when timestamp gets supported in torch-frame
-            # "timestamp": stype.timestamp,
-            "price": stype.numerical,
-        }
-        self._col_to_stype_dict = col_to_stype_dict
 
     def get_tasks(self) -> Dict[str, Task]:
         return {"ltv": LTV()}
@@ -124,28 +110,45 @@ class FakeEcommerceDataset(Dataset):
                 "price": np.random.rand(num_transactions) * 10,
             }
         )
-        return Database(
-            tables={
-                "product": Table(
-                    df=product_df,
-                    fkeys={},
-                    pkey_col="product_id",
-                    time_col=None,
-                ),
-                "customer": Table(
-                    df=customer_df,
-                    fkeys={},
-                    pkey_col="customer_id",
-                    time_col=None,
-                ),
-                "transaction": Table(
-                    df=transaction_df,
-                    fkeys={
-                        "customer_id": "customer",
-                        "product_id": "product",
-                    },
-                    pkey_col=None,
-                    time_col="timestamp",
-                ),
-            }
+
+        tables: Dict[str, Table] = {}
+
+        tables["product"] = Table(
+            df=product_df,
+            fkeys={},
+            pkey_col="product_id",
         )
+        tables["customer"] = Table(
+            df=customer_df,
+            fkeys={},
+            pkey_col="customer_id",
+        )
+        tables["transaction"] = Table(
+            df=transaction_df,
+            fkeys={
+                "customer_id": "customer",
+                "product_id": "product",
+            },
+            time_col="timestamp",
+        )
+
+        return Database(tables)
+
+    def get_stype_proposal(self) -> Dict[str, Dict[str, Any]]:
+        from torch_frame import stype
+
+        stype_dict: Dict[str, Dict[str, Any]] = {}
+        stype_dict["product"] = {
+            "category": stype.categorical,
+        }
+        stype_dict["customer"] = {
+            "age": stype.numerical,
+            "gender": stype.categorical,
+        }
+        stype_dict["transaction"] = {
+            # TODO: add when timestamp gets supported in torch-frame
+            # "timestamp": stype.timestamp,
+            "price": stype.numerical,
+        }
+
+        return stype_dict

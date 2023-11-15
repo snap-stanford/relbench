@@ -1,15 +1,14 @@
-from typing import Dict
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
+from typing import Dict
 
 import pandas as pd
-from torch_frame import stype
-
-from rtb.data.table import Table
 from rtb.data.database import Database
+from rtb.data.table import Table
 from rtb.data.task import Task
-from rtb.utils import rolling_window_sampler, one_window_sampler, download_url, unzip
+from rtb.utils import download_url, one_window_sampler, rolling_window_sampler, unzip
+from torch_frame import stype
 
 
 class Dataset:
