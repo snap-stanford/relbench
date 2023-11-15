@@ -69,7 +69,7 @@ class LTV(Task):
 
 
 class FakeEcommerceDataset(Dataset):
-    r"""Fake e-commerce dataset for the testing purpose."""
+    r"""Fake e-commerce dataset for testing purposes."""
 
     name = "rtb-fake-ecommerce"
 
