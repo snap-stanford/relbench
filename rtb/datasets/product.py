@@ -1,12 +1,16 @@
+import copy
 import json
 import os
 import re
+import time
 
+from typing import Dict, Union
 import duckdb
 import pandas as pd
-from tqdm.auto import tqdm
+import pyarrow as pa
+import pyarrow.json
 
-from rtb.data.table import SemanticType, Table
+from rtb.data.table import Table
 from rtb.data.database import Database
 from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
@@ -20,6 +24,7 @@ class LTV(Task):
         super().__init__(
             target_col="ltv",
             task_type=TaskType.REGRESSION,
+            test_time_window_sizes=[pd.Timedelta("1W")],
             metrics=["mse", "smape"],
         )
 
@@ -29,7 +34,7 @@ class LTV(Task):
         # XXX: If this is not fast enough, we can try using duckdb to query the
         # parquet files directly.
 
-        # columns in time_window_df: time_offset, time_cutoff
+        # columns in time_window_df: window_min_time, window_max_time
 
         # XXX: can we directly access tables in the sql string?
         product = db.tables["product"].df
@@ -42,8 +47,8 @@ class LTV(Task):
         df = duckdb.sql(
             r"""
             SELECT
-                time_offset,
-                time_cutoff,
+                window_min_time,
+                window_max_time,
                 customer_id,
                 SUM(price) AS ltv
             FROM
@@ -60,184 +65,203 @@ class LTV(Task):
                         product.product_id = review.product_id
                 ) AS tmp
             WHERE
-                tmp.review_time > time_window_df.time_offset AND
-                tmp.review_time <= time_window_df.time_cutoff
-            GROUP BY customer_id, time_offset, time_cutoff
+                tmp.review_time > time_window_df.window_min_time AND
+                tmp.review_time <= time_window_df.window_max_time
+            GROUP BY customer_id, window_min_time, window_max_time
             """
         ).df()
 
         return Table(
             df=df,
-            feat_cols={
-                "time_offset": SemanticType.TIME,
-                "time_cutoff": SemanticType.TIME,
-            },
             fkeys={"customer_id": "customer"},
-            pkey=None,
-            time_col="time_offset",
+            pkey_col=None,
+            time_col="window_min_time",
         )
 
 
 class ProductDataset(Dataset):
-    # TODO: pandas is interpreting the time_stamps wrong
-    # I think its a unit issue (unix time is in secs but expected in ns)
-
     name = "rtb-product"
 
     # raw file names
-    product_file_name = "All_Amazon_Meta.json"
-    review_file_name = "All_Amazon_Review.json"
+    # product_file_name = "meta_Books.json"
+    # review_file_name = "Books.json"
+    # we use the 5-core version for now
+    # the original has 51M reviews for 35M distinct customers
+    # will have to think/discuss if using that is a good idea
+    # review_file_name = "Books_5.json"
 
-    # number of lines in the raw files
-    product_lines = 15_023_059
-    # review_lines = 233_055_327
+    product_file_name = "meta_AMAZON_FASHION.json"
+    review_file_name = "AMAZON_FASHION.json"
 
-    # for now I am playing with smaller files
-    # product_lines = 1_500_000
-    review_lines = 20_000_000
-
-    # regex for parsing price
-    price_re = re.compile(r"\$(\d+\.\d+)")
-    price_range_re = re.compile(r"\$(\d+\.\d+) - \$(\d+\.\d+)")
-
-    def get_tasks(self) -> dict[str, Task]:
+    def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
 
         return {"ltv": LTV()}
 
     # TODO: implement get_cutoff_times()
 
-    def download(self, path: str | os.PathLike) -> None:
+    def download(self, path: Union[str, os.PathLike]) -> None:
         r"""Download the Amazon dataset raw files from the AWS server and
         decompresses it."""
 
         raise NotImplementedError
 
-    def parse_price(self, price_str: str) -> float:
-        r"""Parse the raw price string into a float."""
-
-        m = self.price_range_re.match(price_str)
-
-        if m is not None:
-            lb = float(m.group(1))
-            ub = float(m.group(2))
-            return (lb + ub) / 2
-
-        m = self.price_re.match(price_str)
-
-        if m:
-            return float(m.group(1))
-        else:
-            raise ValueError(f"Invalid price string: {price_str}")
-
     def process(self) -> Database:
         r"""Process the raw files into a database."""
 
-        # tried speeding up the json decoding with multiprocessing and others,
-        # but that was just a big waste of time and gave no significant gain
+        ### product table ###
 
-        tables = {}
-
-        # product table
-        # products = []
-        # path = f"{self.root}/{self.name}/raw/{self.product_file_name}"
-        # with open(path, "r") as f:
-        #     for l in tqdm(f, total=self.product_lines):
-        #         raw = json.loads(l)
-        #         try:
-        #             products.append(
-        #                 {
-        #                     "product_id": raw["asin"],
-        #                     "category": raw["category"][0],
-        #                     "brand": raw["brand"],
-        #                     "title": raw["title"],
-        #                     "description": raw["description"],
-        #                     "price": self.parse_price(raw["price"]),
-        #                 }
-        #             )
-        #         except (ValueError, IndexError):
-        #             # ignoring invalid prices and empty categories for now
-        #             pass
-
-        # tables["product"] = Table(
-        #     df=pd.DataFrame(products),
-        #     feat_cols={
-        #         "category": SemanticType.CATEGORICAL,
-        #         "brand": SemanticType.TEXT,  # can also be categorical
-        #         "title": SemanticType.TEXT,
-        #         "description": SemanticType.TEXT,
-        #         "price": SemanticType.NUMERICAL,
-        #     },
-        #     fkeys={},
-        #     pkey="product_id",
-        #     time_col=None,
-        # )
-
-        tables["product"] = Table.load(
-            f"{self.root}/{self.name}/processed/db/product.parquet"
-        )
-
-        product_ids = set(tables["product"].df["product_id"])
-
-        # review table
-        customers = {}
-        reviews = []
-        path = f"{self.root}/{self.name}/raw/{self.review_file_name}"
-        with open(path, "r") as f:
-            for l in tqdm(f, total=self.review_lines):
-                raw = json.loads(l)
-
-                # only keep reviews for products in product table
-                if raw["asin"] not in product_ids:
-                    continue
-
-                try:
-                    reviews.append(
-                        {
-                            "review_time": raw["unixReviewTime"],
-                            "customer_id": raw["reviewerID"],
-                            "product_id": raw["asin"],
-                            "rating": raw["overall"],
-                            "verified": raw["verified"],
-                            "review_text": raw["reviewText"],
-                            "summary": raw["summary"],
-                        }
-                    )
-                    customers[raw["reviewerID"]] = raw["reviewerName"]
-                except KeyError:
-                    # ignoring missing data rows for now
-                    pass
-
-        tables["customer"] = Table(
-            df=pd.DataFrame(
-                {
-                    "customer_id": list(customers.keys()),
-                    "name": list(customers.values()),
-                }
+        path = f"{self.root}/{self.name}/raw/{self.product_file_name}"
+        print(f"reading product info from {path}...")
+        tic = time.time()
+        ptable = pa.json.read_json(
+            path,
+            parse_options=pa.json.ParseOptions(
+                explicit_schema=pa.schema(
+                    [
+                        ("asin", pa.string()),
+                        ("category", pa.list_(pa.string())),
+                        ("brand", pa.string()),
+                        ("title", pa.string()),
+                        ("description", pa.list_(pa.string())),
+                        ("price", pa.string()),
+                    ]
+                ),
+                unexpected_field_behavior="ignore",
             ),
-            feat_cols={
-                "name": SemanticType.TEXT,
-            },
-            fkeys={},
-            pkey="customer_id",
-            time_col=None,
+        )
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        print(f"converting to pandas dataframe...")
+        tic = time.time()
+        pdf = ptable.to_pandas()
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        print(f"processing product info...")
+        tic = time.time()
+
+        # asin is not intuitive / recognizable
+        pdf.rename(columns={"asin": "product_id"}, inplace=True)
+
+        # remove products with missing price
+        pdf = pdf.query("price != '' and not price.isnull()")
+
+        # price is like "$x,xxx.xx", "$xx.xx", or "$xx.xx - $xx.xx", or garbage html
+        # if it's a range, we take the first value
+        pdf.loc[:, "price"] = pdf["price"].apply(
+            lambda x: None
+            if x is None or x[0] != "$"
+            else float(x.split(" ")[0][1:].replace(",", ""))
         )
 
-        tables["review"] = Table(
-            df=pd.DataFrame(reviews),
-            feat_cols={
-                "review_time": SemanticType.TIME,
-                "rating": SemanticType.NUMERICAL,
-                "verified": SemanticType.CATEGORICAL,
-                "review_text": SemanticType.TEXT,
-                "summary": SemanticType.TEXT,
-            },
-            fkeys={
-                "customer_id": "customer",
-                "product_id": "product",
-            },
-            pkey=None,
-            time_col="review_time",
+        # remove products with missing price
+        pdf = pdf.dropna(subset=["price"])
+
+        pdf.loc[:, "category"] = pdf["category"].apply(
+            lambda x: None if x is None or len(x) == 0 else x
         )
 
-        return Database(tables)
+        # description is either [] or ["some description"]
+        pdf.loc[:, "description"] = pdf["description"].apply(
+            lambda x: None if x is None or len(x) == 0 else x[0]
+        )
+
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        ### review table ###
+
+        path = f"{self.root}/{self.name}/raw/{self.review_file_name}"
+        print(f"reading review and customer info from {path}...")
+        tic = time.time()
+        rtable = pa.json.read_json(
+            path,
+            parse_options=pa.json.ParseOptions(
+                explicit_schema=pa.schema(
+                    [
+                        ("unixReviewTime", pa.int32()),
+                        ("reviewerID", pa.string()),
+                        ("reviewerName", pa.string()),
+                        ("asin", pa.string()),
+                        ("overall", pa.float32()),
+                        ("verified", pa.bool_()),
+                        ("reviewText", pa.string()),
+                        ("summary", pa.string()),
+                    ]
+                ),
+                unexpected_field_behavior="ignore",
+            ),
+        )
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        print(f"converting to pandas dataframe...")
+        tic = time.time()
+        rdf = rtable.to_pandas()
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        print(f"processing review and customer info...")
+        tic = time.time()
+
+        rdf.rename(
+            columns={
+                "unixReviewTime": "review_time",
+                "reviewerID": "customer_id",
+                "reviewerName": "customer_name",
+                "asin": "product_id",
+                "overall": "rating",
+                "reviewText": "review_text",
+            },
+            inplace=True,
+        )
+
+        rdf.loc[:, "review_time"] = pd.to_datetime(rdf["review_time"], unit="s")
+
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        # TODO: refactor
+
+        print(f"removing products not in review table (#products={len(pdf)})...")
+        tic = time.time()
+        pdf = pd.merge(
+            rdf["product_id"].drop_duplicates(),
+            pdf.drop_duplicates(subset=["product_id"]),
+            on="product_id",
+        )
+        rdf = pd.merge(rdf, pdf[["product_id"]], on="product_id")
+        cdf = rdf[["customer_id", "customer_name"]].drop_duplicates(
+            subset=["customer_id"]
+        )
+        rdf.drop(columns=["customer_name"], inplace=True)
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds (#products={len(pdf)}).")
+
+        return Database(
+            tables={
+                "product": Table(
+                    df=pdf,
+                    fkeys={},
+                    pkey_col="product_id",
+                    time_col=None,
+                ),
+                "customer": Table(
+                    df=cdf,
+                    fkeys={},
+                    pkey_col="customer_id",
+                    time_col=None,
+                ),
+                "review": Table(
+                    df=rdf,
+                    fkeys={
+                        "customer_id": "customer",
+                        "product_id": "product",
+                    },
+                    pkey_col=None,
+                    time_col="review_time",
+                ),
+            }
+        )

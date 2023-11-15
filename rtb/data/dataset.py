@@ -1,12 +1,13 @@
 import os
 from pathlib import Path
+import shutil
 
 import pandas as pd
 
 from rtb.data.table import Table
 from rtb.data.database import Database
 from rtb.data.task import Task
-from rtb.utils import rolling_window_sampler, one_window_sampler
+from rtb.utils import rolling_window_sampler, one_window_sampler, download_url, unzip
 
 
 class Dataset:
@@ -16,30 +17,30 @@ class Dataset:
     # name of dataset, to be specified by subclass
     name: str
 
-    def __init__(self, root: str | os.PathLike) -> None:
+    def __init__(self, root: str | os.PathLike, process=False) -> None:
         r"""Initializes the dataset."""
 
         self.root = root
 
         # download
-        path = f"{root}/{self.name}/raw"
-        if not Path(f"{path}/done").exists():
-            self.download(path)
-            Path(f"{path}/done").touch()
+        if not os.path.exists(os.path.join(root, self.name)):
+            url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
+            self.download(url, root)
 
         path = f"{root}/{self.name}/processed/db"
-        if not Path(f"{path}/done").exists():
-            # process db
-            db = self.process()
+        if process or not Path(f"{path}/done").exists():
+            # delete processed db dir if exists to avoid possibility of corruption
+            shutil.rmtree(path, ignore_errors=True)
 
-            # standardize db
-            # db = self.standardize_db()
+            # process and standardize db
+            db = self.standardize(self.process())
 
             # process and standardize are separate because
             # process() is implemented by each subclass, but
             # standardize() is common to all subclasses
 
             db.save(path)
+            Path(f"{path}/done").touch()
 
         # load database
         self._db = Database.load(path)
@@ -48,9 +49,22 @@ class Dataset:
         # test information
 
         self.min_time, self.max_time = self._db.get_time_range()
-        self.train_cutoff_time, self.val_cutoff_time = self.get_cutoff_times()
+        self.train_max_time, self.val_max_time = self.get_cutoff_times()
 
         self.tasks = self.get_tasks()
+
+    def __repr__(self):
+        return (
+            f"Dataset(\n"
+            f"root={self.root},\n\n"
+            f"min_time={self.min_time},\n\n"
+            f"max_time={self.max_time},\n\n"
+            f"train_max_time={self.train_max_time},\n\n"
+            f"val_max_time={self.val_max_time},\n\n"
+            f"tasks={self.tasks},\n\n"
+            f"db_train={self.db_train}\n"
+            f")"
+        )
 
     def get_tasks(self) -> dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset. To be implemented
@@ -58,19 +72,20 @@ class Dataset:
 
         raise NotImplementedError
 
-    def get_cutoff_times(self) -> tuple[int, int]:
+    def get_cutoff_times(self) -> tuple[pd.Timestamp, pd.Timestamp]:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
-        train_cutoff_time = self.min_time + 0.8 * (self.max_time - self.min_time)
-        val_cutoff_time = self.min_time + 0.9 * (self.max_time - self.min_time)
-        return train_cutoff_time, val_cutoff_time
+        train_max_time = self.min_time + 0.8 * (self.max_time - self.min_time)
+        val_max_time = self.min_time + 0.9 * (self.max_time - self.min_time)
+        return train_max_time, val_max_time
 
-    def download(self, path: str | os.PathLike) -> None:
+    def download(self, url: str, path: str | os.PathLike) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by
         subclass."""
 
-        raise NotImplementedError
+        download_path = download_url(url, path)
+        unzip(download_path, path)
 
     def process(self) -> Database:
         r"""Processes the raw data into a database. To be implemented by
@@ -78,30 +93,33 @@ class Dataset:
 
         raise NotImplementedError
 
-    def standardize_db(self, db: Database) -> Database:
-        r"""
-        - Add primary key column if not present.
-        - Re-index primary key column with 0-indexed ints, if required.
-        - Can still keep the original pkey column as a feature column (e.g. email).
-        """
+    def standardize(self, db: Database) -> None:
+        # get pkey to idx mapping
+        pkey_to_idx = {}
+        for name, table in db.tables.items():
+            if table.pkey_col is not None:
+                pkey_to_idx[name] = {
+                    pkey: idx for idx, pkey in enumerate(table.df[table.pkey_col])
+                }
+                # replace pkey with idx
+                table.df[table.pkey_col] = table.df.index
 
-        raise NotImplementedError
-
-    def db_snapshot(self, time_stamp: int) -> Database:
-        r"""Returns a database with all rows upto time_stamp (if table is
-        temporal, otherwise all rows)."""
-
-        assert time_stamp <= self.val_cutoff_time
-
-        return self._db.time_cutoff(time_stamp)
+        # replace fkeys with pkey idxs
+        for name, table in db.tables.items():
+            for fkey_col, pkey_table_name in table.fkeys.items():
+                table.df[fkey_col] = table.df[fkey_col].apply(
+                    lambda x: pkey_to_idx[pkey_table_name][x] if x in pkey_to_idx[pkey_table_name] else None
+                )
+                table.df = table.df[table.df[fkey_col].notnull()].reset_index(drop = True)
+        return db
 
     @property
     def db_train(self) -> Database:
-        return self.db_snapshot(self.train_cutoff_time)
+        return self._db.time_cutoff(self.train_max_time)
 
     @property
     def db_val(self) -> Database:
-        return self.db_snapshot(self.val_cutoff_time)
+        return self._db.time_cutoff(self.val_max_time)
 
     def make_train_table(
         self,
@@ -120,7 +138,7 @@ class Dataset:
             # default sampler
             time_window_df = rolling_window_sampler(
                 self.min_time,
-                self.train_cutoff_time,
+                self.train_max_time,
                 window_size,
                 stride=window_size,
             )
@@ -144,7 +162,7 @@ class Dataset:
             assert window_size is not None
             # default sampler
             time_window_df = one_window_sampler(
-                self.train_cutoff_time,
+                self.train_max_time,
                 window_size,
             )
 
@@ -156,12 +174,13 @@ class Dataset:
 
         task = self.tasks[task_name]
         time_window_df = one_window_sampler(
-            self.val_cutoff_time,
+            self.val_max_time,
             window_size,
         )
         table = task.make_table(self._db, time_window_df)
 
         # hide the label information
-        table.drop(columns=[task.target_col])
-
+        df = table.df
+        df.drop(columns=[task.target_col], inplace=True)
+        table.df = df
         return table

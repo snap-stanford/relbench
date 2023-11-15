@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 import os
 from typing_extensions import Self
+from typing import Union, List
 
 import pandas as pd
 
@@ -24,10 +25,12 @@ class Task:
         self,
         target_col: str,
         task_type: TaskType,
-        metrics: list[str],
+        test_time_window_sizes: List[int],
+        metrics: List[str],
     ) -> None:
         self.target_col = target_col
         self.task_type = task_type
+        self.test_time_window_sizes = test_time_window_sizes
         self.metrics = metrics
 
     def validate(self) -> bool:
@@ -35,13 +38,13 @@ class Task:
 
         raise NotImplementedError
 
-    def save(self, path: str | os.PathLike) -> None:
+    def save(self, path: Union[str, os.PathLike]) -> None:
         r"""Saves the task."""
 
         raise NotImplementedError
 
     @staticmethod
-    def load(self, path: str | os.PathLike) -> Self:
+    def load(self, path: Union[str, os.PathLike]) -> Self:
         r"""Loads a task."""
 
         raise NotImplementedError

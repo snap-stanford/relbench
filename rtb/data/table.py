@@ -1,6 +1,5 @@
 import copy
 from dataclasses import dataclass
-from enum import Enum
 import os
 from pathlib import Path
 from typing import Dict, Union, Optional, Tuple
@@ -12,48 +11,23 @@ import pyarrow.parquet as pq
 import json
 
 
-class SemanticType(Enum):
-    r"""The semantic type of a database column."""
-
-    NUMERICAL = "numerical"
-    CATEGORICAL = "categorical"
-    MULTI_CATEGORICAL = "multi_categorical"
-    TEXT = "text"
-    IMAGE = "image"
-    TIME = "time"  # if PyF does not support map TIME to numerical stype
-
-
-import os
-import pandas as pd
-
-
 class Table:
     r"""A table in a database."""
 
     def __init__(
         self,
         df: pd.DataFrame,
-        feat_cols: dict[str, SemanticType],
-        fkeys: dict[str, str],
-        pkey: str | None,
-        time_col: str | None = None,
+        fkeys: Dict[str, str],
+        pkey_col: Union[str, None],
+        time_col: Union[str, None] = None,
     ):
         self.df = df
-        self.feat_cols = feat_cols
         self.fkeys = fkeys
-        self.pkey = pkey
+        self.pkey_col = pkey_col
         self.time_col = time_col
 
-        # Check if time_col is a timestamp column, if not convert it
-        if self.time_col:
-            if not pd.api.types.is_datetime64_any_dtype(self.df[self.time_col]):
-                self.df[self.time_col] = pd.to_datetime(self.df[self.time_col])
-
     def __repr__(self):
-        return (
-            f"Table(df={self.df.head()}, feat_cols={self.feat_cols}, fkeys={self.fkeys}, "
-            f"pkey={self.pkey}, time_col={self.time_col})"
-        )
+        return f"Table(df=\n{self.df},\nfkeys={self.fkeys},\npkey_col={self.pkey_col},\ntime_col={self.time_col})"
 
     def __len__(self) -> int:
         """Returns the number of rows in the table (DataFrame)."""
@@ -61,13 +35,9 @@ class Table:
 
     def validate(self) -> bool:
         r"""Validate the table."""
-        # Check if pkey exists
-        if self.pkey and self.pkey not in self.df.columns:
+        # Check if pkey_col exists
+        if self.pkey_col and self.pkey_col not in self.df.columns:
             return False
-        # Check if feat_cols exist
-        for col in self.feat_cols:
-            if col not in self.df.columns:
-                return False
         # Check if fkeys columns exist
         for col in self.fkeys:
             if col not in self.df.columns:
@@ -79,22 +49,22 @@ class Table:
         parquet metadata."""
         assert str(path).endswith(".parquet")
         metadata = {
-            # convert SemanticType to string
-            "feat_cols": {k: v.name for k, v in self.feat_cols.items()},
             "fkeys": self.fkeys,
-            "pkey": self.pkey,
+            "pkey_col": self.pkey_col,
             "time_col": self.time_col,
         }
 
         # Convert DataFrame to a PyArrow Table
-        table = pa.Table.from_pandas(self.df)
+        table = pa.Table.from_pandas(self.df, preserve_index=False)
 
         # Add metadata to the PyArrow Table
         metadata_bytes = {
             key: json.dumps(value).encode("utf-8") for key, value in metadata.items()
         }
-        # XXX: instead of replacing metadata, we should add to it
-        table = table.replace_schema_metadata(metadata_bytes)
+
+        table = table.replace_schema_metadata(
+            {**table.schema.metadata, **metadata_bytes}
+        )
 
         # Write the PyArrow Table to a Parquet file using pyarrow.parquet
         Path(path).parent.mkdir(parents=True, exist_ok=True)
@@ -114,13 +84,12 @@ class Table:
         metadata = {
             key.decode("utf-8"): json.loads(value.decode("utf-8"))
             for key, value in metadata_bytes.items()
+            if key in [b"fkeys", b"pkey_col", b"time_col"]
         }
         return cls(
             df=df,
-            # convert string to SemanticType
-            feat_cols={k: SemanticType[v] for k, v in metadata["feat_cols"].items()},
             fkeys=metadata["fkeys"],
-            pkey=metadata["pkey"],
+            pkey_col=metadata["pkey_col"],
             time_col=metadata["time_col"],
         )
 
@@ -131,11 +100,12 @@ class Table:
             return self
 
         new_table = copy.copy(self)
-        new_table.df = new_table.df.query(f"{self.time_col} <= {time_stamp}")
-
+        df = new_table.df
+        df = df[df[self.time_col] <= time_stamp]
+        new_table.df = df
         return new_table
 
-    def get_time_range(self) -> tuple[int, int]:
+    def get_time_range(self) -> Tuple[int, int]:
         r"""Returns the earliest and latest timestamp in the table."""
 
         assert self.time_col is not None
