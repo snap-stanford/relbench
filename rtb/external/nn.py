@@ -78,13 +78,17 @@ class GraphSAGE(torch.nn.Module):
 
         self.norms = torch.nn.ModuleList()
         for _ in range(num_layers):
-            self.norms.append(LayerNorm(channels, mode="node"))
+            norm_dict = torch.nn.ModuleDict()
+            for node_type in node_types:
+                norm_dict[node_type] = LayerNorm(channels, mode="node")
+            self.norms.append(norm_dict)
 
     def reset_parameters(self):
         for conv in self.convs:
             conv.reset_parameters()
-        for norm in self.norms:
-            norm.reset_parameters()
+        for norm_dict in self.norms:
+            for norm in norm_dict.values():
+                norm.reset_parameters()
 
     def forward(
         self,
@@ -93,7 +97,7 @@ class GraphSAGE(torch.nn.Module):
         num_sampled_nodes_dict: Optional[Dict[NodeType, List[int]]] = None,
         num_sampled_edges_dict: Optional[Dict[EdgeType, List[int]]] = None,
     ) -> Dict[NodeType, Tensor]:
-        for i, conv in enumerate(self.convs):
+        for i, (conv, norm_dict) in enumerate(zip(self.convs, self.norms)):
             # Trim graph and features to only hold required data per layer:
             if num_sampled_nodes_dict is not None:
                 assert num_sampled_edges_dict is not None
@@ -106,6 +110,7 @@ class GraphSAGE(torch.nn.Module):
                 )
 
             x_dict = conv(x_dict, edge_index_dict)
+            x_dict = {key: norm_dict[key](x) for key, x in x_dict.items()}
             x_dict = {key: x.relu() for key, x in x_dict.items()}
 
         return x_dict
