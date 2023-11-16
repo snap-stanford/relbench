@@ -3,9 +3,16 @@ from typing import Any, Dict, List, Tuple, Union
 import torch
 from rtb.data.database import Database
 from torch_frame import stype
+from torch_frame.config import TextEmbedderConfig
 from torch_frame.data import Dataset, StatType
 from torch_geometric.data import Batch, HeteroData
 from torch_geometric.utils import sort_edge_index
+
+
+# TODO: fix
+def dummy_text_embedder(input: List[str]) -> torch.Tensor:
+    r"""Dummy text embedder."""
+    return torch.rand(len(input), 768)
 
 
 def make_pkey_fkey_graph(
@@ -34,6 +41,8 @@ def make_pkey_fkey_graph(
         dataset = Dataset(
             df=table.df,
             col_to_stype=col_to_stype_dict[table_name],
+            # TODO: fix
+            text_embedder_cfg=TextEmbedderConfig(text_embedder=dummy_text_embedder),
         ).materialize()
 
         data[table_name].tf = dataset.tensor_frame

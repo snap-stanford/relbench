@@ -26,7 +26,8 @@ dependencies=[
 [project.optional-dependencies]
 example=[
 	"torch",
-	"pytorch_frame",
+	# TODO: revert to non-git
+	"pytorch_frame@git+https://github.com/pyg-team/pytorch-frame",
 	"torch_geometric",
 ]
 test=[
