@@ -2,7 +2,7 @@ import os
 import shutil
 import time
 from pathlib import Path
-from typing import Any, Dict, Union, Optional
+from typing import Any, Dict, Union, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -19,7 +19,9 @@ class Dataset:
     # name of dataset, to be specified by subclass
     name: str
 
-    def __init__(self, root: str | os.PathLike, process=False, download=False) -> None:
+    def __init__(
+        self, root: Union[str, os.PathLike], process=False, download=False
+    ) -> None:
         r"""Initializes the dataset.
 
         process=True wil force pre-processing data from raw files.
@@ -113,13 +115,13 @@ class Dataset:
             f")"
         )
 
-    def get_tasks(self) -> dict[str, Task]:
+    def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset. To be implemented
         by subclass."""
 
         raise NotImplementedError
 
-    def get_cutoff_times(self) -> tuple[pd.Timestamp, pd.Timestamp]:
+    def get_cutoff_times(self) -> Tuple[pd.Timestamp, pd.Timestamp]:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
@@ -127,7 +129,7 @@ class Dataset:
         val_max_time = self.min_time + 0.9 * (self.max_time - self.min_time)
         return train_max_time, val_max_time
 
-    def download_raw(self, path: str | os.PathLike) -> None:
+    def download_raw(self, path: Union[str, os.PathLike]) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by
         subclass."""
 

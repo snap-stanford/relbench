@@ -1,6 +1,6 @@
 import os
 
-from typing import Dict
+from typing import Dict, Tuple
 import pandas as pd
 
 from rtb.data.table import Table
@@ -343,7 +343,7 @@ class GrantDataset(Dataset):
 
         return Database(tables)
 
-    def get_cutoff_times(self) -> tuple[pd.Timestamp, pd.Timestamp]:
+    def get_cutoff_times(self) -> Tuple[pd.Timestamp, pd.Timestamp]:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 

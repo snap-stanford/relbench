@@ -119,7 +119,7 @@ class ProductDataset(Dataset):
 
     def __init__(
         self,
-        root: str | os.PathLike,
+        root: Union[str, os.PathLike],
         process=False,
         category: str = "books",
         use_5_core: bool = True,

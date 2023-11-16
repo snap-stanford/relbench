@@ -40,8 +40,9 @@ class FakeProductDataset(Dataset):
         product_df = pd.DataFrame(
             {
                 "product_id": [f"product_id_{i}" for i in range(num_products)],
-                "category": [None, [], ["toy", "health"]] * (num_products // 3),
-                "title": ["title_1", "title_2", "title_3"] * (num_products // 3),
+                # TODO: add when these are supported in the model side
+                # "category": [None, [], ["toy", "health"]] * (num_products // 3),
+                # "title": ["title_1", "title_2", "title_3"] * (num_products // 3),
                 "price": np.random.rand(num_products) * 10,
             }
         )
@@ -99,16 +100,19 @@ class FakeProductDataset(Dataset):
 
         stype_dict: Dict[str, Dict[str, Any]] = {}
         stype_dict["product"] = {
-            "category": stype.categorical,
+            # TODO: add when these are supported in the model side
+            # "category": stype.multicategorical,
+            # "title": stype.text_embedded,
+            "price": stype.numerical,
         }
         stype_dict["customer"] = {
             "age": stype.numerical,
             "gender": stype.categorical,
         }
-        stype_dict["transaction"] = {
+        stype_dict["review"] = {
             # TODO: add when timestamp gets supported in torch-frame
-            # "timestamp": stype.timestamp,
-            "price": stype.numerical,
+            # "review_time": stype.timestamp,
+            "rating": stype.numerical,
         }
 
         return stype_dict
