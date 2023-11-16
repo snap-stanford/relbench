@@ -6,12 +6,13 @@ from torch_frame import stype
 from torch_frame.data import Dataset, StatType
 from torch_geometric.data import Batch, HeteroData
 from torch_geometric.utils import sort_edge_index
+from torch_geometric.typing import NodeType
 
 
 def make_pkey_fkey_graph(
     db: Database,
     col_to_stype_dict: Dict[str, Dict[str, stype]],
-) -> Tuple[HeteroData, Dict[str, Dict[str, Dict[StatType, Any]]]]:
+) -> Tuple[HeteroData, Dict[str, Dict[NodeType, Dict[StatType, Any]]]]:
     r"""Given a :class:`Database` object, construct a heterogeneous graph with
     primary-foreign key relationships, together with the column stats of each
     table.
@@ -24,8 +25,8 @@ def make_pkey_fkey_graph(
     Returns:
         HeteroData: The heterogeneous :class:`PyG` object with
             :class:`TensorFrame` feature.
-        Dict[str, Dict[str, Dict[StatType, Any]]]: Column stats dictionary,
-            mapping table name into column stats.
+        Dict[NodeType, Dict[str, Dict[StatType, Any]]]: Column stats dictionary,
+            mapping table name (node type) into column stats.
     """
     data = HeteroData()
     node_to_col_stats = {}
