@@ -23,9 +23,7 @@ def make_pkey_fkey_graph(
 
     Returns:
         HeteroData: The heterogeneous :class:`PyG` object with
-            :class:`TensorFrame` feature.
-        Dict[NodeType, Dict[str, Dict[StatType, Any]]]: Column stats dictionary,
-            mapping table name (node type) into column stats.
+            :class:`TensorFrame` feature..
     """
     data = HeteroData()
 
