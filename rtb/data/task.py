@@ -29,6 +29,24 @@ class Task:
         window_sizes: List[int],
         metrics: List[str],
     ) -> None:
+        r"""
+
+        input_cols and target_col are explicit because the task table may
+        contain extra columns with metadata for analysis or other purposes. To
+        avoid possibility of info leakage, in the test table only the
+        input_cols will be returned.
+
+        Also, having input_cols explicit makes it easier to understand the task
+        (manually or programmatically) for the user.
+
+        Args:
+            input_cols: columns to use as input
+            target_col: column to use as target
+            task_type: type of task
+            window_sizes: window sizes used for this task in our benchmark
+            metrics: metrics used for this task in our benchmark
+        """
+
         # columns to use as input
         # only these columns will be kept in the test table
         self.input_cols = input_cols
