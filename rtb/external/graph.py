@@ -1,18 +1,17 @@
-from typing import Any, Dict, List, Tuple, Union
+from typing import Dict, List, Union
 
 import torch
 from rtb.data.database import Database
 from torch_frame import stype
-from torch_frame.data import Dataset, StatType
+from torch_frame.data import Dataset
 from torch_geometric.data import Batch, HeteroData
 from torch_geometric.utils import sort_edge_index
-from torch_geometric.typing import NodeType
 
 
 def make_pkey_fkey_graph(
     db: Database,
     col_to_stype_dict: Dict[str, Dict[str, stype]],
-) -> Tuple[HeteroData, Dict[str, Dict[NodeType, Dict[StatType, Any]]]]:
+) -> HeteroData:
     r"""Given a :class:`Database` object, construct a heterogeneous graph with
     primary-foreign key relationships, together with the column stats of each
     table.
@@ -29,7 +28,6 @@ def make_pkey_fkey_graph(
             mapping table name (node type) into column stats.
     """
     data = HeteroData()
-    node_to_col_stats = {}
 
     for table_name, table in db.tables.items():
         # Materialize the tables into tensor frames:
@@ -39,7 +37,7 @@ def make_pkey_fkey_graph(
         ).materialize()
 
         data[table_name].tf = dataset.tensor_frame
-        node_to_col_stats[table_name] = dataset.col_stats
+        data[table_name].col_stats = dataset.col_stats
 
         # Add time attribute:
         if table.time_col is not None:
@@ -67,7 +65,7 @@ def make_pkey_fkey_graph(
             edge_type = (pkey_table_name, f"p2f_{fkey_name}", table_name)
             data[edge_type].edge_index = edge_index
 
-    return data, node_to_col_stats
+    return data
 
 
 class AddTargetLabelTransform:

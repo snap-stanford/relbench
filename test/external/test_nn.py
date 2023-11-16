@@ -6,7 +6,7 @@ from rtb.external.nn import GraphSAGE, HeteroEncoder
 def test_train_fake_ecommerce_dataset(tmp_path):
     dataset = FakeEcommerceDataset(root=tmp_path)
 
-    data, node_to_col_stats = make_pkey_fkey_graph(
+    data = make_pkey_fkey_graph(
         dataset.db_train,
         dataset.get_stype_proposal(),
     )
@@ -14,7 +14,7 @@ def test_train_fake_ecommerce_dataset(tmp_path):
         node_type: data[node_type].tf.col_names_dict for node_type in data.node_types
     }
 
-    encoder = HeteroEncoder(64, node_to_col_names_dict, node_to_col_stats)
+    encoder = HeteroEncoder(64, node_to_col_names_dict, data.col_stats_dict)
     gnn = GraphSAGE(data.node_types, data.edge_types, 64)
 
     x_dict = encoder(data.tf_dict)

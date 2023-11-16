@@ -19,9 +19,6 @@ class HeteroEncoder(torch.nn.Module):
         node_to_col_names_dict (Dict[NodeType, Dict[torch_frame.stype, List[str]]]):
             A dictionary mapping from node type to column names dictionary
             compatible to PyTorch Frame.
-        node_to_col_stats (Dict[NodeType, Dict[str, Dict[StatType, Any]]]):
-            A dictionary mapping from node type to col stats compatible to
-            PyTorch Frame.
         torch_frame_model_cls: Model class for PyTorch Frame. The object should
             take :class:`TensorFrame` object as input and output :obj:`channels`
             dimensional embeddings. Default to :class:`torch_frame.nn.ResNet`.

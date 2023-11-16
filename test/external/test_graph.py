@@ -6,7 +6,7 @@ from torch_frame import TensorFrame
 def test_make_pkey_fkey_graph(tmp_path):
     dataset = FakeEcommerceDataset(root=tmp_path)
 
-    data, _ = make_pkey_fkey_graph(
+    data = make_pkey_fkey_graph(
         dataset.db_train,
         dataset.get_stype_proposal(),
     )
