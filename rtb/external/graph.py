@@ -83,7 +83,7 @@ def make_pkey_fkey_graph(
     return data
 
 
-class AttachTarget:
+class AttachTargetTransform:
     r"""Adds the target label to the heterogeneous mini-batch.
     The batch consists of disjoins subgraphs loaded via temporal sampling.
     The same input node can occur twice with different timestamps, and thus
@@ -104,7 +104,7 @@ class TrainTableInput(NamedTuple):
     nodes: Tuple[NodeType, Tensor]
     time: Optional[Tensor]
     target: Optional[Tensor]
-    transform: Optional[AttachTarget]
+    transform: Optional[AttachTargetTransform]
 
 
 def get_train_table_input(
@@ -122,12 +122,12 @@ def get_train_table_input(
         time = to_unix_time(train_table.df[train_table.time_col])
 
     target: Optional[Tensor] = None
-    transform: Optional[AttachTarget] = None
+    transform: Optional[AttachTargetTransform] = None
     if target_col in train_table.df:
         target = torch.from_numpy(train_table.df[target_col].values)
         if target_dtype is not None:
             target = target.to(target_dtype)
-        transform = AttachTarget(table_name, target)
+        transform = AttachTargetTransform(table_name, target)
 
     return TrainTableInput(
         nodes=(table_name, nodes),
