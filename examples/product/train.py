@@ -12,7 +12,7 @@ from rtb.datasets import get_dataset
 
 
 class Net(torch.nn.Module):
-    def __init__(self, node_col_stats, node_col_names_dict, hetero_metadata):
+    def __init__(self, node_col_stats, node_to_col_names_dict, hetero_metadata):
         super().__init__()
 
         # make node encoders (tabular encoders)
@@ -23,7 +23,7 @@ class Net(torch.nn.Module):
                 out_channels=64,
                 num_layers=4,
                 col_stats=node_col_stats[name],
-                col_names_dict=node_col_names_dict[name],
+                col_names_dict=node_to_col_names_dict[name],
             )
 
         # make hetero GNN
@@ -66,18 +66,18 @@ def main():
 
     # important: node col stats should be computed only over the train set
     node_col_stats = {}
-    node_col_names_dict = {}
+    node_to_col_names_dict = {}
     for name, table in dset.db_train.tables:
         pyf_dataset = rtb.utils.to_pyf_dataset(table)
         node_col_stats[name] = pyf_dataset.col_stats
         # XXX: col_names_dict is not a pyf_dataset attribute, but maybe should be?
-        node_col_names_dict[name] = pyf_dataset.col_names_dict
+        node_to_col_names_dict[name] = pyf_dataset.col_names_dict
 
     # make graph only for the train snapshot for safety
     data = rtb.utils.make_graph(dset.db_train)
     net = Net(
         node_col_stats=node_col_stats,
-        node_col_names_dict=node_col_names_dict,
+        node_to_col_names_dict=node_to_col_names_dict,
         hetero_metadata=data.metadata(),
     )
 

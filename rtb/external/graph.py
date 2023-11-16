@@ -28,6 +28,7 @@ def make_pkey_fkey_graph(
             mapping table name into column stats.
     """
     data = HeteroData()
+    node_to_col_stats = {}
 
     for table_name, table in db.tables.items():
         # Materialize the tables into tensor frames:
@@ -37,7 +38,7 @@ def make_pkey_fkey_graph(
         ).materialize()
 
         data[table_name].tf = dataset.tensor_frame
-        data[table_name].col_stats = dataset.col_stats
+        node_to_col_stats[table_name] = dataset.col_stats
 
         # Add time attribute:
         if table.time_col is not None:
@@ -65,7 +66,7 @@ def make_pkey_fkey_graph(
             edge_type = (pkey_table_name, f"p2f_{fkey_name}", table_name)
             data[edge_type].edge_index = edge_index
 
-    return data
+    return data, node_to_col_stats
 
 
 class AddTargetLabelTransform:

@@ -8,36 +8,54 @@ from torch_geometric.nn import HeteroConv, LayerNorm, SAGEConv
 from torch_geometric.typing import EdgeType, NodeType
 from torch_geometric.utils import trim_to_layer
 
+from torch_frame.nn.models import ResNet
+
 
 class HeteroEncoder(torch.nn.Module):
+    r"""HeteroEncoder based on PyTorch Frame.
+
+    Args:
+        torch (_type_): _description_
+    """
+
     def __init__(
         self,
         channels: int,
-        col_names_dict: Dict[NodeType, Dict[torch_frame.stype, List[str]]],
-        col_stats_dict: Dict[NodeType, Dict[str, Dict[StatType, Any]]],
+        node_to_col_names_dict: Dict[NodeType, Dict[torch_frame.stype, List[str]]],
+        node_to_col_stats: Dict[NodeType, Dict[str, Dict[StatType, Any]]],
+        torch_frame_model_cls=ResNet,
+        torch_frame_model_kwargs: Dict[str, Any] = {
+            "channels": 128,
+            "num_layers": 4,
+        },
+        default_stype_encoder_cls_kwargs: Dict[torch_frame.stype, Any] = {
+            torch_frame.categorical: (torch_frame.nn.EmbeddingEncoder, {}),
+            torch_frame.numerical: (torch_frame.nn.LinearEncoder, {}),
+            torch_frame.multicategorical: (
+                torch_frame.nn.MultiCategoricalEmbeddingEncoder,
+                {},
+            ),
+        },
     ):
         super().__init__()
 
         self.encoders = torch.nn.ModuleDict()
 
-        for node_type in col_names_dict.keys():
-            encoders = {
-                torch_frame.categorical: torch_frame.nn.EmbeddingEncoder(),
-                torch_frame.numerical: torch_frame.nn.LinearEncoder(),
+        for node_type in node_to_col_names_dict.keys():
+            stype_encoder_dict = {
+                stype: default_stype_encoder_cls_kwargs[stype][0](
+                    **default_stype_encoder_cls_kwargs[stype][1]
+                )
+                for stype in node_to_col_names_dict[node_type].keys()
             }
-            encoders = {
-                stype: encoders[stype] for stype in col_names_dict[node_type].keys()
-            }
-
-            self.encoders[node_type] = torch_frame.nn.StypeWiseFeatureEncoder(
+            torch_frame_model = torch_frame_model_cls(
+                **torch_frame_model_kwargs,
                 out_channels=channels,
-                col_stats=col_stats_dict[node_type],
-                col_names_dict=col_names_dict[node_type],
-                stype_encoder_dict=encoders,
+                col_stats=node_to_col_stats[node_type],
+                col_names_dict=node_to_col_names_dict[node_type],
+                stype_encoder_dict=stype_encoder_dict,
             )
-
-            # TODO Add conv+decoder
-            # TODO Add relative time
+            self.encoders[node_type] = torch_frame_model
 
     def reset_parameters(self):
         for encoder in self.encoders.values():
@@ -48,10 +66,8 @@ class HeteroEncoder(torch.nn.Module):
         tf_dict: Dict[NodeType, torch_frame.TensorFrame],
     ) -> Dict[NodeType, Tensor]:
         x_dict = {
-            node_type: self.encoders[node_type](tf)[0]
-            for node_type, tf in tf_dict.items()
+            node_type: self.encoders[node_type](tf) for node_type, tf in tf_dict.items()
         }
-        x_dict = {node_type: x.mean(dim=1) for node_type, x in x_dict.items()}
         return x_dict
 
 
