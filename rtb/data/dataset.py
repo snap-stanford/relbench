@@ -2,9 +2,8 @@ import os
 import shutil
 import time
 from pathlib import Path
-from typing import Any, Dict, Union, Optional
+from typing import Any, Dict, Optional
 
-import numpy as np
 import pandas as pd
 from rtb.data.database import Database
 from rtb.data.table import Table
@@ -38,20 +37,22 @@ class Dataset:
             raw_path = f"{root}/{self.name}/raw"
             if download or not Path(f"{raw_path}/done").exists():
                 self.download_raw(raw_path)
-                Path(f"{raw_path}/done").touch()
+                # TODO: revert back
+                # Path(f"{raw_path}/done").touch()
 
-            # delete processed db dir if exists to avoid possibility of corruption
+            # delete processed db dir if exists to avoid possibility of
+            # corruption
             shutil.rmtree(process_path, ignore_errors=True)
 
             # process db
-            print(f"processing db...")
+            print("processing db...")
             tic = time.time()
             db = self.process()
             toc = time.time()
             print(f"processing db took {toc - tic:.2f} seconds.")
 
             # standardize db
-            print(f"reindexing pkeys and fkeys...")
+            print("reindexing pkeys and fkeys...")
             tic = time.time()
             db = self.reindex_pkeys_and_fkeys(db)
             toc = time.time()

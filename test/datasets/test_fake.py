@@ -14,7 +14,7 @@ def test_fake_ecommerce_dataset(tmp_path):
         ")"
     )
 
-    window_size = dataset.tasks["ltv"].test_time_window_sizes[0]
+    window_size = dataset.tasks["ltv"].window_sizes[0]
     train_table = dataset.make_train_table("ltv", window_size)
     val_table = dataset.make_val_table("ltv", window_size)
     test_table = dataset.make_test_table("ltv", window_size)

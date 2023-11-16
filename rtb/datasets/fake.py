@@ -19,7 +19,7 @@ class LTV(Task):
         super().__init__(
             target_col="ltv",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta("1W")],
+            window_sizes=[pd.Timedelta("1W")],
             metrics=["mse", "smape"],
         )
 
@@ -72,14 +72,15 @@ class FakeEcommerceDataset(Dataset):
 
     name = "rtb-fake-ecommerce"
 
-    def __init__(self, root: Union[str, os.PathLike], process: bool = False) -> None:
+    def __init__(self, root: Union[str, os.PathLike], process: bool = True) -> None:
         super().__init__(root, process)
 
     def get_tasks(self) -> Dict[str, Task]:
         return {"ltv": LTV()}
 
-    def download(self, url: str, path: Union[str, os.PathLike]) -> None:
-        pass
+    def download_raw(self, path: str | os.PathLike) -> None:
+        r"""Downloads the raw data to the path directory. To be implemented by
+        subclass."""
 
     def process(self) -> Database:
         num_products = 30
