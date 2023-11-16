@@ -1,12 +1,20 @@
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
+import pandas as pd
 import torch
-from rtb.data.database import Database
+from rtb.data import Database, Table
+from torch import Tensor
 from torch_frame import stype
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.data import Dataset, StatType
-from torch_geometric.data import Batch, HeteroData
-from torch_geometric.utils import sort_edge_index
+from torch_geometric.data import HeteroData
+from torch_geometric.typing import NodeType
+
+
+def to_unix_time(ser: pd.Series) -> Tensor:
+    r"""Converts a :class:`pandas.Timestamp` series to UNIX timestamp
+    (in seconds)."""
+    return torch.from_numpy(ser.astype(int).values) // 10**9
 
 
 # TODO: fix
@@ -50,8 +58,7 @@ def make_pkey_fkey_graph(
 
         # Add time attribute:
         if table.time_col is not None:
-            time = table.df[table.time_col].astype(int).values / 10**9
-            data[table_name].time = torch.from_numpy(time)
+            data[table_name].time = to_unix_time(table.df[table.time_col])
 
         # Add edges:
         for fkey_name, pkey_table_name in table.fkey_col_to_pkey_table.items():
@@ -65,7 +72,6 @@ def make_pkey_fkey_graph(
 
             # fkey -> pkey edges
             edge_index = torch.stack([fkey_index, pkey_index], dim=0)
-            edge_index = sort_edge_index(edge_index, sort_by_row=False)
             edge_type = (table_name, f"f2p_{fkey_name}", pkey_table_name)
             data[edge_type].edge_index = edge_index
 
@@ -77,16 +83,55 @@ def make_pkey_fkey_graph(
     return data
 
 
-class AddTargetLabelTransform:
-    r"""Adds the target label to the batch. The batch consists of disjoint
-    subgraphs loaded via temporal sampling. The same input node can occur twice
-    with different timestamps, and thus different subgraphs and labels. Hence
-    labels cannot be stored in the Data object directly, and must be attached
-    to the batch after the batch is created."""
+class AttachTarget:
+    r"""Adds the target label to the heterogeneous mini-batch.
+    The batch consists of disjoins subgraphs loaded via temporal sampling.
+    The same input node can occur twice with different timestamps, and thus
+    different subgraphs and labels. Hence labels cannot be stored in the graph
+    object directly, and must be attached to the batch after the batch is
+    created."""
 
-    def __init__(self, labels: List[Union[int, float]]):
-        self.labels = torch.tensor(labels)
+    def __init__(self, entity: str, target: Tensor):
+        self.entity = entity
+        self.target = target
 
-    def __call__(self, batch: Batch) -> Batch:
-        batch.y = self.labels[batch.input_id]
+    def __call__(self, batch: HeteroData) -> HeteroData:
+        batch[self.entity].y = self.target[batch[self.entity].input_id]
         return batch
+
+
+class TrainTableInput(NamedTuple):
+    nodes: Tuple[NodeType, Tensor]
+    time: Optional[Tensor]
+    target: Optional[Tensor]
+    transform: Optional[AttachTarget]
+
+
+def get_train_table_input(
+    train_table: Table,
+    target_col: str,
+    target_dtype: Optional[torch.dtype] = None,
+) -> TrainTableInput:
+    assert len(train_table.fkey_col_to_pkey_table) == 1
+    fkey_col, table_name = list(train_table.fkey_col_to_pkey_table.items())[0]
+
+    nodes = torch.from_numpy(train_table.df[fkey_col].values)
+
+    time: Optional[Tensor] = None
+    if train_table.time_col is not None:
+        time = to_unix_time(train_table.df[train_table.time_col])
+
+    target: Optional[Tensor] = None
+    transform: Optional[AttachTarget] = None
+    if target_col in train_table.df:
+        target = torch.from_numpy(train_table.df[target_col].values)
+        if target_dtype is not None:
+            target = target.to(target_dtype)
+        transform = AttachTarget(table_name, target)
+
+    return TrainTableInput(
+        nodes=(table_name, nodes),
+        time=time,
+        target=target,
+        transform=transform,
+    )
