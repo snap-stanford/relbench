@@ -1,9 +1,10 @@
 import torch
+from torch_geometric.loader import NodeLoader
+from torch_geometric.sampler import NeighborSampler
+
 from rtb.datasets import FakeProductDataset
 from rtb.external.graph import get_train_table_input, make_pkey_fkey_graph
 from rtb.external.nn import GraphSAGE, HeteroEncoder
-from torch_geometric.loader import NodeLoader
-from torch_geometric.sampler import NeighborSampler
 
 
 def test_train_fake_product_dataset(tmp_path):

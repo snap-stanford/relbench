@@ -22,7 +22,7 @@ def rolling_window_sampler(
 
     df["window_min_time"] = range(
         # TODO: find a better way to do this
-        start_time,
+        start_time + window_size,  # We need a bit of data to train on
         end_time - window_size,  # window should not overshoot end_time
         stride,
     )
