@@ -20,6 +20,7 @@ class ChurnTask(Task):
 
     def __init__(self):
         super().__init__(
+            input_cols=["window_min_time", "window_max_time", "customer_id"],
             target_col="churn",
             task_type=TaskType.BINARY_CLASSIFICATION,
             window_sizes=[pd.Timedelta("52W")],
@@ -64,6 +65,7 @@ class LTVTask(Task):
 
     def __init__(self):
         super().__init__(
+            input_cols=["window_min_time", "window_max_time", "customer_id"],
             target_col="ltv",
             task_type=TaskType.REGRESSION,
             window_sizes=[pd.Timedelta("52W")],

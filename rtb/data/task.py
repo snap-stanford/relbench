@@ -23,12 +23,16 @@ class Task:
 
     def __init__(
         self,
+        input_cols: List[str],
         target_col: str,
         task_type: TaskType,
         window_sizes: List[int],
         metrics: List[str],
     ) -> None:
-        self.target_col = target_col
+        # columns to use as input
+        # only these columns will be kept in the test table
+        self.input_cols = input_cols
+        self.target_col = target_col  # column to use as target
         self.task_type = task_type
         self.window_sizes = window_sizes
         self.metrics = metrics
