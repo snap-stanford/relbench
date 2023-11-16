@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 
 import torch
 from rtb.data.database import Database
@@ -6,11 +6,13 @@ from torch_frame import stype
 from torch_frame.data import Dataset
 from torch_geometric.data import Batch, HeteroData
 from torch_geometric.utils import sort_edge_index
+from torch_frame.config import TextEmbedderConfig
 
 
 def make_pkey_fkey_graph(
     db: Database,
     col_to_stype_dict: Dict[str, Dict[str, stype]],
+    text_embedder_cfg: Optional[TextEmbedderConfig] = None,
 ) -> HeteroData:
     r"""Given a :class:`Database` object, construct a heterogeneous graph with
     primary-foreign key relationships, together with the column stats of each
@@ -33,6 +35,7 @@ def make_pkey_fkey_graph(
             df=table.df,
             col_to_stype=col_to_stype_dict[table_name],
             col_to_sep=",",
+            text_embedder_cfg=text_embedder_cfg,
         ).materialize()
 
         data[table_name].tf = dataset.tensor_frame
