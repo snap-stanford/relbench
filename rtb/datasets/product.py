@@ -28,6 +28,7 @@ class ChurnTask(Task):
 
     def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
         product = db.tables["product"].df
+        customer = db.tables["customer"].df
         review = db.tables["review"].df
 
         df = duckdb.sql(
@@ -71,6 +72,7 @@ class LTVTask(Task):
 
     def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
         product = db.tables["product"].df
+        customer = db.tables["customer"].df
         review = db.tables["review"].df
 
         df = duckdb.sql(

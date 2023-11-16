@@ -69,12 +69,8 @@ class Dataset:
         else:
             # download
             if download or not Path(f"{process_path}/done").exists():
-                url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
-                # TODO: should be Path(f"{root}/{self.name}/") but that will break
-                # current workflow for grant dataset
-                # TODO: fix it together with a new zip file
-                download_path = download_url(url, root)
-                unzip(download_path, root)
+                self.download_processed(process_path)
+                Path(f"{process_path}/done").touch()
 
             # load database
             self._db = Database.load(process_path)
@@ -86,6 +82,24 @@ class Dataset:
         self.train_max_time, self.val_max_time = self.get_cutoff_times()
 
         self.tasks = self.get_tasks()
+
+    def download_raw(self, path: Union[str, os.PathLike]) -> None:
+        """Downloads the raw data to the path directory. For our
+        datasets, we will download from stanford URL, but we should keep it as
+        a function for Dataset subclasses to override if required."""
+
+        raise NotImplementedError
+
+    def download_processed(self, path: Union[str, os.PathLike]) -> None:
+        """Downloads the processed data to the path directory. For our
+        datasets, we will download from stanford URL, but we should keep it as
+        a function for Dataset subclasses to override if required."""
+        url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
+        # TODO: should be Path(f"{root}/{self.name}/") but that will break
+        # current workflow for grant dataset
+        # TODO: fix it together with a new zip file
+        download_path = download_url(url, root)
+        unzip(download_path, root)
 
     def __repr__(self) -> str:
         return (
@@ -241,8 +255,3 @@ class Dataset:
         df.drop(columns=[task.target_col], inplace=True)
         table.df = df
         return table
-
-    def get_stype_proposal(self) -> Dict[str, Dict[str, Any]]:
-        r"""Returns a proposal of mapping column names to their semantic
-        types, to be further consumed by :obj:`pytorch-frame`."""
-        raise NotImplementedError
