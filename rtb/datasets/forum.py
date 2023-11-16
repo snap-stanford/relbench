@@ -17,7 +17,7 @@ class user_posts_next_three_months(Task):
         super().__init__(
             target_col="num_posts",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta(days=90)],
+            window_sizes=[pd.Timedelta(days=90)],
             metrics=["mse", "smape"],
         )
 
@@ -70,7 +70,7 @@ class comment_scores_next_six_months(Task):
         super().__init__(
             target_col="comment_scores",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta(days=180)],
+            window_sizes=[pd.Timedelta(days=180)],
             metrics=["mse", "smape"],
         )
 
@@ -123,7 +123,7 @@ class post_upvotes_next_week(Task):
         super().__init__(
             target_col="num_upvotes",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta("1W")],
+            window_sizes=[pd.Timedelta("1W")],
             metrics=["mse", "smape"],
         )
 
@@ -179,9 +179,7 @@ class ForumDataset(Dataset):
             "comment_scores_next_six_months": comment_scores_next_six_months(),
             "post_upvotes_next_week": post_upvotes_next_week(),
         }
-        self.tasks_window_size = {
-            i: j.test_time_window_sizes[0] for i, j in tasks.items()
-        }
+        self.tasks_window_size = {i: j.window_sizes[0] for i, j in tasks.items()}
         return tasks
 
     def process(self) -> Database:

@@ -61,7 +61,7 @@ def main():
     toc = time.time()
     print(f"done in {toc - tic:.2f} seconds.")
 
-    window_size = dset.tasks["ltv"].test_time_window_sizes[0]
+    window_size = dset.tasks["ltv"].window_sizes[0]
     print(f"{window_size = }")
 
     # important: node col stats should be computed only over the train set
