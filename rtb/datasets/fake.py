@@ -39,8 +39,8 @@ class FakeProductDataset(Dataset):
         product_df = pd.DataFrame(
             {
                 "product_id": [f"product_id_{i}" for i in range(num_products)],
+                "category": ["", "toy", "health,toy"] * (num_products // 3),
                 # TODO: add when these are supported in the model side
-                # "category": [None, [], ["toy", "health"]] * (num_products // 3),
                 # "title": ["title_1", "title_2", "title_3"] * (num_products // 3),
                 "price": np.random.rand(num_products) * 10,
             }
@@ -100,7 +100,7 @@ class FakeProductDataset(Dataset):
         stype_dict: Dict[str, Dict[str, Any]] = {}
         stype_dict["product"] = {
             # TODO: add when these are supported in the model side
-            # "category": stype.multicategorical,
+            "category": stype.multicategorical,
             # "title": stype.text_embedded,
             "price": stype.numerical,
         }
