@@ -11,61 +11,90 @@ from rtb.data.table import Table
 from rtb.data.database import Database
 from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
+from rtb.utils import download_url, unzip
 
 
-class LTV(Task):
+class ChurnTask(Task):
+    r"""Churn for a customer is 1 if the customer does not review any product
+    in the time window, else 0."""
+
+    def __init__(self):
+        super().__init__(
+            target_col="churn",
+            task_type=TaskType.BINARY_CLASSIFICATION,
+            window_sizes=[pd.Timedelta("52W")],
+            metrics=["auprc"],
+        )
+
+    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
+        product = db.tables["product"].df
+        review = db.tables["review"].df
+
+        df = duckdb.sql(
+            """
+            SELECT
+                window_min_time,
+                window_max_time,
+                customer_id,
+                NOT EXISTS (
+                    SELECT 1
+                    FROM review
+                    WHERE
+                        review.customer_id = customer.customer_id AND
+                        review.review_time BETWEEN window_min_time AND window_max_time
+                ) AS churn
+            FROM
+                time_window_df,
+                customer
+        """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={"customer_id": "customer"},
+            pkey_col=None,
+            time_col="window_min_time",
+        )
+
+
+class LTVTask(Task):
     r"""LTV (life-time value) for a customer is the sum of prices of products
-    that the user reviews in the time_frame."""
+    that the customer reviews in the time window."""
 
     def __init__(self):
         super().__init__(
             target_col="ltv",
             task_type=TaskType.REGRESSION,
-            test_time_window_sizes=[pd.Timedelta("1W")],
-            metrics=["mse", "smape"],
+            window_sizes=[pd.Timedelta("52W")],
+            metrics=["auprc"],
         )
 
     def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
-        r"""Create Task object for LTV."""
-
-        # XXX: If this is not fast enough, we can try using duckdb to query the
-        # parquet files directly.
-
-        # columns in time_window_df: window_min_time, window_max_time
-
-        # XXX: can we directly access tables in the sql string?
         product = db.tables["product"].df
         review = db.tables["review"].df
 
-        # due to query optimization and parallelization,
-        # this should be fast enough
-        # and doing sql queries is also flexible enough to easily implement
-        # a variety of other tasks
         df = duckdb.sql(
-            r"""
+            """
             SELECT
                 window_min_time,
                 window_max_time,
                 customer_id,
-                SUM(price) AS ltv
+                ltv,
+                count
             FROM
                 time_window_df,
+                customer,
                 (
                     SELECT
-                        review_time,
-                        customer_id,
-                        price
-                    FROM
-                        product,
-                        review
+                        COALESCE(SUM(price), 0) as ltv,
+                        COALESCE(COUNT(price), 0) as count
+                    FROM review, product
                     WHERE
-                        product.product_id = review.product_id
-                ) AS tmp
-            WHERE
-                tmp.review_time > time_window_df.window_min_time AND
-                tmp.review_time <= time_window_df.window_max_time
-            GROUP BY customer_id, window_min_time, window_max_time
-            """
+                        review.customer_id = customer.customer_id AND
+                        review.product_id = product.product_id AND
+                        review.review_time BETWEEN window_min_time AND window_max_time
+                )
+        """
         ).df()
 
         return Table(
@@ -79,36 +108,61 @@ class LTV(Task):
 class ProductDataset(Dataset):
     name = "rtb-product"
 
-    # raw file names
-    # product_file_name = "meta_Books.json"
-    # review_file_name = "Books.json"
-    # we use the 5-core version for now
-    # the original has 51M reviews for 35M distinct customers
-    # will have to think/discuss if using that is a good idea
-    # review_file_name = "Books_5.json"
+    cat_to_raw = {
+        "books": "Books",
+        "fashion": "AMAZON_FASHION",
+    }
 
-    product_file_name = "meta_AMAZON_FASHION.json"
-    review_file_name = "AMAZON_FASHION.json"
+    def __init__(
+        self,
+        root: str | os.PathLike,
+        process=False,
+        category: str = "books",
+        use_5_core: bool = True,
+    ):
+        self.category = category
+        self.use_5_core = use_5_core
+
+        self.name = f"{self.__class__.name}/{self.category}{'-5-core' if self.use_5_core else ''}"
+
+        super().__init__(root, process)
 
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""
 
-        return {"ltv": LTV()}
+        return {"ltv": LTVTask(), "churn": ChurnTask()}
 
     # TODO: implement get_cutoff_times()
 
-    def download(self, path: Union[str, os.PathLike]) -> None:
+    def download_raw(self, path: Union[str, os.PathLike]) -> None:
         r"""Download the Amazon dataset raw files from the AWS server and
         decompresses it."""
 
-        raise NotImplementedError
+        raw = self.cat_to_raw[self.category]
+
+        # download review file
+        if self.use_5_core:
+            url = f"https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2/categoryFilesSmall/{raw}_5.json.gz"
+        else:
+            url = f"https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2/categoryFiles/{raw}.json.gz"
+
+        download_path = download_url(url, path)
+        # TODO: this doesn't work, need gunzip
+        unzip(download_path, path)
+
+        # download product file
+        url = f"https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2/categoryFilesSmall/meta_{raw}.json.gz"
+        download_path = download_url(url, path)
+        # TODO: this doesn't work, need gunzip
+        unzip(download_path, path)
 
     def process(self) -> Database:
         r"""Process the raw files into a database."""
 
         ### product table ###
 
-        path = f"{self.root}/{self.name}/raw/{self.product_file_name}"
+        file_name = f"meta_{self.cat_to_raw[self.category]}.json"
+        path = f"{self.root}/{self.name}/raw/{file_name}"
         print(f"reading product info from {path}...")
         tic = time.time()
         ptable = pa.json.read_json(
@@ -142,14 +196,14 @@ class ProductDataset(Dataset):
         # asin is not intuitive / recognizable
         pdf.rename(columns={"asin": "product_id"}, inplace=True)
 
-        # remove products with missing price
-        pdf = pdf.query("price != '' and not price.isnull()")
+        # somehow the raw data has duplicate product_id's
+        pdf.drop_duplicates(subset=["product_id"], inplace=True)
 
         # price is like "$x,xxx.xx", "$xx.xx", or "$xx.xx - $xx.xx", or garbage html
         # if it's a range, we take the first value
         pdf.loc[:, "price"] = pdf["price"].apply(
             lambda x: None
-            if x is None or x[0] != "$"
+            if x is None or x == "" or x[0] != "$"
             else float(x.split(" ")[0][1:].replace(",", ""))
         )
 
@@ -170,7 +224,10 @@ class ProductDataset(Dataset):
 
         ### review table ###
 
-        path = f"{self.root}/{self.name}/raw/{self.review_file_name}"
+        file_name = (
+            f"{self.cat_to_raw[self.category]}{'_5' if self.use_5_core else ''}.json"
+        )
+        path = f"{self.root}/{self.name}/raw/{file_name}"
         print(f"reading review and customer info from {path}...")
         tic = time.time()
         rtable = pa.json.read_json(
@@ -220,22 +277,24 @@ class ProductDataset(Dataset):
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        # TODO: refactor
-
-        print(f"removing products not in review table (#products={len(pdf)})...")
+        print(f"keeping only products common to product and review tables...")
         tic = time.time()
-        pdf = pd.merge(
-            rdf["product_id"].drop_duplicates(),
-            pdf.drop_duplicates(subset=["product_id"]),
-            on="product_id",
-        )
-        rdf = pd.merge(rdf, pdf[["product_id"]], on="product_id")
-        cdf = rdf[["customer_id", "customer_name"]].drop_duplicates(
-            subset=["customer_id"]
+        plist = list(set(pdf["product_id"]) & set(rdf["product_id"]))
+        pdf.query("product_id == @plist", inplace=True)
+        rdf.query("product_id == @plist", inplace=True)
+        toc = time.time()
+        print(f"done in {toc - tic:.2f} seconds.")
+
+        print(f"extracting customer table...")
+        tic = time.time()
+        cdf = (
+            rdf[["customer_id", "customer_name"]]
+            .drop_duplicates(subset=["customer_id"])
+            .copy()
         )
         rdf.drop(columns=["customer_name"], inplace=True)
         toc = time.time()
-        print(f"done in {toc - tic:.2f} seconds (#products={len(pdf)}).")
+        print(f"done in {toc - tic:.2f} seconds.")
 
         return Database(
             tables={

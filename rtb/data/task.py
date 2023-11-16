@@ -25,12 +25,12 @@ class Task:
         self,
         target_col: str,
         task_type: TaskType,
-        test_time_window_sizes: List[int],
+        window_sizes: List[int],
         metrics: List[str],
     ) -> None:
         self.target_col = target_col
         self.task_type = task_type
-        self.test_time_window_sizes = test_time_window_sizes
+        self.window_sizes = window_sizes
         self.metrics = metrics
 
     def validate(self) -> bool:
@@ -50,6 +50,9 @@ class Task:
         raise NotImplementedError
 
     def make_table(db: Database, time_window_df: pd.DataFrame) -> Table:
-        r"""To be implemented by subclass."""
+        r"""To be implemented by subclass.
+
+        time_window_df should have columns window_min_time and window_max_time,
+        containing timestamps."""
 
         raise NotImplementedError

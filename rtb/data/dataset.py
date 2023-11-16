@@ -1,8 +1,10 @@
 import os
 import shutil
+import time
 from pathlib import Path
 from typing import Any, Dict, Union, Optional
 
+import numpy as np
 import pandas as pd
 from rtb.data.database import Database
 from rtb.data.table import Table
@@ -17,33 +19,66 @@ class Dataset:
     # name of dataset, to be specified by subclass
     name: str
 
-    def __init__(self, root: Union[str, os.PathLike], process: bool = False) -> None:
-        r"""Initializes the dataset."""
+    def __init__(self, root: str | os.PathLike, process=False, download=False) -> None:
+        r"""Initializes the dataset.
+
+        process=True wil force pre-processing data from raw files.
+        download=True will force downloading raw files if process=True, or
+        processed files if process=False.
+
+        By default, tries to download (if required) and use already processed data.
+        """
 
         self.root = root
 
-        # download
-        if not os.path.exists(os.path.join(root, self.name)):
-            url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
-            self.download(url, root)
+        process_path = f"{root}/{self.name}/processed/db"
 
-        path = f"{root}/{self.name}/processed/db"
-        if process or not Path(f"{path}/done").exists():
+        if process:
+            # download
+            raw_path = f"{root}/{self.name}/raw"
+            if download or not Path(f"{raw_path}/done").exists():
+                self.download_raw(raw_path)
+                Path(f"{raw_path}/done").touch()
+
             # delete processed db dir if exists to avoid possibility of corruption
-            shutil.rmtree(path, ignore_errors=True)
+            shutil.rmtree(process_path, ignore_errors=True)
 
-            # process and reindex_pkeys_and_fkeys db
-            db = self.reindex_pkeys_and_fkeys(self.process())
+            # process db
+            print(f"processing db...")
+            tic = time.time()
+            db = self.process()
+            toc = time.time()
+            print(f"processing db took {toc - tic:.2f} seconds.")
+
+            # standardize db
+            print(f"reindexing pkeys and fkeys...")
+            tic = time.time()
+            db = self.reindex_pkeys_and_fkeys(db)
+            toc = time.time()
+            print(f"reindexing pkeys and fkeys took {toc - tic:.2f} seconds.")
 
             # process and reindex_pkeys_and_fkeys are separate because
             # process() is implemented by each subclass, but
             # reindex_pkeys_and_fkeys() is common to all subclasses
 
-            db.save(path)
-            Path(f"{path}/done").touch()
+            db.save(process_path)
+            Path(f"{process_path}/done").touch()
 
-        # load database
-        self._db = Database.load(path)
+            self._db = db
+
+        else:
+            # download
+            if download or not Path(f"{process_path}/done").exists():
+                url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
+                # TODO: should be Path(f"{root}/{self.name}/") but that will break
+                # current workflow for grant dataset
+                # TODO: fix it together with a new zip file
+                download_path = download_url(url, root)
+                unzip(download_path, root)
+
+            # load database
+            self._db = Database.load(process_path)
+
         # we want to keep the database private, because it also contains
         # test information
 
@@ -78,12 +113,11 @@ class Dataset:
         val_max_time = self.min_time + 0.9 * (self.max_time - self.min_time)
         return train_max_time, val_max_time
 
-    def download(self, url: str, path: Union[str, os.PathLike]) -> None:
+    def download_raw(self, path: str | os.PathLike) -> None:
         r"""Downloads the raw data to the path directory. To be implemented by
         subclass."""
 
-        download_path = download_url(url, path)
-        unzip(download_path, path)
+        raise NotImplementedError
 
     def process(self) -> Database:
         r"""Processes the raw data into a database. To be implemented by
@@ -200,6 +234,8 @@ class Dataset:
         )
         table = task.make_table(self._db, time_window_df)
 
+        # TODO: need to hide all other columns
+        # we do add extra columns with meta info for analysis!
         # hide the label information
         df = table.df
         df.drop(columns=[task.target_col], inplace=True)
