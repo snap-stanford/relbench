@@ -19,17 +19,18 @@ class HeteroEncoder(torch.nn.Module):
         node_to_col_names_dict (Dict[NodeType, Dict[torch_frame.stype, List[str]]]):
             A dictionary mapping from node type to column names dictionary
             compatible to PyTorch Frame.
-        torch_frame_model_cls: Model class for PyTorch Frame. The object should
-            take :class:`TensorFrame` object as input and output :obj:`channels`
-            dimensional embeddings. Default to :class:`torch_frame.nn.ResNet`.
-            for now.
-        torch_frame_model_kwargs (Dict[str, Any]): kwargs for the above
-            :class:`torch_frame_model_cls` class. Default to :obj:`kwargs` for
+        torch_frame_model_cls: Model class for PyTorch Frame. The class object
+            takes :class:`TensorFrame` object as input and outputs
+            :obj:`channels`-dimensional embeddings. Default to
             :class:`torch_frame.nn.ResNet`.
+        torch_frame_model_kwargs (Dict[str, Any]): Keyword arguments for
+            :class:`torch_frame_model_cls` class. Default keyword argument is
+            set specific for :class:`torch_frame.nn.ResNet`. Expect it to
+            be changed for different :class:`torch_frame_model_cls`.
         default_stype_encoder_cls_kwargs (Dict[torch_frame.stype, Any]):
             A dictionary mapping from :obj:`torch_frame.stype` object into a
             tuple specifying :class:`torch_frame.nn.StypeEncoder` class and its
-            :obj:`kwargs`.
+            keyword arguments :obj:`kwargs`.
     """
 
     def __init__(
