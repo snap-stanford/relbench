@@ -1,10 +1,10 @@
-from rtb.datasets import FakeEcommerceDataset
+from rtb.datasets import FakeProductDataset
 from rtb.external.graph import make_pkey_fkey_graph
 from rtb.external.nn import GraphSAGE, HeteroEncoder
 
 
-def test_train_fake_ecommerce_dataset(tmp_path):
-    dataset = FakeEcommerceDataset(root=tmp_path)
+def test_train_fake_product_dataset(tmp_path):
+    dataset = FakeProductDataset(root=tmp_path, process=True)
 
     data = make_pkey_fkey_graph(
         dataset.db_train,
@@ -22,5 +22,5 @@ def test_train_fake_ecommerce_dataset(tmp_path):
 
     assert len(x_dict) == 3
     assert x_dict["customer"].size() == (100, 64)
-    assert x_dict["transaction"].size() == (400, 64)
+    assert x_dict["review"].size() == (400, 64)
     assert x_dict["product"].size() == (30, 64)

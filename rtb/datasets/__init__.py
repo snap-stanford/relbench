@@ -1,4 +1,4 @@
-from rtb.datasets.fake import FakeEcommerceDataset
+from rtb.datasets.fake import FakeProductDataset
 from rtb.datasets.forum import ForumDataset
 from rtb.datasets.grant import GrantDataset
 from rtb.datasets.product import ProductDataset
@@ -7,6 +7,8 @@ from rtb.datasets.product import ProductDataset
 def get_dataset(name: str, *args, **kwargs):
     r"""Convenience function to get a dataset by name."""
 
+    if name == FakeProductDataset.name:
+        return FakeProductDataset(*args, **kwargs)
     if name == ProductDataset.name:
         return ProductDataset(*args, **kwargs)
     if name == GrantDataset.name:
@@ -18,7 +20,7 @@ def get_dataset(name: str, *args, **kwargs):
 
 
 __all__ = [
-    "FakeEcommerceDataset",
+    "FakeProductDataset",
     "ForumDataset",
     "GrantDataset",
     "ProductDataset",

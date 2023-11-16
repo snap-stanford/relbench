@@ -15,6 +15,7 @@ class user_posts_next_three_months(Task):
 
     def __init__(self):
         super().__init__(
+            input_cols=["window_min_time", "window_max_time", "OwnerUserId"],
             target_col="num_posts",
             task_type=TaskType.REGRESSION,
             window_sizes=[pd.Timedelta(days=90)],
@@ -68,6 +69,7 @@ class comment_scores_next_six_months(Task):
 
     def __init__(self):
         super().__init__(
+            input_cols=["window_min_time", "window_max_time", "UserId"],
             target_col="comment_scores",
             task_type=TaskType.REGRESSION,
             window_sizes=[pd.Timedelta(days=180)],
@@ -121,6 +123,7 @@ class post_upvotes_next_week(Task):
 
     def __init__(self):
         super().__init__(
+            input_cols=["window_min_time", "window_max_time", "PostId"],
             target_col="num_upvotes",
             task_type=TaskType.REGRESSION,
             window_sizes=[pd.Timedelta("1W")],

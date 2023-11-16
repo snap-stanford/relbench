@@ -1,6 +1,6 @@
 import os
 
-from typing import Dict
+from typing import Dict, Tuple
 import pandas as pd
 
 from rtb.data.table import Table
@@ -15,6 +15,7 @@ class investigator_three_years(Task):
 
     def __init__(self):
         super().__init__(
+            input_cols=["window_min_time", "window_max_time", "email_id"],
             target_col="award_sum",
             task_type=TaskType.REGRESSION,
             window_sizes=[pd.Timedelta(days=3 * 365.25)],
@@ -71,6 +72,7 @@ class institution_one_year(Task):
 
     def __init__(self):
         super().__init__(
+            input_cols=["window_min_time", "window_max_time", "name"],
             target_col="award_sum",
             task_type=TaskType.REGRESSION,
             window_sizes=[pd.Timedelta(days=365.25)],
@@ -125,6 +127,7 @@ class program_three_years(Task):
 
     def __init__(self):
         super().__init__(
+            input_cols=["window_min_time", "window_max_time", "code"],
             target_col="award_sum",
             task_type=TaskType.REGRESSION,
             window_sizes=[pd.Timedelta(days=3 * 365.25)],
@@ -228,13 +231,15 @@ class GrantDataset(Dataset):
         # print('after 1976, length of awards table, ', len(awards)) 415838
 
         ## add pkey columns
-        
-        institution['institution_name'] = institution['name']
-        investigator['email'] = investigator['email_id']
+
+        institution["institution_name"] = institution["name"]
+        investigator["email"] = investigator["email_id"]
 
         ## for each table, drop duplicated pkeys
-        investigator = investigator[investigator.email_id.notnull()].reset_index(drop = True) ## 3 have NaN email_ids, duplicating rows
-        
+        investigator = investigator[investigator.email_id.notnull()].reset_index(
+            drop=True
+        )  ## 3 have NaN email_ids, duplicating rows
+
         tables = {}
 
         tables["foa_info_awards"] = Table(
@@ -338,7 +343,7 @@ class GrantDataset(Dataset):
 
         return Database(tables)
 
-    def get_cutoff_times(self) -> tuple[pd.Timestamp, pd.Timestamp]:
+    def get_cutoff_times(self) -> Tuple[pd.Timestamp, pd.Timestamp]:
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
