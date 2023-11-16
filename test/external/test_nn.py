@@ -6,7 +6,7 @@ from torch_geometric.sampler import NeighborSampler
 
 from rtb.datasets import FakeProductDataset
 from rtb.external.graph import get_train_table_input, make_pkey_fkey_graph
-from rtb.external.nn import GraphSAGE, HeteroEncoder
+from rtb.external.nn import HeteroEncoder, HeteroGraphSAGE
 
 
 def test_train_fake_product_dataset(tmp_path):
@@ -24,7 +24,7 @@ def test_train_fake_product_dataset(tmp_path):
     # Ensure that full-batch model works as expected ##########################
 
     encoder = HeteroEncoder(64, col_names_dict, data.col_stats_dict)
-    gnn = GraphSAGE(data.node_types, data.edge_types, 64)
+    gnn = HeteroGraphSAGE(data.node_types, data.edge_types, 64)
     head = MLP(64, out_channels=1, num_layers=1)
 
     x_dict = encoder(data.tf_dict)
