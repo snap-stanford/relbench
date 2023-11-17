@@ -18,7 +18,8 @@ def test_train_fake_product_dataset(tmp_path):
     )
 
     col_names_dict = {  # TODO Expose as method in `HeteroData`.
-        node_type: data[node_type].tf.col_names_dict for node_type in data.node_types
+        node_type: data[node_type].tf.col_names_dict
+        for node_type in data.node_types
     }
 
     # Ensure that full-batch model works as expected ##########################
@@ -63,9 +64,9 @@ def test_train_fake_product_dataset(tmp_path):
 
         batch = next(iter(loader))
         assert batch["customer"].batch_size == 32
-        assert batch["customer"].seed_time.size() == (32,)
+        assert batch["customer"].seed_time.size() == (32, )
         if i < 2:
-            assert batch["customer"].y.size() == (32,)
+            assert batch["customer"].y.size() == (32, )
 
     # Ensure that mini-batch training works ###################################
 
