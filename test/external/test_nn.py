@@ -35,7 +35,7 @@ def test_train_fake_product_dataset(tmp_path):
 
     assert len(x_dict) == 3
     assert x_dict["customer"].size() == (100, 64)
-    assert x_dict["review"].size() == (500, 64)
+    assert x_dict["review"].size() == (400, 64)
     assert x_dict["product"].size() == (30, 64)
     assert x.size() == (100, 1)
 
