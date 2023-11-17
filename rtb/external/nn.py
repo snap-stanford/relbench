@@ -55,7 +55,7 @@ class HeteroEncoder(torch.nn.Module):
         return x_dict
 
 
-class GraphSAGE(torch.nn.Module):
+class HeteroGraphSAGE(torch.nn.Module):
     def __init__(
         self,
         node_types: List[NodeType],
