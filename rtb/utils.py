@@ -20,11 +20,12 @@ def rolling_window_sampler(
     window_size = int(window_size.total_seconds())
     stride = int(stride.total_seconds())
 
+    # Traverse backwards to operate on the latest available timestamps:
     df["window_min_time"] = range(
         # TODO: find a better way to do this
-        start_time,
         end_time - window_size,  # window should not overshoot end_time
-        stride,
+        start_time + window_size,  # We need a bit of data to train on
+        -stride,
     )
     df["window_max_time"] = df["window_min_time"] + window_size
     df["window_min_time"] = df["window_min_time"].astype("datetime64[s]")
@@ -32,9 +33,8 @@ def rolling_window_sampler(
     return df
 
 
-def one_window_sampler(
-    start_time: pd.Timestamp, window_size: pd.Timestamp
-) -> pd.DataFrame:
+def one_window_sampler(start_time: pd.Timestamp,
+                       window_size: pd.Timestamp) -> pd.DataFrame:
     """Returns a DataFrame with columns window_min_time and window_max_time."""
     start_time = int(start_time.timestamp())
     window_size = int(window_size.total_seconds())
