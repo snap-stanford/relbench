@@ -1,16 +1,15 @@
 import os
 import time
-
 from typing import Dict, Union
+
 import duckdb
 import pandas as pd
 import pyarrow as pa
 import pyarrow.json
-
-from rtb.data.table import Table
 from rtb.data.database import Database
-from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
+from rtb.data.table import Table
+from rtb.data.task import Task, TaskType
 from rtb.utils import download_url, unzip
 
 

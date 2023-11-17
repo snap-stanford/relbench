@@ -2,7 +2,7 @@ import os
 import shutil
 import time
 from pathlib import Path
-from typing import Any, Dict, Union, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -185,6 +185,11 @@ class Dataset:
         return db
 
     @property
+    def db(self) -> Database:
+        r"""The full database. Use with caution to prevent temporal leakage."""
+        return self._db
+
+    @property
     def db_train(self) -> Database:
         return self._db.time_cutoff(self.train_max_time)
 
@@ -205,7 +210,9 @@ class Dataset:
         time_window_df obtained by their sampling strategy."""
 
         if time_window_df is None:
-            assert window_size is not None
+            if window_size is None:
+                window_size = self.tasks[task_name].window_sizes[0]
+
             # default sampler
             time_window_df = rolling_window_sampler(
                 self.min_time,
@@ -230,7 +237,9 @@ class Dataset:
         time_window_df obtained by their sampling strategy."""
 
         if time_window_df is None:
-            assert window_size is not None
+            if window_size is None:
+                window_size = self.tasks[task_name].window_sizes[0]
+
             # default sampler
             time_window_df = one_window_sampler(
                 self.train_max_time,
@@ -240,8 +249,14 @@ class Dataset:
         task = self.tasks[task_name]
         return task.make_table(self.db_val, time_window_df)
 
-    def make_test_table(self, task_name: str, window_size: int) -> Table:
+    def make_test_table(
+        self,
+        task_name: str,
+        window_size: Optional[int] = None,
+    ) -> Table:
         r"""Returns the test table for a task."""
+        if window_size is None:
+            window_size = self.tasks[task_name].window_sizes[0]
 
         task = self.tasks[task_name]
         time_window_df = one_window_sampler(

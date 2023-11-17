@@ -7,7 +7,7 @@ def test_make_pkey_fkey_graph(tmp_path):
     dataset = FakeProductDataset(root=tmp_path, process=True)
 
     data = make_pkey_fkey_graph(
-        dataset.db_train,
+        dataset.db,
         dataset.get_stype_proposal(),
     )
     assert set(data.node_types) == {"customer", "review", "product"}
