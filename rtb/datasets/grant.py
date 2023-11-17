@@ -193,7 +193,7 @@ class GrantDataset(Dataset):
 
     def process(self) -> Database:
         r"""Process the raw files into a database."""
-        path = f"{self.root}/{self.name}/raw/"
+        path = os.path.join(self.root, self.name, 'raw')
         foa_info_awards = pd.read_csv(os.path.join(path, "foa_info_awards.csv"))
         foa_info = pd.read_csv(os.path.join(path, "foa_info.csv"))
         institution_awards = pd.read_csv(os.path.join(path, "institution_awards.csv"))

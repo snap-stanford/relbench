@@ -33,13 +33,16 @@ class Dataset:
 
         self.root = root
 
-        process_path = f"{root}/{self.name}/processed/db"
+        process_path = os.path.join(root, self.name, 'processed', 'db')
+        os.makedirs(process_path, exist_ok=True)
 
         if process:
             # download
-            raw_path = f"{root}/{self.name}/raw"
+            #raw_path = f"{root}/{self.name}/raw"
+            raw_path = os.path.join(root, self.name, 'raw')
+            os.makedirs(raw_path, exist_ok=True)
             if download or not Path(f"{raw_path}/done").exists():
-                self.download_raw(raw_path)
+                self.download_raw(os.path.join(root, self.name))
                 Path(f"{raw_path}/done").touch()
 
             # delete processed db dir if exists to avoid possibility of corruption
@@ -71,7 +74,7 @@ class Dataset:
         else:
             # download
             if download or not Path(f"{process_path}/done").exists():
-                self.download_processed(process_path)
+                self.download_processed(os.path.join(root, self.name, 'processed'))
                 Path(f"{process_path}/done").touch()
 
             # load database
@@ -90,18 +93,17 @@ class Dataset:
         datasets, we will download from stanford URL, but we should keep it as
         a function for Dataset subclasses to override if required."""
 
-        raise NotImplementedError
+        url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}-raw.zip"
+        download_path = download_url(url, path)
+        unzip(download_path, path)
 
     def download_processed(self, path: Union[str, os.PathLike]) -> None:
         """Downloads the processed data to the path directory. For our
         datasets, we will download from stanford URL, but we should keep it as
         a function for Dataset subclasses to override if required."""
-        url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
-        # TODO: should be Path(f"{root}/{self.name}/") but that will break
-        # current workflow for grant dataset
-        # TODO: fix it together with a new zip file
-        download_path = download_url(url, root)
-        unzip(download_path, root)
+        url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}-processed.zip"
+        download_path = download_url(url, path)
+        unzip(download_path, path)
 
     def __repr__(self) -> str:
         return (
@@ -128,12 +130,6 @@ class Dataset:
         train_max_time = self.min_time + 0.8 * (self.max_time - self.min_time)
         val_max_time = self.min_time + 0.9 * (self.max_time - self.min_time)
         return train_max_time, val_max_time
-
-    def download_raw(self, path: Union[str, os.PathLike]) -> None:
-        r"""Downloads the raw data to the path directory. To be implemented by
-        subclass."""
-
-        raise NotImplementedError
 
     def process(self) -> Database:
         r"""Processes the raw data into a database. To be implemented by
