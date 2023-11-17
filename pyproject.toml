@@ -44,3 +44,9 @@ Home = "https://rtb.stanford.edu"
 [tool.flit.module]
 name="rtb"
 
+[tool.pytest.ini_options]
+addopts = [
+	"--capture=no",
+	"--color=yes",
+	"-vv",
+]

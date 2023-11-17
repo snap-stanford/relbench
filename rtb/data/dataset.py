@@ -2,7 +2,7 @@ import os
 import shutil
 import time
 from pathlib import Path
-from typing import Dict, Union, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 import pandas as pd
 from rtb.data.database import Database
@@ -18,9 +18,10 @@ class Dataset:
     # name of dataset, to be specified by subclass
     name: str
 
-    def __init__(
-        self, root: Union[str, os.PathLike], process=False, download=False
-    ) -> None:
+    def __init__(self,
+                 root: Union[str, os.PathLike],
+                 process=False,
+                 download=False) -> None:
         r"""Initializes the dataset.
 
         process=True wil force pre-processing data from raw files.
@@ -32,15 +33,17 @@ class Dataset:
 
         self.root = root
 
-        process_path = f"{root}/{self.name}/processed/db"
+        process_path = os.path.join(root, self.name, 'processed', 'db')
+        os.makedirs(process_path, exist_ok=True)
 
         if process:
             # download
-            raw_path = f"{root}/{self.name}/raw"
+            #raw_path = f"{root}/{self.name}/raw"
+            raw_path = os.path.join(root, self.name, 'raw')
+            os.makedirs(raw_path, exist_ok=True)
             if download or not Path(f"{raw_path}/done").exists():
-                self.download_raw(raw_path)
-                # TODO: revert back
-                # Path(f"{raw_path}/done").touch()
+                self.download_raw(os.path.join(root, self.name))
+                Path(f"{raw_path}/done").touch()
 
             # delete processed db dir if exists to avoid possibility of
             # corruption
@@ -72,7 +75,8 @@ class Dataset:
         else:
             # download
             if download or not Path(f"{process_path}/done").exists():
-                self.download_processed(process_path)
+                self.download_processed(
+                    os.path.join(root, self.name, 'processed'))
                 Path(f"{process_path}/done").touch()
 
             # load database
@@ -91,30 +95,27 @@ class Dataset:
         datasets, we will download from stanford URL, but we should keep it as
         a function for Dataset subclasses to override if required."""
 
-        raise NotImplementedError
+        url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}-raw.zip"
+        download_path = download_url(url, path)
+        unzip(download_path, path)
 
     def download_processed(self, path: Union[str, os.PathLike]) -> None:
         """Downloads the processed data to the path directory. For our
         datasets, we will download from stanford URL, but we should keep it as
         a function for Dataset subclasses to override if required."""
-        url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}.zip"
-        # TODO: should be Path(f"{root}/{self.name}/") but that will break
-        # current workflow for grant dataset
-        # TODO: fix it together with a new zip file
+        url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}-processed.zip"
         download_path = download_url(url, path)
         unzip(download_path, path)
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(\n"
-            f"  tables={sorted(list(self._db.tables.keys()))},\n"
-            f"  tasks={sorted(list(self.tasks.keys()))},\n"
-            f"  min_time={self.min_time},\n"
-            f"  max_time={self.max_time},\n"
-            f"  train_max_time={self.train_max_time},\n"
-            f"  val_max_time={self.val_max_time},\n"
-            f")"
-        )
+        return (f"{self.__class__.__name__}(\n"
+                f"  tables={sorted(list(self._db.tables.keys()))},\n"
+                f"  tasks={sorted(list(self.tasks.keys()))},\n"
+                f"  min_time={self.min_time},\n"
+                f"  max_time={self.max_time},\n"
+                f"  train_max_time={self.train_max_time},\n"
+                f"  val_max_time={self.val_max_time},\n"
+                f")")
 
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset. To be implemented
@@ -129,12 +130,6 @@ class Dataset:
         train_max_time = self.min_time + 0.8 * (self.max_time - self.min_time)
         val_max_time = self.min_time + 0.9 * (self.max_time - self.min_time)
         return train_max_time, val_max_time
-
-    def download_raw(self, path: Union[str, os.PathLike]) -> None:
-        r"""Downloads the raw data to the path directory. To be implemented by
-        subclass."""
-
-        raise NotImplementedError
 
     def process(self) -> Database:
         r"""Processes the raw data into a database. To be implemented by
@@ -158,11 +153,9 @@ class Dataset:
             if table.pkey_col is not None:
                 ser = table.df[table.pkey_col]
                 if ser.nunique() != len(ser):
-                    raise RuntimeError(
-                        f"The primary key '{table.pkey_col}' "
-                        f"of table '{table_name}' contains "
-                        "duplicated elements"
-                    )
+                    raise RuntimeError(f"The primary key '{table.pkey_col}' "
+                                       f"of table '{table_name}' contains "
+                                       "duplicated elements")
                 arange_ser = pd.RangeIndex(len(ser)).astype("Int64")
                 index_map_dict[table_name] = pd.Series(
                     index=ser,
@@ -173,7 +166,8 @@ class Dataset:
 
         # Replace fkey_col_to_pkey_table with indices.
         for table in db.tables.values():
-            for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items():
+            for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items(
+            ):
                 out = pd.merge(
                     table.df[fkey_col],
                     index_map_dict[pkey_table_name],
@@ -184,6 +178,11 @@ class Dataset:
                 table.df[fkey_col] = out["index"]
 
         return db
+
+    @property
+    def db(self) -> Database:
+        r"""The full database. Use with caution to prevent temporal leakage."""
+        return self._db
 
     @property
     def db_train(self) -> Database:
@@ -206,7 +205,9 @@ class Dataset:
         time_window_df obtained by their sampling strategy."""
 
         if time_window_df is None:
-            assert window_size is not None
+            if window_size is None:
+                window_size = self.tasks[task_name].window_sizes[0]
+
             # default sampler
             time_window_df = rolling_window_sampler(
                 self.min_time,
@@ -231,7 +232,9 @@ class Dataset:
         time_window_df obtained by their sampling strategy."""
 
         if time_window_df is None:
-            assert window_size is not None
+            if window_size is None:
+                window_size = self.tasks[task_name].window_sizes[0]
+
             # default sampler
             time_window_df = one_window_sampler(
                 self.train_max_time,
@@ -241,8 +244,14 @@ class Dataset:
         task = self.tasks[task_name]
         return task.make_table(self.db_val, time_window_df)
 
-    def make_test_table(self, task_name: str, window_size: int) -> Table:
+    def make_test_table(
+        self,
+        task_name: str,
+        window_size: Optional[int] = None,
+    ) -> Table:
         r"""Returns the test table for a task."""
+        if window_size is None:
+            window_size = self.tasks[task_name].window_sizes[0]
 
         task = self.tasks[task_name]
         time_window_df = one_window_sampler(

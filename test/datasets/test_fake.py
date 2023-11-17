@@ -15,10 +15,9 @@ def test_fake_product_dataset(tmp_path):
 )"""
     )
 
-    window_size = dataset.tasks["ltv"].window_sizes[0]
-    train_table = dataset.make_train_table("ltv", window_size)
-    val_table = dataset.make_val_table("ltv", window_size)
-    test_table = dataset.make_test_table("ltv", window_size)
+    train_table = dataset.make_train_table("ltv")
+    val_table = dataset.make_val_table("ltv")
+    test_table = dataset.make_test_table("ltv")
     for table in [train_table, val_table]:
         assert set(table.df.columns) > {
             "window_min_time",
