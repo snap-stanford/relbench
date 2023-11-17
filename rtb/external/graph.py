@@ -2,13 +2,14 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 import pandas as pd
 import torch
-from rtb.data import Database, Table
 from torch import Tensor
 from torch_frame import stype
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.data import Dataset, StatType
 from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
+
+from rtb.data import Database, Table
 
 
 def to_unix_time(ser: pd.Series) -> Tensor:
@@ -109,7 +110,7 @@ class TrainTableInput(NamedTuple):
 
 def get_train_table_input(
     train_table: Table,
-    target_col: str,
+    target_col: Optional[str] = None,
     target_dtype: Optional[torch.dtype] = None,
 ) -> TrainTableInput:
     assert len(train_table.fkey_col_to_pkey_table) == 1
@@ -123,7 +124,7 @@ def get_train_table_input(
 
     target: Optional[Tensor] = None
     transform: Optional[AttachTargetTransform] = None
-    if target_col in train_table.df:
+    if target_col is not None and target_col in train_table.df:
         target = torch.from_numpy(train_table.df[target_col].values)
         if target_dtype is not None:
             target = target.to(target_dtype)
