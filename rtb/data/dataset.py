@@ -2,13 +2,15 @@ import os
 import shutil
 import time
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import pandas as pd
+
 from rtb.data.database import Database
 from rtb.data.table import Table
 from rtb.data.task import Task
-from rtb.utils import download_url, one_window_sampler, rolling_window_sampler, unzip
+from rtb.utils import (download_url, one_window_sampler,
+                       rolling_window_sampler, unzip)
 
 
 class Dataset:
@@ -18,10 +20,9 @@ class Dataset:
     # name of dataset, to be specified by subclass
     name: str
 
-    def __init__(self,
-                 root: Union[str, os.PathLike],
-                 process=False,
-                 download=False) -> None:
+    def __init__(
+        self, root: Union[str, os.PathLike], process=False, download=False
+    ) -> None:
         r"""Initializes the dataset.
 
         process=True wil force pre-processing data from raw files.
@@ -33,13 +34,13 @@ class Dataset:
 
         self.root = root
 
-        process_path = os.path.join(root, self.name, 'processed', 'db')
+        process_path = os.path.join(root, self.name, "processed", "db")
         os.makedirs(process_path, exist_ok=True)
 
         if process:
             # download
-            #raw_path = f"{root}/{self.name}/raw"
-            raw_path = os.path.join(root, self.name, 'raw')
+            # raw_path = f"{root}/{self.name}/raw"
+            raw_path = os.path.join(root, self.name, "raw")
             os.makedirs(raw_path, exist_ok=True)
             if download or not Path(f"{raw_path}/done").exists():
                 self.download_raw(os.path.join(root, self.name))
@@ -75,8 +76,7 @@ class Dataset:
         else:
             # download
             if download or not Path(f"{process_path}/done").exists():
-                self.download_processed(
-                    os.path.join(root, self.name, 'processed'))
+                self.download_processed(os.path.join(root, self.name, "processed"))
                 Path(f"{process_path}/done").touch()
 
             # load database
@@ -108,14 +108,16 @@ class Dataset:
         unzip(download_path, path)
 
     def __repr__(self) -> str:
-        return (f"{self.__class__.__name__}(\n"
-                f"  tables={sorted(list(self._db.tables.keys()))},\n"
-                f"  tasks={sorted(list(self.tasks.keys()))},\n"
-                f"  min_time={self.min_time},\n"
-                f"  max_time={self.max_time},\n"
-                f"  train_max_time={self.train_max_time},\n"
-                f"  val_max_time={self.val_max_time},\n"
-                f")")
+        return (
+            f"{self.__class__.__name__}(\n"
+            f"  tables={sorted(list(self._db.tables.keys()))},\n"
+            f"  tasks={sorted(list(self.tasks.keys()))},\n"
+            f"  min_time={self.min_time},\n"
+            f"  max_time={self.max_time},\n"
+            f"  train_max_time={self.train_max_time},\n"
+            f"  val_max_time={self.val_max_time},\n"
+            f")"
+        )
 
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset. To be implemented
@@ -153,9 +155,11 @@ class Dataset:
             if table.pkey_col is not None:
                 ser = table.df[table.pkey_col]
                 if ser.nunique() != len(ser):
-                    raise RuntimeError(f"The primary key '{table.pkey_col}' "
-                                       f"of table '{table_name}' contains "
-                                       "duplicated elements")
+                    raise RuntimeError(
+                        f"The primary key '{table.pkey_col}' "
+                        f"of table '{table_name}' contains "
+                        "duplicated elements"
+                    )
                 arange_ser = pd.RangeIndex(len(ser)).astype("Int64")
                 index_map_dict[table_name] = pd.Series(
                     index=ser,
@@ -166,8 +170,7 @@ class Dataset:
 
         # Replace fkey_col_to_pkey_table with indices.
         for table in db.tables.values():
-            for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items(
-            ):
+            for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items():
                 out = pd.merge(
                     table.df[fkey_col],
                     index_map_dict[pkey_table_name],
@@ -264,3 +267,33 @@ class Dataset:
         table.df = table.df[task.input_cols]
 
         return table
+
+    def get_stype_proposal(self) -> Dict[str, Dict[str, Any]]:
+        r"""Propose stype for columns of a set of tables.
+
+        Returns:
+            Dict[str, Dict[str, Any]]: A dictionary mapping table name into
+                :obj:`col_to_stype` (mapping column names into inferred stypes)
+        """
+        from torch_frame.utils import infer_df_stype
+
+        inferred_col_to_stype_dict = {}
+        for table_name, table in self.db.tables.items():
+            inferred_col_to_stype = infer_df_stype(table.df)
+
+            # Temporarily removing time_col since StypeEncoder for
+            # stype.timestamp is not yet supported.
+            # TODO: Drop the removing logic once StypeEncoder is supported.
+            # https://github.com/pyg-team/pytorch-frame/pull/225
+            if table.time_col is not None:
+                inferred_col_to_stype.pop(table.time_col)
+
+            # Remove pkey, fkey columns since they will not be used as input
+            # feature.
+            if table.pkey_col is not None:
+                inferred_col_to_stype.pop(table.pkey_col)
+            for fkey in table.fkey_col_to_pkey_table.keys():
+                inferred_col_to_stype.pop(fkey)
+
+            inferred_col_to_stype_dict[table_name] = inferred_col_to_stype
+        return inferred_col_to_stype_dict
