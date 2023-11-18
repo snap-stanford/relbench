@@ -2,9 +2,8 @@ import os
 import shutil
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
-import numpy as np
 import pandas as pd
 from rtb.data.database import Database
 from rtb.data.table import Table
@@ -19,9 +18,10 @@ class Dataset:
     # name of dataset, to be specified by subclass
     name: str
 
-    def __init__(
-        self, root: Union[str, os.PathLike], process=False, download=False
-    ) -> None:
+    def __init__(self,
+                 root: Union[str, os.PathLike],
+                 process=False,
+                 download=False) -> None:
         r"""Initializes the dataset.
 
         process=True wil force pre-processing data from raw files.
@@ -45,18 +45,19 @@ class Dataset:
                 self.download_raw(os.path.join(root, self.name))
                 Path(f"{raw_path}/done").touch()
 
-            # delete processed db dir if exists to avoid possibility of corruption
+            # delete processed db dir if exists to avoid possibility of
+            # corruption
             shutil.rmtree(process_path, ignore_errors=True)
 
             # process db
-            print(f"processing db...")
+            print("processing db...")
             tic = time.time()
             db = self.process()
             toc = time.time()
             print(f"processing db took {toc - tic:.2f} seconds.")
 
             # standardize db
-            print(f"reindexing pkeys and fkeys...")
+            print("reindexing pkeys and fkeys...")
             tic = time.time()
             db = self.reindex_pkeys_and_fkeys(db)
             toc = time.time()
@@ -74,7 +75,8 @@ class Dataset:
         else:
             # download
             if download or not Path(f"{process_path}/done").exists():
-                self.download_processed(os.path.join(root, self.name, 'processed'))
+                self.download_processed(
+                    os.path.join(root, self.name, 'processed'))
                 Path(f"{process_path}/done").touch()
 
             # load database
@@ -106,16 +108,14 @@ class Dataset:
         unzip(download_path, path)
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(\n"
-            f"  tables={sorted(list(self._db.tables.keys()))},\n"
-            f"  tasks={sorted(list(self.tasks.keys()))},\n"
-            f"  min_time={self.min_time},\n"
-            f"  max_time={self.max_time},\n"
-            f"  train_max_time={self.train_max_time},\n"
-            f"  val_max_time={self.val_max_time},\n"
-            f")"
-        )
+        return (f"{self.__class__.__name__}(\n"
+                f"  tables={sorted(list(self._db.tables.keys()))},\n"
+                f"  tasks={sorted(list(self.tasks.keys()))},\n"
+                f"  min_time={self.min_time},\n"
+                f"  max_time={self.max_time},\n"
+                f"  train_max_time={self.train_max_time},\n"
+                f"  val_max_time={self.val_max_time},\n"
+                f")")
 
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset. To be implemented
@@ -153,11 +153,9 @@ class Dataset:
             if table.pkey_col is not None:
                 ser = table.df[table.pkey_col]
                 if ser.nunique() != len(ser):
-                    raise RuntimeError(
-                        f"The primary key '{table.pkey_col}' "
-                        f"of table '{table_name}' contains "
-                        "duplicated elements"
-                    )
+                    raise RuntimeError(f"The primary key '{table.pkey_col}' "
+                                       f"of table '{table_name}' contains "
+                                       "duplicated elements")
                 arange_ser = pd.RangeIndex(len(ser)).astype("Int64")
                 index_map_dict[table_name] = pd.Series(
                     index=ser,
@@ -168,7 +166,8 @@ class Dataset:
 
         # Replace fkey_col_to_pkey_table with indices.
         for table in db.tables.values():
-            for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items():
+            for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items(
+            ):
                 out = pd.merge(
                     table.df[fkey_col],
                     index_map_dict[pkey_table_name],

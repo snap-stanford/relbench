@@ -5,7 +5,7 @@ from typing import Dict, Union
 import duckdb
 import pandas as pd
 import pyarrow as pa
-import pyarrow.json
+
 from rtb.data.database import Database
 from rtb.data.dataset import Dataset
 from rtb.data.table import Table
@@ -280,7 +280,7 @@ class ProductDataset(Dataset):
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        print(f"keeping only products common to product and review tables...")
+        print("keeping only products common to product and review tables...")
         tic = time.time()
         plist = list(set(pdf["product_id"]) & set(rdf["product_id"]))
         pdf.query("product_id == @plist", inplace=True)
@@ -288,7 +288,7 @@ class ProductDataset(Dataset):
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        print(f"extracting customer table...")
+        print("extracting customer table...")
         tic = time.time()
         cdf = (
             rdf[["customer_id", "customer_name"]]

@@ -1,16 +1,16 @@
 import os
+import random
 from pathlib import Path
 from typing import Any, Dict, Union
 
-import random
-import duckdb
 import numpy as np
 import pandas as pd
+
 from rtb.data.database import Database
 from rtb.data.dataset import Dataset
 from rtb.data.table import Table
-from rtb.data.task import Task, TaskType
-from rtb.datasets.product import LTVTask, ChurnTask
+from rtb.data.task import Task
+from rtb.datasets.product import ChurnTask, LTVTask
 
 
 class FakeProductDataset(Dataset):
@@ -40,9 +40,8 @@ class FakeProductDataset(Dataset):
         product_df = pd.DataFrame(
             {
                 "product_id": [f"product_id_{i}" for i in range(num_products)],
-                # TODO: add when these are supported in the model side
-                # "category": [None, [], ["toy", "health"]] * (num_products // 3),
-                # "title": ["title_1", "title_2", "title_3"] * (num_products // 3),
+                "category": [None, [], ["toy", "health"]] * (num_products // 3),
+                "title": ["title 1", "title 2", "title 3"] * (num_products // 3),
                 "price": np.random.rand(num_products) * 10,
             }
         )
@@ -101,8 +100,8 @@ class FakeProductDataset(Dataset):
         stype_dict: Dict[str, Dict[str, Any]] = {}
         stype_dict["product"] = {
             # TODO: add when these are supported in the model side
-            # "category": stype.multicategorical,
-            # "title": stype.text_embedded,
+            "category": stype.multicategorical,
+            "title": stype.text_embedded,
             "price": stype.numerical,
         }
         stype_dict["customer"] = {

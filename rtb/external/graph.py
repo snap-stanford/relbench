@@ -1,11 +1,11 @@
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+from typing import Dict, List, NamedTuple, Optional, Tuple
 
 import pandas as pd
 import torch
 from torch import Tensor
 from torch_frame import stype
 from torch_frame.config import TextEmbedderConfig
-from torch_frame.data import Dataset, StatType
+from torch_frame.data import Dataset
 from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
 
@@ -27,7 +27,8 @@ def dummy_text_embedder(input: List[str]) -> torch.Tensor:
 def make_pkey_fkey_graph(
     db: Database,
     col_to_stype_dict: Dict[str, Dict[str, stype]],
-) -> Tuple[HeteroData, Dict[str, Dict[str, Dict[StatType, Any]]]]:
+    text_embedder_cfg: Optional[TextEmbedderConfig] = None,
+) -> HeteroData:
     r"""Given a :class:`Database` object, construct a heterogeneous graph with
     primary-foreign key relationships, together with the column stats of each
     table.
@@ -39,9 +40,7 @@ def make_pkey_fkey_graph(
 
     Returns:
         HeteroData: The heterogeneous :class:`PyG` object with
-            :class:`TensorFrame` feature.
-        Dict[str, Dict[str, Dict[StatType, Any]]]: Column stats dictionary,
-            mapping table name into column stats.
+            :class:`TensorFrame` feature..
     """
     data = HeteroData()
 
@@ -50,8 +49,7 @@ def make_pkey_fkey_graph(
         dataset = Dataset(
             df=table.df,
             col_to_stype=col_to_stype_dict[table_name],
-            # TODO: fix
-            text_embedder_cfg=TextEmbedderConfig(text_embedder=dummy_text_embedder),
+            text_embedder_cfg=text_embedder_cfg,
         ).materialize()
 
         data[table_name].tf = dataset.tensor_frame

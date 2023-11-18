@@ -1,11 +1,14 @@
 import torch
 import torch.nn.functional as F
-from rtb.datasets import FakeProductDataset
-from rtb.external.graph import get_train_table_input, make_pkey_fkey_graph
-from rtb.external.nn import HeteroEncoder, HeteroGraphSAGE
+from torch_frame.config.text_embedder import TextEmbedderConfig
+from torch_frame.testing.text_embedder import HashTextEmbedder
 from torch_geometric.loader import NodeLoader
 from torch_geometric.nn import MLP
 from torch_geometric.sampler import NeighborSampler
+
+from rtb.datasets import FakeProductDataset
+from rtb.external.graph import get_train_table_input, make_pkey_fkey_graph
+from rtb.external.nn import HeteroEncoder, HeteroGraphSAGE
 
 
 def test_train_fake_product_dataset(tmp_path):
@@ -14,16 +17,17 @@ def test_train_fake_product_dataset(tmp_path):
     data = make_pkey_fkey_graph(
         dataset.db,
         dataset.get_stype_proposal(),
+        text_embedder_cfg=TextEmbedderConfig(
+            text_embedder=HashTextEmbedder(8), batch_size=None
+        ),
     )
-
-    col_names_dict = {  # TODO Expose as method in `HeteroData`.
-        node_type: data[node_type].tf.col_names_dict
-        for node_type in data.node_types
+    node_to_col_names_dict = {  # TODO Expose as method in `HeteroData`.
+        node_type: data[node_type].tf.col_names_dict for node_type in data.node_types
     }
 
     # Ensure that full-batch model works as expected ##########################
 
-    encoder = HeteroEncoder(64, col_names_dict, data.col_stats_dict)
+    encoder = HeteroEncoder(64, node_to_col_names_dict, data.col_stats_dict)
     gnn = HeteroGraphSAGE(data.node_types, data.edge_types, 64)
     head = MLP(64, out_channels=1, num_layers=1)
 
@@ -63,9 +67,9 @@ def test_train_fake_product_dataset(tmp_path):
 
         batch = next(iter(loader))
         assert batch["customer"].batch_size == 32
-        assert batch["customer"].seed_time.size() == (32, )
+        assert batch["customer"].seed_time.size() == (32,)
         if i < 2:
-            assert batch["customer"].y.size() == (32, )
+            assert batch["customer"].y.size() == (32,)
 
     # Ensure that mini-batch training works ###################################
 
@@ -85,8 +89,7 @@ def test_train_fake_product_dataset(tmp_path):
     )
 
     optimizer = torch.optim.Adam(
-        list(encoder.parameters()) + list(gnn.parameters()) +
-        list(head.parameters()),
+        list(encoder.parameters()) + list(gnn.parameters()) + list(head.parameters()),
         lr=0.01,
     )
 
@@ -102,6 +105,7 @@ def test_train_fake_product_dataset(tmp_path):
         )
         x = head(x_dict["customer"]).squeeze(-1)
 
+        optimizer.zero_grad()
         loss = F.binary_cross_entropy_with_logits(x, batch["customer"].y)
         loss.backward()
 
