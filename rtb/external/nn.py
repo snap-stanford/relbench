@@ -4,11 +4,10 @@ import torch
 import torch_frame
 from torch import Tensor
 from torch_frame.data.stats import StatType
+from torch_frame.nn.models import ResNet
 from torch_geometric.nn import HeteroConv, LayerNorm, SAGEConv
 from torch_geometric.typing import EdgeType, NodeType
 from torch_geometric.utils import trim_to_layer
-
-from torch_frame.nn.models import ResNet
 
 
 class HeteroEncoder(torch.nn.Module):

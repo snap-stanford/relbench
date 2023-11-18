@@ -1,12 +1,12 @@
 import os
-
 from typing import Dict, Tuple
+
 import pandas as pd
 
-from rtb.data.table import Table
 from rtb.data.database import Database
-from rtb.data.task import TaskType, Task
 from rtb.data.dataset import Dataset
+from rtb.data.table import Table
+from rtb.data.task import Task, TaskType
 from rtb.utils import to_unix_time
 
 

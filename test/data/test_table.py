@@ -1,4 +1,5 @@
 import pandas as pd
+
 from rtb.data import Table
 
 

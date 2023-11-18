@@ -1,13 +1,13 @@
+import os
 from dataclasses import dataclass
 from enum import Enum
-import os
-from typing_extensions import Self
-from typing import Union, List
+from typing import List, Union
 
 import pandas as pd
+from typing_extensions import Self
 
-from rtb.data.table import Table
 from rtb.data.database import Database
+from rtb.data.table import Table
 
 
 class TaskType(Enum):

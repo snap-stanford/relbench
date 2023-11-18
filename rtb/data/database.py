@@ -3,8 +3,9 @@ import time
 from pathlib import Path
 from typing import Dict, Tuple, Union
 
-from rtb.data.table import Table
 from typing_extensions import Self
+
+from rtb.data.table import Table
 
 
 class Database:

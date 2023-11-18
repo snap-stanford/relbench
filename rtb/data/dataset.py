@@ -5,10 +5,12 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
 import pandas as pd
+
 from rtb.data.database import Database
 from rtb.data.table import Table
 from rtb.data.task import Task
-from rtb.utils import download_url, one_window_sampler, rolling_window_sampler, unzip
+from rtb.utils import (download_url, one_window_sampler,
+                       rolling_window_sampler, unzip)
 
 
 class Dataset:
