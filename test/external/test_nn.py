@@ -94,6 +94,8 @@ def test_train_fake_product_dataset(tmp_path):
     )
 
     for batch in train_loader:
+        optimizer.zero_grad()
+
         x_dict = encoder(batch.tf_dict)
         x_dict = gnn(
             x_dict,
