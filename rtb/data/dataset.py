@@ -13,6 +13,20 @@ from rtb.utils import download_url, one_window_sampler, rolling_window_sampler, 
 
 
 class Dataset:
+    def __init__(
+        self,
+        db: Database,
+        tasks: Dict[str, Task],
+        train_max_time: pd.Timestamp,
+        val_max_time: pd.Timestamp,
+    ) -> None:
+        self.db = db
+        self.tasks = tasks
+        self.train_max_time = train_max_time
+        self.val_max_time = val_max_time
+
+
+class RawDataset:
     r"""Base class for dataset. A dataset includes a database and tasks defined
     on it."""
 
