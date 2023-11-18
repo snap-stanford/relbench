@@ -35,8 +35,7 @@ class HeteroEncoder(torch.nn.Module):
     def __init__(
         self,
         channels: int,
-        node_to_col_names_dict: Dict[NodeType, Dict[torch_frame.stype,
-                                                    List[str]]],
+        node_to_col_names_dict: Dict[NodeType, Dict[torch_frame.stype, List[str]]],
         node_to_col_stats: Dict[NodeType, Dict[str, Dict[StatType, Any]]],
         torch_frame_model_cls=ResNet,
         torch_frame_model_kwargs: Dict[str, Any] = {
@@ -50,8 +49,7 @@ class HeteroEncoder(torch.nn.Module):
                 torch_frame.nn.MultiCategoricalEmbeddingEncoder,
                 {},
             ),
-            torch_frame.text_embedded:
-            (torch_frame.nn.LinearEmbeddingEncoder, {}),
+            torch_frame.text_embedded: (torch_frame.nn.LinearEmbeddingEncoder, {}),
         },
     ):
         super().__init__()
@@ -60,9 +58,9 @@ class HeteroEncoder(torch.nn.Module):
 
         for node_type in node_to_col_names_dict.keys():
             stype_encoder_dict = {
-                stype:
-                default_stype_encoder_cls_kwargs[stype][0](
-                    **default_stype_encoder_cls_kwargs[stype][1])
+                stype: default_stype_encoder_cls_kwargs[stype][0](
+                    **default_stype_encoder_cls_kwargs[stype][1]
+                )
                 for stype in node_to_col_names_dict[node_type].keys()
             }
             torch_frame_model = torch_frame_model_cls(
@@ -83,14 +81,12 @@ class HeteroEncoder(torch.nn.Module):
         tf_dict: Dict[NodeType, torch_frame.TensorFrame],
     ) -> Dict[NodeType, Tensor]:
         x_dict = {
-            node_type: self.encoders[node_type](tf)
-            for node_type, tf in tf_dict.items()
+            node_type: self.encoders[node_type](tf) for node_type, tf in tf_dict.items()
         }
         return x_dict
 
 
 class HeteroGraphSAGE(torch.nn.Module):
-
     def __init__(
         self,
         node_types: List[NodeType],

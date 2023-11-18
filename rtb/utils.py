@@ -33,8 +33,9 @@ def rolling_window_sampler(
     return df
 
 
-def one_window_sampler(start_time: pd.Timestamp,
-                       window_size: pd.Timestamp) -> pd.DataFrame:
+def one_window_sampler(
+    start_time: pd.Timestamp, window_size: pd.Timestamp
+) -> pd.DataFrame:
     """Returns a DataFrame with columns window_min_time and window_max_time."""
     start_time = int(start_time.timestamp())
     window_size = int(window_size.total_seconds())
