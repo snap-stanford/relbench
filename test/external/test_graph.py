@@ -1,20 +1,22 @@
-from rtb.datasets import FakeProductDataset
-from rtb.external.graph import make_pkey_fkey_graph
 from torch_frame import TensorFrame
-
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
+
+from rtb.datasets import FakeProductDataset
+from rtb.external.graph import make_pkey_fkey_graph
 
 
 def test_make_pkey_fkey_graph(tmp_path):
     dataset = FakeProductDataset(root=tmp_path, process=True)
 
-    data = make_pkey_fkey_graph(dataset.db_train,
-                                dataset.get_stype_proposal(),
-                                text_embedder_cfg=TextEmbedderConfig(
-                                    HashTextEmbedder(16),
-                                    batch_size=None,
-                                ))
+    data = make_pkey_fkey_graph(
+        dataset.db,
+        dataset.get_stype_proposal(),
+        text_embedder_cfg=TextEmbedderConfig(
+            HashTextEmbedder(16),
+            batch_size=None,
+        ),
+    )
     assert set(data.node_types) == {"customer", "review", "product"}
 
     data.validate()

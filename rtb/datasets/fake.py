@@ -1,15 +1,16 @@
 import os
+import random
 from pathlib import Path
 from typing import Any, Dict, Union
 
-import random
 import numpy as np
 import pandas as pd
+
 from rtb.data.database import Database
 from rtb.data.dataset import Dataset
 from rtb.data.table import Table
 from rtb.data.task import Task
-from rtb.datasets.product import LTVTask, ChurnTask
+from rtb.datasets.product import ChurnTask, LTVTask
 
 
 class FakeProductDataset(Dataset):
@@ -25,44 +26,49 @@ class FakeProductDataset(Dataset):
         return
 
     def download_processed(self, path: Union[str, os.PathLike]) -> None:
-        raise RuntimeError("download_processed not supported for"
-                           " FakeProductDataset. Use process=True to force"
-                           " processing for the first use.")
+        raise RuntimeError(
+            "download_processed not supported for"
+            " FakeProductDataset. Use process=True to force"
+            " processing for the first use."
+        )
 
     def process(self) -> Database:
         num_products = 30
         num_customers = 100
         num_transactions = 500
 
-        product_df = pd.DataFrame({
-            "product_id": [f"product_id_{i}" for i in range(num_products)],
-            "category": ["", "toy", "health,toy"] * (num_products // 3),
-            # TODO: add when these are supported in the model side
-            "title": ["title 1", "title 2", "title 3"] * (num_products // 3),
-            "price":
-            np.random.rand(num_products) * 10,
-        })
-        customer_df = pd.DataFrame({
-            "customer_id": [f"customer_id_{i}" for i in range(num_customers)],
-            "age":
-            np.random.randint(10, 50, size=(num_customers, )),
-            "gender": ["male", "female"] * (num_customers // 2),
-        })
+        product_df = pd.DataFrame(
+            {
+                "product_id": [f"product_id_{i}" for i in range(num_products)],
+                "category": [None, [], ["toy", "health"]] * (num_products // 3),
+                "title": ["title 1", "title 2", "title 3"] * (num_products // 3),
+                "price": np.random.rand(num_products) * 10,
+            }
+        )
+        customer_df = pd.DataFrame(
+            {
+                "customer_id": [f"customer_id_{i}" for i in range(num_customers)],
+                "age": np.random.randint(10, 50, size=(num_customers,)),
+                "gender": ["male", "female"] * (num_customers // 2),
+            }
+        )
         # Add some dangling foreign keys:
-        review_df = pd.DataFrame({
-            "customer_id": [
-                f"customer_id_{random.randint(0, num_customers+5)}"
-                for _ in range(num_transactions)
-            ],
-            "product_id": [
-                f"product_id_{random.randint(0, num_products-1)}"
-                for _ in range(num_transactions)
-            ],
-            "review_time":
-            pd.to_datetime(10 * np.arange(num_transactions), unit="D"),
-            "rating":
-            np.random.randint(1, 6, size=(num_transactions, )),
-        })
+        review_df = pd.DataFrame(
+            {
+                "customer_id": [
+                    f"customer_id_{random.randint(0, num_customers+5)}"
+                    for _ in range(num_transactions)
+                ],
+                "product_id": [
+                    f"product_id_{random.randint(0, num_products-1)}"
+                    for _ in range(num_transactions)
+                ],
+                "review_time": pd.to_datetime(
+                    10 * np.arange(num_transactions), unit="D"
+                ),
+                "rating": np.random.randint(1, 6, size=(num_transactions,)),
+            }
+        )
 
         tables: Dict[str, Table] = {}
 

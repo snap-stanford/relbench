@@ -49,7 +49,6 @@ def make_pkey_fkey_graph(
         dataset = Dataset(
             df=table.df,
             col_to_stype=col_to_stype_dict[table_name],
-            col_to_sep=",",
             text_embedder_cfg=text_embedder_cfg,
         ).materialize()
 
