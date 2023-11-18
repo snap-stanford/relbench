@@ -11,11 +11,15 @@ repos:
       - id: trailing-whitespace
       - id: check-toml
 
-repos:
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
       - id: black
+
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 23.10.0
+    hooks:
+      - id: black-jupyter
 
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
