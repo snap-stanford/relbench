@@ -7,7 +7,7 @@ from rtb.data.database import Database
 from rtb.data.dataset import Dataset
 from rtb.data.table import Table
 from rtb.data.task import Task, TaskType
-from rtb.utils import to_unix_time
+from rtb.utils import get_df_in_window, to_unix_time
 
 
 class user_posts_next_three_months(Task):
@@ -30,31 +30,30 @@ class user_posts_next_three_months(Task):
             posts.OwnerUserId != -1
         ]  ## when user id is -1, it is stats exchange community, not a real person
         posts = posts[posts.OwnerUserId.notnull()]  ## 1153 null posts
-        import duckdb
+        users = db.tables["users"].df
 
-        df = duckdb.sql(
-            r"""
-            SELECT
-                window_min_time,
-                window_max_time,
-                OwnerUserId,
-                COUNT(Id) AS num_posts
-            FROM
-                time_window_df,
-                (
-                    SELECT
-                        OwnerUserId,
-                        CreaionDate,
-                        Id
-                    FROM
-                        posts
-                ) AS tmp
-            WHERE
-                tmp.CreaionDate > time_window_df.window_min_time AND
-                tmp.CreaionDate <= time_window_df.window_max_time
-            GROUP BY OwnerUserId, window_min_time, window_max_time
-            """
-        ).df()
+        def get_values_in_window(row, posts, users):
+            posts_window = get_df_in_window(posts, "CreaionDate", row)
+            users_exist = users[
+                users.CreationDate <= row["window_min_time"]
+            ]  ## only looking at existing users
+            users_exist_ids = users_exist.Id.values
+            user2num_posts = pd.DataFrame()
+            user2num_posts["OwnerUserId"] = users_exist_ids
+            user2num_posts["window_min_time"] = row["window_min_time"]
+            user2num_posts["window_max_time"] = row["window_max_time"]
+
+            new_posts = dict(posts_window.groupby("OwnerUserId").Id.agg(len))
+            user2num_posts["num_posts"] = user2num_posts.OwnerUserId.apply(
+                lambda x: new_posts[x] if x in new_posts else 0
+            )  ## default all existing users have 0 posts
+            return user2num_posts
+
+        # Apply function to each time window
+        res = time_window_df.apply(
+            lambda row: get_values_in_window(row, posts, users), axis=1
+        )
+        df = pd.concat(res.values)
 
         return Table(
             df=df,
@@ -84,31 +83,30 @@ class comment_scores_next_six_months(Task):
             comments.UserId != -1
         ]  ## when user id is -1, it is stats exchange community, not a real person
         comments = comments[comments.UserId.notnull()]  ## 2439 null comments
-        import duckdb
+        users = db.tables["users"].df
 
-        df = duckdb.sql(
-            r"""
-            SELECT
-                window_min_time,
-                window_max_time,
-                UserId,
-                SUM(Score) AS comment_scores
-            FROM
-                time_window_df,
-                (
-                    SELECT
-                        UserId,
-                        CreationDate,
-                        Score
-                    FROM
-                        comments
-                ) AS tmp
-            WHERE
-                tmp.CreationDate > time_window_df.window_min_time AND
-                tmp.CreationDate <= time_window_df.window_max_time
-            GROUP BY UserId, window_min_time, window_max_time
-            """
-        ).df()
+        def get_values_in_window(row, comments, users):
+            comments_window = get_df_in_window(comments, "CreationDate", row)
+            users_exist = users[users.CreationDate <= row["window_min_time"]]
+            users_exist_ids = users_exist.Id.values
+            train_table = pd.DataFrame()
+            train_table["UserId"] = users_exist_ids
+            train_table["window_min_time"] = row["window_min_time"]
+            train_table["window_max_time"] = row["window_max_time"]
+
+            comment_sum_scores = dict(
+                comments_window.groupby("UserId")["Score"].agg("sum")
+            )
+            train_table["comment_scores"] = train_table.UserId.apply(
+                lambda x: comment_sum_scores[x] if x in comment_sum_scores else 0
+            )  ## default all existing users have 0 comment scores
+            return train_table
+
+        # Apply function to each row in df_b
+        res = time_window_df.apply(
+            lambda row: get_values_in_window(row, comments, users), axis=1
+        )
+        df = pd.concat(res.values)
 
         return Table(
             df=df,
@@ -136,31 +134,33 @@ class post_upvotes_next_week(Task):
         votes = db.tables["votes"].df
         votes = votes[votes.PostId.notnull()]
         votes = votes[votes.VoteTypeId == 2]  ## upvotes
-        import duckdb
 
-        df = duckdb.sql(
-            r"""
-            SELECT
-                window_min_time,
-                window_max_time,
-                PostId,
-                COUNT(Id) AS num_upvotes
-            FROM
-                time_window_df,
-                (
-                    SELECT
-                        PostId,
-                        CreationDate,
-                        Id
-                    FROM
-                        votes
-                ) AS tmp
-            WHERE
-                tmp.CreationDate > time_window_df.window_min_time AND
-                tmp.CreationDate <= time_window_df.window_max_time
-            GROUP BY PostId, window_min_time, window_max_time
-            """
-        ).df()
+        posts = db.tables["posts"].df
+        posts = posts[
+            posts.OwnerUserId != -1
+        ]  ## when user id is -1, it is stats exchange community, not a real person
+        posts = posts[posts.OwnerUserId.notnull()]  ## 1153 null posts
+
+        def get_values_in_window(row, votes, posts):
+            votes_window = get_df_in_window(votes, "CreationDate", row)
+            posts_exist = posts[posts.CreaionDate <= row["window_min_time"]]
+            posts_exist_ids = posts_exist.Id.values
+            train_table = pd.DataFrame()
+            train_table["PostId"] = posts_exist_ids
+            train_table["window_min_time"] = row["window_min_time"]
+            train_table["window_max_time"] = row["window_max_time"]
+
+            num_of_upvotes = dict(votes_window.groupby("PostId")["Id"].agg(len))
+            train_table["num_upvotes"] = train_table.PostId.apply(
+                lambda x: num_of_upvotes[x] if x in num_of_upvotes else 0
+            )  ## default all existing users have 0 comment scores
+            return train_table
+
+        # Apply function to each row in df_b
+        res = time_window_df.apply(
+            lambda row: get_values_in_window(row, votes, posts), axis=1
+        )
+        df = pd.concat(res.values)
 
         return Table(
             df=df,
@@ -211,6 +211,7 @@ class ForumDataset(Dataset):
         postHistory["CreationDate"] = to_unix_time(postHistory["CreationDate"])
         votes["CreationDate"] = to_unix_time(votes["CreationDate"])
         posts["CreaionDate"] = to_unix_time(posts["CreaionDate"])
+        users["CreationDate"] = to_unix_time(users["CreationDate"])
 
         tables = {}
 
@@ -261,7 +262,7 @@ class ForumDataset(Dataset):
             df=pd.DataFrame(users),
             fkey_col_to_pkey_table={},
             pkey_col="Id",
-            time_col=None,
+            time_col="CreationDate",
         )
 
         tables["posts"] = Table(
