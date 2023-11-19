@@ -2,14 +2,15 @@ import os
 import shutil
 import time
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import pandas as pd
 
 from rtb.data.database import Database
 from rtb.data.table import Table
 from rtb.data.task import Task
-from rtb.utils import download_url, one_window_sampler, rolling_window_sampler, unzip
+from rtb.utils import (download_url, one_window_sampler,
+                       rolling_window_sampler, unzip)
 
 
 class Dataset:
@@ -280,3 +281,33 @@ class RawDataset:
         table.df = table.df[task.input_cols]
 
         return table
+
+    def get_stype_proposal(self) -> Dict[str, Dict[str, Any]]:
+        r"""Propose stype for columns of a set of tables.
+
+        Returns:
+            Dict[str, Dict[str, Any]]: A dictionary mapping table name into
+                :obj:`col_to_stype` (mapping column names into inferred stypes)
+        """
+        from torch_frame.utils import infer_df_stype
+
+        inferred_col_to_stype_dict = {}
+        for table_name, table in self.db.tables.items():
+            inferred_col_to_stype = infer_df_stype(table.df)
+
+            # Temporarily removing time_col since StypeEncoder for
+            # stype.timestamp is not yet supported.
+            # TODO: Drop the removing logic once StypeEncoder is supported.
+            # https://github.com/pyg-team/pytorch-frame/pull/225
+            if table.time_col is not None:
+                inferred_col_to_stype.pop(table.time_col)
+
+            # Remove pkey, fkey columns since they will not be used as input
+            # feature.
+            if table.pkey_col is not None:
+                inferred_col_to_stype.pop(table.pkey_col)
+            for fkey in table.fkey_col_to_pkey_table.keys():
+                inferred_col_to_stype.pop(fkey)
+
+            inferred_col_to_stype_dict[table_name] = inferred_col_to_stype
+        return inferred_col_to_stype_dict

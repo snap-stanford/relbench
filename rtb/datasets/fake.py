@@ -1,7 +1,8 @@
 import os
 import random
+import string
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,12 @@ from rtb.data.dataset import Dataset
 from rtb.data.table import Table
 from rtb.data.task import Task
 from rtb.datasets.product import ChurnTask, LTVTask
+
+
+def _generate_random_string(min_length: int, max_length: int) -> str:
+    length = random.randint(min_length, max_length)
+    random_string = "".join(random.choice(string.ascii_letters) for _ in range(length))
+    return random_string
 
 
 class FakeProductDataset(Dataset):
@@ -41,7 +48,7 @@ class FakeProductDataset(Dataset):
             {
                 "product_id": [f"product_id_{i}" for i in range(num_products)],
                 "category": [None, [], ["toy", "health"]] * (num_products // 3),
-                "title": ["title 1", "title 2", "title 3"] * (num_products // 3),
+                "title": [_generate_random_string(5, 15) for _ in range(num_products)],
                 "price": np.random.rand(num_products) * 10,
             }
         )
@@ -92,26 +99,3 @@ class FakeProductDataset(Dataset):
         )
 
         return Database(tables)
-
-    # TODO: remove this once Weihua implements stype inference in Pytorch Frame
-    def get_stype_proposal(self) -> Dict[str, Dict[str, Any]]:
-        from torch_frame import stype
-
-        stype_dict: Dict[str, Dict[str, Any]] = {}
-        stype_dict["product"] = {
-            # TODO: add when these are supported in the model side
-            "category": stype.multicategorical,
-            "title": stype.text_embedded,
-            "price": stype.numerical,
-        }
-        stype_dict["customer"] = {
-            "age": stype.numerical,
-            "gender": stype.categorical,
-        }
-        stype_dict["review"] = {
-            # TODO: add when timestamp gets supported in torch-frame
-            # "review_time": stype.timestamp,
-            "rating": stype.numerical,
-        }
-
-        return stype_dict
