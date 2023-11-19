@@ -8,7 +8,7 @@ git clone https://github.com/snap-stanford/rtb
 cd rtb
 
 # create a conda/mamba environment from env.yaml
-mamba env create -f env.yaml
+mamba env create -f env.yaml --force
 conda activate rtb
 
 # install pre-commit hooks
