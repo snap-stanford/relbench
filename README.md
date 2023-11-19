@@ -24,3 +24,5 @@ mamba env update -f env.yaml
 ```
 
 Make sure to commit the updated `env.yaml` to main to ensure reproducibility for others.
+
+At release, we will move dependencies to `pyproject.toml` and remove `env.yaml` from the repo.
