@@ -1,6 +1,6 @@
 # rtb
 
-Steps to set up for development: (I recommend `mamba` <https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html> instead of `conda` as it is much faster, but the API is the same)
+Steps to set up for development: (I recommend `mamba` <https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html> instead of `conda` as it is much faster, but the CLI is the same)
 
 ```bash
 # clone repo
