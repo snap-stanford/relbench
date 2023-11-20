@@ -21,12 +21,11 @@ def _generate_random_string(min_length: int, max_length: int) -> str:
 
 
 class FakeProductDataset(Dataset):
-    r"""Fake e-commerce dataset for testing purposes. Schema is similar to ProductDataset."""
+    r"""Fake dataset for testing purposes. Schema is similar to ProductDataset."""
+
+    _task_cls_dict: Dict[str, type[Task]] = {"ltv": LTVTask, "churn": ChurnTask}
 
     name = "rtb-fake-product"
-
-    def get_tasks(self) -> Dict[str, Task]:
-        return {"ltv": LTVTask(), "churn": ChurnTask()}
 
     def download_raw(self, path: Union[str, os.PathLike]) -> None:
         Path(path).mkdir(parents=True, exist_ok=True)
@@ -77,25 +76,25 @@ class FakeProductDataset(Dataset):
             }
         )
 
-        tables: Dict[str, Table] = {}
-
-        tables["product"] = Table(
-            df=product_df,
-            fkey_col_to_pkey_table={},
-            pkey_col="product_id",
-        )
-        tables["customer"] = Table(
-            df=customer_df,
-            fkey_col_to_pkey_table={},
-            pkey_col="customer_id",
-        )
-        tables["review"] = Table(
-            df=review_df,
-            fkey_col_to_pkey_table={
-                "customer_id": "customer",
-                "product_id": "product",
-            },
-            time_col="review_time",
-        )
+        tables: Dict[str, Table] = {
+            "product": Table(
+                df=product_df,
+                fkey_col_to_pkey_table={},
+                pkey_col="product_id",
+            ),
+            "customer": Table(
+                df=customer_df,
+                fkey_col_to_pkey_table={},
+                pkey_col="customer_id",
+            ),
+            "review": Table(
+                df=review_df,
+                fkey_col_to_pkey_table={
+                    "customer_id": "customer",
+                    "product_id": "product",
+                },
+                time_col="review_time",
+            ),
+        }
 
         return Database(tables)

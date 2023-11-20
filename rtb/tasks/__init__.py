@@ -19,6 +19,11 @@ def get_dataset(name: str, *args, **kwargs):
     raise ValueError(f"Unknown dataset name: '{name}'")
 
 
+def get_dataset(name):
+    if name == "fake-product":
+        return FakeProductDataset
+
+
 __all__ = [
     "FakeProductDataset",
     "ForumDataset",

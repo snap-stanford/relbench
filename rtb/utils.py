@@ -84,6 +84,7 @@ def download_url(
     return path
 
 
+# TODO: remove, just use shutil.unpack_archive instead
 def unzip(path, root):
     r"""
     Args:

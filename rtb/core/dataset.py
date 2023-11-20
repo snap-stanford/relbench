@@ -9,22 +9,26 @@ import pandas as pd
 from rtb.data.database import Database
 from rtb.data.table import Table
 from rtb.data.task import Task
-from rtb.utils import (download_url, one_window_sampler,
-                       rolling_window_sampler, unzip)
+from rtb.utils import download_url, one_window_sampler, rolling_window_sampler, unzip
 
 
 class Dataset:
     def __init__(
         self,
         db: Database,
-        tasks: Dict[str, Task],
         train_max_time: pd.Timestamp,
         val_max_time: pd.Timestamp,
+        tasks: Dict[str, Task],
     ) -> None:
-        self.db = db
-        self.tasks = tasks
+        self._db = db
         self.train_max_time = train_max_time
         self.val_max_time = val_max_time
+        self.tasks = tasks
+
+    def get_task(self, task_name: str) -> Task:
+        task = self.tasks[task_name]
+        task.dataset = self
+        return task
 
 
 class RawDataset:
