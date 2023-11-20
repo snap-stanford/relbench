@@ -10,7 +10,7 @@ from rtb.data.task import Task, TaskType
 from rtb.utils import get_df_in_window, to_unix_time
 
 
-class user_posts_next_three_months(Task):
+class UserNumPostsTask(Task):
     r"""Predict the number of posts a user will make in the next 3 months."""
 
     def __init__(self):
@@ -23,7 +23,7 @@ class user_posts_next_three_months(Task):
         )
 
     def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
-        r"""Create Task object for user_posts_next_three_months."""
+        r"""Create Task object for UserNumPosts."""
 
         posts = db.tables["posts"].df
         posts = posts[
@@ -63,7 +63,7 @@ class user_posts_next_three_months(Task):
         )
 
 
-class comment_scores_next_six_months(Task):
+class UserSumCommentScoresTask(Task):
     r"""Predict the sum of scores of comments that a user will make in the next 6 months."""
 
     def __init__(self):
@@ -76,7 +76,7 @@ class comment_scores_next_six_months(Task):
         )
 
     def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
-        r"""Create Task object for post_next_three_months."""
+        r"""Create Task object for UserSumCommentScoresTask."""
 
         comments = db.tables["comments"].df
         comments = comments[
@@ -116,7 +116,7 @@ class comment_scores_next_six_months(Task):
         )
 
 
-class post_upvotes_next_week(Task):
+class PostUpvotesTask(Task):
     r"""Predict the number of upvotes that a post will receive in the next week."""
 
     def __init__(self):
@@ -178,9 +178,9 @@ class ForumDataset(Dataset):
         ## needs to brainstorm a bit about meaningful tasks
 
         tasks = {
-            "user_posts_next_three_months": user_posts_next_three_months(),
-            "comment_scores_next_six_months": comment_scores_next_six_months(),
-            "post_upvotes_next_week": post_upvotes_next_week(),
+            "PostUpvotesTask": PostUpvotesTask(),
+            "UserSumCommentScoresTask": UserSumCommentScoresTask(),
+            "UserNumPostsTask": UserNumPostsTask(),
         }
         self.tasks_window_size = {i: j.window_sizes[0] for i, j in tasks.items()}
         return tasks
