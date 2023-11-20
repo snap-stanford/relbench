@@ -18,17 +18,15 @@ class Dataset:
         db: Database,
         train_max_time: pd.Timestamp,
         val_max_time: pd.Timestamp,
-        tasks: Dict[str, Task],
+        task_cls_dict: Dict[str, Task],
     ) -> None:
         self._db = db
         self.train_max_time = train_max_time
         self.val_max_time = val_max_time
-        self.tasks = tasks
+        self.task_cls_dict = task_cls_dict
 
     def get_task(self, task_name: str) -> Task:
-        task = self.tasks[task_name]
-        task.dataset = self
-        return task
+        return self.task_cls_dict[task_name](self._db)
 
 
 class RawDataset:
