@@ -7,7 +7,8 @@ from torch_geometric.nn import MLP
 from torch_geometric.sampler import NeighborSampler
 
 from rtb.datasets import FakeProductDataset
-from rtb.external.graph import get_train_table_input, make_pkey_fkey_graph
+from rtb.external.graph import (get_stype_proposal, get_train_table_input,
+                                make_pkey_fkey_graph)
 from rtb.external.nn import HeteroEncoder, HeteroGraphSAGE
 
 
@@ -16,7 +17,7 @@ def test_train_fake_product_dataset(tmp_path):
 
     data = make_pkey_fkey_graph(
         dataset.db,
-        dataset.get_stype_proposal(),
+        get_stype_proposal(dataset.db),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),

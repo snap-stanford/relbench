@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 import pandas as pd
 import torch
@@ -6,6 +6,7 @@ from torch import Tensor
 from torch_frame import stype
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.data import Dataset
+from torch_frame.utils import infer_df_stype
 from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
 
@@ -18,10 +19,38 @@ def to_unix_time(ser: pd.Series) -> Tensor:
     return torch.from_numpy(ser.astype(int).values) // 10**9
 
 
-# TODO: fix
-def dummy_text_embedder(input: List[str]) -> torch.Tensor:
-    r"""Dummy text embedder."""
-    return torch.rand(len(input), 768)
+def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
+    r"""Propose stype for columns of a set of tables in the given database.
+
+    Args:
+        db (Database): : The database object containing a set of tables.
+
+    Returns:
+        Dict[str, Dict[str, Any]]: A dictionary mapping table name into
+            :obj:`col_to_stype` (mapping column names into inferred stypes).
+    """
+
+    inferred_col_to_stype_dict = {}
+    for table_name, table in db.tables.items():
+        inferred_col_to_stype = infer_df_stype(table.df)
+
+        # Temporarily removing time_col since StypeEncoder for
+        # stype.timestamp is not yet supported.
+        # TODO: Drop the removing logic once StypeEncoder is supported.
+        # https://github.com/pyg-team/pytorch-frame/pull/225
+        if table.time_col is not None:
+            inferred_col_to_stype.pop(table.time_col)
+
+        # Remove pkey, fkey columns since they will not be used as input
+        # feature.
+        if table.pkey_col is not None:
+            inferred_col_to_stype.pop(table.pkey_col)
+        for fkey in table.fkey_col_to_pkey_table.keys():
+            inferred_col_to_stype.pop(fkey)
+
+        inferred_col_to_stype_dict[table_name] = inferred_col_to_stype
+
+    return inferred_col_to_stype_dict
 
 
 def make_pkey_fkey_graph(
