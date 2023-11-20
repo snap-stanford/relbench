@@ -24,7 +24,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Load dataset and create training labels #####################################
 
 print(dataset_names)
-dataset = get_dataset("fake", root="/tmp/rtb-data")
+dataset = get_dataset(name="fake", root="/tmp/rtb-data")
 print(db.task_names)
 
 task = dataset.get_task(args.task)

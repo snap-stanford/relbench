@@ -10,8 +10,21 @@ from rtb.core import Database, Dataset
 from rtb.tasks.product import ChurnTask, LTVTask
 from rtb.utils import download_url
 
+url_fmt = "http://rtb.stanford.edu/data/{}.zip"
 
-class BenchmarkDataset(Dataset):
+dataset_dict = {
+    "product": {
+        "train_max_time": pd.Timestamp("2016-01-01"),
+        "val_max_time": pd.Timestamp("2017-01-01"),
+        "tasks": {
+            "churn": ChurnTask,
+            "ltv": LTVTask,
+        },
+    },
+}
+
+
+def get_dataset(name: str, root=Union[str, os.PathLike], download=False) -> Dataset:
     """
 
     Conventions:
@@ -22,41 +35,27 @@ class BenchmarkDataset(Dataset):
     <root>/<name> can be loaded with Database.load
     """
 
-    url_fmt = "http://rtb.stanford.edu/data/{}.zip"
+    url = self.url_fmt.format(name)
 
-    dataset_dict = {
-        "product": {
-            "train_max_time": pd.Timestamp("2016-01-01"),
-            "val_max_time": pd.Timestamp("2017-01-01"),
-            "tasks": {
-                "churn": ChurnTask,
-                "ltv": LTVTask,
-            },
-        },
-    }
+    if download or not Path(f"{root}/{name}").exists():
+        print(f"downloading from {url} to {root}...")
+        tic = time.time()
+        path = download_url(url, root)
+        toc = time.time()
+        print(f"downloaded in {toc - tic:.2f} s.")
 
-    def __init__(self, name: str, root=Union[str, os.PathLike], download=False):
-        url = self.url_fmt.format(name)
+        print(f"extracting {path} to {root}...")
+        tic = time.time()
+        shutil.unpack_archive(path, root)
+        toc = time.time()
+        print(f"extracted in {toc - tic:.2f} s.")
 
-        if download or not Path(f"{root}/{name}").exists():
-            print(f"downloading from {url} to {root}...")
-            tic = time.time()
-            path = download_url(url, root)
-            toc = time.time()
-            print(f"downloaded in {toc - tic:.2f} s.")
+    else:
+        print(f"{root}/{name} exists, skipping download.")
 
-            print(f"extracting {path} to {root}...")
-            tic = time.time()
-            shutil.unpack_archive(path, root)
-            toc = time.time()
-            print(f"extracted in {toc - tic:.2f} s.")
-
-        else:
-            print(f"{root}/{name} exists, skipping download.")
-
-        super().__init__(
-            db=Database.load(f"{root}/{name}"),
-            train_max_time=self.dataset_dict[name]["train_max_time"],
-            val_max_time=self.dataset_dict[name]["val_max_time"],
-            tasks=self.dataset_dict[name]["tasks"],
-        )
+    super().__init__(
+        db=Database.load(f"{root}/{name}"),
+        train_max_time=self.dataset_dict[name]["train_max_time"],
+        val_max_time=self.dataset_dict[name]["val_max_time"],
+        tasks=self.dataset_dict[name]["tasks"],
+    )
