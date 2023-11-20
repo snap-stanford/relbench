@@ -92,3 +92,10 @@ def unzip(path, root):
     """
     with zipfile.ZipFile(path, "r") as zip:
         zip.extractall(path=root)
+
+
+def get_df_in_window(df, time_col, row):
+    return df[
+        (df[time_col] >= row["window_min_time"])
+        & (df[time_col] < row["window_max_time"])
+    ]
