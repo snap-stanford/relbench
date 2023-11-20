@@ -23,11 +23,11 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
     r"""Propose stype for columns of a set of tables in the given database.
 
     Args:
-        db (Database):
+        db (Database): : The database object containing a set of tables.
 
     Returns:
         Dict[str, Dict[str, Any]]: A dictionary mapping table name into
-            :obj:`col_to_stype` (mapping column names into inferred stypes)
+            :obj:`col_to_stype` (mapping column names into inferred stypes).
     """
 
     inferred_col_to_stype_dict = {}
