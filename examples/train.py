@@ -26,12 +26,16 @@ _dataset_to_informative_text_cols["rtb-forum"] = {
 }
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rtb-forum", choices=["rtb-forum"])
+parser.add_argument("--dataset",
+                    type=str,
+                    default="rtb-forum",
+                    choices=["rtb-forum"])
 parser.add_argument("--task", type=str, default="UserSumCommentScoresTask")
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
+parser.add_argument("--num_neighbors", type=int, default=64)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -40,8 +44,7 @@ dataset = get_dataset(name=args.dataset, root="/home/weihua/code/rtb/data")
 if args.task not in dataset.tasks:
     raise ValueError(
         f"{args.dataset} does not support the given task {args.task}. Please "
-        f"choose the task from {list(dataset.tasks.keys())}"
-    )
+        f"choose the task from {list(dataset.tasks.keys())}")
 
 inferred_col_to_stype_dict = get_stype_proposal(dataset.db)
 
@@ -51,8 +54,7 @@ inferred_col_to_stype_dict = get_stype_proposal(dataset.db)
 for table_name, col_to_stype in inferred_col_to_stype_dict.items():
     filtered_col_to_stype = {
         key: value
-        for key, value in col_to_stype.items()
-        if value != stype.text_embedded
+        for key, value in col_to_stype.items() if value != stype.text_embedded
     }
     inferred_col_to_stype_dict[table_name] = filtered_col_to_stype
 
@@ -75,7 +77,8 @@ elif task_type == TaskType.MULTICLASS_CLASSIFICATION:
     num_classes = 10
     out_channels = num_classes
     loss_fun = CrossEntropyLoss()
-    metric_computer = Accuracy(task="multiclass", num_classes=num_classes).to(device)
+    metric_computer = Accuracy(task="multiclass",
+                               num_classes=num_classes).to(device)
     higher_is_better = True
 elif task_type == TaskType.REGRESSION:
     out_channels = 1
@@ -84,18 +87,19 @@ elif task_type == TaskType.REGRESSION:
     higher_is_better = False
 
 node_to_col_names_dict = {
-    node_type: data[node_type].tf.col_names_dict for node_type in data.node_types
+    node_type: data[node_type].tf.col_names_dict
+    for node_type in data.node_types
 }
 
-encoder = HeteroEncoder(args.channels, node_to_col_names_dict, data.col_stats_dict).to(
-    device
-)
-gnn = HeteroGraphSAGE(data.node_types, data.edge_types, args.channels).to(device)
+encoder = HeteroEncoder(args.channels, node_to_col_names_dict,
+                        data.col_stats_dict).to(device)
+gnn = HeteroGraphSAGE(data.node_types, data.edge_types,
+                      args.channels).to(device)
 head = MLP(args.channels, out_channels=out_channels, num_layers=1).to(device)
 
 sampler = NeighborSampler(
     data,
-    num_neighbors=[64, 64],
+    num_neighbors=[args.num_neighbors, args.num_neighbors],
     time_attr="time",
 )
 
@@ -128,7 +132,8 @@ for split_name, label_table in [
     loader_dict[split_name] = loader
 
 optimizer = torch.optim.Adam(
-    list(encoder.parameters()) + list(gnn.parameters()) + list(head.parameters()),
+    list(encoder.parameters()) + list(gnn.parameters()) +
+    list(head.parameters()),
     lr=args.lr,
 )
 
@@ -154,9 +159,7 @@ def train() -> float:
         )
         pred = head(x_dict[entity_node])
         if pred.size(1) == 1:
-            pred = pred.view(
-                -1,
-            )
+            pred = pred.view(-1, )
 
         optimizer.zero_grad()
         loss = loss_fun(pred, batch[entity_node].y)
@@ -188,9 +191,7 @@ def eval(loader: NodeLoader) -> float:
         if task_type == TaskType.MULTICLASS_CLASSIFICATION:
             pred = pred.argmax(dim=-1)
         elif task_type == TaskType.REGRESSION:
-            pred = pred.view(
-                -1,
-            )
+            pred = pred.view(-1, )
         metric_computer.update(pred, batch[entity_node].y)
     return metric_computer.compute().item()
 
