@@ -18,7 +18,8 @@ from rtb.data.task import TaskType
 from rtb.datasets import get_dataset
 from rtb.external.graph import (get_stype_proposal, get_train_table_input,
                                 make_pkey_fkey_graph)
-from rtb.external.nn import HeteroEncoder, HeteroGraphSAGE
+from rtb.external.nn import (HeteroEncoder, HeteroGraphSAGE,
+                             HeteroTemporalEncoder)
 
 # Stores the informative text columns to retain for each table:
 dataset_to_informative_text_cols = {}
@@ -36,7 +37,7 @@ parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
-parser.add_argument("--num_neighbors", type=int, default=64)
+parser.add_argument("--num_neighbors", type=int, default=-1)
 parser.add_argument("--num_workers", type=int, default=6)
 args = parser.parse_args()
 
@@ -123,6 +124,12 @@ class Model(torch.nn.Module):
             },
             node_to_col_stats=data.col_stats_dict,
         )
+        self.temporal_encoder = HeteroTemporalEncoder(
+            node_types=[
+                node_type for node_type in data.node_types if "time" in data[node_type]
+            ],
+            channels=args.channels,
+        )
         self.gnn = HeteroGraphSAGE(
             node_types=data.node_types,
             edge_types=data.edge_types,
@@ -138,16 +145,25 @@ class Model(torch.nn.Module):
         self,
         tf_dict: Dict[NodeType, torch_frame.TensorFrame],
         edge_index_dict: Dict[EdgeType, Tensor],
+        seed_time: Tensor,
+        time_dict: Dict[NodeType, Tensor],
+        batch_dict: Dict[NodeType, Tensor],
         num_sampled_nodes_dict: Dict[NodeType, List[int]],
         num_sampled_edges_dict: Dict[EdgeType, List[int]],
     ) -> Tensor:
         x_dict = self.encoder(tf_dict)
+
+        rel_time_dict = self.temporal_encoder(seed_time, time_dict, batch_dict)
+        for node_type, rel_time in rel_time_dict.items():
+            x_dict[node_type] = x_dict[node_type] + rel_time
+
         x_dict = self.gnn(
             x_dict,
             edge_index_dict,
             num_sampled_nodes_dict,
             num_sampled_edges_dict,
         )
+
         return self.head(x_dict[entity_table])
 
 
@@ -167,6 +183,9 @@ def train() -> Tuple[float, float]:
         pred = model(
             batch.tf_dict,
             batch.edge_index_dict,
+            batch[entity_table].seed_time,
+            batch.time_dict,
+            batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
         )
@@ -192,6 +211,9 @@ def test(loader: NodeLoader) -> float:
         pred = model(
             batch.tf_dict,
             batch.edge_index_dict,
+            batch[entity_table].seed_time,
+            batch.time_dict,
+            batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
         )
