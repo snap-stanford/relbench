@@ -1,11 +1,13 @@
 import argparse
+import math
 
 import torch
-import torch.nn.functional as F
+from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, L1Loss
 from torch_frame import stype
 from torch_geometric.loader import NodeLoader
 from torch_geometric.nn import MLP
 from torch_geometric.sampler import NeighborSampler
+from torchmetrics import AUROC, Accuracy, MeanAbsoluteError
 from tqdm import tqdm
 
 from rtb.data.task import TaskType
@@ -57,6 +59,26 @@ data = make_pkey_fkey_graph(
     col_to_stype_dict=inferred_col_to_stype_dict,
 )
 
+task_type = dataset.tasks[args.task].task_type
+
+if task_type == TaskType.BINARY_CLASSIFICATION:
+    out_channels = 1
+    loss_fun = BCEWithLogitsLoss()
+    metric_computer = AUROC(task="binary").to(device)
+    higher_is_better = True
+elif task_type == TaskType.MULTICLASS_CLASSIFICATION:
+    # TODO Expose num_classes in dataset object.
+    num_classes = 10
+    out_channels = num_classes
+    loss_fun = CrossEntropyLoss()
+    metric_computer = Accuracy(task="multiclass", num_classes=num_classes).to(device)
+    higher_is_better = True
+elif task_type == TaskType.REGRESSION:
+    out_channels = 1
+    loss_fun = L1Loss()
+    metric_computer = MeanAbsoluteError(squared=False).to(device)
+    higher_is_better = False
+
 node_to_col_names_dict = {
     node_type: data[node_type].tf.col_names_dict for node_type in data.node_types
 }
@@ -65,7 +87,7 @@ encoder = HeteroEncoder(args.channels, node_to_col_names_dict, data.col_stats_di
     device
 )
 gnn = HeteroGraphSAGE(data.node_types, data.edge_types, args.channels).to(device)
-head = MLP(args.channels, out_channels=1, num_layers=1).to(device)
+head = MLP(args.channels, out_channels=out_channels, num_layers=1).to(device)
 
 sampler = NeighborSampler(
     data,
@@ -74,38 +96,49 @@ sampler = NeighborSampler(
 )
 
 train_table = dataset.make_train_table(args.task)
-# val_table = dataset.make_val_table(args.task)
-# test_table = dataset.make_test_table(args.task)
+val_table = dataset.make_val_table(args.task)
+test_table = dataset.make_test_table(args.task)
 
 # Ensure that mini-batch training works ###################################
 
-train_table_input = get_train_table_input(
-    train_table=train_table,
-    task=dataset.tasks[args.task],
-)
-
-train_loader = NodeLoader(
-    data,
-    node_sampler=sampler,
-    input_nodes=train_table_input.nodes,
-    input_time=train_table_input.time,
-    transform=train_table_input.transform,
-    batch_size=args.batch_size,
-)
+loader_dict = {}
+for split_name, label_table in [
+    ("train", train_table),
+    ("val", val_table),
+    ("test", test_table),
+]:
+    label_table_input = get_train_table_input(
+        train_table=label_table,
+        task=dataset.tasks[args.task],
+    )
+    shuffle = True if split_name == "train" else False
+    loader = NodeLoader(
+        data,
+        node_sampler=sampler,
+        input_nodes=label_table_input.nodes,
+        input_time=label_table_input.time,
+        transform=label_table_input.transform,
+        batch_size=args.batch_size,
+        shuffle=shuffle,
+    )
+    loader_dict[split_name] = loader
 
 optimizer = torch.optim.Adam(
     list(encoder.parameters()) + list(gnn.parameters()) + list(head.parameters()),
     lr=args.lr,
 )
 
-entity_node = train_table_input.nodes[0]
-task_type = dataset.tasks[args.task].task_type
+entity_node = label_table_input.nodes[0]
 
 
 def train() -> float:
+    encoder.train()
+    gnn.train()
+    head.train()
+
     loss_accum = 0.0
     count_accum = 0
-    for batch in tqdm(train_loader):
+    for batch in tqdm(loader_dict["train"]):
         optimizer.zero_grad()
         batch = batch.to(device)
         x_dict = encoder(batch.tf_dict)
@@ -115,16 +148,14 @@ def train() -> float:
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
         )
-        pred = head(x_dict[entity_node]).squeeze(-1)
+        pred = head(x_dict[entity_node])
+        if pred.size(1) == 1:
+            pred = pred.view(
+                -1,
+            )
 
         optimizer.zero_grad()
-        if task_type == TaskType.BINARY_CLASSIFICATION:
-            loss = F.binary_cross_entropy_with_logits(pred, batch[entity_node].y)
-        elif task_type == TaskType.REGRESSION:
-            loss = F.l1_loss(pred, batch[entity_node].y)
-        elif task_type == TaskType.MULTICLASS_CLASSIFICATION:
-            loss = F.cross_entropy(pred, batch[entity_node].y)
-
+        loss = loss_fun(pred, batch[entity_node].y)
         loss.backward()
         loss_accum += loss.item() * len(pred)
         count_accum += len(pred)
@@ -133,7 +164,52 @@ def train() -> float:
     return loss_accum / count_accum
 
 
+def eval(loader: NodeLoader) -> float:
+    encoder.eval()
+    gnn.eval()
+    head.eval()
+
+    metric_computer.reset()
+    for batch in tqdm(loader):
+        optimizer.zero_grad()
+        batch = batch.to(device)
+        x_dict = encoder(batch.tf_dict)
+        x_dict = gnn(
+            x_dict,
+            batch.edge_index_dict,
+            batch.num_sampled_nodes_dict,
+            batch.num_sampled_edges_dict,
+        )
+        pred = head(x_dict[entity_node])
+        if task_type == TaskType.MULTICLASS_CLASSIFICATION:
+            pred = pred.argmax(dim=-1)
+        elif task_type == TaskType.REGRESSION:
+            pred = pred.view(
+                -1,
+            )
+        metric_computer.update(pred, batch[entity_node].y)
+    return metric_computer.compute().item()
+
+
+if higher_is_better:
+    best_val_metric = 0
+else:
+    best_val_metric = math.inf
+
 for epoch in range(args.epochs):
     print(f"===Epoch {epoch}")
     train_loss = train()
-    print("Train loss: ", train_loss)
+    print(f"Train Loss: {train_loss:.4f}")
+    train_metric = eval(loader_dict["train"])
+    val_metric = eval(loader_dict["val"])
+
+    if higher_is_better:
+        if val_metric > best_val_metric:
+            best_val_metric = val_metric
+    else:
+        if val_metric < best_val_metric:
+            best_val_metric = val_metric
+
+    print(f"Train metric: {train_metric:.4f}, Val metric: {val_metric:.4f}")
+
+print(f"Best val metric: {best_val_metric:.4f}")
