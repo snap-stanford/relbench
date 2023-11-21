@@ -56,10 +56,6 @@ val_table = dataset.make_val_table(args.task)
 test_table = dataset.make_test_table(args.task)
 
 col_to_stype_dict = get_stype_proposal(dataset.db)
-# Fix semantic type proposal:
-if args.dataset == "rtb-forum":
-    col_to_stype_dict["postHistory"]["PostHistoryTypeId"] = torch_frame.categorical
-    col_to_stype_dict["posts"]["PostTypeId"] = torch_frame.categorical
 # Drop text columns for now:
 for stype_dict in col_to_stype_dict.values():
     for col_name, stype in list(stype_dict.items()):
