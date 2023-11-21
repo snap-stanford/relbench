@@ -1,6 +1,7 @@
 import os
 import shutil
 import time
+from functools import cache
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -27,6 +28,21 @@ class Dataset:
 
     def get_task(self, task_name: str) -> Task:
         return self.task_cls_dict[task_name](self._db)
+
+    # @property
+    # @cache
+
+
+class RelBenchDataset(Dataset):
+    name: str
+
+    def __init__(
+        root=Union[str, os.PathLike],
+        *,
+        download=False,
+        process=False,
+    ):
+        pass
 
 
 class RawDataset:

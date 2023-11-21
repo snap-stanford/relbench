@@ -1,8 +1,10 @@
 import os
 import time
+from functools import cache
 from pathlib import Path
 from typing import Dict, Tuple, Union
 
+import pandas as pd
 from typing_extensions import Self
 
 from rtb.data.table import Table
@@ -12,29 +14,19 @@ class Database:
     r"""A database is a collection of named tables linked by foreign key -
     primary key connections."""
 
-    def __init__(self, tables: Dict[str, Table]) -> None:
+    def __init__(self, table_dict: Dict[str, Table]) -> None:
         r"""Creates a database from a dictionary of tables."""
 
-        self.tables = tables
+        self.table_dict = table_dict
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
-
-    def validate(self) -> bool:
-        r"""Validate the database.
-
-        Check:
-        1. All tables validate.
-        2. All foreign keys point to tables that exist.
-        """
-
-        raise NotImplementedError
 
     def save(self, path: Union[str, os.PathLike]) -> None:
         r"""Saves the database to a directory. Simply saves each table
         individually with the table name as base name of file."""
 
-        for name, table in self.tables.items():
+        for name, table in self.table_dict.items():
             print(f"saving table {name}...")
             tic = time.time()
             table.save(f"{path}/{name}.parquet")
@@ -45,23 +37,31 @@ class Database:
     def load(cls, path: Union[str, os.PathLike]) -> Self:
         r"""Loads a database from a directory of tables in parquet files."""
 
-        tables = {}
+        table_dict = {}
         for table_path in Path(path).glob("*.parquet"):
             print(f"loading table {table_path}...")
             tic = time.time()
             table = Table.load(table_path)
-            tables[table_path.stem] = table
+            table_dict[table_path.stem] = table
             toc = time.time()
             print(f"done in {toc - tic:.2f} seconds.")
 
-        return cls(tables)
+        return cls(table_dict)
 
     def time_cutoff(self, time: int) -> Self:
         r"""Returns a database with all rows upto time."""
 
         return Database(
-            {name: table.time_cutoff(time) for name, table in self.tables.items()}
+            {name: table.time_cutoff(time) for name, table in self.table_dict.items()}
         )
+
+    @property
+    @cache
+    def min_time(self) -> pd.Timestamp:
+        r"""Returns the earliest timestamp in the database."""
+
+        return min(table.min_time for table in self.table_dict.values())
+        return pd.Timestamp(min(table.min_time for table in self.table_dict.values()))
 
     def get_time_range(self) -> Tuple[int, int]:
         r"""Returns the earliest and latest timestamp in the database."""
@@ -69,7 +69,7 @@ class Database:
         global_min_time = None
         global_max_time = None
 
-        for table in self.tables.values():
+        for table in self.table_dict.values():
             if table.time_col is None:
                 continue
 
