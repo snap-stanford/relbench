@@ -46,6 +46,8 @@ if args.task not in dataset.tasks:
 inferred_col_to_stype_dict = get_stype_proposal(dataset.db)
 
 # Drop text columns for now.
+# TODO: Re-include _dataset_to_informative_text_cols for each dataset and
+# and support text columns.
 for table_name, col_to_stype in inferred_col_to_stype_dict.items():
     filtered_col_to_stype = {
         key: value
@@ -54,6 +56,8 @@ for table_name, col_to_stype in inferred_col_to_stype_dict.items():
     }
     inferred_col_to_stype_dict[table_name] = filtered_col_to_stype
 
+# TODO: Add table materialization/saving logic so that we don't need to
+# re-compute text embeddings every time. Pass :obj:`path`.
 data = make_pkey_fkey_graph(
     dataset.db,
     col_to_stype_dict=inferred_col_to_stype_dict,
