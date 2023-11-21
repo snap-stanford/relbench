@@ -98,17 +98,15 @@ class Table:
             time_col=metadata["time_col"],
         )
 
-    def time_cutoff(self, time_stamp: int) -> Self:
+    def upto(self, time_stamp: pd.Timestamp) -> Self:
         r"""Returns a table with all rows upto time."""
 
-        if self.time_col is None:
-            return self
-
-        new_table = copy.copy(self)
-        df = new_table.df
-        df = df[df[self.time_col] <= time_stamp]
-        new_table.df = df
-        return new_table
+        return Table(
+            df=self.df.query(f"{self.time_col} <= @time_stamp"),
+            fkey_col_to_pkey_table=self.fkey_col_to_pkey_table,
+            pkey_col=self.pkey_col,
+            time_col=self.time_col,
+        )
 
     @property
     @cache

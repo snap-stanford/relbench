@@ -1,6 +1,7 @@
 import os
 import shutil
 import time
+import warnings
 from functools import cache
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
@@ -29,8 +30,25 @@ class Dataset:
     def get_task(self, task_name: str) -> Task:
         return self.task_cls_dict[task_name](self._db)
 
-    # @property
-    # @cache
+    @property
+    @cache
+    def db_upto_train(self) -> Database:
+        return self._db.upto(self.train_max_time)
+
+    @property
+    @cache
+    def db_upto_val(self) -> Database:
+        return self._db.upto(self.val_max_time)
+
+    @property
+    @cache
+    def db(self) -> Dataset:
+        warnings.warn(
+            "Accessing the full database is not recommended. Use with caution"
+            "to prevent temporal leakage. If memory is not a concern, please use"
+            "`db_upto_train` or `db_upto_val` instead."
+        )
+        return self._db
 
 
 class RelBenchDataset(Dataset):
@@ -92,7 +110,8 @@ class RawDataset:
             # standardize db
             print("reindexing pkeys and fkeys...")
             tic = time.time()
-            db = self.reindex_pkeys_and_fkeys(db)
+            # db = self.reindex_pkeys_and_fkeys(db)
+            # TODO: also sort by time
             toc = time.time()
             print(f"reindexing pkeys and fkeys took {toc - tic:.2f} seconds.")
 
@@ -170,49 +189,6 @@ class RawDataset:
         subclass."""
 
         raise NotImplementedError
-
-    def reindex_pkeys_and_fkeys(self, db: Database) -> None:
-        r"""Mapping primary and foreign keys into indices according to
-        the ordering in the primary key tables.
-
-        Args:
-            db (Database): The database object containing a set of tables.
-
-        Returns:
-            Database: Mapped database.
-        """
-        # Get pkey to idx mapping:
-        index_map_dict: Dict[str, pd.Series] = {}
-        for table_name, table in db.tables.items():
-            if table.pkey_col is not None:
-                ser = table.df[table.pkey_col]
-                if ser.nunique() != len(ser):
-                    raise RuntimeError(
-                        f"The primary key '{table.pkey_col}' "
-                        f"of table '{table_name}' contains "
-                        "duplicated elements"
-                    )
-                arange_ser = pd.RangeIndex(len(ser)).astype("Int64")
-                index_map_dict[table_name] = pd.Series(
-                    index=ser,
-                    data=arange_ser,
-                    name="index",
-                )
-                table.df[table.pkey_col] = arange_ser
-
-        # Replace fkey_col_to_pkey_table with indices.
-        for table in db.tables.values():
-            for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items():
-                out = pd.merge(
-                    table.df[fkey_col],
-                    index_map_dict[pkey_table_name],
-                    how="left",
-                    left_on=fkey_col,
-                    right_index=True,
-                )
-                table.df[fkey_col] = out["index"]
-
-        return db
 
     @property
     def db(self) -> Database:

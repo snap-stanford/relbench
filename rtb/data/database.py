@@ -14,12 +14,15 @@ class Database:
     r"""A database is a collection of named tables linked by foreign key -
     primary key connections."""
 
+    # TODO: maybe add a function to visualize schema in jupyter
+
     def __init__(self, table_dict: Dict[str, Table]) -> None:
         r"""Creates a database from a dictionary of tables."""
 
         self.table_dict = table_dict
 
     def __repr__(self) -> str:
+        # TODO: add more info
         return f"{self.__class__.__name__}()"
 
     def save(self, path: Union[str, os.PathLike]) -> None:
@@ -48,11 +51,48 @@ class Database:
 
         return cls(table_dict)
 
-    def time_cutoff(self, time: int) -> Self:
-        r"""Returns a database with all rows upto time."""
+    def reindex_pkeys_and_fkeys(self):
+        r"""Mapping primary and foreign keys into indices according to
+        the ordering in the primary key tables.
+        """
+        # Get pkey to idx mapping:
+        index_map_dict: Dict[str, pd.Series] = {}
+        for table_name, table in self.table_dict.items():
+            if table.pkey_col is not None:
+                ser = table.df[table.pkey_col]
+                if ser.nunique() != len(ser):
+                    raise RuntimeError(
+                        f"The primary key '{table.pkey_col}' "
+                        f"of table '{table_name}' contains "
+                        "duplicated elements"
+                    )
+                arange_ser = pd.RangeIndex(len(ser)).astype("Int64")
+                index_map_dict[table_name] = pd.Series(
+                    index=ser,
+                    data=arange_ser,
+                    name="index",
+                )
+                table.df[table.pkey_col] = arange_ser
+
+        # Replace fkey_col_to_pkey_table with indices.
+        for table in self.table_dict.values():
+            for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items():
+                out = pd.merge(
+                    table.df[fkey_col],
+                    index_map_dict[pkey_table_name],
+                    how="left",
+                    left_on=fkey_col,
+                    right_index=True,
+                )
+                table.df[fkey_col] = out["index"]
+
+    def upto(self, time_stamp: pd.Timestamp) -> Self:
+        r"""Returns a database with all rows upto time_stamp."""
 
         return Database(
-            {name: table.time_cutoff(time) for name, table in self.table_dict.items()}
+            table_dict={
+                name: table.upto(time_stamp) for name, table in self.table_dict.items()
+            }
         )
 
     @property
