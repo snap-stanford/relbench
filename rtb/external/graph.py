@@ -161,15 +161,14 @@ def get_train_table_input(
     if train_table.time_col is not None:
         time = to_unix_time(train_table.df[train_table.time_col])
 
-    target = None
-    transform = None
+    target: Optional[Tensor] = None
+    transform: Optional[AttachTargetTransform] = None
     if task.target_col in train_table.df:
         target_type = float
         if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
             target_type = int
         target = torch.from_numpy(
-            train_table.df[task.target_col].values.astype(target_type)
-        )
+            train_table.df[task.target_col].values.astype(target_type))
         transform = AttachTargetTransform(table_name, target)
 
     return TrainTableInput(
