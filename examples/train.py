@@ -4,12 +4,6 @@ from typing import Dict, List, Tuple
 
 import torch
 import torch_frame
-from rtb.data.task import TaskType
-from rtb.datasets import get_dataset
-from rtb.external.graph import (get_stype_proposal, get_train_table_input,
-                                make_pkey_fkey_graph)
-from rtb.external.nn import (HeteroEncoder, HeteroGraphSAGE,
-                             HeteroTemporalEncoder)
 from torch import Tensor
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_geometric.data import HeteroData
@@ -19,6 +13,13 @@ from torch_geometric.sampler import NeighborSampler
 from torch_geometric.typing import EdgeType, NodeType
 from torchmetrics import AUROC, MeanAbsoluteError
 from tqdm import tqdm
+
+from rtb.data.task import TaskType
+from rtb.datasets import get_dataset
+from rtb.external.graph import (get_stype_proposal, get_train_table_input,
+                                make_pkey_fkey_graph)
+from rtb.external.nn import (HeteroEncoder, HeteroGraphSAGE,
+                             HeteroTemporalEncoder)
 
 # Stores the informative text columns to retain for each table:
 dataset_to_informative_text_cols = {}
@@ -36,7 +37,7 @@ parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
-parser.add_argument("--num_neighbors", type=int, default=5)
+parser.add_argument("--num_neighbors", type=int, default=-1)
 parser.add_argument("--num_workers", type=int, default=6)
 args = parser.parse_args()
 
@@ -46,7 +47,8 @@ dataset = get_dataset(name=args.dataset, root="./data")
 if args.task not in dataset.tasks:
     raise ValueError(
         f"'{args.dataset}' does not support the given task {args.task}. "
-        f"Please choose the task from {list(dataset.tasks.keys())}.")
+        f"Please choose the task from {list(dataset.tasks.keys())}."
+    )
 
 task = dataset.tasks[args.task]
 train_table = dataset.make_train_table(args.task)
@@ -56,8 +58,7 @@ test_table = dataset.make_test_table(args.task)
 col_to_stype_dict = get_stype_proposal(dataset.db)
 # Fix semantic type proposal:
 if args.dataset == "rtb-forum":
-    col_to_stype_dict["postHistory"][
-        "PostHistoryTypeId"] = torch_frame.categorical
+    col_to_stype_dict["postHistory"]["PostHistoryTypeId"] = torch_frame.categorical
     col_to_stype_dict["posts"]["PostTypeId"] = torch_frame.categorical
 # Drop text columns for now:
 for stype_dict in col_to_stype_dict.values():
@@ -112,7 +113,6 @@ elif task.task_type == TaskType.REGRESSION:
 
 
 class Model(torch.nn.Module):
-
     def __init__(self):
         super().__init__()
 
@@ -126,8 +126,7 @@ class Model(torch.nn.Module):
         )
         self.temporal_encoder = HeteroTemporalEncoder(
             node_types=[
-                node_type for node_type in data.node_types
-                if "time" in data[node_type]
+                node_type for node_type in data.node_types if "time" in data[node_type]
             ],
             channels=args.channels,
         )
@@ -229,13 +228,16 @@ best_val_metric = 0 if higher_is_better else math.inf
 for epoch in range(1, args.epochs + 1):
     loss, train_metric = train()
     val_metric = test(loader_dict["val"])
-    print(f"Epoch: {epoch:02d}, "
-          f"Loss: {loss:.4f}, "
-          f"Train {metric_name}: {train_metric:.4f}, "
-          f"Val {metric_name}: {val_metric:.4f}")
+    print(
+        f"Epoch: {epoch:02d}, "
+        f"Loss: {loss:.4f}, "
+        f"Train {metric_name}: {train_metric:.4f}, "
+        f"Val {metric_name}: {val_metric:.4f}"
+    )
 
     if (higher_is_better and val_metric > best_val_metric) or (
-            not higher_is_better and val_metric < best_val_metric):
+        not higher_is_better and val_metric < best_val_metric
+    ):
         best_val_metric = val_metric
         state_dict = model.state_dict()
 
