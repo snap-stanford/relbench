@@ -35,7 +35,7 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
     inferred_col_to_stype_dict = {}
     for table_name, table in db.tables.items():
         # Take the first 10,000 rows for quick stype inference.
-        inferred_col_to_stype = infer_df_stype(table.df.head(10000))
+        inferred_col_to_stype = infer_df_stype(table.df)
 
         # Temporarily removing time_col since StypeEncoder for
         # stype.timestamp is not yet supported.
