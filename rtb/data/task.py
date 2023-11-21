@@ -1,5 +1,4 @@
 import os
-from dataclasses import dataclass
 from enum import Enum
 from typing import List, Union
 
@@ -71,7 +70,7 @@ class Task:
 
         raise NotImplementedError
 
-    def make_table(db: Database, time_window_df: pd.DataFrame) -> Table:
+    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
         r"""To be implemented by subclass.
 
         time_window_df should have columns window_min_time and window_max_time,

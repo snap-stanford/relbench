@@ -1,5 +1,6 @@
 from typing import Any, Dict, NamedTuple, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 import torch
 from torch import Tensor
@@ -11,6 +12,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
 
 from rtb.data import Database, Table
+from rtb.data.task import Task, TaskType
 
 
 def to_unix_time(ser: pd.Series) -> Tensor:
@@ -32,14 +34,18 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
 
     inferred_col_to_stype_dict = {}
     for table_name, table in db.tables.items():
-        inferred_col_to_stype = infer_df_stype(table.df)
+        # Take the first 10,000 rows for quick stype inference.
+        inferred_col_to_stype = infer_df_stype(table.df.head(10000))
 
         # Temporarily removing time_col since StypeEncoder for
         # stype.timestamp is not yet supported.
         # TODO: Drop the removing logic once StypeEncoder is supported.
         # https://github.com/pyg-team/pytorch-frame/pull/225
-        if table.time_col is not None:
-            inferred_col_to_stype.pop(table.time_col)
+        inferred_col_to_stype = {
+            col_name: inferred_stype
+            for col_name, inferred_stype in inferred_col_to_stype.items()
+            if inferred_stype != stype.timestamp
+        }
 
         # Remove pkey, fkey columns since they will not be used as input
         # feature.
@@ -75,9 +81,16 @@ def make_pkey_fkey_graph(
 
     for table_name, table in db.tables.items():
         # Materialize the tables into tensor frames:
+        df = table.df
+        col_to_stype = col_to_stype_dict[table_name]
+
+        if len(col_to_stype) == 0:  # Add constant feature in case df is empty:
+            col_to_stype = {"__const__": stype.numerical}
+            df = pd.DataFrame({"__const__": np.ones(len(table.df))})
+
         dataset = Dataset(
-            df=table.df,
-            col_to_stype=col_to_stype_dict[table_name],
+            df=df,
+            col_to_stype=col_to_stype,
             text_embedder_cfg=text_embedder_cfg,
         ).materialize()
 
@@ -137,13 +150,12 @@ class TrainTableInput(NamedTuple):
 
 def get_train_table_input(
     train_table: Table,
-    target_col: Optional[str] = None,
-    target_dtype: Optional[torch.dtype] = None,
+    task: Task,
 ) -> TrainTableInput:
     assert len(train_table.fkey_col_to_pkey_table) == 1
     fkey_col, table_name = list(train_table.fkey_col_to_pkey_table.items())[0]
 
-    nodes = torch.from_numpy(train_table.df[fkey_col].values)
+    nodes = torch.from_numpy(train_table.df[fkey_col].astype(int).values)
 
     time: Optional[Tensor] = None
     if train_table.time_col is not None:
@@ -151,10 +163,13 @@ def get_train_table_input(
 
     target: Optional[Tensor] = None
     transform: Optional[AttachTargetTransform] = None
-    if target_col is not None and target_col in train_table.df:
-        target = torch.from_numpy(train_table.df[target_col].values)
-        if target_dtype is not None:
-            target = target.to(target_dtype)
+    if task.target_col in train_table.df:
+        target_type = float
+        if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+            target_type = int
+        target = torch.from_numpy(
+            train_table.df[task.target_col].values.astype(target_type)
+        )
         transform = AttachTargetTransform(table_name, target)
 
     return TrainTableInput(
