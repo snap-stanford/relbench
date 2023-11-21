@@ -1,6 +1,7 @@
 import copy
 import json
 import os
+from functools import cache
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
@@ -27,8 +28,8 @@ class Table:
         self,
         df: pd.DataFrame,
         fkey_col_to_pkey_table: Dict[str, str],
+        time_col: str,
         pkey_col: Optional[str] = None,
-        time_col: Optional[str] = None,
     ):
         self.df = df
         self.fkey_col_to_pkey_table = fkey_col_to_pkey_table
@@ -47,19 +48,6 @@ class Table:
     def __len__(self) -> int:
         r"""Returns the number of rows in the table."""
         return len(self.df)
-
-    def validate(self) -> bool:
-        r"""Validate the table."""
-
-        if self.pkey_col is not None and self.pkey not in self.df.columns:
-            return False
-        # Check if fkey_col_to_pkey_table columns exist
-        for col in self.fkey_col_to_pkey_table:
-            if col not in self.df.columns:
-                return False
-        if self.time_col is not None and self.time_col not in self.df.columns:
-            return False
-        return True
 
     def save(self, path: Union[str, os.PathLike]) -> None:
         r"""Saves the table to a parquet file. Stores other attributes as
@@ -122,10 +110,16 @@ class Table:
         new_table.df = df
         return new_table
 
-    def get_time_range(self) -> Tuple[int, int]:
-        r"""Returns the earliest and latest timestamp in the table."""
+    @property
+    @cache
+    def min_time(self) -> pd.Timestamp:
+        r"""Returns the earliest time in the table."""
 
-        assert self.time_col is not None
+        return self.df[self.time_col].min()
 
-        ts = self.df[self.time_col]
-        return ts.min(), ts.max()
+    @property
+    @cache
+    def max_time(self) -> pd.Timestamp:
+        r"""Returns the latest time in the table."""
+
+        return self.df[self.time_col].max()

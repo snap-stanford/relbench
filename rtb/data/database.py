@@ -61,24 +61,10 @@ class Database:
         r"""Returns the earliest timestamp in the database."""
 
         return min(table.min_time for table in self.table_dict.values())
-        return pd.Timestamp(min(table.min_time for table in self.table_dict.values()))
 
-    def get_time_range(self) -> Tuple[int, int]:
-        r"""Returns the earliest and latest timestamp in the database."""
+    @property
+    @cache
+    def max_time(self) -> pd.Timestamp:
+        r"""Returns the latest timestamp in the database."""
 
-        global_min_time = None
-        global_max_time = None
-
-        for table in self.table_dict.values():
-            if table.time_col is None:
-                continue
-
-            min_time, max_time = table.get_time_range()
-
-            if global_min_time is None or min_time < global_min_time:
-                global_min_time = min_time
-
-            if global_max_time is None or max_time > global_max_time:
-                global_max_time = max_time
-
-        return global_min_time, global_max_time
+        return max(table.max_time for table in self.table_dict.values())
