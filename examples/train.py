@@ -1,13 +1,17 @@
 import argparse
 import math
+from typing import Dict, List, Tuple
 
 import torch
-from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, L1Loss
-from torch_frame import stype
+import torch_frame
+from torch import Tensor
+from torch.nn import BCEWithLogitsLoss, L1Loss
+from torch_geometric.data import HeteroData
 from torch_geometric.loader import NodeLoader
 from torch_geometric.nn import MLP
 from torch_geometric.sampler import NeighborSampler
-from torchmetrics import AUROC, Accuracy, MeanAbsoluteError
+from torch_geometric.typing import EdgeType, NodeType
+from torchmetrics import AUROC, MeanAbsoluteError
 from tqdm import tqdm
 
 from rtb.data.task import TaskType
@@ -16,9 +20,9 @@ from rtb.external.graph import (get_stype_proposal, get_train_table_input,
                                 make_pkey_fkey_graph)
 from rtb.external.nn import HeteroEncoder, HeteroGraphSAGE
 
-# Stores the informative text columns to retain for each table.
-_dataset_to_informative_text_cols = {}
-_dataset_to_informative_text_cols["rtb-forum"] = {
+# Stores the informative text columns to retain for each table:
+dataset_to_informative_text_cols = {}
+dataset_to_informative_text_cols["rtb-forum"] = {
     "postHistory": ["Text"],
     "users": ["AboutMe"],
     "posts": ["Body", "Title", "Tags"],
@@ -26,195 +30,195 @@ _dataset_to_informative_text_cols["rtb-forum"] = {
 }
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset",
-                    type=str,
-                    default="rtb-forum",
-                    choices=["rtb-forum"])
+parser.add_argument("--dataset", type=str, default="rtb-forum")
 parser.add_argument("--task", type=str, default="UserSumCommentScoresTask")
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--num_neighbors", type=int, default=64)
+parser.add_argument("--num_workers", type=int, default=6)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-dataset = get_dataset(name=args.dataset, root="/home/weihua/code/rtb/data")
+dataset = get_dataset(name=args.dataset, root="./data")
 if args.task not in dataset.tasks:
     raise ValueError(
-        f"{args.dataset} does not support the given task {args.task}. Please "
-        f"choose the task from {list(dataset.tasks.keys())}")
+        f"'{args.dataset}' does not support the given task {args.task}. "
+        f"Please choose the task from {list(dataset.tasks.keys())}."
+    )
 
-inferred_col_to_stype_dict = get_stype_proposal(dataset.db)
+task = dataset.tasks[args.task]
+train_table = dataset.make_train_table(args.task)
+val_table = dataset.make_val_table(args.task)
+test_table = dataset.make_test_table(args.task)
 
-# Drop text columns for now.
-# TODO: Re-include _dataset_to_informative_text_cols for each dataset and
-# and support text columns.
-for table_name, col_to_stype in inferred_col_to_stype_dict.items():
-    filtered_col_to_stype = {
-        key: value
-        for key, value in col_to_stype.items() if value != stype.text_embedded
-    }
-    inferred_col_to_stype_dict[table_name] = filtered_col_to_stype
+col_to_stype_dict = get_stype_proposal(dataset.db)
+# Fix semantic type proposal:
+if args.dataset == "rtb-forum":
+    col_to_stype_dict["postHistory"]["PostHistoryTypeId"] = torch_frame.categorical
+    col_to_stype_dict["posts"]["PostTypeId"] = torch_frame.categorical
+# Drop text columns for now:
+for stype_dict in col_to_stype_dict.values():
+    for col_name, stype in list(stype_dict.items()):
+        if stype == torch_frame.text_embedded:
+            del stype_dict[col_name]
 
-# TODO: Add table materialization/saving logic so that we don't need to
-# re-compute text embeddings every time. Pass :obj:`path`.
-data = make_pkey_fkey_graph(
+# TODO Add table materialization/saving logic.
+data: HeteroData = make_pkey_fkey_graph(
     dataset.db,
-    col_to_stype_dict=inferred_col_to_stype_dict,
+    col_to_stype_dict=col_to_stype_dict,
 )
 
-task_type = dataset.tasks[args.task].task_type
-
-if task_type == TaskType.BINARY_CLASSIFICATION:
-    out_channels = 1
-    loss_fun = BCEWithLogitsLoss()
-    metric_computer = AUROC(task="binary").to(device)
-    higher_is_better = True
-elif task_type == TaskType.MULTICLASS_CLASSIFICATION:
-    # TODO Expose num_classes in dataset object.
-    num_classes = 10
-    out_channels = num_classes
-    loss_fun = CrossEntropyLoss()
-    metric_computer = Accuracy(task="multiclass",
-                               num_classes=num_classes).to(device)
-    higher_is_better = True
-elif task_type == TaskType.REGRESSION:
-    out_channels = 1
-    loss_fun = L1Loss()
-    metric_computer = MeanAbsoluteError(squared=False).to(device)
-    higher_is_better = False
-
-node_to_col_names_dict = {
-    node_type: data[node_type].tf.col_names_dict
-    for node_type in data.node_types
-}
-
-encoder = HeteroEncoder(args.channels, node_to_col_names_dict,
-                        data.col_stats_dict).to(device)
-gnn = HeteroGraphSAGE(data.node_types, data.edge_types,
-                      args.channels).to(device)
-head = MLP(args.channels, out_channels=out_channels, num_layers=1).to(device)
-
-sampler = NeighborSampler(
+sampler = NeighborSampler(  # Initialize sampler only once:
     data,
     num_neighbors=[args.num_neighbors, args.num_neighbors],
     time_attr="time",
 )
 
-train_table = dataset.make_train_table(args.task)
-val_table = dataset.make_val_table(args.task)
-test_table = dataset.make_test_table(args.task)
-
-# Ensure that mini-batch training works ###################################
-
-loader_dict = {}
-for split_name, label_table in [
+loader_dict: Dict[str, NodeLoader] = {}
+for split, table in [
     ("train", train_table),
     ("val", val_table),
     ("test", test_table),
 ]:
-    label_table_input = get_train_table_input(
-        train_table=label_table,
-        task=dataset.tasks[args.task],
-    )
-    shuffle = True if split_name == "train" else False
-    loader = NodeLoader(
+    table_input = get_train_table_input(train_table=table, task=task)
+    entity_table = table_input.nodes[0]
+    loader_dict[split] = NodeLoader(
         data,
         node_sampler=sampler,
-        input_nodes=label_table_input.nodes,
-        input_time=label_table_input.time,
-        transform=label_table_input.transform,
+        input_nodes=table_input.nodes,
+        input_time=table_input.time,
+        transform=table_input.transform,
         batch_size=args.batch_size,
-        shuffle=shuffle,
+        shuffle=split == "train",
+        num_workers=args.num_workers,
+        persistent_workers=args.num_workers > 0,
     )
-    loader_dict[split_name] = loader
 
-optimizer = torch.optim.Adam(
-    list(encoder.parameters()) + list(gnn.parameters()) +
-    list(head.parameters()),
-    lr=args.lr,
-)
+if task.task_type == TaskType.BINARY_CLASSIFICATION:
+    out_channels = 1
+    loss_fn = BCEWithLogitsLoss()
+    metric_name = "AUROC"
+    metric = AUROC(task="binary").to(device)
+    higher_is_better = True
+elif task.task_type == TaskType.REGRESSION:
+    out_channels = 1
+    loss_fn = L1Loss()
+    metric_name = "MAE"
+    metric = MeanAbsoluteError(squared=False).to(device)
+    higher_is_better = False
 
-entity_node = label_table_input.nodes[0]
+
+class Model(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.encoder = HeteroEncoder(
+            channels=args.channels,
+            node_to_col_names_dict={
+                node_type: data[node_type].tf.col_names_dict
+                for node_type in data.node_types
+            },
+            node_to_col_stats=data.col_stats_dict,
+        )
+        self.gnn = HeteroGraphSAGE(
+            node_types=data.node_types,
+            edge_types=data.edge_types,
+            channels=args.channels,
+        )
+        self.head = MLP(
+            args.channels,
+            out_channels=out_channels,
+            num_layers=1,
+        )
+
+    def forward(
+        self,
+        tf_dict: Dict[NodeType, torch_frame.TensorFrame],
+        edge_index_dict: Dict[EdgeType, Tensor],
+        num_sampled_nodes_dict: Dict[NodeType, List[int]],
+        num_sampled_edges_dict: Dict[EdgeType, List[int]],
+    ) -> Tensor:
+        x_dict = self.encoder(tf_dict)
+        x_dict = self.gnn(
+            x_dict,
+            edge_index_dict,
+            num_sampled_nodes_dict,
+            num_sampled_edges_dict,
+        )
+        return self.head(x_dict[entity_table])
 
 
-def train() -> float:
-    encoder.train()
-    gnn.train()
-    head.train()
+model = Model().to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
-    loss_accum = 0.0
-    count_accum = 0
+
+def train() -> Tuple[float, float]:
+    model.train()
+
+    metric.reset()
+    loss_accum = count_accum = 0
     for batch in tqdm(loader_dict["train"]):
-        optimizer.zero_grad()
         batch = batch.to(device)
-        x_dict = encoder(batch.tf_dict)
-        x_dict = gnn(
-            x_dict,
+
+        optimizer.zero_grad()
+        pred = model(
+            batch.tf_dict,
             batch.edge_index_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
         )
-        pred = head(x_dict[entity_node])
-        if pred.size(1) == 1:
-            pred = pred.view(-1, )
-
-        optimizer.zero_grad()
-        loss = loss_fun(pred, batch[entity_node].y)
+        pred = pred.view(-1) if pred.size(1) == 1 else pred
+        loss = loss_fn(pred, batch[entity_table].y)
         loss.backward()
-        loss_accum += loss.item() * len(pred)
-        count_accum += len(pred)
-
         optimizer.step()
-    return loss_accum / count_accum
+
+        loss_accum += float(loss) * pred.size(0)
+        count_accum += pred.size(0)
+        metric.update(pred, batch[entity_table].y)
+
+    return loss_accum / count_accum, float(metric.compute())
 
 
-def eval(loader: NodeLoader) -> float:
-    encoder.eval()
-    gnn.eval()
-    head.eval()
+@torch.no_grad()
+def test(loader: NodeLoader) -> float:
+    model.eval()
 
-    metric_computer.reset()
+    metric.reset()
     for batch in tqdm(loader):
-        optimizer.zero_grad()
         batch = batch.to(device)
-        x_dict = encoder(batch.tf_dict)
-        x_dict = gnn(
-            x_dict,
+        pred = model(
+            batch.tf_dict,
             batch.edge_index_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
         )
-        pred = head(x_dict[entity_node])
-        if task_type == TaskType.MULTICLASS_CLASSIFICATION:
-            pred = pred.argmax(dim=-1)
-        elif task_type == TaskType.REGRESSION:
-            pred = pred.view(-1, )
-        metric_computer.update(pred, batch[entity_node].y)
-    return metric_computer.compute().item()
+        pred = pred.view(-1) if pred.size(1) == 1 else pred
+        metric.update(pred, batch[entity_table].y)
+
+    return float(metric.compute())
 
 
-if higher_is_better:
-    best_val_metric = 0
-else:
-    best_val_metric = math.inf
+state_dict = None
+best_val_metric = 0 if higher_is_better else math.inf
+for epoch in range(1, args.epochs + 1):
+    loss, train_metric = train()
+    val_metric = test(loader_dict["val"])
+    print(
+        f"Epoch: {epoch:02d}, "
+        f"Loss: {loss:.4f}, "
+        f"Train {metric_name}: {train_metric:.4f}, "
+        f"Val {metric_name}: {val_metric:.4f}"
+    )
 
-for epoch in range(args.epochs):
-    print(f"===Epoch {epoch}")
-    train_loss = train()
-    print(f"Train Loss: {train_loss:.4f}")
-    train_metric = eval(loader_dict["train"])
-    val_metric = eval(loader_dict["val"])
+    if (higher_is_better and val_metric > best_val_metric) or (
+        not higher_is_better and val_metric < best_val_metric
+    ):
+        best_val_metric = val_metric
+        state_dict = model.state_dict()
 
-    if higher_is_better:
-        if val_metric > best_val_metric:
-            best_val_metric = val_metric
-    else:
-        if val_metric < best_val_metric:
-            best_val_metric = val_metric
-
-    print(f"Train metric: {train_metric:.4f}, Val metric: {val_metric:.4f}")
-
-print(f"Best val metric: {best_val_metric:.4f}")
+model.load_state_dict(state_dict)
+test_metric = test(loader_dict["test"])
+print(f"Test {metric_name}: {test_metric:.4f}")

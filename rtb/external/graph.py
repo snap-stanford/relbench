@@ -81,12 +81,12 @@ def make_pkey_fkey_graph(
 
     for table_name, table in db.tables.items():
         # Materialize the tables into tensor frames:
-        col_to_stype = col_to_stype_dict[table_name]
         df = table.df
-        if len(col_to_stype) == 0:
-            # Add constant feature in case col_to_stype is empty
+        col_to_stype = col_to_stype_dict[table_name]
+
+        if len(col_to_stype) == 0:  # Add constant feature in case df is empty:
             col_to_stype = {"__const__": stype.numerical}
-            df = pd.DataFrame({"__const__": np.zeros(len(df))})
+            df = pd.DataFrame({"__const__": np.ones(len(table.df))})
 
         dataset = Dataset(
             df=df,
@@ -168,7 +168,8 @@ def get_train_table_input(
         if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
             target_type = int
         target = torch.from_numpy(
-            train_table.df[task.target_col].values.astype(target_type))
+            train_table.df[task.target_col].values.astype(target_type)
+        )
         transform = AttachTargetTransform(table_name, target)
 
     return TrainTableInput(
