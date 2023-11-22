@@ -1,4 +1,5 @@
 import argparse
+import copy
 import math
 import os
 from typing import Dict, List, Tuple
@@ -37,9 +38,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rtb-forum")
 parser.add_argument("--task", type=str, default="UserSumCommentScoresTask")
 parser.add_argument("--lr", type=float, default=0.01)
-parser.add_argument("--epochs", type=int, default=10)
+parser.add_argument("--epochs", type=int, default=50)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
+# Default to "sum" aggrgation since it's better for sum-based target labels.
+parser.add_argument(
+    "--aggr", type=str, default="sum", help="GNN neighbor aggregation scheme."
+)
 parser.add_argument("--num_neighbors", type=int, default=-1)
 parser.add_argument("--num_workers", type=int, default=6)
 args = parser.parse_args()
@@ -140,6 +145,7 @@ class Model(torch.nn.Module):
             node_types=data.node_types,
             edge_types=data.edge_types,
             channels=args.channels,
+            aggr=args.aggr,
         )
         self.head = MLP(
             args.channels,
@@ -245,9 +251,15 @@ for epoch in range(1, args.epochs + 1):
         not higher_is_better and val_metric < best_val_metric
     ):
         best_val_metric = val_metric
-        state_dict = model.state_dict()
+        state_dict = copy.deepcopy(model.state_dict())
 
 model.load_state_dict(state_dict)
+val_metric = test(loader_dict["val"])
+print(f"Best val: {metric_name}: {val_metric:.4f}")
+
+# Test if the correct checkpoint gets picked up
+assert val_metric == best_val_metric
+
 # NOTE: Commented out for now since test labels are not attached.
 # test_metric = test(loader_dict["test"])
 # print(f"Test {metric_name}: {test_metric:.4f}")
