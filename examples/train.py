@@ -42,10 +42,9 @@ parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 # Default to "sum" aggrgation since it's better for sum-based target labels.
-parser.add_argument("--aggr",
-                    type=str,
-                    default="sum",
-                    help="GNN neighbor aggregation scheme.")
+parser.add_argument(
+    "--aggr", type=str, default="sum", help="GNN neighbor aggregation scheme."
+)
 parser.add_argument("--num_neighbors", type=int, default=-1)
 parser.add_argument("--num_workers", type=int, default=6)
 args = parser.parse_args()
@@ -58,7 +57,8 @@ dataset = get_dataset(name=args.dataset, root=root_dir)
 if args.task not in dataset.tasks:
     raise ValueError(
         f"'{args.dataset}' does not support the given task {args.task}. "
-        f"Please choose the task from {list(dataset.tasks.keys())}.")
+        f"Please choose the task from {list(dataset.tasks.keys())}."
+    )
 
 task = dataset.tasks[args.task]
 train_table = dataset.make_train_table(args.task)
@@ -78,7 +78,8 @@ data: HeteroData = make_pkey_fkey_graph(
     dataset.db,
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device), batch_size=16),
+        text_embedder=GloveTextEmbedding(device=device), batch_size=256
+    ),
     cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
 
@@ -123,7 +124,6 @@ elif task.task_type == TaskType.REGRESSION:
 
 
 class Model(torch.nn.Module):
-
     def __init__(self):
         super().__init__()
 
@@ -137,8 +137,7 @@ class Model(torch.nn.Module):
         )
         self.temporal_encoder = HeteroTemporalEncoder(
             node_types=[
-                node_type for node_type in data.node_types
-                if "time" in data[node_type]
+                node_type for node_type in data.node_types if "time" in data[node_type]
             ],
             channels=args.channels,
         )
@@ -241,13 +240,16 @@ best_val_metric = 0 if higher_is_better else math.inf
 for epoch in range(1, args.epochs + 1):
     loss, train_metric = train()
     val_metric = test(loader_dict["val"])
-    print(f"Epoch: {epoch:02d}, "
-          f"Loss: {loss:.4f}, "
-          f"Train {metric_name}: {train_metric:.4f}, "
-          f"Val {metric_name}: {val_metric:.4f}")
+    print(
+        f"Epoch: {epoch:02d}, "
+        f"Loss: {loss:.4f}, "
+        f"Train {metric_name}: {train_metric:.4f}, "
+        f"Val {metric_name}: {val_metric:.4f}"
+    )
 
     if (higher_is_better and val_metric > best_val_metric) or (
-            not higher_is_better and val_metric < best_val_metric):
+        not higher_is_better and val_metric < best_val_metric
+    ):
         best_val_metric = val_metric
         state_dict = copy.deepcopy(model.state_dict())
 
