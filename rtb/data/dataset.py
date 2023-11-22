@@ -18,43 +18,24 @@ class Dataset:
     def __init__(
         self,
         db: Database,
-        train_max_time: pd.Timestamp,
-        val_max_time: pd.Timestamp,
+        val_timestamp: pd.Timestamp,
+        test_timestamp: pd.Timestamp,
         task_cls_dict: Dict[str, Task],
     ) -> None:
         self._db = db
-        self.train_max_time = train_max_time
-        self.val_max_time = val_max_time
+        self.val_timestamp = val_timestamp
+        self.test_timestamp = test_timestamp
         self.task_cls_dict = task_cls_dict
 
-        self.db_min_time = db.min_time
-        self.db_max_time = db.max_time
-
-    @property
-    @cache
-    def db_upto_train(self) -> Database:
-        return self._db.upto(self.train_max_time)
-
-    @property
-    @cache
-    def db_upto_val(self) -> Database:
-        return self._db.upto(self.val_max_time)
-
-    @property
-    @cache
-    def db(self) -> Dataset:
-        warnings.warn(
-            "Accessing the full database is not recommended. Use with caution"
-            "to prevent temporal leakage. If memory is not a concern, please use"
-            "`db_upto_train` or `db_upto_val` instead."
-        )
-        return self._db
+        self.input_db = db.upto(test_timestamp)
+        self.min_timestamp = db.min_time
+        self.max_timestamp = db.max_time
 
     def get_task(self, task_name: str) -> Task:
         return self.task_cls_dict[task_name](self._db)
 
 
-class RelBenchDataset(Dataset):
+class BenchmarkDataset(Dataset):
     name: str
     task_cls_dict: Dict[str, type[Task]]
 

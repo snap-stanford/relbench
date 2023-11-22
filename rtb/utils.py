@@ -8,27 +8,6 @@ import requests
 from tqdm import tqdm
 
 
-def rolling_window_sampler(
-    min_time: pd.Timestamp,
-    max_time: pd.Timestamp,
-    window_size: pd.Timedelta,
-    stride: pd.Timedelta,
-) -> Tuple[pd.Series[pd.Timestamp], pd.Series[pd.Timestamp]]:
-    # Traverse backwards to operate on the latest available timestamps:
-    # TODO: verify closedness
-    window_max_time = pd.date_range(
-        end_time, start_time + window_size, freq=stride, closed="right"
-    )
-    window_min_time = window_max_time - window_size
-    return window_min_time, window_max_time
-
-
-def one_window_sampler(
-    min_time: pd.Timestamp, window_size: pd.Timestamp
-) -> Tuple[pd.Series[pd.Timestamp], pd.Series[pd.Timestamp]]:
-    return pd.Series([min_time]), pd.Series([min_time + window_size])
-
-
 def to_unix_time(column: pd.Series) -> pd.Series:
     """convert a timestamp column to unix time"""
     # return pd.to_datetime(column).astype('int64') // 10**9
