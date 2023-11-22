@@ -1,61 +1,44 @@
-class ProductDataset(Dataset):
-    name = "rtb-product"
+import pandas as pd
 
-    cat_to_raw = {
-        "books": "Books",
-        "fashion": "AMAZON_FASHION",
-    }
+from rtb.data import BenchmarkDataset, Database
+from rtb.tasks import ChurnTask, LTVTask
+
+
+class AmazonReviewsDataset(BenchmarkDataset):
+    name = "amazon_reviews"
+    task_cls_dict = {"churn": ChurnTask, "ltv": LTVTask}
+
+    category_list = ["books", "fashion"]
+
+    _cat_to_raw = {"books": "Books", "fashion": "AMAZON_FASHION"}
 
     def __init__(
         self,
         root: Union[str, os.PathLike],
-        process=False,
         category: str = "books",
         use_5_core: bool = True,
+        *,
+        download=False,
+        process=False,
     ):
         self.category = category
         self.use_5_core = use_5_core
 
-        self.name = f"{self.__class__.name}/{self.category}{'-5-core' if self.use_5_core else ''}"
+        self.name = f"{self.name}-{category}{'-5-core' if use_5_core else ''}"
 
-        super().__init__(root, process)
+        super().__init__(root, download=download, process=process)
 
-    def get_tasks(self) -> Dict[str, Task]:
-        r"""Returns a list of tasks defined on the dataset."""
+    def get_val_and_test_timestamps(self) -> Tuple[pd.Timestamp, pd.Timestamp]:
+        # TODO: revise
+        return pd.Timestamp("2014-01-01"), pd.Timestamp("2016-01-01")
 
-        return {"ltv": LTVTask(), "churn": ChurnTask()}
-
-    # TODO: implement get_cutoff_times()
-
-    def download_raw(self, path: Union[str, os.PathLike]) -> None:
-        r"""Download the Amazon dataset raw files from the AWS server and
-        decompresses it."""
-
-        raw = self.cat_to_raw[self.category]
-
-        # download review file
-        if self.use_5_core:
-            url = f"https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2/categoryFilesSmall/{raw}_5.json.gz"
-        else:
-            url = f"https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2/categoryFiles/{raw}.json.gz"
-
-        download_path = download_url(url, path)
-        # TODO: this doesn't work, need gunzip
-        unzip(download_path, path)
-
-        # download product file
-        url = f"https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2/categoryFilesSmall/meta_{raw}.json.gz"
-        download_path = download_url(url, path)
-        # TODO: this doesn't work, need gunzip
-        unzip(download_path, path)
-
-    def process(self) -> Database:
+    def process_db(self, raw_path: Union[str, os.PathLike]) -> Database:
         r"""Process the raw files into a database."""
 
         ### product table ###
 
-        file_name = f"meta_{self.cat_to_raw[self.category]}.json"
-        path = f"{self.root}/{self.name}/raw/{file_name}"
+        file_name = f"meta_{self._cat_to_raw[self.category]}.json"
+        path = raw_path / file_name
         print(f"reading product info from {path}...")
         tic = time.time()
         ptable = pa.json.read_json(
@@ -118,9 +101,9 @@ class ProductDataset(Dataset):
         ### review table ###
 
         file_name = (
-            f"{self.cat_to_raw[self.category]}{'_5' if self.use_5_core else ''}.json"
+            f"{self._cat_to_raw[self.category]}{'_5' if self.use_5_core else ''}.json"
         )
-        path = f"{self.root}/{self.name}/raw/{file_name}"
+        path = raw_path / file_name
         print(f"reading review and customer info from {path}...")
         tic = time.time()
         rtable = pa.json.read_json(
