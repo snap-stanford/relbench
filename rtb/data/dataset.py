@@ -1,17 +1,13 @@
 import os
 import shutil
 import time
-import warnings
-from functools import cache
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
 
 import pandas as pd
 
-from rtb.data.database import Database
-from rtb.data.table import Table
-from rtb.data.task import Task
-from rtb.utils import download_url, one_window_sampler, rolling_window_sampler, unzip
+from rtb.data import Database, Task
+from rtb.utils import download_and_extract
 
 
 class Dataset:
@@ -22,7 +18,7 @@ class Dataset:
         test_timestamp: pd.Timestamp,
         task_cls_dict: Dict[str, Task],
     ) -> None:
-        self._db = db
+        self._full_db = db
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
         self.task_cls_dict = task_cls_dict
@@ -44,8 +40,6 @@ class BenchmarkDataset(Dataset):
 
     raw_dir: str = "raw"
     processed_dir: str = "processed"
-    db_dir: str = "db"
-    split_times_file: str = "split_times.json"
 
     def __init__(
         root=Union[str, os.PathLike],
@@ -56,13 +50,16 @@ class BenchmarkDataset(Dataset):
         root = Path(root)
 
         processed_path = root / self.name / self.processed_dir
-        processed_path.mkdir(parents=True, exist_ok=True)
 
         if process:
             raw_path = root / self.name / self.raw_dir
             raw_path.mkdir(parents=True, exist_ok=True)
 
             if download or not (raw_path / "done").exists():
+                # delete to avoid corruption
+                shutil.rmtree(raw_path, ignore_errors=True)
+                raw_path.mkdir(parents=True)
+
                 print("downloading raw files...")
                 tic = time.time()
                 raw_url = self.raw_url_fmt.format(self.name)
@@ -84,30 +81,24 @@ class BenchmarkDataset(Dataset):
             toc = time.time()
             print(f"reindexing pkeys and fkeys took {toc - tic:.2f} seconds.")
 
+            # delete to avoid corruption
+            shutil.rmtree(processed_path, ignore_errors=True)
+            processed_path.mkdir(parents=True)
+
             print("saving db...")
             tic = time.time()
-            db.save(processed_path / self.db_dir)
+            db.save(processed_path)
             toc = time.time()
             print(f"saving db took {toc - tic:.2f} seconds.")
-
-            print("saving split times...")
-            tic = time.time()
-            train_max_time, val_max_time = self.get_split_times(db)
-            with open(processed_path / self.split_times_file, "w") as f:
-                json.dump(
-                    {
-                        "train_max_time": str(train_max_time),
-                        "val_max_time": str(val_max_time),
-                    },
-                    f,
-                )
-            toc = time.time()
-            print(f"saving split times took {toc - tic:.2f} seconds.")
 
             (processed_path / "done").touch()
 
         else:
             if download or not (processed_path / "done").exists():
+                # delete to avoid corruption
+                shutil.rmtree(processed_path, ignore_errors=True)
+                processed_path.mkdir(parents=True)
+
                 print("downloading processed files...")
                 tic = time.time()
                 processed_url = self.processed_url_fmt.format(self.name)
@@ -117,20 +108,21 @@ class BenchmarkDataset(Dataset):
 
                 (processed_path / "done").touch()
 
+            print("loading db...")
+            tic = time.time()
             db = Database.load(processed_path)
+            toc = time.time()
+            print(f"loading db took {toc - tic:.2f} seconds.")
 
-        train_max_time, val_max_time = self.get_split_times(db)
+        val_timestamp, test_timestamp = self.get_val_and_test_timestamps(db)
 
-        super().__init__(
-            db=db,
-            train_max_time=train_max_time,
-            val_max_time=val_max_time,
-            task_cls_dict=self.task_cls_dict,
-        )
+        super().__init__(db, val_timestamp, test_timestamp, self.task_cls_dict)
 
     def process_db(self, raw_path: Union[str, os.PathLike]) -> Database:
         raise NotImplementedError
 
-    def get_split_times(self, db: Database) -> Tuple[pd.Timestamp, pd.Timestamp]:
-        train_max_time, val_max_time = db.split_times([0.8, 0.9])
-        return train_max_time, val_max_time
+    def get_val_and_test_timestamps(
+        self, db: Database
+    ) -> Tuple[pd.Timestamp, pd.Timestamp]:
+        val_timestamp, test_timestamp = db.split_times([0.8, 0.9])
+        return val_timestamp, test_timestamp

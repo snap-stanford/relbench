@@ -30,7 +30,7 @@ class Task:
         self.dataset = dataset
         self.window_size = window_size
 
-    def make_table(timestamps: pd.Series[pd.Timestamp]) -> Table:
+    def make_table(db: Database, timestamps: pd.Series[pd.Timestamp]) -> Table:
         r"""To be implemented by subclass.
 
         The window is (timestamp, timestamp + window_size], i.e., left-exclusive.
@@ -58,7 +58,7 @@ class Task:
         assert timestamps.min() >= self.dataset.min_timestamp
         assert timestamps.max() + self.window_size <= self.dataset.val_timestamp
 
-        return self.make_table(time_stamps)
+        return self.make_table(self.dataset.input_db, time_stamps)
 
     def val_table(
         self,
@@ -73,7 +73,7 @@ class Task:
         assert timestamps.min() >= self.dataset.val_timestamp
         assert timestamps.max() + self.window_size <= self.dataset.test_timestamp
 
-        return self.make_table(timestamps)
+        return self.make_table(self.dataset.input_db, timestamps)
 
     def test_table(
         self,
@@ -84,7 +84,7 @@ class Task:
         assert timestamps.min() >= self.dataset.test_timestamp
         assert timestamps.max() + self.window_size <= self.dataset.max_timestamp
 
-        table = self.make_table(timestamps)
+        table = self.make_table(self.dataset._full_db, timestamps)
 
         # only expose input columns to prevent info leakage
         table.df = table.df[task.input_cols]
