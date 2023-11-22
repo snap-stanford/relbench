@@ -22,6 +22,7 @@ def test_train_fake_product_dataset(tmp_path):
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),
+        cache_dir=tmp_path,
     )
     node_to_col_names_dict = {  # TODO Expose as method in `HeteroData`.
         node_type: data[node_type].tf.col_names_dict for node_type in data.node_types

@@ -1,11 +1,14 @@
 import argparse
 import math
+import os
 from typing import Dict, List, Tuple
 
 import torch
 import torch_frame
+from text_embedder import TextToEmbedding
 from torch import Tensor
 from torch.nn import BCEWithLogitsLoss, L1Loss
+from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NodeLoader
 from torch_geometric.nn import MLP
@@ -43,7 +46,9 @@ args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-dataset = get_dataset(name=args.dataset, root="./data")
+root_dir = "./data"
+
+dataset = get_dataset(name=args.dataset, root=root_dir)
 if args.task not in dataset.tasks:
     raise ValueError(
         f"'{args.dataset}' does not support the given task {args.task}. "
@@ -56,16 +61,21 @@ val_table = dataset.make_val_table(args.task)
 test_table = dataset.make_test_table(args.task)
 
 col_to_stype_dict = get_stype_proposal(dataset.db)
-# Drop text columns for now:
-for stype_dict in col_to_stype_dict.values():
+informative_text_cols: Dict = dataset_to_informative_text_cols[args.dataset]
+for table_name, stype_dict in col_to_stype_dict.items():
     for col_name, stype in list(stype_dict.items()):
+        # remove text columns except the informative ones
         if stype == torch_frame.text_embedded:
-            del stype_dict[col_name]
+            if col_name not in informative_text_cols.get(table_name, []):
+                del stype_dict[col_name]
 
-# TODO Add table materialization/saving logic.
 data: HeteroData = make_pkey_fkey_graph(
     dataset.db,
     col_to_stype_dict=col_to_stype_dict,
+    text_embedder_cfg=TextEmbedderConfig(
+        text_embedder=TextToEmbedding(device=device), batch_size=16
+    ),
+    cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
 
 sampler = NeighborSampler(  # Initialize sampler only once:
@@ -238,5 +248,6 @@ for epoch in range(1, args.epochs + 1):
         state_dict = model.state_dict()
 
 model.load_state_dict(state_dict)
-test_metric = test(loader_dict["test"])
-print(f"Test {metric_name}: {test_metric:.4f}")
+# NOTE: Commented out for now since test labels are not attached.
+# test_metric = test(loader_dict["test"])
+# print(f"Test {metric_name}: {test_metric:.4f}")

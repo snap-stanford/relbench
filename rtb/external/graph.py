@@ -1,3 +1,4 @@
+import os
 from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 import numpy as np
@@ -63,6 +64,7 @@ def make_pkey_fkey_graph(
     db: Database,
     col_to_stype_dict: Dict[str, Dict[str, stype]],
     text_embedder_cfg: Optional[TextEmbedderConfig] = None,
+    cache_dir: Optional[str] = None,
 ) -> HeteroData:
     r"""Given a :class:`Database` object, construct a heterogeneous graph with
     primary-foreign key relationships, together with the column stats of each
@@ -72,12 +74,18 @@ def make_pkey_fkey_graph(
         db (Database): A database object containing a set of tables.
         col_to_stype_dict (Dict[str, Dict[str, stype]]): Column to stype for
             each table.
+        cache_dir (str, optional): A directory for storing materialized tensor
+            frames. If specified, we will either cache the file or use the
+            cached file. If not specified, we will not use cached file and
+            re-process everything from scrach without saving the cache.
 
     Returns:
         HeteroData: The heterogeneous :class:`PyG` object with
             :class:`TensorFrame` feature..
     """
     data = HeteroData()
+    if cache_dir is not None:
+        os.makedirs(cache_dir, exist_ok=True)
 
     for table_name, table in db.tables.items():
         # Materialize the tables into tensor frames:
@@ -88,11 +96,14 @@ def make_pkey_fkey_graph(
             col_to_stype = {"__const__": stype.numerical}
             df = pd.DataFrame({"__const__": np.ones(len(table.df))})
 
+        path = (
+            None if cache_dir is None else os.path.join(cache_dir, f"{table_name}.pt")
+        )
         dataset = Dataset(
             df=df,
             col_to_stype=col_to_stype,
             text_embedder_cfg=text_embedder_cfg,
-        ).materialize()
+        ).materialize(path=path)
 
         data[table_name].tf = dataset.tensor_frame
         data[table_name].col_stats = dataset.col_stats
