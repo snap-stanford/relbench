@@ -28,8 +28,8 @@ class Table:
         self,
         df: pd.DataFrame,
         fkey_col_to_pkey_table: Dict[str, str],
-        time_col: str,
         pkey_col: Optional[str] = None,
+        time_col: Optional[str] = None,
     ):
         self.df = df
         self.fkey_col_to_pkey_table = fkey_col_to_pkey_table

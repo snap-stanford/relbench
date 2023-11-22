@@ -23,17 +23,21 @@ class Task:
     input_cols: List[str]
     target_col: str
     task_type: TaskType
-    benchmark_window_sizes: List[pd.Timedelta]
+    benchmark_timedeltas: List[pd.Timedelta]
     metrics: List[str]
 
-    def __init__(self, dataset: Dataset, window_size: pd.Timedelta):
+    def __init__(self, dataset: Dataset):
         self.dataset = dataset
-        self.window_size = window_size
 
-    def make_table(db: Database, timestamps: pd.Series[pd.Timestamp]) -> Table:
+    @classmethod
+    def make_table(
+        cls,
+        db: Database,
+        time_df: pd.DataFrame,
+    ) -> Table:
         r"""To be implemented by subclass.
 
-        The window is (timestamp, timestamp + window_size], i.e., left-exclusive.
+        The window is (timestamp, timestamp + timedelta], i.e., left-exclusive.
         """
 
         # TODO: ensure that tasks follow the right-closed convention
@@ -42,49 +46,83 @@ class Task:
 
     def train_table(
         self,
-        timestamps: Optional[pd.Series[pd.Timestamp]] = None,
+        timedelta: Optional[pd.Timedelta] = None,
+        time_df: Optional[pd.DataFrame] = None,
     ) -> Table:
         """Returns the train table for a task."""
 
-        if timestamps is None:
+        assert timedelta is None or time_df is None
+
+        if time_df is None:
+            if timedelta is None:
+                # default timedelta
+                timedelta = self.benchmark_timedeltas[0]
+
             # default sampler
-            # traverse backwards to use the latest timestamps
-            timestamps = pd.date_range(
-                self.dataset.val_timestamp - self.window_size,
-                self.dataset.min_timestamp,
-                freq=-self.window_size,
+            time_df = pd.DataFrame(
+                dict(
+                    timestamp=pd.date_range(
+                        self.dataset.val_timestamp - timedelta,
+                        self.dataset.min_timestamp,
+                        freq=-timedelta,
+                    ),
+                    timedelta=timedelta,
+                )
             )
 
-        assert timestamps.min() >= self.dataset.min_timestamp
-        assert timestamps.max() + self.window_size <= self.dataset.val_timestamp
+        assert time_df.timestamp.min() >= self.dataset.min_timestamp
+        assert (
+            time_df.timestamp + time_df.timedelta
+        ).max() <= self.dataset.val_timestamp
 
-        return self.make_table(self.dataset.input_db, time_stamps)
+        return self.make_table(self.dataset.input_db, time_df)
 
     def val_table(
         self,
-        timestamps: Optional[pd.Series[pd.Timestamp]] = None,
+        timedelta: Optional[pd.Timedelta] = None,
+        time_df: Optional[pd.DataFrame] = None,
     ) -> Table:
         r"""Returns the val table for a task."""
 
-        if timestamps is None:
+        assert timedelta is None or time_df is None
+
+        if time_df is None:
+            if timedelta is None:
+                # default timedelta
+                timedelta = self.benchmark_timedeltas[0]
+
             # default sampler
-            timestamps = pd.Series([self.dataset.val_timestamp])
+            time_df = pd.DataFrame(
+                dict(timestamp=[self.dataset.val_timestamp], timedelta=timedelta),
+            )
 
-        assert timestamps.min() >= self.dataset.val_timestamp
-        assert timestamps.max() + self.window_size <= self.dataset.test_timestamp
+        assert time_df.timestamp.min() >= self.dataset.val_timestamp
+        assert (
+            time_df.timestamp + time_df.timedelta
+        ).max() <= self.dataset.test_timestamp
 
-        return self.make_table(self.dataset.input_db, timestamps)
+        return self.make_table(self.dataset.input_db, time_df)
 
     def test_table(
         self,
+        timedelta: Optional[pd.Timedelta] = None,
     ) -> Table:
         r"""Returns the test table for a task."""
-        timestamps = pd.Series([self.dataset.test_timestamp])
 
-        assert timestamps.min() >= self.dataset.test_timestamp
-        assert timestamps.max() + self.window_size <= self.dataset.max_timestamp
+        if timedelta is None:
+            # default timedelta
+            timedelta = self.benchmark_timedeltas[0]
 
-        table = self.make_table(self.dataset._full_db, timestamps)
+        time_df = pd.DataFrame(
+            dict(timestamp=[self.dataset.test_timestamp], timedelta=timedelta),
+        )
+
+        assert time_df.timestamp.min() >= self.dataset.test_timestamp
+        assert (
+            time_df.timestamp + time_df.timedelta
+        ).max() <= self.dataset.max_timestamp
+
+        table = self.make_table(self.dataset._full_db, time_df)
 
         # only expose input columns to prevent info leakage
         table.df = table.df[task.input_cols]
