@@ -1,5 +1,7 @@
 import os
-import zipfile
+import shutil
+from pathlib import Path
+from typing import Union
 
 import pandas as pd
 import requests
@@ -84,12 +86,6 @@ def download_url(
     return path
 
 
-# TODO: remove, just use shutil.unpack_archive instead
-def unzip(path, root):
-    r"""
-    Args:
-        path (str): The path to the zip file that needs to be extracted.
-        root (str): The directory where the contents of the zip file will be extracted.
-    """
-    with zipfile.ZipFile(path, "r") as zip:
-        zip.extractall(path=root)
+def download_and_extract(url: str, root: Union[str, os.PathLike]) -> None:
+    download_path = download_url(url, root)
+    shutil.unpack_archive(download_path, root)

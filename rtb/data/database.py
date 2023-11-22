@@ -30,11 +30,7 @@ class Database:
         individually with the table name as base name of file."""
 
         for name, table in self.table_dict.items():
-            print(f"saving table {name}...")
-            tic = time.time()
             table.save(f"{path}/{name}.parquet")
-            toc = time.time()
-            print(f"done in {toc - tic:.2f} seconds.")
 
     @classmethod
     def load(cls, path: Union[str, os.PathLike]) -> Self:
@@ -42,14 +38,37 @@ class Database:
 
         table_dict = {}
         for table_path in Path(path).glob("*.parquet"):
-            print(f"loading table {table_path}...")
-            tic = time.time()
             table = Table.load(table_path)
             table_dict[table_path.stem] = table
-            toc = time.time()
-            print(f"done in {toc - tic:.2f} seconds.")
 
         return cls(table_dict)
+
+    @property
+    @cache
+    def min_time(self) -> pd.Timestamp:
+        r"""Returns the earliest timestamp in the database."""
+
+        return min(table.min_time for table in self.table_dict.values())
+
+    @property
+    @cache
+    def max_time(self) -> pd.Timestamp:
+        r"""Returns the latest timestamp in the database."""
+
+        return max(table.max_time for table in self.table_dict.values())
+
+    def upto(self, time_stamp: pd.Timestamp) -> Self:
+        r"""Returns a database with all rows upto time_stamp."""
+
+        return Database(
+            table_dict={
+                name: table.upto(time_stamp) for name, table in self.table_dict.items()
+            }
+        )
+
+    def split_times(self, frac_list: List[float]) -> pd.Timestamp:
+        t = pd.concat([table.df[table.time_col] for table in self.table_dict.values()])
+        return t.quantile(frac_list)
 
     def reindex_pkeys_and_fkeys(self):
         r"""Mapping primary and foreign keys into indices according to
@@ -85,26 +104,3 @@ class Database:
                     right_index=True,
                 )
                 table.df[fkey_col] = out["index"]
-
-    def upto(self, time_stamp: pd.Timestamp) -> Self:
-        r"""Returns a database with all rows upto time_stamp."""
-
-        return Database(
-            table_dict={
-                name: table.upto(time_stamp) for name, table in self.table_dict.items()
-            }
-        )
-
-    @property
-    @cache
-    def min_time(self) -> pd.Timestamp:
-        r"""Returns the earliest timestamp in the database."""
-
-        return min(table.min_time for table in self.table_dict.values())
-
-    @property
-    @cache
-    def max_time(self) -> pd.Timestamp:
-        r"""Returns the latest timestamp in the database."""
-
-        return max(table.max_time for table in self.table_dict.values())
