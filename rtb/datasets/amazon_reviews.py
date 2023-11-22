@@ -1,7 +1,7 @@
 import pandas as pd
 
 from rtb.data import BenchmarkDataset, Database
-from rtb.tasks import ChurnTask, LTVTask
+from rtb.tasks.amazon_reviews import ChurnTask, LTVTask
 
 
 class AmazonReviewsDataset(BenchmarkDataset):

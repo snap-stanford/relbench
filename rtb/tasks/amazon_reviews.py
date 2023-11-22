@@ -6,10 +6,7 @@ import duckdb
 import pandas as pd
 import pyarrow as pa
 
-from rtb.data.database import Database
-from rtb.data.dataset import Dataset
-from rtb.data.table import Table
-from rtb.data.task import Task, TaskType
+from rtb.data import Database, Dataset, Table, Task, TaskType
 from rtb.utils import download_url, unzip
 
 
@@ -17,16 +14,14 @@ class ChurnTask(Task):
     r"""Churn for a customer is 1 if the customer does not review any product
     in the time window, else 0."""
 
-    def __init__(self):
-        super().__init__(
-            input_cols=["window_min_time", "window_max_time", "customer_id"],
-            target_col="churn",
-            task_type=TaskType.BINARY_CLASSIFICATION,
-            window_sizes=[pd.Timedelta("52W")],
-            metrics=["auprc"],
-        )
+    input_cols = ["timestamp", "timedelta", "customer_id"]
+    target_col = "churn"
+    task_type = TaskType.BINARY_CLASSIFICATION
+    benchmark_timedeltas = [pd.Timedelta("365D")]
+    metrics = ["accuracy"]
 
-    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
+    @classmethod
+    def make_table(cls, db: Database, time_df: pd.DataFrame) -> Table:
         product = db.tables["product"].df
         customer = db.tables["customer"].df
         review = db.tables["review"].df
@@ -34,27 +29,28 @@ class ChurnTask(Task):
         df = duckdb.sql(
             """
             SELECT
-                window_min_time,
-                window_max_time,
+                timestamp,
+                timedelta,
                 customer_id,
                 NOT EXISTS (
                     SELECT 1
                     FROM review
                     WHERE
                         review.customer_id = customer.customer_id AND
-                        review.review_time BETWEEN window_min_time AND window_max_time
+                        review.review_time > timestamp AND
+                        review.review_time <= timestamp + timedelta
                 ) AS churn
             FROM
-                time_window_df,
+                time_df,
                 customer
-        """
+            """
         ).df()
 
         return Table(
             df=df,
             fkey_col_to_pkey_table={"customer_id": "customer"},
             pkey_col=None,
-            time_col="window_min_time",
+            time_col="timestamp",
         )
 
 
@@ -62,16 +58,14 @@ class LTVTask(Task):
     r"""LTV (life-time value) for a customer is the sum of prices of products
     that the customer reviews in the time window."""
 
-    def __init__(self):
-        super().__init__(
-            input_cols=["window_min_time", "window_max_time", "customer_id"],
-            target_col="ltv",
-            task_type=TaskType.REGRESSION,
-            window_sizes=[pd.Timedelta("52W")],
-            metrics=["auprc"],
-        )
+    input_cols = ["timestamp", "timedelta", "customer_id"]
+    target_col = "ltv"
+    task_type = TaskType.REGRESSION
+    benchmark_timedeltas = [pd.Timedelta("365D")]
+    metrics = ["mae"]
 
-    def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
+    @classmethod
+    def make_table(cls, db: Database, time_df: pd.DataFrame) -> Table:
         product = db.tables["product"].df
         customer = db.tables["customer"].df
         review = db.tables["review"].df
@@ -79,13 +73,13 @@ class LTVTask(Task):
         df = duckdb.sql(
             """
             SELECT
-                window_min_time,
-                window_max_time,
+                timestamp,
+                timedelta,
                 customer_id,
                 ltv,
                 count
             FROM
-                time_window_df,
+                time_df,
                 customer,
                 (
                     SELECT
@@ -95,14 +89,15 @@ class LTVTask(Task):
                     WHERE
                         review.customer_id = customer.customer_id AND
                         review.product_id = product.product_id AND
-                        review.review_time BETWEEN window_min_time AND window_max_time
+                        review.review_time > timestamp AND
+                        review.review_time <= timestamp + timedelta
                 )
-        """
+            """
         ).df()
 
         return Table(
             df=df,
             fkey_col_to_pkey_table={"customer_id": "customer"},
             pkey_col=None,
-            time_col="window_min_time",
+            time_col="timestamp",
         )
