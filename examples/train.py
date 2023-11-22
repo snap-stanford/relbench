@@ -38,7 +38,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rtb-forum")
 parser.add_argument("--task", type=str, default="UserSumCommentScoresTask")
 parser.add_argument("--lr", type=float, default=0.01)
-parser.add_argument("--epochs", type=int, default=50)
+parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 # Default to "sum" aggrgation since it's better for sum-based target labels.
