@@ -9,45 +9,24 @@ from tqdm import tqdm
 
 
 def rolling_window_sampler(
-    start_time: pd.Timestamp,
-    end_time: pd.Timestamp,
+    min_time: pd.Timestamp,
+    max_time: pd.Timestamp,
     window_size: pd.Timedelta,
     stride: pd.Timedelta,
-) -> pd.DataFrame:
-    """Returns a DataFrame with columns window_min_time and window_max_time."""
-
-    df = pd.DataFrame()
-    start_time = int(start_time.timestamp())
-    end_time = int(end_time.timestamp())
-    window_size = int(window_size.total_seconds())
-    stride = int(stride.total_seconds())
-
+) -> Tuple[pd.Series[pd.Timestamp], pd.Series[pd.Timestamp]]:
     # Traverse backwards to operate on the latest available timestamps:
-    df["window_min_time"] = range(
-        # TODO: find a better way to do this
-        end_time - window_size,  # window should not overshoot end_time
-        start_time + window_size,  # We need a bit of data to train on
-        -stride,
+    # TODO: verify closedness
+    window_max_time = pd.date_range(
+        end_time, start_time + window_size, freq=stride, closed="right"
     )
-    df["window_max_time"] = df["window_min_time"] + window_size
-    df["window_min_time"] = df["window_min_time"].astype("datetime64[s]")
-    df["window_max_time"] = df["window_max_time"].astype("datetime64[s]")
-    return df
+    window_min_time = window_max_time - window_size
+    return window_min_time, window_max_time
 
 
 def one_window_sampler(
-    start_time: pd.Timestamp, window_size: pd.Timestamp
-) -> pd.DataFrame:
-    """Returns a DataFrame with columns window_min_time and window_max_time."""
-    start_time = int(start_time.timestamp())
-    window_size = int(window_size.total_seconds())
-    df = pd.DataFrame()
-    # TODO: find a better way to do this
-    df["window_min_time"] = [start_time]
-    df["window_max_time"] = [start_time + window_size]
-    df["window_min_time"] = df["window_min_time"].astype("datetime64[s]")
-    df["window_max_time"] = df["window_max_time"].astype("datetime64[s]")
-    return df
+    min_time: pd.Timestamp, window_size: pd.Timestamp
+) -> Tuple[pd.Series[pd.Timestamp], pd.Series[pd.Timestamp]]:
+    return pd.Series([min_time]), pd.Series([min_time + window_size])
 
 
 def to_unix_time(column: pd.Series) -> pd.Series:

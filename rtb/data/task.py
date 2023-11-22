@@ -42,7 +42,9 @@ class Task:
     def train_table(
         self,
         window_size: Optional[pd.Timedelta] = None,
-        windows: Optional[Tuple[List[pd.Timestamp], List[pd.Timestamp]]] = None,
+        windows: Optional[
+            Tuple[pd.Series[pd.Timestamp], pd.Series[pd.Timestamp]]
+        ] = None,
     ) -> Table:
         """Returns the train table for a task."""
 
@@ -69,7 +71,9 @@ class Task:
     def val_table(
         self,
         window_size: Optional[pd.Timedelta] = None,
-        windows: Optional[Tuple[List[pd.Timestamp], List[pd.Timestamp]]] = None,
+        windows: Optional[
+            Tuple[pd.Series[pd.Timestamp], pd.Series[pd.Timestamp]]
+        ] = None,
     ) -> Table:
         r"""Returns the val table for a task."""
 
