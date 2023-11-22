@@ -1,11 +1,15 @@
 import argparse
+import copy
 import math
+import os
 from typing import Dict, List, Tuple
 
 import torch
 import torch_frame
+from text_embedder import TextToEmbedding
 from torch import Tensor
 from torch.nn import BCEWithLogitsLoss, L1Loss
+from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NodeLoader
 from torch_geometric.nn import MLP
@@ -34,16 +38,22 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rtb-forum")
 parser.add_argument("--task", type=str, default="UserSumCommentScoresTask")
 parser.add_argument("--lr", type=float, default=0.01)
-parser.add_argument("--epochs", type=int, default=10)
+parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
+# Default to "sum" aggrgation since it's better for sum-based target labels.
+parser.add_argument(
+    "--aggr", type=str, default="sum", help="GNN neighbor aggregation scheme."
+)
 parser.add_argument("--num_neighbors", type=int, default=-1)
 parser.add_argument("--num_workers", type=int, default=6)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-dataset = get_dataset(name=args.dataset, root="./data")
+root_dir = "./data"
+
+dataset = get_dataset(name=args.dataset, root=root_dir)
 if args.task not in dataset.tasks:
     raise ValueError(
         f"'{args.dataset}' does not support the given task {args.task}. "
@@ -56,16 +66,21 @@ val_table = dataset.make_val_table(args.task)
 test_table = dataset.make_test_table(args.task)
 
 col_to_stype_dict = get_stype_proposal(dataset.db)
-# Drop text columns for now:
-for stype_dict in col_to_stype_dict.values():
+informative_text_cols: Dict = dataset_to_informative_text_cols[args.dataset]
+for table_name, stype_dict in col_to_stype_dict.items():
     for col_name, stype in list(stype_dict.items()):
+        # remove text columns except the informative ones
         if stype == torch_frame.text_embedded:
-            del stype_dict[col_name]
+            if col_name not in informative_text_cols.get(table_name, []):
+                del stype_dict[col_name]
 
-# TODO Add table materialization/saving logic.
 data: HeteroData = make_pkey_fkey_graph(
     dataset.db,
     col_to_stype_dict=col_to_stype_dict,
+    text_embedder_cfg=TextEmbedderConfig(
+        text_embedder=TextToEmbedding(device=device), batch_size=16
+    ),
+    cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
 
 sampler = NeighborSampler(  # Initialize sampler only once:
@@ -130,6 +145,7 @@ class Model(torch.nn.Module):
             node_types=data.node_types,
             edge_types=data.edge_types,
             channels=args.channels,
+            aggr=args.aggr,
         )
         self.head = MLP(
             args.channels,
@@ -235,8 +251,15 @@ for epoch in range(1, args.epochs + 1):
         not higher_is_better and val_metric < best_val_metric
     ):
         best_val_metric = val_metric
-        state_dict = model.state_dict()
+        state_dict = copy.deepcopy(model.state_dict())
 
 model.load_state_dict(state_dict)
-test_metric = test(loader_dict["test"])
-print(f"Test {metric_name}: {test_metric:.4f}")
+val_metric = test(loader_dict["val"])
+print(f"Best val: {metric_name}: {val_metric:.4f}")
+
+# Test if the correct checkpoint gets picked up
+assert val_metric == best_val_metric
+
+# NOTE: Commented out for now since test labels are not attached.
+# test_metric = test(loader_dict["test"])
+# print(f"Test {metric_name}: {test_metric:.4f}")

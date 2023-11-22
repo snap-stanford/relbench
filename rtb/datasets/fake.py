@@ -21,7 +21,8 @@ def _generate_random_string(min_length: int, max_length: int) -> str:
 
 
 class FakeProductDataset(Dataset):
-    r"""Fake e-commerce dataset for testing purposes. Schema is similar to ProductDataset."""
+    r"""Fake e-commerce dataset for testing purposes. Schema is similar to
+    ProductDataset."""
 
     name = "rtb-fake-product"
 
