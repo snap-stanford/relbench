@@ -18,7 +18,7 @@ class Dataset:
         test_timestamp: pd.Timestamp,
         task_cls_dict: Dict[str, Task],
     ) -> None:
-        self._full_db = db
+        self._db = db
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
         self.task_cls_dict = task_cls_dict
@@ -27,8 +27,8 @@ class Dataset:
         self.min_timestamp = db.min_time
         self.max_timestamp = db.max_time
 
-    def get_task(self, task_name: str) -> Task:
-        return self.task_cls_dict[task_name](self._db)
+    def get_task(self, task_name: str, timedelta: pd.Timedelta) -> Task:
+        return self.task_cls_dict[task_name](self._db, timedelta)
 
 
 class BenchmarkDataset(Dataset):
@@ -114,15 +114,7 @@ class BenchmarkDataset(Dataset):
             toc = time.time()
             print(f"loading db took {toc - tic:.2f} seconds.")
 
-        val_timestamp, test_timestamp = self.get_val_and_test_timestamps(db)
-
         super().__init__(db, val_timestamp, test_timestamp, self.task_cls_dict)
 
     def process_db(self, raw_path: Union[str, os.PathLike]) -> Database:
         raise NotImplementedError
-
-    def get_val_and_test_timestamps(
-        self, db: Database
-    ) -> Tuple[pd.Timestamp, pd.Timestamp]:
-        val_timestamp, test_timestamp = db.split_times([0.8, 0.9])
-        return val_timestamp, test_timestamp

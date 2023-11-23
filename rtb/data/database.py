@@ -66,10 +66,6 @@ class Database:
             }
         )
 
-    def split_times(self, frac_list: List[float]) -> pd.Timestamp:
-        t = pd.concat([table.df[table.time_col] for table in self.table_dict.values()])
-        return t.quantile(frac_list)
-
     def reindex_pkeys_and_fkeys(self):
         r"""Mapping primary and foreign keys into indices according to
         the ordering in the primary key tables.
