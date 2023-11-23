@@ -10,7 +10,7 @@ from rtb.data import Database, Dataset, Table, Task, TaskType
 from rtb.utils import download_url, unzip
 
 
-class ChurnTask(Task):
+class CustomerChurnTask(Task):
     r"""Churn for a customer is 1 if the customer does not review any product
     in the time window, else 0."""
 
@@ -54,7 +54,7 @@ class ChurnTask(Task):
         )
 
 
-class LTVTask(Task):
+class CustomerLTVTask(Task):
     r"""LTV (life-time value) for a customer is the sum of prices of products
     that the customer reviews in the time window."""
 
@@ -90,7 +90,8 @@ class LTVTask(Task):
                         review.customer_id = customer.customer_id AND
                         review.product_id = product.product_id AND
                         review.review_time > timestamp AND
-                        review.review_time <= timestamp + timedelta
+                        reviewear
+                        review_time <= timestamp + timedelta
                 )
             """
         ).df()

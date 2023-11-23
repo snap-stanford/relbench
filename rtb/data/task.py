@@ -26,8 +26,9 @@ class Task:
     benchmark_timedeltas: List[pd.Timedelta]
     metrics: List[str]
 
-    def __init__(self, dataset: Dataset):
+    def __init__(self, dataset: Dataset, timedelta: pd.Timedelta):
         self.dataset = dataset
+        self.timedelta = timedelta
 
     @classmethod
     def make_table(
@@ -44,87 +45,41 @@ class Task:
 
         raise NotImplementedError
 
-    def train_table(
-        self,
-        timedelta: Optional[pd.Timedelta] = None,
-        time_df: Optional[pd.DataFrame] = None,
-    ) -> Table:
-        """Returns the train table for a task."""
-
-        assert timedelta is None or time_df is None
-
-        if time_df is None:
-            if timedelta is None:
-                # default timedelta
-                timedelta = self.benchmark_timedeltas[0]
-
-            # default sampler
-            time_df = pd.DataFrame(
-                dict(
-                    timestamp=pd.date_range(
-                        self.dataset.val_timestamp - timedelta,
-                        self.dataset.min_timestamp,
-                        freq=-timedelta,
-                    ),
-                    timedelta=timedelta,
-                )
-            )
-
-        assert time_df.timestamp.min() >= self.dataset.min_timestamp
-        assert (
-            time_df.timestamp + time_df.timedelta
-        ).max() <= self.dataset.val_timestamp
-
-        return self.make_table(self.dataset.input_db, time_df)
-
-    def val_table(
-        self,
-        timedelta: Optional[pd.Timedelta] = None,
-        time_df: Optional[pd.DataFrame] = None,
-    ) -> Table:
-        r"""Returns the val table for a task."""
-
-        assert timedelta is None or time_df is None
-
-        if time_df is None:
-            if timedelta is None:
-                # default timedelta
-                timedelta = self.benchmark_timedeltas[0]
-
-            # default sampler
-            time_df = pd.DataFrame(
-                dict(timestamp=[self.dataset.val_timestamp], timedelta=timedelta),
-            )
-
-        assert time_df.timestamp.min() >= self.dataset.val_timestamp
-        assert (
-            time_df.timestamp + time_df.timedelta
-        ).max() <= self.dataset.test_timestamp
-
-        return self.make_table(self.dataset.input_db, time_df)
-
-    def test_table(
-        self,
-        timedelta: Optional[pd.Timedelta] = None,
-    ) -> Table:
+    def make_test_table(self) -> Table:
         r"""Returns the test table for a task."""
 
-        if timedelta is None:
-            # default timedelta
-            timedelta = self.benchmark_timedeltas[0]
-
         time_df = pd.DataFrame(
-            dict(timestamp=[self.dataset.test_timestamp], timedelta=timedelta),
+            dict(timestamp=[self.dataset.test_timestamp], timedelta=self.timedelta),
         )
 
-        assert time_df.timestamp.min() >= self.dataset.test_timestamp
-        assert (
-            time_df.timestamp + time_df.timedelta
-        ).max() <= self.dataset.max_timestamp
-
-        table = self.make_table(self.dataset._full_db, time_df)
+        table = self.__class__.make_table(self.dataset._full_db, time_df)
 
         # only expose input columns to prevent info leakage
         table.df = table.df[task.input_cols]
 
         return table
+
+    def make_default_train_table(self) -> Table:
+        """Returns the train table for a task."""
+
+        time_df = pd.DataFrame(
+            dict(
+                timestamp=pd.date_range(
+                    self.dataset.val_timestamp - self.timedelta,
+                    self.dataset.min_timestamp,
+                    freq=-self.timedelta,
+                ),
+                timedelta=self.timedelta,
+            )
+        )
+
+        return self.__class__.make_table(self.dataset.input_db, time_df)
+
+    def make_default_val_table(self) -> Table:
+        r"""Returns the val table for a task."""
+
+        time_df = pd.DataFrame(
+            dict(timestamp=[self.dataset.val_timestamp], timedelta=self.timedelta),
+        )
+
+        return self.__class__.make_table(self.dataset.input_db, time_df)
