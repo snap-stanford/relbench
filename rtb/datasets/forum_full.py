@@ -74,7 +74,7 @@ class UserChurnTask(Task):
             input_cols=["window_min_time", "window_max_time", "OwnerUserId"],
             target_col="churn",
             task_type=TaskType.BINARY_CLASSIFICATION,
-            window_sizes=[pd.Timedelta(days=365*3)],
+            window_sizes=[pd.Timedelta(days=365*2)],
             metrics=["auroc", "auprc"],
         )
 
@@ -321,9 +321,9 @@ class ForumDataset(Dataset):
         subclass, but can implement a sensible default strategy here."""
 
         train_max_time = pd.Timestamp(
-            "2021-09-12"
-        )  # 2 years months before the max_time
+            "2019-09-12"
+        )  # 4 years before the max_time
         val_max_time = pd.Timestamp(
-            "2022-09-12"
-        )  # 1 year before the max_time
+            "2021-09-12"
+        )  # 2 years the max_time
         return train_max_time, val_max_time
