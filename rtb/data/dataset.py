@@ -95,7 +95,7 @@ class Dataset:
         datasets, we will download from stanford URL, but we should keep it as
         a function for Dataset subclasses to override if required."""
 
-        url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}-raw.zip"
+        url = f"http://relbench.stanford.edu/data/{self.name}-raw.zip"
         download_path = download_url(url, path)
         unzip(download_path, path)
 
@@ -103,7 +103,7 @@ class Dataset:
         """Downloads the processed data to the path directory. For our
         datasets, we will download from stanford URL, but we should keep it as
         a function for Dataset subclasses to override if required."""
-        url = f"http://ogb-data.stanford.edu/data/rtb/{self.name}-processed.zip"
+        url = f"http://relbench.stanford.edu/data/{self.name}-processed.zip"
         download_path = download_url(url, path)
         unzip(download_path, path)
 
