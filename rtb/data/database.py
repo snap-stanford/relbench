@@ -45,17 +45,17 @@ class Database:
 
     @property
     @cache
-    def min_time(self) -> pd.Timestamp:
+    def min_timestamp(self) -> pd.Timestamp:
         r"""Returns the earliest timestamp in the database."""
 
-        return min(table.min_time for table in self.table_dict.values())
+        return min(table.min_timestamp for table in self.table_dict.values())
 
     @property
     @cache
-    def max_time(self) -> pd.Timestamp:
+    def max_timestamp(self) -> pd.Timestamp:
         r"""Returns the latest timestamp in the database."""
 
-        return max(table.max_time for table in self.table_dict.values())
+        return max(table.max_timestamp for table in self.table_dict.values())
 
     def upto(self, time_stamp: pd.Timestamp) -> Self:
         r"""Returns a database with all rows upto time_stamp."""

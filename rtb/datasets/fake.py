@@ -7,11 +7,8 @@ from typing import Dict, Union
 import numpy as np
 import pandas as pd
 
-from rtb.data.database import Database
-from rtb.data.dataset import Dataset
-from rtb.data.table import Table
-from rtb.data.task import Task
-from rtb.datasets.product import ChurnTask, LTVTask
+from rtb.data import Database, Dataset, Table, Task
+from rtb.tasks.amazon_reviews import CustomerChurnTask, CustomerLTVTask
 
 
 def _generate_random_string(min_length: int, max_length: int) -> str:
@@ -20,29 +17,21 @@ def _generate_random_string(min_length: int, max_length: int) -> str:
     return random_string
 
 
-class FakeProductDataset(Dataset):
-    r"""Fake dataset for testing purposes. Schema is similar to ProductDataset."""
-
-    _task_cls_dict: Dict[str, type[Task]] = {"ltv": LTVTask, "churn": ChurnTask}
-
-    name = "rtb-fake-product"
-
-    def download_raw(self, path: Union[str, os.PathLike]) -> None:
-        Path(path).mkdir(parents=True, exist_ok=True)
-        return
-
-    def download_processed(self, path: Union[str, os.PathLike]) -> None:
-        raise RuntimeError(
-            "download_processed not supported for"
-            " FakeProductDataset. Use process=True to force"
-            " processing for the first use."
+class FakeReviewsDataset(Dataset):
+    def __init__(
+        self, num_products: int = 30, num_customers: int = 100, num_reviews: int = 500
+    ):
+        db = self.process_db(num_products, num_customers, num_reviews)
+        val_timestamp = db.min_timestamp + 0.8 * (db.max_timestamp - db.min_timestamp)
+        test_timestamp = db.min_timestamp + 0.9 * (db.max_timestamp - db.min_timestamp)
+        super().__init__(
+            db=self.process_db(),
+            val_timestamp=val_timestamp,
+            test_timestamp=test_timestamp,
+            task_cls_dict={"churn": CustomerChurnTask, "ltv": CustomerLTVTask},
         )
 
-    def process(self) -> Database:
-        num_products = 30
-        num_customers = 100
-        num_transactions = 500
-
+    def process_db(self, num_products, num_customers, num_reviews) -> Database:
         product_df = pd.DataFrame(
             {
                 "product_id": [f"product_id_{i}" for i in range(num_products)],
@@ -63,38 +52,36 @@ class FakeProductDataset(Dataset):
             {
                 "customer_id": [
                     f"customer_id_{random.randint(0, num_customers+5)}"
-                    for _ in range(num_transactions)
+                    for _ in range(num_reviews)
                 ],
                 "product_id": [
                     f"product_id_{random.randint(0, num_products-1)}"
-                    for _ in range(num_transactions)
+                    for _ in range(num_reviews)
                 ],
-                "review_time": pd.to_datetime(
-                    10 * np.arange(num_transactions), unit="D"
-                ),
-                "rating": np.random.randint(1, 6, size=(num_transactions,)),
+                "review_time": pd.to_datetime(10 * np.arange(num_reviews), unit="D"),
+                "rating": np.random.randint(1, 6, size=(num_reviews,)),
             }
         )
 
-        tables: Dict[str, Table] = {
-            "product": Table(
-                df=product_df,
-                fkey_col_to_pkey_table={},
-                pkey_col="product_id",
-            ),
-            "customer": Table(
-                df=customer_df,
-                fkey_col_to_pkey_table={},
-                pkey_col="customer_id",
-            ),
-            "review": Table(
-                df=review_df,
-                fkey_col_to_pkey_table={
-                    "customer_id": "customer",
-                    "product_id": "product",
-                },
-                time_col="review_time",
-            ),
-        }
-
-        return Database(tables)
+        return Database(
+            table_dict={
+                "product": Table(
+                    df=product_df,
+                    fkey_col_to_pkey_table={},
+                    pkey_col="product_id",
+                ),
+                "customer": Table(
+                    df=customer_df,
+                    fkey_col_to_pkey_table={},
+                    pkey_col="customer_id",
+                ),
+                "review": Table(
+                    df=review_df,
+                    fkey_col_to_pkey_table={
+                        "customer_id": "customer",
+                        "product_id": "product",
+                    },
+                    time_col="review_time",
+                ),
+            }
+        )

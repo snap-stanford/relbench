@@ -110,14 +110,14 @@ class Table:
 
     @property
     @cache
-    def min_time(self) -> pd.Timestamp:
+    def min_timestamp(self) -> pd.Timestamp:
         r"""Returns the earliest time in the table."""
 
         return self.df[self.time_col].min()
 
     @property
     @cache
-    def max_time(self) -> pd.Timestamp:
+    def max_timestamp(self) -> pd.Timestamp:
         r"""Returns the latest time in the table."""
 
         return self.df[self.time_col].max()

@@ -1,12 +1,15 @@
 import pandas as pd
 
 from rtb.data import BenchmarkDataset, Database
-from rtb.tasks.amazon_reviews import ChurnTask, LTVTask
+from rtb.tasks.amazon_reviews import CustomerChurnTask, CustomerLTVTask
 
 
 class AmazonReviewsDataset(BenchmarkDataset):
     name = "amazon_reviews"
-    task_cls_dict = {"churn": ChurnTask, "ltv": LTVTask}
+    # TODO: revise
+    val_timestamp = pd.Timestamp("2014-01-01")
+    test_timestamp = pd.Timestamp("2016-01-01")
+    task_cls_dict = {"churn": CustomerChurnTask, "ltv": CustomerLTVTask}
 
     category_list = ["books", "fashion"]
 
@@ -27,10 +30,6 @@ class AmazonReviewsDataset(BenchmarkDataset):
         self.name = f"{self.name}-{category}{'-5-core' if use_5_core else ''}"
 
         super().__init__(root, download=download, process=process)
-
-    def get_val_and_test_timestamps(self) -> Tuple[pd.Timestamp, pd.Timestamp]:
-        # TODO: revise
-        return pd.Timestamp("2014-01-01"), pd.Timestamp("2016-01-01")
 
     def process_db(self, raw_path: Union[str, os.PathLike]) -> Database:
         r"""Process the raw files into a database."""
@@ -173,7 +172,7 @@ class AmazonReviewsDataset(BenchmarkDataset):
         print(f"done in {toc - tic:.2f} seconds.")
 
         return Database(
-            tables={
+            table_dict={
                 "product": Table(
                     df=pdf,
                     fkey_col_to_pkey_table={},

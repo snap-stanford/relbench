@@ -24,8 +24,8 @@ class Dataset:
         self.task_cls_dict = task_cls_dict
 
         self.input_db = db.upto(test_timestamp)
-        self.min_timestamp = db.min_time
-        self.max_timestamp = db.max_time
+        self.min_timestamp = db.min_timestamp
+        self.max_timestamp = db.max_timestamp
 
     def get_task(self, task_name: str, timedelta: pd.Timedelta) -> Task:
         return self.task_cls_dict[task_name](self._db, timedelta)
@@ -33,6 +33,8 @@ class Dataset:
 
 class BenchmarkDataset(Dataset):
     name: str
+    val_timestamp: pd.Timestamp
+    test_timestamp: pd.Timestamp
     task_cls_dict: Dict[str, type[Task]]
 
     raw_url_fmt: str = "http://relbench.stanford.edu/data/raw/{}.zip"
@@ -114,7 +116,9 @@ class BenchmarkDataset(Dataset):
             toc = time.time()
             print(f"loading db took {toc - tic:.2f} seconds.")
 
-        super().__init__(db, val_timestamp, test_timestamp, self.task_cls_dict)
+        super().__init__(
+            db, self.val_timestamp, self.test_timestamp, self.task_cls_dict
+        )
 
     def process_db(self, raw_path: Union[str, os.PathLike]) -> Database:
         raise NotImplementedError
