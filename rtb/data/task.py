@@ -13,8 +13,8 @@ class Task:
     input_cols: List[str]
     target_col: str
     task_type: str
-    benchmark_timedelta_list: List[pd.Timedelta]
-    benchmark_metric_dict: Dict[str, Callable[[np.ndarray, np.ndarray], float]]
+    benchmark_timedeltas: List[pd.Timedelta]
+    benchmark_metrics: List[Callable[[np.ndarray, np.ndarray], float]]
 
     def __init__(self, dataset: Dataset, timedelta: pd.Timedelta):
         self.dataset = dataset
@@ -83,16 +83,14 @@ class Task:
         self,
         pred: np.ndarray[np.float64],
         target_table: Optional[Table] = None,
-        metric_dict: Optional[
-            Dict[str, Callable[[np.ndarray, np.ndarray], float]]
-        ] = None,
+        metrics: Optional[List[Callable[[np.ndarray, np.ndarray], float]]] = None,
     ) -> Dict[str, float]:
         if target_table is None:
             target_table = self._test_table
 
-        if metric_dict is None:
-            metric_dict = self.benchmark_metric_dict
+        if metrics is None:
+            metrics = self.benchmark_metrics
 
         true = target_table.df[self.target_col].to_numpy()
 
-        return {name: fn(true, pred) for name, fn in metric_dict}
+        return {fn.__name__: fn(true, pred) for fn in metrics}

@@ -18,8 +18,8 @@ class CustomerChurnTask(Task):
     input_cols = ["timestamp", "timedelta", "customer_id"]
     target_col = "churn"
     task_type = TaskType.BINARY_CLASSIFICATION
-    benchmark_timedelta_list = [pd.Timedelta(days=365), pd.Timedelta(days=365 * 2)]
-    benchmark_metric_dict = {"accuracy": accuracy, "f1": f1, "roc_auc": roc_auc}
+    benchmark_timedeltas = [pd.Timedelta(days=365), pd.Timedelta(days=365 * 2)]
+    benchmark_metrics = [accuracy, f1, roc_auc]
 
     @classmethod
     def make_table(cls, db: Database, time_df: pd.DataFrame) -> Table:
@@ -62,8 +62,8 @@ class CustomerLTVTask(Task):
     input_cols = ["timestamp", "timedelta", "customer_id"]
     target_col = "ltv"
     task_type = TaskType.REGRESSION
-    benchmark_timedelta_list = [pd.Timedelta(days=365), pd.Timedelta(days=365 * 2)]
-    benchmark_metric_dict = {"mae": mae, "rmse": rmse}
+    benchmark_timedeltas = [pd.Timedelta(days=365), pd.Timedelta(days=365 * 2)]
+    benchmark_metrics = [mae, rmse]
 
     @classmethod
     def make_table(cls, db: Database, time_df: pd.DataFrame) -> Table:
