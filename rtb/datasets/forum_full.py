@@ -35,7 +35,7 @@ class UserContributionTask(Task):
             posts.OwnerUserId != -1
         ]  ## when user id is -1, it is stats exchange community, not a real person
         posts = posts[posts.OwnerUserId.notnull()]  ## 1153 null posts
-        
+
         users = db.tables["users"].df
         votes = votes[votes.UserId.notnull()]  
         posts = posts[posts.OwnerUserId.notnull()]  
@@ -44,7 +44,7 @@ class UserContributionTask(Task):
             comments.UserId != -1
         ]  ## when user id is -1, it is stats exchange community, not a real person
         comments = comments[comments.UserId.notnull()]  ## 2439 null comments
-        
+
         def get_values_in_window(row, posts, users):
             posts_window = get_df_in_window(posts, "CreationDate", row)
             comments_window = get_df_in_window(comments, "CreationDate", row)
@@ -53,9 +53,9 @@ class UserContributionTask(Task):
             user_made_posts_in_this_period = posts_window.OwnerUserId.unique()
             user_made_comments_in_this_period = comments_window.UserId.unique()
             user_made_votes_in_this_period = votes_window.UserId.unique()
-            
+
             #user_active_in_this_period = user_made_posts_in_this_period
-            
+
             user_active_in_this_period = np.union1d(np.union1d(user_made_posts_in_this_period, user_made_comments_in_this_period),user_made_votes_in_this_period)
 
             users_exist = users[
@@ -69,12 +69,12 @@ class UserContributionTask(Task):
             active_user_before_this_time = np.union1d(np.union1d(user_made_votes, user_made_comments),user_made_posts)
             #active_user_before_this_time = user_made_posts
             users_exist_and_active_ids = np.intersect1d(users_exist_ids, active_user_before_this_time)
-            
+
             user2churn = pd.DataFrame()
             user2churn["OwnerUserId"] = users_exist_and_active_ids
             user2churn["window_min_time"] = row["window_min_time"]
             user2churn["window_max_time"] = row["window_max_time"]            
-            
+
             user2churn["churn"] = user2churn.OwnerUserId.apply(
                 lambda x: 1 if x in user_active_in_this_period else 0
             )  ## 1: contributed; 0: not contributed
@@ -120,9 +120,9 @@ class QuestionPopularityTask(Task):
             posts.OwnerUserId != -1
         ]  ## when user id is -1, it is stats exchange community, not a real person
         posts = posts[posts.OwnerUserId.notnull()]  ## 1153 null posts
-        
+
         posts = posts[posts.PostTypeId == 1] ## just looking at questions
-        
+
         def get_values_in_window(row, votes, posts):
             votes_window = get_df_in_window(votes, "CreationDate", row)
             posts_exist = posts[(posts.CreationDate <= row["window_min_time"]) & (posts.CreationDate > (row["window_min_time"] - pd.Timedelta(days = 365*2)))] ## posts exist and active defined by created in the last 2 years
@@ -137,7 +137,7 @@ class QuestionPopularityTask(Task):
                 lambda x: num_of_upvotes[x] if x in num_of_upvotes else 0
             )  ## default all existing users have 0 comment scores
             return train_table
-            
+
         tqdm.pandas()
         # Apply function to each row in df_b
         res = time_window_df.progress_apply(
@@ -178,7 +178,7 @@ class ForumDataset(Dataset):
         postLinks = pd.read_csv(os.path.join(path, "PostLinks.csv"))
         badges = pd.read_csv(os.path.join(path, "Badges.csv"))
         postHistory = pd.read_csv(os.path.join(path, "PostHistory.csv"))
-        
+
         # tags = pd.read_csv(os.path.join(path, "Tags.csv")) we remove tag table here since after removing time leakage columns, all information are kept in the posts tags columns
 
         ## remove time leakage columns
@@ -186,10 +186,10 @@ class ForumDataset(Dataset):
             columns=["Reputation", "Views", "UpVotes", "DownVotes", "LastAccessDate"], inplace=True
         )
         posts.drop(columns=["ViewCount", "AnswerCount", "CommentCount", "FavoriteCount", "CommunityOwnedDate", "ClosedDate", "LastEditDate", "LastActivityDate", "Score"], inplace=True)
-        
+
         comments.drop(columns=["Score"], inplace=True)
         votes.drop(columns=["BountyAmount"], inplace=True)
-                
+
         ## change time column to unix time
         comments["CreationDate"] = to_unix_time(comments["CreationDate"])
         badges["Date"] = to_unix_time(badges["Date"])

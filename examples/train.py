@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 
 import torch
 import torch_frame
-from text_embedder import TextToEmbedding
+from text_embedder import GloveTextEmbedding
 from torch import Tensor
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
@@ -78,7 +78,7 @@ data: HeteroData = make_pkey_fkey_graph(
     dataset.db,
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=TextToEmbedding(device=device), batch_size=16
+        text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
     cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
