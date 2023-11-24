@@ -1,15 +1,17 @@
 import argparse
+from typing import Dict
 
 import torch
-from torchmetrics import AUROC, MeanAbsoluteError
+from torch import Tensor
+from torchmetrics import AUROC, AveragePrecision, MeanAbsoluteError
 
 from rtb.data import Table
 from rtb.data.task import TaskType
 from rtb.datasets import get_dataset
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rtb-forum")
-parser.add_argument("--task", type=str, default="UserSumCommentScoresTask")
+parser.add_argument("--dataset", type=str, default="relbench-forum")
+parser.add_argument("--task", type=str, default="UserContributionTask")
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -27,25 +29,33 @@ val_table = dataset.make_val_table(args.task)
 test_table = dataset.make_test_table(args.task)
 
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
-    metric_name = "AUROC"
-    metric = AUROC(task="binary").to(device)
-    higher_is_better = True
+    metrics = {
+        "AUROC": AUROC(task="binary").to(device),
+        "AP": AveragePrecision(task="binary").to(device),
+    }
 
 elif task.task_type == TaskType.REGRESSION:
-    metric_name = "MAE"
-    metric = MeanAbsoluteError(squared=False).to(device)
-    higher_is_better = False
+    metrics = {
+        "MAE": MeanAbsoluteError(squared=False).to(device),
+    }
 
 
-def global_zero(train_table: Table, pred_table: Table) -> float:
+def get_metrics(pred: Tensor, target: Tensor) -> Dict[str, float]:
+    out_dict: Dict[str, float] = {}
+    for metric_name, metric in metrics.items():
+        metric.reset()
+        metric.update(pred, target)
+        out_dict[metric_name] = float(metric.compute())
+    return out_dict
+
+
+def global_zero(train_table: Table, pred_table: Table) -> Dict[str, float]:
     target = pred_table.df[task.target_col].astype(float).values
     target = torch.from_numpy(target)
 
     pred = torch.zeros_like(target)
 
-    metric.reset()
-    metric.update(pred, target)
-    return float(metric.compute())
+    return get_metrics(pred, target)
 
 
 def global_mean(train_table: Table, pred_table: Table) -> float:
@@ -56,9 +66,7 @@ def global_mean(train_table: Table, pred_table: Table) -> float:
     pred = torch.from_numpy(pred)
     pred = pred.mean().expand(target.size(0))
 
-    metric.reset()
-    metric.update(pred, target)
-    return float(metric.compute())
+    return get_metrics(pred, target)
 
 
 def global_median(train_table: Table, pred_table: Table) -> float:
@@ -69,9 +77,7 @@ def global_median(train_table: Table, pred_table: Table) -> float:
     pred = torch.from_numpy(pred)
     pred = pred.median().expand(target.size(0))
 
-    metric.reset()
-    metric.update(pred, target)
-    return float(metric.compute())
+    return get_metrics(pred, target)
 
 
 def entity_mean(train_table: Table, pred_table: Table) -> float:
@@ -85,9 +91,7 @@ def entity_mean(train_table: Table, pred_table: Table) -> float:
     pred = df[f"{task.target_col}_y"].fillna(0).astype(float).values
     pred = torch.from_numpy(pred)
 
-    metric.reset()
-    metric.update(pred, target)
-    return float(metric.compute())
+    return get_metrics(pred, target)
 
 
 def entity_median(train_table: Table, pred_table: Table) -> float:
@@ -101,48 +105,71 @@ def entity_median(train_table: Table, pred_table: Table) -> float:
     pred = df[f"{task.target_col}_y"].fillna(0).astype(float).values
     pred = torch.from_numpy(pred)
 
-    metric.reset()
-    metric.update(pred, target)
-    return float(metric.compute())
+    return get_metrics(pred, target)
+
+
+def random(train_table: Table, pred_table: Table) -> float:
+    target = pred_table.df[task.target_col].astype(int).values
+    target = torch.from_numpy(target)
+
+    pred = torch.rand(target.size())
+
+    return get_metrics(pred, target)
+
+
+def majority(train_table: Table, pred_table: Table) -> float:
+    target = pred_table.df[task.target_col].astype(int).values
+    target = torch.from_numpy(target)
+
+    past_target = train_table.df[task.target_col].astype(int).values
+    past_target = torch.from_numpy(past_target)
+
+    majority_label = float(past_target.bincount().argmax())
+    pred = torch.full((target.numel(),), fill_value=majority_label)
+
+    return get_metrics(pred, target)
 
 
 if task.task_type == TaskType.REGRESSION:
-    train_metric = global_zero(train_table, train_table)
-    val_metric = global_zero(train_table, val_table)
-    print(
-        f"Global Zero - "
-        f"Train {metric_name}: {train_metric:.4f}, "
-        f"Val {metric_name}: {val_metric:.4f}"
-    )
+    train_metrics = global_zero(train_table, train_table)
+    val_metrics = global_zero(train_table, val_table)
+    print("Global Zero:")
+    print(f"Train: {train_metrics}")
+    print(f"Val: {val_metrics}")
 
-    train_metric = global_mean(train_table, train_table)
-    val_metric = global_mean(train_table, val_table)
-    print(
-        f"Global Mean - "
-        f"Train {metric_name}: {train_metric:.4f}, "
-        f"Val {metric_name}: {val_metric:.4f}"
-    )
+    train_metrics = global_mean(train_table, train_table)
+    val_metrics = global_mean(train_table, val_table)
+    print("Global Mean:")
+    print(f"Train: {train_metrics}")
+    print(f"Val: {val_metrics}")
 
-    train_metric = global_median(train_table, train_table)
-    val_metric = global_median(train_table, val_table)
-    print(
-        f"Global Median - "
-        f"Train {metric_name}: {train_metric:.4f}, "
-        f"Val {metric_name}: {val_metric:.4f}"
-    )
+    train_metrics = global_median(train_table, train_table)
+    val_metrics = global_median(train_table, val_table)
+    print("Global Median:")
+    print(f"Train: {train_metrics}")
+    print(f"Val: {val_metrics}")
 
-    train_metric = entity_mean(train_table, train_table)
-    val_metric = entity_mean(train_table, val_table)
-    print(
-        f"Entity Mean - "
-        f"Train {metric_name}: {train_metric:.4f}, "
-        f"Val {metric_name}: {val_metric:.4f}"
-    )
+    train_metrics = entity_mean(train_table, train_table)
+    val_metrics = entity_mean(train_table, val_table)
+    print("Entity Mean:")
+    print(f"Train: {train_metrics}")
+    print(f"Val: {val_metrics}")
 
-    train_metric = entity_median(train_table, train_table)
-    val_metric = entity_median(train_table, val_table)
-    print(
-        f"Entity Median - "
-        f"Train {metric_name}: {train_metric:.4f}, "
-        f"Val {metric_name}: {val_metric:.4f}"
-    )
+    train_metrics = entity_median(train_table, train_table)
+    val_metrics = entity_median(train_table, val_table)
+    print("Entity Median:")
+    print(f"Train: {train_metrics}")
+    print(f"Val: {val_metrics}")
+
+elif task.task_type == TaskType.BINARY_CLASSIFICATION:
+    train_metrics = random(train_table, train_table)
+    val_metrics = random(train_table, val_table)
+    print("Random")
+    print(f"Train: {train_metrics}")
+    print(f"Val: {val_metrics}")
+
+    train_metrics = majority(train_table, train_table)
+    val_metrics = majority(train_table, val_table)
+    print("Majority:")
+    print(f"Train: {train_metrics}")
+    print(f"Val: {val_metrics}")
