@@ -45,9 +45,10 @@ class BenchmarkDataset(Dataset):
     test_timestamp: pd.Timestamp
     task_cls_list: List[Type[Task]]
 
-    raw_url_fmt: str = "http://relbench.stanford.edu/data/raw/{}.zip"
-    processed_url_fmt: str = "http://relbench.stanford.edu/data/processed/{}.zip"
+    raw_url_fmt: str = "http://relbench.stanford.edu/data/{}/db/raw.zip"
+    processed_url_fmt: str = "http://relbench.stanford.edu/data/{}/db/processed.zip"
 
+    db_dir: str = "db"
     raw_dir: str = "raw"
     processed_dir: str = "processed"
 
@@ -57,12 +58,12 @@ class BenchmarkDataset(Dataset):
         download=False,
         process=False,
     ):
-        root = Path(root)
+        self.root = Path(root)
 
-        processed_path = root / self.name / self.processed_dir
+        processed_path = root / self.name / self.db_dir / self.processed_dir
 
         if process:
-            raw_path = root / self.name / self.raw_dir
+            raw_path = root / self.name / self.db_dir / self.raw_dir
             raw_path.mkdir(parents=True, exist_ok=True)
 
             if download or not (raw_path / "done").exists():
@@ -128,5 +129,5 @@ class BenchmarkDataset(Dataset):
             db, self.val_timestamp, self.test_timestamp, self.task_cls_list
         )
 
-    def process_db(self, raw_path: Union[str, os.PathLike]) -> Database:
+    def make_db(self, raw_path: Union[str, os.PathLike]) -> Database:
         raise NotImplementedError

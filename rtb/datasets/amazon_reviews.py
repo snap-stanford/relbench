@@ -22,7 +22,7 @@ class AmazonReviewsDataset(BenchmarkDataset):
         self,
         root: Union[str, os.PathLike],
         category: str = "books",
-        use_5_core: bool = True,
+        use_5_core: bool = False,
         *,
         download=False,
         process=False,
@@ -34,7 +34,7 @@ class AmazonReviewsDataset(BenchmarkDataset):
 
         super().__init__(root, download=download, process=process)
 
-    def process_db(self, raw_path: Union[str, os.PathLike]) -> Database:
+    def make_db(self, raw_path: Union[str, os.PathLike]) -> Database:
         r"""Process the raw files into a database."""
 
         ### product table ###

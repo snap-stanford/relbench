@@ -10,62 +10,74 @@ from rtb.data.database import Database
 from rtb.data.table import Table
 
 if TYPE_CHECKING:
-    from rtb.data import Dataset
+    from rtb.data import BenchmarkDataset, Dataset
 
 
 class Task:
     r"""A task on a dataset."""
 
-    task_type: str
-    metrics: List[Callable[[NDArray, NDArray], float]]
-
-    timedelta: pd.Timedelta
-
-    target_col: str
-    entity_col: str
-    entity_table: str
-    time_col: str = "timestamp"
-
-    def __init__(self, dataset: "Dataset"):
+    def __init__(
+        self,
+        dataset: "Dataset",
+        timedelta: pd.Timedelta,
+        target_col: str,
+        metrics: List[Callable[NDArray, NDArray], float],
+    ):
         self.dataset = dataset
+        self.timedelta = timedelta
+        self.target_col = target_col
+        self.metrics = metrics
+
         self._test_table = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
-    @classmethod
     def make_table(
-        cls,
+        self,
         db: Database,
-        time_df: pd.DataFrame,
+        timestamps: "pd.Series[pd.Timestamp]",
     ) -> Table:
-        r"""To be implemented by subclass.
-
-        The window is (timestamp, timestamp + timedelta], i.e., left-exclusive.
-        """
+        r"""To be implemented by subclass."""
 
         # TODO: ensure that tasks follow the right-closed convention
 
         raise NotImplementedError
 
-    def make_default_train_table(self) -> Table:
+    def make_train_table(self, stride: Optional[pd.Timedelta] = None) -> Table:
         """Returns the train table for a task."""
+
+        if stride is None:
+            stride = self.timedelta
 
         return self.make_table(
             self.dataset.input_db,
             pd.date_range(
                 self.dataset.val_timestamp - self.timedelta,
                 self.dataset.min_timestamp,
-                freq=-self.timedelta,
+                freq=-stride,
             ),
         )
 
-    def make_default_val_table(self) -> Table:
+    def make_val_table(self) -> Table:
         r"""Returns the val table for a task."""
 
         return self.make_table(
             self.dataset.input_db,
             pd.Series([self.dataset.val_timestamp]),
+        )
+
+    def mask_input_cols(self, table: Table) -> Table:
+        input_cols = [
+            table.time_col,
+            *table.fkey_col_to_pkey_table.keys(),
+        ]
+
+        return Table(
+            df=table.df[input_cols],
+            fkey_col_to_pkey_table=table.fkey_col_to_pkey_table,
+            pkey_col=table.pkey_col,
+            time_col=table.time_col,
         )
 
     def make_input_test_table(self) -> Table:
@@ -77,13 +89,7 @@ class Task:
         )
         self._test_table = table
 
-        return Table(
-            # only expose input columns to prevent info leakage
-            df=table.df[[self.time_col, self.entity_col]],
-            fkey_col_to_pkey_table=table.fkey_col_to_pkey_table,
-            pkey_col=table.pkey_col,
-            time_col=table.time_col,
-        )
+        return self.mask_input_cols(table)
 
     def evaluate(
         self,
@@ -100,3 +106,60 @@ class Task:
         true = target_table.df[self.target_col].to_numpy()
 
         return {fn.__name__: fn(true, pred) for fn in metrics}
+
+
+class BenchmarkTask(Task):
+    name: str
+    task_type: str
+
+    timedelta: pd.Timedelta
+    target_col: str
+    metrics: List[Callable[[NDArray, NDArray], float]]
+
+    url_fmt: str = "http://relbench.stanford.edu/data/{}/tasks/{}.zip"
+
+    task_dir: str = "tasks"
+    train_file: str = "train_table.parquet"
+    val_file: str = "val_table.parquet"
+    test_file: str = "test_table.parquet"
+
+    def __init__(self, dataset: "BenchmarkDataset", *, download=False, process=False):
+        super().__init__(
+            dataset=dataset,
+            timedelta=self.timedelta,
+            target_col=self.target_col,
+            metrics=self.metrics,
+        )
+
+        task_path = self.dataset.root / self.dataset.name / self.task_dir / self.name
+
+        if process:
+            assert not download
+
+            # delete to avoid corruption
+            shutil.rmtree(task_path, ignore_errors=True)
+            task_path.mkdir(parents=True)
+
+            self.train_table = super().make_train_table()
+            self.train_table.save(task_path / self.train_file)
+
+            self.val_table = super().make_val_table()
+            self.val_table.save(task_path / self.val_file)
+
+            self._test_table = super().make_input_test_table()
+            self._test_table.save(task_path / self.test_file)
+            self.input_test_table = self.mask_input_cols(self._test_table)
+
+        else:
+            if download:
+                # delete to avoid corruption
+                shutil.rmtree(task_path, ignore_errors=True)
+                task_path.mkdir(parents=True)
+
+                url = self.url_fmt.format(self.dataset.name, self.name)
+                download_and_extract(url, task_path)
+
+            self.train_table = Table.load(task_path / self.train_file)
+            self.val_table = Table.load(task_path / self.val_file)
+            self._test_table = Table.load(task_path / self.test_file)
+            self.input_test_table = self.mask_input_cols(self._test_table)
