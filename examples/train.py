@@ -33,18 +33,21 @@ dataset_to_informative_text_cols["rtb-forum"] = {
     "posts": ["Body", "Title", "Tags"],
     "comments": ["Text"],
 }
+dataset_to_informative_text_cols["relbench-forum"] = {
+    "postHistory": ["Text"],
+    "users": ["AboutMe"],
+    "posts": ["Body", "Title", "Tags"],
+    "comments": ["Text"],
+}
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rtb-forum")
-parser.add_argument("--task", type=str, default="UserSumCommentScoresTask")
+parser.add_argument("--dataset", type=str, default="relbench-forum")
+parser.add_argument("--task", type=str, default="UserContributionTask")
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
-# Default to "sum" aggrgation since it's better for sum-based target labels.
-parser.add_argument(
-    "--aggr", type=str, default="sum", help="GNN neighbor aggregation scheme."
-)
+parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_neighbors", type=int, default=-1)
 parser.add_argument("--num_workers", type=int, default=6)
 args = parser.parse_args()
@@ -69,7 +72,7 @@ col_to_stype_dict = get_stype_proposal(dataset.db)
 informative_text_cols: Dict = dataset_to_informative_text_cols[args.dataset]
 for table_name, stype_dict in col_to_stype_dict.items():
     for col_name, stype in list(stype_dict.items()):
-        # remove text columns except the informative ones
+        # Remove text columns except for the informative ones:
         if stype == torch_frame.text_embedded:
             if col_name not in informative_text_cols.get(table_name, []):
                 del stype_dict[col_name]
@@ -82,8 +85,9 @@ data: HeteroData = make_pkey_fkey_graph(
     ),
     cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
+print(data)
 
-sampler = NeighborSampler(  # Initialize sampler only once:
+sampler = NeighborSampler(  # Initialize sampler only once.
     data,
     num_neighbors=[args.num_neighbors, args.num_neighbors],
     time_attr="time",

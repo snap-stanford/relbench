@@ -172,6 +172,10 @@ def get_train_table_input(
     if train_table.time_col is not None:
         time = to_unix_time(train_table.df[train_table.time_col])
 
+    print(train_table.df.columns)
+    print(train_table.df)
+    print(task.target_col)
+
     target: Optional[Tensor] = None
     transform: Optional[AttachTargetTransform] = None
     if task.target_col in train_table.df:
