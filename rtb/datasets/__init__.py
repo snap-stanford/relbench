@@ -1,5 +1,6 @@
 from rtb.datasets.fake import FakeProductDataset
 from rtb.datasets.forum import ForumDataset
+from rtb.datasets.forum_full import ForumFullDataset
 from rtb.datasets.grant import GrantDataset
 from rtb.datasets.product import ProductDataset
 
@@ -15,6 +16,8 @@ def get_dataset(name: str, *args, **kwargs):
         return GrantDataset(*args, **kwargs)
     if name == ForumDataset.name:
         return ForumDataset(*args, **kwargs)
+    if name == ForumFullDataset.name:
+        return ForumFullDataset(*args, **kwargs)
 
     raise ValueError(f"Unknown dataset name: '{name}'")
 

@@ -1,8 +1,8 @@
 import os
 from typing import Dict, Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
 from rtb.data.database import Database
@@ -10,7 +10,6 @@ from rtb.data.dataset import Dataset
 from rtb.data.table import Table
 from rtb.data.task import Task, TaskType
 from rtb.utils import get_df_in_window, to_unix_time
-
 
 
 class UserContributionTask(Task):
@@ -21,12 +20,12 @@ class UserContributionTask(Task):
             input_cols=["window_min_time", "window_max_time", "OwnerUserId"],
             target_col="contribution",
             task_type=TaskType.BINARY_CLASSIFICATION,
-            window_sizes=[pd.Timedelta(days=365*2)],
+            window_sizes=[pd.Timedelta(days=365 * 2)],
             metrics=["auroc", "auprc"],
         )
 
     def make_table(self, db: Database, time_window_df: pd.DataFrame) -> Table:
-        r"""Create Task object for UserChurnTask."""
+        r"""Create Task object for UserContributionTask."""
 
         comments = db.tables["comments"].df
         votes = db.tables["votes"].df
@@ -37,8 +36,8 @@ class UserContributionTask(Task):
         posts = posts[posts.OwnerUserId.notnull()]  ## 1153 null posts
 
         users = db.tables["users"].df
-        votes = votes[votes.UserId.notnull()]  
-        posts = posts[posts.OwnerUserId.notnull()]  
+        votes = votes[votes.UserId.notnull()]
+        posts = posts[posts.OwnerUserId.notnull()]
 
         comments = comments[
             comments.UserId != -1
@@ -54,36 +53,51 @@ class UserContributionTask(Task):
             user_made_comments_in_this_period = comments_window.UserId.unique()
             user_made_votes_in_this_period = votes_window.UserId.unique()
 
-            #user_active_in_this_period = user_made_posts_in_this_period
+            # user_active_in_this_period = user_made_posts_in_this_period
 
-            user_active_in_this_period = np.union1d(np.union1d(user_made_posts_in_this_period, user_made_comments_in_this_period),user_made_votes_in_this_period)
+            user_active_in_this_period = np.union1d(
+                np.union1d(
+                    user_made_posts_in_this_period, user_made_comments_in_this_period
+                ),
+                user_made_votes_in_this_period,
+            )
 
             users_exist = users[
                 users.CreationDate <= row["window_min_time"]
             ]  ## only looking at existing users
             users_exist_ids = users_exist.Id.values
 
-            user_made_votes = votes[votes.CreationDate <= row["window_min_time"]].UserId.unique()
-            user_made_comments = comments[comments.CreationDate <= row["window_min_time"]].UserId.unique()
-            user_made_posts = posts[posts.CreationDate <= row["window_min_time"]].OwnerUserId.unique()
-            active_user_before_this_time = np.union1d(np.union1d(user_made_votes, user_made_comments),user_made_posts)
-            #active_user_before_this_time = user_made_posts
-            users_exist_and_active_ids = np.intersect1d(users_exist_ids, active_user_before_this_time)
+            user_made_votes = votes[
+                votes.CreationDate <= row["window_min_time"]
+            ].UserId.unique()
+            user_made_comments = comments[
+                comments.CreationDate <= row["window_min_time"]
+            ].UserId.unique()
+            user_made_posts = posts[
+                posts.CreationDate <= row["window_min_time"]
+            ].OwnerUserId.unique()
+            active_user_before_this_time = np.union1d(
+                np.union1d(user_made_votes, user_made_comments), user_made_posts
+            )
+            # active_user_before_this_time = user_made_posts
+            users_exist_and_active_ids = np.intersect1d(
+                users_exist_ids, active_user_before_this_time
+            )
 
             user2churn = pd.DataFrame()
             user2churn["OwnerUserId"] = users_exist_and_active_ids
             user2churn["window_min_time"] = row["window_min_time"]
-            user2churn["window_max_time"] = row["window_max_time"]            
+            user2churn["window_max_time"] = row["window_max_time"]
 
-            user2churn["churn"] = user2churn.OwnerUserId.apply(
+            user2churn["contribution"] = user2churn.OwnerUserId.apply(
                 lambda x: 1 if x in user_active_in_this_period else 0
             )  ## 1: contributed; 0: not contributed
             return user2churn
+
         tqdm.pandas()
         # Apply function to each time window
         res = time_window_df.progress_apply(
-            lambda row: get_values_in_window(row, posts, users), 
-            axis=1
+            lambda row: get_values_in_window(row, posts, users), axis=1
         )
         df = pd.concat(res.values)
 
@@ -93,7 +107,6 @@ class UserContributionTask(Task):
             pkey_col=None,
             time_col="window_min_time",
         )
-
 
 
 class QuestionPopularityTask(Task):
@@ -121,11 +134,17 @@ class QuestionPopularityTask(Task):
         ]  ## when user id is -1, it is stats exchange community, not a real person
         posts = posts[posts.OwnerUserId.notnull()]  ## 1153 null posts
 
-        posts = posts[posts.PostTypeId == 1] ## just looking at questions
+        posts = posts[posts.PostTypeId == 1]  ## just looking at questions
 
         def get_values_in_window(row, votes, posts):
             votes_window = get_df_in_window(votes, "CreationDate", row)
-            posts_exist = posts[(posts.CreationDate <= row["window_min_time"]) & (posts.CreationDate > (row["window_min_time"] - pd.Timedelta(days = 365*2)))] ## posts exist and active defined by created in the last 2 years
+            posts_exist = posts[
+                (posts.CreationDate <= row["window_min_time"])
+                & (
+                    posts.CreationDate
+                    > (row["window_min_time"] - pd.Timedelta(days=365 * 2))
+                )
+            ]  ## posts exist and active defined by created in the last 2 years
             posts_exist_ids = posts_exist.Id.values
             train_table = pd.DataFrame()
             train_table["PostId"] = posts_exist_ids
@@ -153,7 +172,7 @@ class QuestionPopularityTask(Task):
         )
 
 
-class ForumDataset(Dataset):
+class ForumFullDataset(Dataset):
     name = "relbench-forum"
 
     def get_tasks(self) -> Dict[str, Task]:
@@ -162,7 +181,7 @@ class ForumDataset(Dataset):
 
         tasks = {
             "QuestionPopularityTask": QuestionPopularityTask(),
-            "UserContributionTask": UserContributionTask()
+            "UserContributionTask": UserContributionTask(),
         }
         self.tasks_window_size = {i: j.window_sizes[0] for i, j in tasks.items()}
         return tasks
@@ -183,9 +202,23 @@ class ForumDataset(Dataset):
 
         ## remove time leakage columns
         users.drop(
-            columns=["Reputation", "Views", "UpVotes", "DownVotes", "LastAccessDate"], inplace=True
+            columns=["Reputation", "Views", "UpVotes", "DownVotes", "LastAccessDate"],
+            inplace=True,
         )
-        posts.drop(columns=["ViewCount", "AnswerCount", "CommentCount", "FavoriteCount", "CommunityOwnedDate", "ClosedDate", "LastEditDate", "LastActivityDate", "Score"], inplace=True)
+        posts.drop(
+            columns=[
+                "ViewCount",
+                "AnswerCount",
+                "CommentCount",
+                "FavoriteCount",
+                "CommunityOwnedDate",
+                "ClosedDate",
+                "LastEditDate",
+                "LastActivityDate",
+                "Score",
+            ],
+            inplace=True,
+        )
 
         comments.drop(columns=["Score"], inplace=True)
         votes.drop(columns=["BountyAmount"], inplace=True)
@@ -269,10 +302,6 @@ class ForumDataset(Dataset):
         r"""Returns the train and val cutoff times. To be implemented by
         subclass, but can implement a sensible default strategy here."""
 
-        train_max_time = pd.Timestamp(
-            "2019-09-12"
-        )  # 4 years before the max_time
-        val_max_time = pd.Timestamp(
-            "2021-09-12"
-        )  # 2 years the max_time
+        train_max_time = pd.Timestamp("2019-09-12")  # 4 years before the max_time
+        val_max_time = pd.Timestamp("2021-09-12")  # 2 years the max_time
         return train_max_time, val_max_time
