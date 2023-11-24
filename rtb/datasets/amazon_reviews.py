@@ -12,10 +12,7 @@ class AmazonReviewsDataset(BenchmarkDataset):
     # TODO: revise
     val_timestamp = pd.Timestamp("2014-01-01")
     test_timestamp = pd.Timestamp("2016-01-01")
-    task_cls_dict = {
-        "customer_churn": CustomerChurnTask,
-        "customer_ltv": CustomerLTVTask,
-    }
+    tasks = [CustomerChurnTask, CustomerLTVTask]
 
     category_list = ["books", "fashion"]
 

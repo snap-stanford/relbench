@@ -29,10 +29,7 @@ class FakeReviewsDataset(Dataset):
             db=db,
             val_timestamp=val_timestamp,
             test_timestamp=test_timestamp,
-            task_cls_dict={
-                "customer_churn": CustomerChurnTask,
-                "customer_ltv": CustomerLTVTask,
-            },
+            task_cls_list=[CustomerChurnTask, CustomerLTVTask],
         )
 
     def process_db(self, num_products, num_customers, num_reviews) -> Database:

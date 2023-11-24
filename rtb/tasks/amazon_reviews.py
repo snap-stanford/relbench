@@ -13,6 +13,8 @@ class CustomerChurnTask(Task):
     r"""Churn for a customer is 1 if the customer does not review any product
     in the time window, else 0."""
 
+    name = "customer_churn"
+
     task_type = "binary_classification"
     metrics = [accuracy, f1, roc_auc]
 
@@ -71,6 +73,8 @@ class CustomerChurnTask(Task):
 class CustomerLTVTask(Task):
     r"""LTV (life-time value) for a customer is the sum of prices of products
     that the customer reviews in the time window."""
+
+    name = "customer_ltv"
 
     task_type = "regression"
     metrics = [mae, rmse]

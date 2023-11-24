@@ -17,12 +17,12 @@ class Dataset:
         db: Database,
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
-        task_cls_dict: Dict[str, Type[Task]],
+        task_cls_list: List[Type[Task]],
     ) -> None:
         self._db = db
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
-        self.task_cls_dict = task_cls_dict
+        self.task_cls_list = task_cls_list
 
         self.input_db = db.upto(test_timestamp)
         self.min_timestamp = db.min_timestamp
@@ -33,17 +33,20 @@ class Dataset:
 
     @property
     def task_names(self) -> List[str]:
-        return list(self.task_cls_dict.keys())
+        return [task_cls.name for task_cls in self.task_cls_list]
 
     def get_task(self, task_name: str) -> Task:
-        return self.task_cls_dict[task_name](self)
+        for task_cls in self.task_cls_list:
+            if task_cls.name == task_name:
+                return task_cls(self)
+        raise ValueError(f"Unknown task {task_name} for dataset {self}.")
 
 
 class BenchmarkDataset(Dataset):
     name: str
     val_timestamp: pd.Timestamp
     test_timestamp: pd.Timestamp
-    task_cls_dict: Dict[str, Type[Task]]
+    task_cls_list: List[Type[Task]]
 
     raw_url_fmt: str = "http://relbench.stanford.edu/data/raw/{}.zip"
     processed_url_fmt: str = "http://relbench.stanford.edu/data/processed/{}.zip"
@@ -125,7 +128,7 @@ class BenchmarkDataset(Dataset):
             print(f"loading db took {toc - tic:.2f} seconds.")
 
         super().__init__(
-            db, self.val_timestamp, self.test_timestamp, self.task_cls_dict
+            db, self.val_timestamp, self.test_timestamp, self.task_cls_list
         )
 
     def process_db(self, raw_path: Union[str, os.PathLike]) -> Database:
