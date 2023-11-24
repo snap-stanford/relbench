@@ -35,8 +35,8 @@ class Dataset:
     def task_names(self) -> List[str]:
         return list(self.task_cls_dict.keys())
 
-    def get_task(self, task_name: str, timedelta: pd.Timedelta) -> Task:
-        return self.task_cls_dict[task_name](self, timedelta)
+    def get_task(self, task_name: str) -> Task:
+        return self.task_cls_dict[task_name](self)
 
 
 class BenchmarkDataset(Dataset):
@@ -87,7 +87,7 @@ class BenchmarkDataset(Dataset):
 
             print("reindexing pkeys and fkeys...")
             tic = time.time()
-            db = self.reindex_pkeys_and_fkeys(db)
+            db.reindex_pkeys_and_fkeys()
             toc = time.time()
             print(f"reindexing pkeys and fkeys took {toc - tic:.2f} seconds.")
 

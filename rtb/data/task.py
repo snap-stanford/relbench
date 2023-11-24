@@ -16,16 +16,22 @@ if TYPE_CHECKING:
 class Task:
     r"""A task on a dataset."""
 
-    input_cols: List[str]
-    target_col: str
     task_type: str
-    benchmark_timedeltas: List[pd.Timedelta]
-    benchmark_metrics: List[Callable[[NDArray, NDArray], float]]
+    metrics: List[Callable[[NDArray, NDArray], float]]
 
-    def __init__(self, dataset: "Dataset", timedelta: pd.Timedelta):
+    timedelta: pd.Timedelta
+
+    target_col: str
+    entity_col: str
+    entity_table: str
+    time_col: str = "timestamp"
+
+    def __init__(self, dataset: "Dataset"):
         self.dataset = dataset
-        self.timedelta = timedelta
         self._test_table = None
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(dataset={self.dataset})"
 
     @classmethod
     def make_table(
@@ -45,41 +51,35 @@ class Task:
     def make_default_train_table(self) -> Table:
         """Returns the train table for a task."""
 
-        time_df = pd.DataFrame(
-            dict(
-                timestamp=pd.date_range(
-                    self.dataset.val_timestamp - self.timedelta,
-                    self.dataset.min_timestamp,
-                    freq=-self.timedelta,
-                ),
-                timedelta=self.timedelta,
-            )
+        return self.make_table(
+            self.dataset.input_db,
+            pd.date_range(
+                self.dataset.val_timestamp - self.timedelta,
+                self.dataset.min_timestamp,
+                freq=-self.timedelta,
+            ),
         )
-
-        return self.make_table(self.dataset.input_db, time_df)
 
     def make_default_val_table(self) -> Table:
         r"""Returns the val table for a task."""
 
-        time_df = pd.DataFrame(
-            dict(timestamp=[self.dataset.val_timestamp], timedelta=self.timedelta),
+        return self.make_table(
+            self.dataset.input_db,
+            pd.Series([self.dataset.val_timestamp]),
         )
-
-        return self.make_table(self.dataset.input_db, time_df)
 
     def make_input_test_table(self) -> Table:
         r"""Returns the test table for a task."""
 
-        time_df = pd.DataFrame(
-            dict(timestamp=[self.dataset.test_timestamp], timedelta=self.timedelta),
+        table = self.make_table(
+            self.dataset._db,
+            pd.Series([self.dataset.test_timestamp]),
         )
-
-        table = self.make_table(self.dataset._db, time_df)
         self._test_table = table
 
         return Table(
             # only expose input columns to prevent info leakage
-            df=table.df[task.input_cols],
+            df=table.df[[self.time_col, self.entity_col]],
             fkey_col_to_pkey_table=table.fkey_col_to_pkey_table,
             pkey_col=table.pkey_col,
             time_col=table.time_col,

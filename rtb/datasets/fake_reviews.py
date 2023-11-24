@@ -22,6 +22,7 @@ class FakeReviewsDataset(Dataset):
         self, num_products: int = 30, num_customers: int = 100, num_reviews: int = 500
     ):
         db = self.process_db(num_products, num_customers, num_reviews)
+        db.reindex_pkeys_and_fkeys()
         val_timestamp = db.min_timestamp + 0.8 * (db.max_timestamp - db.min_timestamp)
         test_timestamp = db.min_timestamp + 0.9 * (db.max_timestamp - db.min_timestamp)
         super().__init__(

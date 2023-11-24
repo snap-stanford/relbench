@@ -75,7 +75,7 @@ class Database:
             }
         )
 
-    def reindex_pkeys_and_fkeys(self):
+    def reindex_pkeys_and_fkeys(self) -> None:
         r"""Mapping primary and foreign keys into indices according to
         the ordering in the primary key tables.
         """

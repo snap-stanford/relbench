@@ -13,43 +13,58 @@ class CustomerChurnTask(Task):
     r"""Churn for a customer is 1 if the customer does not review any product
     in the time window, else 0."""
 
-    input_cols = ["timestamp", "timedelta", "customer_id"]
-    target_col = "churn"
     task_type = "binary_classification"
-    benchmark_timedeltas = [pd.Timedelta(days=365), pd.Timedelta(days=365 * 2)]
-    benchmark_metrics = [accuracy, f1, roc_auc]
+    metrics = [accuracy, f1, roc_auc]
+
+    timedelta = pd.Timedelta(days=365 * 2)
+
+    target_col = "churn"
+    entity_col = "customer_id"
+    entity_table = "customer"
+    time_col = "timestamp"
 
     @classmethod
-    def make_table(cls, db: Database, time_df: pd.DataFrame) -> Table:
-        product = db.tables["product"].df
-        customer = db.tables["customer"].df
-        review = db.tables["review"].df
+    def make_table(cls, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        product = db.table_dict["product"].df
+        customer = db.table_dict["customer"].df
+        review = db.table_dict["review"].df
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         df = duckdb.sql(
-            """
+            f"""
             SELECT
                 timestamp,
-                timedelta,
                 customer_id,
-                NOT EXISTS (
+                CAST(
+                    NOT EXISTS (
+                        SELECT 1
+                        FROM review
+                        WHERE
+                            review.customer_id = customer.customer_id AND
+                            review_time > timestamp AND
+                            review_time <= timestamp + INTERVAL '{cls.timedelta}'
+                    ) AS INTEGER
+                ) AS churn
+            FROM
+                timestamp_df,
+                customer,
+            WHERE
+                EXISTS (
                     SELECT 1
                     FROM review
                     WHERE
                         review.customer_id = customer.customer_id AND
-                        review.review_time > timestamp AND
-                        review.review_time <= timestamp + timedelta
-                ) AS churn
-            FROM
-                time_df,
-                customer
+                        review_time > timestamp - INTERVAL '{cls.timedelta}' AND
+                        review_time <= timestamp
+                )
             """
         ).df()
 
         return Table(
             df=df,
-            fkey_col_to_pkey_table={"customer_id": "customer"},
+            fkey_col_to_pkey_table={cls.entity_col: cls.entity_table},
             pkey_col=None,
-            time_col="timestamp",
+            time_col=cls.time_col,
         )
 
 
@@ -57,40 +72,54 @@ class CustomerLTVTask(Task):
     r"""LTV (life-time value) for a customer is the sum of prices of products
     that the customer reviews in the time window."""
 
-    input_cols = ["timestamp", "timedelta", "customer_id"]
-    target_col = "ltv"
     task_type = "regression"
-    benchmark_timedeltas = [pd.Timedelta(days=365), pd.Timedelta(days=365 * 2)]
-    benchmark_metrics = [mae, rmse]
+    metrics = [mae, rmse]
+
+    timedelta = pd.Timedelta(days=365 * 2)
+
+    target_col = "ltv"
+    entity_col = "customer_id"
+    entity_table = "customer"
+    time_col = "timestamp"
 
     @classmethod
-    def make_table(cls, db: Database, time_df: pd.DataFrame) -> Table:
-        product = db.tables["product"].df
-        customer = db.tables["customer"].df
-        review = db.tables["review"].df
+    def make_table(cls, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        product = db.table_dict["product"].df
+        customer = db.table_dict["customer"].df
+        review = db.table_dict["review"].df
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         df = duckdb.sql(
-            """
+            f"""
             SELECT
                 timestamp,
-                timedelta,
                 customer_id,
                 ltv,
-                count
+                count_
             FROM
-                time_df,
+                timestamp_df,
                 customer,
                 (
                     SELECT
                         COALESCE(SUM(price), 0) as ltv,
-                        COALESCE(COUNT(price), 0) as count
-                    FROM review, product
+                        COALESCE(COUNT(price), 0) as count_
+                    FROM
+                        review,
+                        product
                     WHERE
                         review.customer_id = customer.customer_id AND
                         review.product_id = product.product_id AND
-                        review.review_time > timestamp AND
-                        reviewear
-                        review_time <= timestamp + timedelta
+                        review_time > timestamp AND
+                        review_time <= timestamp + INTERVAL '{cls.timedelta}'
+                )
+            WHERE
+                EXISTS (
+                    SELECT 1
+                    FROM review
+                    WHERE
+                        review.customer_id = customer.customer_id AND
+                        review_time > timestamp - INTERVAL '{cls.timedelta}' AND
+                        review_time <= timestamp
                 )
             """
         ).df()
