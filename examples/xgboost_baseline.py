@@ -81,6 +81,10 @@ model.tune(
     num_trials=20,
 )
 
+pred = model.predict(tf_test=datasets['train'].tensor_frame)
+score = model.compute_metric(datasets['train'].tensor_frame.y, pred)
+print(f"Train {model.metric}: {score:.4f}")
+
 pred = model.predict(tf_test=datasets['val'].tensor_frame)
 score = model.compute_metric(datasets['val'].tensor_frame.y, pred)
-print(f"{model.metric} : {score}")
+print(f"Val {model.metric}: {score:.4f}")
