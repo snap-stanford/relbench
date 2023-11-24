@@ -22,7 +22,7 @@ class Dataset:
         self._db = db
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
-        self.task_cls_list = task_cls_list
+        self.task_cls_dict = {task_cls.name: task_cls for task_cls in task_cls_list}
 
         self.input_db = db.upto(test_timestamp)
         self.min_timestamp = db.min_timestamp
@@ -33,13 +33,10 @@ class Dataset:
 
     @property
     def task_names(self) -> List[str]:
-        return [task_cls.name for task_cls in self.task_cls_list]
+        return list(self.task_cls_dict.keys())
 
     def get_task(self, task_name: str) -> Task:
-        for task_cls in self.task_cls_list:
-            if task_cls.name == task_name:
-                return task_cls(self)
-        raise ValueError(f"Unknown task {task_name} for dataset {self}.")
+        return self.task_cls_dict[task_name](self)
 
 
 class BenchmarkDataset(Dataset):

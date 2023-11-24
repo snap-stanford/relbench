@@ -18,6 +18,8 @@ def _generate_random_string(min_length: int, max_length: int) -> str:
 
 
 class FakeReviewsDataset(Dataset):
+    name = "fake_reviews"
+
     def __init__(
         self, num_products: int = 30, num_customers: int = 100, num_reviews: int = 500
     ):
