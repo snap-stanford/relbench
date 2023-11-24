@@ -53,12 +53,14 @@ class RelBenchDataset(Dataset):
     processed_dir: str = "processed"
 
     def __init__(
+        self,
         root=Union[str, os.PathLike],
         *,
         download=False,
         process=False,
     ):
-        self.root = Path(root)
+        root = Path(root)
+        self.root = root
 
         processed_path = root / self.name / self.db_dir / self.processed_dir
 
@@ -71,9 +73,9 @@ class RelBenchDataset(Dataset):
                 shutil.rmtree(raw_path, ignore_errors=True)
                 raw_path.mkdir(parents=True)
 
-                print("downloading raw files...")
-                tic = time.time()
                 raw_url = self.raw_url_fmt.format(self.name)
+                print(f"downloading raw files from {raw_url} into {raw_path}...")
+                tic = time.time()
                 download_and_extract(raw_url, raw_path)
                 toc = time.time()
                 print(f"downloading raw files took {toc - tic:.2f} seconds.")

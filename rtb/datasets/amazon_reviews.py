@@ -22,7 +22,7 @@ class AmazonReviewsDataset(RelBenchDataset):
         self,
         root: Union[str, os.PathLike],
         category: str = "books",
-        use_5_core: bool = False,
+        use_5_core: bool = True,
         *,
         download=False,
         process=False,
