@@ -85,7 +85,6 @@ data: HeteroData = make_pkey_fkey_graph(
     ),
     cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
-print(data)
 
 sampler = NeighborSampler(  # Initialize sampler only once.
     data,
