@@ -4,11 +4,9 @@ from typing import Dict, Union
 
 import duckdb
 import pandas as pd
-import pyarrow as pa
 
-from rtb.data import Database, Dataset, Table, Task, TaskType
+from rtb.data import Database, Dataset, Table, Task
 from rtb.metrics import accuracy, f1, mae, rmse, roc_auc
-from rtb.utils import download_url, unzip
 
 
 class CustomerChurnTask(Task):
@@ -17,7 +15,7 @@ class CustomerChurnTask(Task):
 
     input_cols = ["timestamp", "timedelta", "customer_id"]
     target_col = "churn"
-    task_type = TaskType.BINARY_CLASSIFICATION
+    task_type = "binary_classification"
     benchmark_timedeltas = [pd.Timedelta(days=365), pd.Timedelta(days=365 * 2)]
     benchmark_metrics = [accuracy, f1, roc_auc]
 
@@ -61,7 +59,7 @@ class CustomerLTVTask(Task):
 
     input_cols = ["timestamp", "timedelta", "customer_id"]
     target_col = "ltv"
-    task_type = TaskType.REGRESSION
+    task_type = "regression"
     benchmark_timedeltas = [pd.Timedelta(days=365), pd.Timedelta(days=365 * 2)]
     benchmark_metrics = [mae, rmse]
 

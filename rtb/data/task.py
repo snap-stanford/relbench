@@ -1,10 +1,16 @@
 import os
 from dataclasses import dataclass
-from typing import Callable, List, Union
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
 
+import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 
-from rtb.data import Dataset
+from rtb.data.database import Database
+from rtb.data.table import Table
+
+if TYPE_CHECKING:
+    from rtb.data import Dataset
 
 
 class Task:
@@ -14,9 +20,9 @@ class Task:
     target_col: str
     task_type: str
     benchmark_timedeltas: List[pd.Timedelta]
-    benchmark_metrics: List[Callable[[np.ndarray, np.ndarray], float]]
+    benchmark_metrics: List[Callable[[NDArray, NDArray], float]]
 
-    def __init__(self, dataset: Dataset, timedelta: pd.Timedelta):
+    def __init__(self, dataset: "Dataset", timedelta: pd.Timedelta):
         self.dataset = dataset
         self.timedelta = timedelta
         self._test_table = None
@@ -81,9 +87,9 @@ class Task:
 
     def evaluate(
         self,
-        pred: np.ndarray[np.float64],
+        pred: NDArray[np.float64],
         target_table: Optional[Table] = None,
-        metrics: Optional[List[Callable[[np.ndarray, np.ndarray], float]]] = None,
+        metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
     ) -> Dict[str, float]:
         if target_table is None:
             target_table = self._test_table

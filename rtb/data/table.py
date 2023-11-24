@@ -1,7 +1,7 @@
 import copy
 import json
 import os
-from functools import cache
+from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
@@ -101,6 +101,9 @@ class Table:
     def upto(self, time_stamp: pd.Timestamp) -> Self:
         r"""Returns a table with all rows upto time."""
 
+        if self.time_col is None:
+            raise ValueError("Table has no time column.")
+
         return Table(
             df=self.df.query(f"{self.time_col} <= @time_stamp"),
             fkey_col_to_pkey_table=self.fkey_col_to_pkey_table,
@@ -109,15 +112,21 @@ class Table:
         )
 
     @property
-    @cache
+    @lru_cache(maxsize=None)
     def min_timestamp(self) -> pd.Timestamp:
         r"""Returns the earliest time in the table."""
+
+        if self.time_col is None:
+            return ValueError("Table has no time column.")
 
         return self.df[self.time_col].min()
 
     @property
-    @cache
+    @lru_cache(maxsize=None)
     def max_timestamp(self) -> pd.Timestamp:
         r"""Returns the latest time in the table."""
+
+        if self.time_col is None:
+            return ValueError("Table has no time column.")
 
         return self.df[self.time_col].max()

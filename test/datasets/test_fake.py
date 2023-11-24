@@ -1,19 +1,10 @@
-from rtb.datasets import FakeProductDataset
+from rtb.datasets import FakeReviewsDataset
 
 
-def test_fake_product_dataset(tmp_path):
-    dataset = FakeProductDataset(root=tmp_path, process=True)
-    assert (
-        str(dataset)
-        == """FakeProductDataset(
-  tables=['customer', 'product', 'review'],
-  tasks=['churn', 'ltv'],
-  min_time=1970-01-01 00:00:00,
-  max_time=1983-08-31 00:00:00,
-  train_max_time=1980-12-06 00:00:00,
-  val_max_time=1982-04-19 00:00:00,
-)"""
-    )
+def test_fake_reviews_dataset():
+    dataset = FakeReviewsDataset()
+    assert str(dataset) == "FakeProductDataset()"
+    assert dataset.task_names == ["customer_churn", "customer_ltv"]
 
     train_table = dataset.make_train_table("ltv")
     val_table = dataset.make_val_table("ltv")

@@ -2,11 +2,12 @@ import os
 import shutil
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
-from rtb.data import Database, Task
+from rtb.data.database import Database
+from rtb.data.task import Task
 from rtb.utils import download_and_extract
 
 
@@ -16,7 +17,7 @@ class Dataset:
         db: Database,
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
-        task_cls_dict: Dict[str, Task],
+        task_cls_dict: Dict[str, Type[Task]],
     ) -> None:
         self._db = db
         self.val_timestamp = val_timestamp
@@ -27,15 +28,22 @@ class Dataset:
         self.min_timestamp = db.min_timestamp
         self.max_timestamp = db.max_timestamp
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}()"
+
+    @property
+    def task_names(self) -> List[str]:
+        return list(self.task_cls_dict.keys())
+
     def get_task(self, task_name: str, timedelta: pd.Timedelta) -> Task:
-        return self.task_cls_dict[task_name](self._db, timedelta)
+        return self.task_cls_dict[task_name](self, timedelta)
 
 
 class BenchmarkDataset(Dataset):
     name: str
     val_timestamp: pd.Timestamp
     test_timestamp: pd.Timestamp
-    task_cls_dict: Dict[str, type[Task]]
+    task_cls_dict: Dict[str, Type[Task]]
 
     raw_url_fmt: str = "http://relbench.stanford.edu/data/raw/{}.zip"
     processed_url_fmt: str = "http://relbench.stanford.edu/data/processed/{}.zip"

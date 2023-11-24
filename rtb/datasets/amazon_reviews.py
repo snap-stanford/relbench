@@ -1,3 +1,6 @@
+import os
+from typing import Union
+
 import pandas as pd
 
 from rtb.data import BenchmarkDataset, Database
@@ -9,7 +12,10 @@ class AmazonReviewsDataset(BenchmarkDataset):
     # TODO: revise
     val_timestamp = pd.Timestamp("2014-01-01")
     test_timestamp = pd.Timestamp("2016-01-01")
-    task_cls_dict = {"churn": CustomerChurnTask, "ltv": CustomerLTVTask}
+    task_cls_dict = {
+        "customer_churn": CustomerChurnTask,
+        "customer_ltv": CustomerLTVTask,
+    }
 
     category_list = ["books", "fashion"]
 

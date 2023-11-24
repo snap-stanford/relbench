@@ -25,10 +25,13 @@ class FakeReviewsDataset(Dataset):
         val_timestamp = db.min_timestamp + 0.8 * (db.max_timestamp - db.min_timestamp)
         test_timestamp = db.min_timestamp + 0.9 * (db.max_timestamp - db.min_timestamp)
         super().__init__(
-            db=self.process_db(),
+            db=db,
             val_timestamp=val_timestamp,
             test_timestamp=test_timestamp,
-            task_cls_dict={"churn": CustomerChurnTask, "ltv": CustomerLTVTask},
+            task_cls_dict={
+                "customer_churn": CustomerChurnTask,
+                "customer_ltv": CustomerLTVTask,
+            },
         )
 
     def process_db(self, num_products, num_customers, num_reviews) -> Database:
