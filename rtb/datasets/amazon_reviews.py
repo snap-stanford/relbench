@@ -3,11 +3,11 @@ from typing import Union
 
 import pandas as pd
 
-from rtb.data import BenchmarkDataset, Database
+from rtb.data import Database, RelBenchDataset
 from rtb.tasks.amazon_reviews import CustomerChurnTask, CustomerLTVTask
 
 
-class AmazonReviewsDataset(BenchmarkDataset):
+class AmazonReviewsDataset(RelBenchDataset):
     name = "amazon_reviews"
     # TODO: revise
     val_timestamp = pd.Timestamp("2014-01-01")

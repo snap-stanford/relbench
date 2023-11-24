@@ -1,13 +1,11 @@
-import os
-
 import duckdb
 import pandas as pd
 
-from rtb.data import Database, RelBenchTask, Table
+from rtb.data import Database, Dataset, Table, Task
 from rtb.metrics import accuracy, f1, mae, rmse, roc_auc
 
 
-class CustomerChurnTask(RelBenchTask):
+class CustomerChurnTask(Task):
     r"""Churn for a customer is 1 if the customer does not review any product
     in the time window, else 0."""
 
@@ -19,6 +17,14 @@ class CustomerChurnTask(RelBenchTask):
     target_col = "churn"
     timedelta = pd.Timedelta(days=365 * 2)
     metrics = [accuracy, f1, roc_auc]
+
+    def __init__(self, dataset: Dataset):
+        super().__init__(
+            dataset=dataset,
+            timedelta=self.timedelta,
+            target_col=self.target_col,
+            metrics=self.metrics,
+        )
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         product = db.table_dict["product"].df
@@ -64,7 +70,7 @@ class CustomerChurnTask(RelBenchTask):
         )
 
 
-class CustomerLTVTask(RelBenchTask):
+class CustomerLTVTask(Task):
     r"""LTV (life-time value) for a customer is the sum of prices of products
     that the customer reviews in the time window."""
 
@@ -76,6 +82,14 @@ class CustomerLTVTask(RelBenchTask):
     target_col = "ltv"
     timedelta = pd.Timedelta(days=365 * 2)
     metrics = [mae, rmse]
+
+    def __init__(self, dataset: Dataset):
+        super().__init__(
+            dataset=dataset,
+            timedelta=self.timedelta,
+            target_col=self.target_col,
+            metrics=self.metrics,
+        )
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         product = db.table_dict["product"].df

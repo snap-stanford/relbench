@@ -21,7 +21,7 @@ class Task:
         dataset: "Dataset",
         timedelta: pd.Timedelta,
         target_col: str,
-        metrics: List[Callable[NDArray, NDArray], float],
+        metrics: List[Callable[[NDArray, NDArray], float]],
     ):
         self.dataset = dataset
         self.timedelta = timedelta
@@ -44,22 +44,19 @@ class Task:
 
         raise NotImplementedError
 
-    def make_train_table(self, stride: Optional[pd.Timedelta] = None) -> Table:
+    def make_default_train_table(self) -> Table:
         """Returns the train table for a task."""
-
-        if stride is None:
-            stride = self.timedelta
 
         return self.make_table(
             self.dataset.input_db,
             pd.date_range(
                 self.dataset.val_timestamp - self.timedelta,
                 self.dataset.min_timestamp,
-                freq=-stride,
+                freq=-self.timedelta,
             ),
         )
 
-    def make_val_table(self) -> Table:
+    def make_default_val_table(self) -> Table:
         r"""Returns the val table for a task."""
 
         return self.make_table(
@@ -108,9 +105,12 @@ class Task:
         return {fn.__name__: fn(true, pred) for fn in metrics}
 
 
-class BenchmarkTask(Task):
+class RelBenchTask(Task):
     name: str
     task_type: str
+    entity_col: str
+    entity_table: str
+    time_col: str
 
     timedelta: pd.Timedelta
     target_col: str
@@ -140,18 +140,19 @@ class BenchmarkTask(Task):
             shutil.rmtree(task_path, ignore_errors=True)
             task_path.mkdir(parents=True)
 
-            self.train_table = super().make_train_table()
-            self.train_table.save(task_path / self.train_file)
+            self.default_train_table = self.make_default_train_table()
+            self.default_train_table.save(task_path / self.train_file)
 
-            self.val_table = super().make_val_table()
-            self.val_table.save(task_path / self.val_file)
+            self.default_val_table = self.make_default_val_table()
+            self.default_val_table.save(task_path / self.val_file)
 
-            self._test_table = super().make_input_test_table()
+            self.input_test_table = self.make_input_test_table()
             self._test_table.save(task_path / self.test_file)
-            self.input_test_table = self.mask_input_cols(self._test_table)
+
+            (task_path / "done").touch()
 
         else:
-            if download:
+            if download or not (task_path / "done").exists():
                 # delete to avoid corruption
                 shutil.rmtree(task_path, ignore_errors=True)
                 task_path.mkdir(parents=True)
@@ -159,7 +160,9 @@ class BenchmarkTask(Task):
                 url = self.url_fmt.format(self.dataset.name, self.name)
                 download_and_extract(url, task_path)
 
-            self.train_table = Table.load(task_path / self.train_file)
-            self.val_table = Table.load(task_path / self.val_file)
+                (task_path / "done").touch()
+
+            self.default_train_table = Table.load(task_path / self.train_file)
+            self.default_val_table = Table.load(task_path / self.val_file)
             self._test_table = Table.load(task_path / self.test_file)
             self.input_test_table = self.mask_input_cols(self._test_table)

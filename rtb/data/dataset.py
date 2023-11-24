@@ -35,11 +35,11 @@ class Dataset:
     def task_names(self) -> List[str]:
         return list(self.task_cls_dict.keys())
 
-    def get_task(self, task_name: str) -> Task:
-        return self.task_cls_dict[task_name](self)
+    def get_task(self, task_name: str, *args, **kwargs) -> Task:
+        return self.task_cls_dict[task_name](self, *args, **kwargs)
 
 
-class BenchmarkDataset(Dataset):
+class RelBenchDataset(Dataset):
     name: str
     val_timestamp: pd.Timestamp
     test_timestamp: pd.Timestamp

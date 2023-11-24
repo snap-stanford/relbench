@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from rtb.data import Database, Dataset, Table, Task
-from rtb.tasks.amazon_reviews import CustomerChurnTask, CustomerLTVTask
+from rtb.tasks.fake_reviews import CustomerChurnTask, CustomerLTVTask
 
 
 def _generate_random_string(min_length: int, max_length: int) -> str:
@@ -23,7 +23,7 @@ class FakeReviewsDataset(Dataset):
     def __init__(
         self, num_products: int = 30, num_customers: int = 100, num_reviews: int = 500
     ):
-        db = self.process_db(num_products, num_customers, num_reviews)
+        db = self.make_db(num_products, num_customers, num_reviews)
         db.reindex_pkeys_and_fkeys()
         val_timestamp = db.min_timestamp + 0.8 * (db.max_timestamp - db.min_timestamp)
         test_timestamp = db.min_timestamp + 0.9 * (db.max_timestamp - db.min_timestamp)
@@ -34,7 +34,7 @@ class FakeReviewsDataset(Dataset):
             task_cls_list=[CustomerChurnTask, CustomerLTVTask],
         )
 
-    def process_db(self, num_products, num_customers, num_reviews) -> Database:
+    def make_db(self, num_products, num_customers, num_reviews) -> Database:
         product_df = pd.DataFrame(
             {
                 "product_id": [f"product_id_{i}" for i in range(num_products)],
