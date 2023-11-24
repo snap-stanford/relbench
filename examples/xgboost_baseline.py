@@ -30,13 +30,19 @@ train_table = dataset.make_train_table(args.task)
 val_table = dataset.make_val_table(args.task)
 test_table = dataset.make_test_table(args.task)
 
-if args.dataset == "rtb-forum":
-    col_to_stype = {
-        'Reputation': torch_frame.numerical,
-        'AboutMe': torch_frame.text_embedded,
-        'Age': torch_frame.numerical,
-    }
-    user_df = dataset.db.tables["users"].df[['Id', *col_to_stype.keys()]]
+if args.dataset in {"rtb-forum", "relbench-forum"}:
+    if args.dataset == 'rtb-forum':
+        col_to_stype = {
+            'Reputation': torch_frame.numerical,
+            'AboutMe': torch_frame.text_embedded,
+            'Age': torch_frame.numerical,
+        }
+    elif args.dataset == 'relbench-forum':
+        col_to_stype = {
+            'AboutMe': torch_frame.text_embedded,
+        }
+    user_table = dataset.db.tables["users"]
+    user_df = user_table.df[[user_table.pkey_col, *col_to_stype.keys()]]
 
     if task.task_type == TaskType.BINARY_CLASSIFICATION:
         col_to_stype[task.target_col] = torch_frame.categorical
@@ -53,8 +59,8 @@ if args.dataset == "rtb-forum":
         df = table.df.merge(
             user_df,
             how='left',
-            left_on='UserId',
-            right_on='Id',
+            left_on=list(table.fkey_col_to_pkey_table.keys())[0],
+            right_on=user_table.pkey_col,
         )
 
         # TODO This usage is incorrect, since we are computing separate stats.
