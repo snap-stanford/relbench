@@ -2,7 +2,7 @@ import argparse
 import copy
 import math
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import torch
 import torch_frame
@@ -15,7 +15,7 @@ from torch_geometric.loader import NodeLoader
 from torch_geometric.nn import MLP
 from torch_geometric.sampler import NeighborSampler
 from torch_geometric.typing import EdgeType, NodeType
-from torchmetrics import AUROC, MeanAbsoluteError
+from torchmetrics import AUROC, AveragePrecision, MeanAbsoluteError
 from tqdm import tqdm
 
 from rtb.data.task import TaskType
@@ -33,18 +33,21 @@ dataset_to_informative_text_cols["rtb-forum"] = {
     "posts": ["Body", "Title", "Tags"],
     "comments": ["Text"],
 }
+dataset_to_informative_text_cols["relbench-forum"] = {
+    "postHistory": ["Text"],
+    "users": ["AboutMe"],
+    "posts": ["Body", "Title", "Tags"],
+    "comments": ["Text"],
+}
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rtb-forum")
-parser.add_argument("--task", type=str, default="UserSumCommentScoresTask")
+parser.add_argument("--dataset", type=str, default="relbench-forum")
+parser.add_argument("--task", type=str, default="UserContributionTask")
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
-# Default to "sum" aggrgation since it's better for sum-based target labels.
-parser.add_argument(
-    "--aggr", type=str, default="sum", help="GNN neighbor aggregation scheme."
-)
+parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_neighbors", type=int, default=-1)
 parser.add_argument("--num_workers", type=int, default=6)
 args = parser.parse_args()
@@ -69,7 +72,7 @@ col_to_stype_dict = get_stype_proposal(dataset.db)
 informative_text_cols: Dict = dataset_to_informative_text_cols[args.dataset]
 for table_name, stype_dict in col_to_stype_dict.items():
     for col_name, stype in list(stype_dict.items()):
-        # remove text columns except the informative ones
+        # Remove text columns except for the informative ones:
         if stype == torch_frame.text_embedded:
             if col_name not in informative_text_cols.get(table_name, []):
                 del stype_dict[col_name]
@@ -83,7 +86,7 @@ data: HeteroData = make_pkey_fkey_graph(
     cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
 
-sampler = NeighborSampler(  # Initialize sampler only once:
+sampler = NeighborSampler(  # Initialize sampler only once.
     data,
     num_neighbors=[args.num_neighbors, args.num_neighbors],
     time_attr="time",
@@ -112,14 +115,19 @@ for split, table in [
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
     out_channels = 1
     loss_fn = BCEWithLogitsLoss()
-    metric_name = "AUROC"
-    metric = AUROC(task="binary").to(device)
+    metrics = {
+        "AUROC": AUROC(task="binary").to(device),
+        "AP": AveragePrecision(task="binary").to(device),
+    }
+    tune_metric = "AUROC"
     higher_is_better = True
 elif task.task_type == TaskType.REGRESSION:
     out_channels = 1
     loss_fn = L1Loss()
-    metric_name = "MAE"
-    metric = MeanAbsoluteError(squared=False).to(device)
+    metrics = {
+        "MAE": MeanAbsoluteError(squared=False).to(device),
+    }
+    tune_metric = "MAE"
     higher_is_better = False
 
 
@@ -183,10 +191,11 @@ model = Model().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
 
-def train() -> Tuple[float, float]:
+def train() -> Dict[str, float]:
     model.train()
 
-    metric.reset()
+    for metric in metrics.values():
+        metric.reset()
     loss_accum = count_accum = 0
     for batch in tqdm(loader_dict["train"]):
         batch = batch.to(device)
@@ -208,16 +217,25 @@ def train() -> Tuple[float, float]:
 
         loss_accum += float(loss) * pred.size(0)
         count_accum += pred.size(0)
-        metric.update(pred, batch[entity_table].y)
 
-    return loss_accum / count_accum, float(metric.compute())
+        for metric in metrics.values():
+            y = batch[entity_table].y
+            if task.task_type == TaskType.BINARY_CLASSIFICATION:
+                y = y.to(torch.long)
+            metric.update(pred, y)
+
+    metric_outputs = {name: float(metric.compute()) for name, metric in metrics.items()}
+    metric_outputs["loss"] = loss_accum / count_accum
+
+    return metric_outputs
 
 
 @torch.no_grad()
 def test(loader: NodeLoader) -> float:
     model.eval()
 
-    metric.reset()
+    for metric in metrics.values():
+        metric.reset()
     for batch in tqdm(loader):
         batch = batch.to(device)
         pred = model(
@@ -230,35 +248,35 @@ def test(loader: NodeLoader) -> float:
             batch.num_sampled_edges_dict,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
-        metric.update(pred, batch[entity_table].y)
 
-    return float(metric.compute())
+        for metric in metrics.values():
+            y = batch[entity_table].y
+            if task.task_type == TaskType.BINARY_CLASSIFICATION:
+                y = y.to(torch.long)
+            metric.update(pred, y)
+
+    return {name: float(metric.compute()) for name, metric in metrics.items()}
 
 
 state_dict = None
 best_val_metric = 0 if higher_is_better else math.inf
 for epoch in range(1, args.epochs + 1):
-    loss, train_metric = train()
-    val_metric = test(loader_dict["val"])
-    print(
-        f"Epoch: {epoch:02d}, "
-        f"Loss: {loss:.4f}, "
-        f"Train {metric_name}: {train_metric:.4f}, "
-        f"Val {metric_name}: {val_metric:.4f}"
-    )
+    train_metrics = train()
+    val_metrics = test(loader_dict["val"])
+    print(f"Epoch: {epoch:02d}, Train: {train_metrics}, Val: {val_metrics}")
 
-    if (higher_is_better and val_metric > best_val_metric) or (
-        not higher_is_better and val_metric < best_val_metric
+    if (higher_is_better and val_metrics[tune_metric] > best_val_metric) or (
+        not higher_is_better and val_metrics[tune_metric] < best_val_metric
     ):
-        best_val_metric = val_metric
+        best_val_metric = val_metrics[tune_metric]
         state_dict = copy.deepcopy(model.state_dict())
 
 model.load_state_dict(state_dict)
-val_metric = test(loader_dict["val"])
-print(f"Best val: {metric_name}: {val_metric:.4f}")
+val_metrics = test(loader_dict["val"])
+print(f"Best Val: {val_metrics}")
 
 # Test if the correct checkpoint gets picked up
-assert val_metric == best_val_metric
+assert val_metrics[tune_metric] == best_val_metric
 
 # NOTE: Commented out for now since test labels are not attached.
 # test_metric = test(loader_dict["test"])
