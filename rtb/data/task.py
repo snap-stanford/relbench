@@ -1,5 +1,7 @@
 import os
+import shutil
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
 
 import numpy as np
@@ -8,6 +10,7 @@ from numpy.typing import NDArray
 
 from rtb.data.database import Database
 from rtb.data.table import Table
+from rtb.utils import download_and_extract
 
 if TYPE_CHECKING:
     from rtb.data import BenchmarkDataset, Dataset
@@ -44,8 +47,7 @@ class Task:
 
         raise NotImplementedError
 
-    @property
-    def default_train_table(self) -> Table:
+    def get_default_train_table(self) -> Table:
         """Returns the train table for a task."""
 
         return self.make_table(
@@ -57,8 +59,7 @@ class Task:
             ),
         )
 
-    @property
-    def default_val_table(self) -> Table:
+    def get_default_val_table(self) -> Table:
         r"""Returns the val table for a task."""
 
         return self.make_table(
@@ -79,8 +80,7 @@ class Task:
             time_col=table.time_col,
         )
 
-    @property
-    def input_test_table(self) -> Table:
+    def get_input_test_table(self) -> Table:
         r"""Returns the test table for a task."""
 
         table = self.make_table(
@@ -119,14 +119,14 @@ class RelBenchTask(Task):
     target_col: str
     metrics: List[Callable[[NDArray, NDArray], float]]
 
-    url_fmt: str = "http://relbench.stanford.edu/data/{}/tasks/{}.zip"
+    url_prefix_fmt: str = "http://relbench.stanford.edu/data/{}/tasks/{}"
 
     task_dir: str = "tasks"
     train_file: str = "train_table.parquet"
     val_file: str = "val_table.parquet"
     test_file: str = "test_table.parquet"
 
-    def __init__(self, dataset: "BenchmarkDataset", *, download=False, process=False):
+    def __init__(self, dataset: "RelBenchDataset"):
         super().__init__(
             dataset=dataset,
             timedelta=self.timedelta,
@@ -134,50 +134,66 @@ class RelBenchTask(Task):
             metrics=self.metrics,
         )
 
-        task_path = self.dataset.root / self.dataset.name / self.task_dir / self.name
+        self.url_prefix = self.url_prefix_fmt.format(self.dataset.name, self.name)
+
+        self.path_prefix = (
+            self.dataset.root / self.dataset.name / self.task_dir / self.name
+        )
+
+    def get_default_train_table(self, *, download=False, process=False) -> Table:
+        path = self.path_prefix / self.train_file
 
         if process:
             assert not download
 
-            # delete to avoid corruption
-            shutil.rmtree(task_path, ignore_errors=True)
-            task_path.mkdir(parents=True)
+            table = super().get_default_train_table()
+            table.save(path)
+            shutil.make_archive(str(path), "zip")
 
-            self._default_train_table = super().default_train_table
-            self._default_train_table.save(task_path / self.train_file)
-
-            self._default_val_table = super().default_val_table
-            self._default_val_table.save(task_path / self.val_file)
-
-            self._input_test_table = super().input_test_table
-            self._test_table.save(task_path / self.test_file)
-
-            (task_path / "done").touch()
+            return table
 
         else:
-            if download or not (task_path / "done").exists():
-                # delete to avoid corruption
-                shutil.rmtree(task_path, ignore_errors=True)
-                task_path.mkdir(parents=True)
+            if download or not path.exists():
+                url = f"{self.url_prefix}/{self.train_file}.zip"
+                download_and_extract(url, path)
 
-                url = self.url_fmt.format(self.dataset.name, self.name)
-                download_and_extract(url, task_path)
+            return Table.load(path / self.train_file)
 
-                (task_path / "done").touch()
+    def get_default_val_table(self, *, download=False, process=False) -> Table:
+        path = self.path_prefix / self.val_file
 
-            self._default_train_table = Table.load(task_path / self.train_file)
-            self._default_val_table = Table.load(task_path / self.val_file)
-            self._test_table = Table.load(task_path / self.test_file)
-            self._input_test_table = self._mask_input_cols(self._test_table)
+        if process:
+            assert not download
 
-    @property
-    def default_train_table(self) -> Table:
-        return self._default_train_table
+            table = super().get_default_val_table()
+            table.save(path)
+            shutil.make_archive(str(path), "zip")
 
-    @property
-    def default_val_table(self) -> Table:
-        return self._default_val_table
+            return table
 
-    @property
-    def input_test_table(self) -> Table:
-        return self._input_test_table
+        else:
+            if download or not path.exists():
+                url = f"{self.url_prefix}/{self.val_file}.zip"
+                download_and_extract(url, path)
+
+            return Table.load(path / self.val_file)
+
+    def get_input_test_table(self, *, download=False, process=False) -> Table:
+        path = self.path_prefix / self.test_file
+
+        if process:
+            assert not download
+
+            input_table = super().get_input_test_table()
+            self._test_table.save(path)
+            shutil.make_archive(str(path), "zip")
+
+            return input_table
+
+        else:
+            if download or not path.exists():
+                url = f"{self.url_prefix}/{self.test_file}.zip"
+                download_and_extract(url, path)
+
+            self._test_table = Table.load(path / self.test_file)
+            return self._mask_input_cols(self._test_table)

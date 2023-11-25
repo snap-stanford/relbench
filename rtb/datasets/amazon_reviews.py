@@ -1,18 +1,20 @@
 import os
+import time
 from typing import Union
 
 import pandas as pd
+import pyarrow as pa
+import pyarrow.json
 
-from rtb.data import Database, RelBenchDataset
+from rtb.data import Database, RelBenchDataset, Table
 from rtb.tasks.amazon_reviews import CustomerChurnTask, CustomerLTVTask
 
 
 class AmazonReviewsDataset(RelBenchDataset):
     name = "amazon_reviews"
-    # TODO: revise
-    val_timestamp = pd.Timestamp("2014-01-01")
-    test_timestamp = pd.Timestamp("2016-01-01")
-    tasks = [CustomerChurnTask, CustomerLTVTask]
+    val_timestamp = pd.Timestamp("2013-01-01")
+    test_timestamp = pd.Timestamp("2015-01-01")
+    task_cls_list = [CustomerChurnTask, CustomerLTVTask]
 
     category_list = ["books", "fashion"]
 
@@ -30,7 +32,7 @@ class AmazonReviewsDataset(RelBenchDataset):
         self.category = category
         self.use_5_core = use_5_core
 
-        self.name = f"{self.name}-{category}{'-5-core' if use_5_core else ''}"
+        self.name = f"{self.name}-{category}{'_5_core' if use_5_core else ''}"
 
         super().__init__(root, download=download, process=process)
 

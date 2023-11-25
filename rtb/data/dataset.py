@@ -84,7 +84,7 @@ class RelBenchDataset(Dataset):
 
             print("processing db...")
             tic = time.time()
-            db = self.process_db(raw_path)
+            db = self.make_db(raw_path)
             toc = time.time()
             print(f"processing db took {toc - tic:.2f} seconds.")
 
@@ -103,6 +103,12 @@ class RelBenchDataset(Dataset):
             db.save(processed_path)
             toc = time.time()
             print(f"saving db took {toc - tic:.2f} seconds.")
+
+            print("creating zip archive...")
+            tic = time.time()
+            shutil.make_archive(processed_path, "zip", processed_path)
+            toc = time.time()
+            print(f"creating zip archive took {toc - tic:.2f} seconds.")
 
             (processed_path / "done").touch()
 
