@@ -1,10 +1,11 @@
 import os
 import time
-from typing import Dict, Union
+from typing import Dict, Tuple, Union
 
 import duckdb
 import pandas as pd
 import pyarrow as pa
+import pyarrow.json
 
 from rtb.data.database import Database
 from rtb.data.dataset import Dataset
@@ -22,7 +23,7 @@ class ChurnTask(Task):
             input_cols=["window_min_time", "window_max_time", "customer_id"],
             target_col="churn",
             task_type=TaskType.BINARY_CLASSIFICATION,
-            window_sizes=[pd.Timedelta("52W")],
+            window_sizes=[pd.Timedelta(days=365 * 2)],
             metrics=["auprc"],
         )
 
@@ -37,16 +38,26 @@ class ChurnTask(Task):
                 window_min_time,
                 window_max_time,
                 customer_id,
-                NOT EXISTS (
+                CAST(NOT EXISTS (
                     SELECT 1
                     FROM review
                     WHERE
                         review.customer_id = customer.customer_id AND
-                        review.review_time BETWEEN window_min_time AND window_max_time
-                ) AS churn
+                        review.review_time > window_min_time AND
+                        review.review_time <= window_max_time
+                ) AS INTEGER) AS churn
             FROM
                 time_window_df,
                 customer
+            WHERE
+                EXISTS (
+                    SELECT 1
+                    FROM review
+                    WHERE
+                        review.customer_id = customer.customer_id AND
+                        review.review_time > window_min_time - (window_max_time - window_min_time) AND
+                        review.review_time <= window_min_time
+                )
         """
         ).df()
 
@@ -67,7 +78,7 @@ class LTVTask(Task):
             input_cols=["window_min_time", "window_max_time", "customer_id"],
             target_col="ltv",
             task_type=TaskType.REGRESSION,
-            window_sizes=[pd.Timedelta("52W")],
+            window_sizes=[pd.Timedelta(days=365 * 2)],
             metrics=["auprc"],
         )
 
@@ -83,19 +94,29 @@ class LTVTask(Task):
                 window_max_time,
                 customer_id,
                 ltv,
-                count
+                count_
             FROM
                 time_window_df,
                 customer,
                 (
                     SELECT
                         COALESCE(SUM(price), 0) as ltv,
-                        COALESCE(COUNT(price), 0) as count
+                        COALESCE(COUNT(price), 0) as count_
                     FROM review, product
                     WHERE
                         review.customer_id = customer.customer_id AND
                         review.product_id = product.product_id AND
-                        review.review_time BETWEEN window_min_time AND window_max_time
+                        review.review_time > window_min_time AND
+                        review.review_time <= window_max_time
+                )
+            WHERE
+                EXISTS (
+                    SELECT 1
+                    FROM review
+                    WHERE
+                        review.customer_id = customer.customer_id AND
+                        review.review_time > window_min_time - (window_max_time - window_min_time) AND
+                        review.review_time <= window_min_time
                 )
         """
         ).df()
@@ -126,7 +147,7 @@ class ProductDataset(Dataset):
         self.category = category
         self.use_5_core = use_5_core
 
-        self.name = f"{self.__class__.name}/{self.category}{'-5-core' if self.use_5_core else ''}"
+        self.name = f"{self.__class__.name}-{self.category}{'_5_core' if self.use_5_core else ''}"
 
         super().__init__(root, process)
 
@@ -135,7 +156,8 @@ class ProductDataset(Dataset):
 
         return {"ltv": LTVTask(), "churn": ChurnTask()}
 
-    # TODO: implement get_cutoff_times()
+    def get_cutoff_times(self) -> Tuple[pd.Timestamp, pd.Timestamp]:
+        return pd.Timestamp("2013-01-01"), pd.Timestamp("2015-01-01")
 
     def download_raw(self, path: Union[str, os.PathLike]) -> None:
         r"""Download the Amazon dataset raw files from the AWS server and
