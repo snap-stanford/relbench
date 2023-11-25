@@ -3,11 +3,13 @@ import time
 from typing import Union
 
 import pandas as pd
+import pooch
 import pyarrow as pa
 import pyarrow.json
 
 from rtb.data import Database, RelBenchDataset, Table
 from rtb.tasks.amazon_reviews import CustomerChurnTask, CustomerLTVTask
+from rtb.utils import download_and_extract
 
 
 class AmazonReviewsDataset(RelBenchDataset):
@@ -23,42 +25,29 @@ class AmazonReviewsDataset(RelBenchDataset):
 
     def __init__(
         self,
-        root: Union[str, os.PathLike],
         category: str = "books",
         use_5_core: bool = True,
-        *,
-        download=False,
-        process=False,
     ):
         self.category = category
         self.use_5_core = use_5_core
 
         self.name = f"{self.name}-{category}{'_5_core' if use_5_core else ''}"
 
-        super().__init__(root, download=download, process=process)
+        super().__init__()
 
-    def download_raw_db(self, raw_path: Union[str, os.PathLike]) -> None:
-        url_key = self._category_to_url_key[self.category]
-
-        # download review file
-        if self.use_5_core:
-            url = f"{self.url_prefix}/categoryFilesSmall/{url_key}_5.json.gz"
-        else:
-            url = f"{self.url_prefix}/categoryFiles/{url_key}.json.gz"
-
-        download_and_extract(url, raw_path)
-
-        # download product file
-        url = f"{self.url_prefix}/categoryFilesSmall/meta_{url_key}.json.gz"
-        download_and_extract(url, raw_path)
-
-    def make_db(self, raw_path: Union[str, os.PathLike]) -> Database:
+    def make_db(self) -> Database:
         r"""Process the raw files into a database."""
 
         ### product table ###
 
-        file_name = f"meta_{self._cat_to_raw[self.category]}.json"
-        path = raw_path / file_name
+        url_key = self._category_to_url_key[self.category]
+        url = f"{self.url_prefix}/metaFiles2/meta_{url_key}.json.gz"
+        path = pooch.retrieve(
+            url,
+            known_hash=None,
+            progressbar=True,
+            processor=pooch.Decompress(),
+        )
         print(f"reading product info from {path}...")
         tic = time.time()
         ptable = pa.json.read_json(
@@ -120,10 +109,16 @@ class AmazonReviewsDataset(RelBenchDataset):
 
         ### review table ###
 
-        file_name = (
-            f"{self._cat_to_raw[self.category]}{'_5' if self.use_5_core else ''}.json"
+        if self.use_5_core:
+            url = f"{self.url_prefix}/categoryFilesSmall/{url_key}_5.json.gz"
+        else:
+            url = f"{self.url_prefix}/categoryFiles/{url_key}.json.gz"
+        path = pooch.retrieve(
+            url,
+            known_hash=None,
+            progressbar=True,
+            processor=pooch.Decompress(),
         )
-        path = raw_path / file_name
         print(f"reading review and customer info from {path}...")
         tic = time.time()
         rtable = pa.json.read_json(
