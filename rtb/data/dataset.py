@@ -45,7 +45,6 @@ class RelBenchDataset(Dataset):
     test_timestamp: pd.Timestamp
     task_cls_list: List[Type[Task]]
 
-    raw_url_fmt: str = "http://relbench.stanford.edu/data/{}/db/raw.zip"
     processed_url_fmt: str = "http://relbench.stanford.edu/data/{}/db/processed.zip"
 
     db_dir: str = "db"
@@ -73,10 +72,9 @@ class RelBenchDataset(Dataset):
                 shutil.rmtree(raw_path, ignore_errors=True)
                 raw_path.mkdir(parents=True)
 
-                raw_url = self.raw_url_fmt.format(self.name)
-                print(f"downloading raw files from {raw_url} into {raw_path}...")
+                print(f"downloading raw files into {raw_path}...")
                 tic = time.time()
-                download_and_extract(raw_url, raw_path)
+                self.download_raw(raw_path)
                 toc = time.time()
                 print(f"downloading raw files took {toc - tic:.2f} seconds.")
 
@@ -136,6 +134,9 @@ class RelBenchDataset(Dataset):
         super().__init__(
             db, self.val_timestamp, self.test_timestamp, self.task_cls_list
         )
+
+    def download_raw_db(self, raw_path: Union[str, os.PathLike]) -> None:
+        raise NotImplementedError
 
     def make_db(self, raw_path: Union[str, os.PathLike]) -> Database:
         raise NotImplementedError

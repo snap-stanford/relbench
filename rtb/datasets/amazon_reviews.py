@@ -18,7 +18,8 @@ class AmazonReviewsDataset(RelBenchDataset):
 
     category_list = ["books", "fashion"]
 
-    _cat_to_raw = {"books": "Books", "fashion": "AMAZON_FASHION"}
+    url_prefix = "https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2"
+    _category_to_url_key = {"books": "Books", "fashion": "AMAZON_FASHION"}
 
     def __init__(
         self,
@@ -35,6 +36,21 @@ class AmazonReviewsDataset(RelBenchDataset):
         self.name = f"{self.name}-{category}{'_5_core' if use_5_core else ''}"
 
         super().__init__(root, download=download, process=process)
+
+    def download_raw_db(self, raw_path: Union[str, os.PathLike]) -> None:
+        url_key = self._category_to_url_key[self.category]
+
+        # download review file
+        if self.use_5_core:
+            url = f"{self.url_prefix}/categoryFilesSmall/{url_key}_5.json.gz"
+        else:
+            url = f"{self.url_prefix}/categoryFiles/{url_key}.json.gz"
+
+        download_and_extract(url, raw_path)
+
+        # download product file
+        url = f"{self.url_prefix}/categoryFilesSmall/meta_{url_key}.json.gz"
+        download_and_extract(url, raw_path)
 
     def make_db(self, raw_path: Union[str, os.PathLike]) -> Database:
         r"""Process the raw files into a database."""
