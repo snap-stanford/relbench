@@ -44,7 +44,8 @@ class Task:
 
         raise NotImplementedError
 
-    def make_default_train_table(self) -> Table:
+    @property
+    def default_train_table(self) -> Table:
         """Returns the train table for a task."""
 
         return self.make_table(
@@ -56,7 +57,8 @@ class Task:
             ),
         )
 
-    def make_default_val_table(self) -> Table:
+    @property
+    def default_val_table(self) -> Table:
         r"""Returns the val table for a task."""
 
         return self.make_table(
@@ -64,7 +66,7 @@ class Task:
             pd.Series([self.dataset.val_timestamp]),
         )
 
-    def mask_input_cols(self, table: Table) -> Table:
+    def _mask_input_cols(self, table: Table) -> Table:
         input_cols = [
             table.time_col,
             *table.fkey_col_to_pkey_table.keys(),
@@ -77,7 +79,8 @@ class Task:
             time_col=table.time_col,
         )
 
-    def make_input_test_table(self) -> Table:
+    @property
+    def input_test_table(self) -> Table:
         r"""Returns the test table for a task."""
 
         table = self.make_table(
@@ -86,7 +89,7 @@ class Task:
         )
         self._test_table = table
 
-        return self.mask_input_cols(table)
+        return self._mask_input_cols(table)
 
     def evaluate(
         self,
@@ -140,13 +143,13 @@ class RelBenchTask(Task):
             shutil.rmtree(task_path, ignore_errors=True)
             task_path.mkdir(parents=True)
 
-            self.default_train_table = self.make_default_train_table()
-            self.default_train_table.save(task_path / self.train_file)
+            self._default_train_table = super().default_train_table
+            self._default_train_table.save(task_path / self.train_file)
 
-            self.default_val_table = self.make_default_val_table()
-            self.default_val_table.save(task_path / self.val_file)
+            self._default_val_table = super().default_val_table
+            self._default_val_table.save(task_path / self.val_file)
 
-            self.input_test_table = self.make_input_test_table()
+            self._input_test_table = super().input_test_table
             self._test_table.save(task_path / self.test_file)
 
             (task_path / "done").touch()
@@ -162,7 +165,19 @@ class RelBenchTask(Task):
 
                 (task_path / "done").touch()
 
-            self.default_train_table = Table.load(task_path / self.train_file)
-            self.default_val_table = Table.load(task_path / self.val_file)
+            self._default_train_table = Table.load(task_path / self.train_file)
+            self._default_val_table = Table.load(task_path / self.val_file)
             self._test_table = Table.load(task_path / self.test_file)
-            self.input_test_table = self.mask_input_cols(self._test_table)
+            self._input_test_table = self._mask_input_cols(self._test_table)
+
+    @property
+    def default_train_table(self) -> Table:
+        return self._default_train_table
+
+    @property
+    def default_val_table(self) -> Table:
+        return self._default_val_table
+
+    @property
+    def input_test_table(self) -> Table:
+        return self._input_test_table
