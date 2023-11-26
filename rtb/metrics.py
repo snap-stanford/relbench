@@ -28,7 +28,7 @@ def log_loss(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 
 def f1(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
     assert pred.ndim == 1
-    label = pred.argmax(axis=1)
+    label = pred >= 0.5
     return skm.f1_score(true, label, average="binary")
 
 
