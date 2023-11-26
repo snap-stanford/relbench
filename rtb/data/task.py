@@ -1,17 +1,20 @@
 import hashlib
 import os
 import shutil
+import tempfile
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
+from rtb import _pooch
 from rtb.data.database import Database
 from rtb.data.table import Table
-from rtb.utils import download_and_extract
+from rtb.utils import unzip_processor
 
 if TYPE_CHECKING:
     from rtb.data import BenchmarkDataset, Dataset
@@ -48,19 +51,23 @@ class Task:
 
         raise NotImplementedError
 
-    def make_train_table(self) -> Table:
+    @property
+    @lru_cache
+    def train_table(self) -> Table:
         """Returns the train table for a task."""
 
         return self.make_table(
             self.dataset.db,
             pd.date_range(
                 self.dataset.val_timestamp - self.timedelta,
-                self.dataset.min_timestamp,
+                self.dataset.db.min_timestamp,
                 freq=-self.timedelta,
             ),
         )
 
-    def make_val_table(self) -> Table:
+    @property
+    @lru_cache
+    def val_table(self) -> Table:
         r"""Returns the val table for a task."""
 
         return self.make_table(
@@ -81,7 +88,9 @@ class Task:
             time_col=table.time_col,
         )
 
-    def make_test_table(self) -> Table:
+    @property
+    @lru_cache
+    def test_table(self) -> Table:
         r"""Returns the test table for a task."""
 
         table = self.make_table(
@@ -95,18 +104,16 @@ class Task:
     def evaluate(
         self,
         pred: NDArray[np.float64],
-        target_table: Optional[Table] = None,
+        target: Optional[Union[NDArray[np.float64], NDArray[np.int16]]] = None,
         metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
     ) -> Dict[str, float]:
-        if target_table is None:
-            target_table = self._full_test_table
-
         if metrics is None:
             metrics = self.metrics
 
-        true = target_table.df[self.target_col].to_numpy()
+        if target is None:
+            target = self._full_test_table.df[self.target_col].to_numpy()
 
-        return {fn.__name__: fn(true, pred) for fn in metrics}
+        return {fn.__name__: fn(target, pred) for fn in metrics}
 
 
 class RelBenchTask(Task):
@@ -123,9 +130,20 @@ class RelBenchTask(Task):
     task_dir: str = "tasks"
     train_table_name: str = "train"
     val_table_name: str = "val"
-    test_table_name: str = "full_test"
+    test_table_name: str = "test"
+    full_test_table_name: str = "full_test"
 
-    def __init__(self, dataset: "RelBenchDataset"):
+    def __init__(self, dataset: "RelBenchDataset", process: bool = False) -> None:
+        self.process = process
+
+        if not process:
+            task_path = _pooch.fetch(
+                f"{dataset.name}/{self.task_dir}/{self.name}.zip",
+                processor=unzip_processor,
+                progressbar=True,
+            )
+            self.dummy_db = Database.load(task_path)
+
         super().__init__(
             dataset=dataset,
             timedelta=self.timedelta,
@@ -133,16 +151,32 @@ class RelBenchTask(Task):
             metrics=self.metrics,
         )
 
-    def pack_task(self, stage_path: Union[str, os.PathLike]) -> None:
-        train_table = self.make_train_table()
-        val_table = self.make_val_table()
-        test_table = self.make_test_table()
+    @property
+    def train_table(self) -> Table:
+        if self.process:
+            return super().train_table
+        return self.dummy_db.table_dict[self.train_table_name]
 
+    @property
+    def val_table(self) -> Table:
+        if self.process:
+            return super().val_table
+        return self.dummy_db.table_dict[self.val_table_name]
+
+    @property
+    def test_table(self) -> Table:
+        if self.process:
+            return super().test_table
+        self._full_test_table = self.dummy_db.table_dict[self.full_test_table_name]
+        return self.dummy_db.table_dict[self.test_table_name]
+
+    def pack_tables(self, stage_path: Union[str, os.PathLike]) -> None:
         dummy_db = Database(
             table_dict={
-                self.train_table_name: train_table,
-                self.val_table_name: val_table,
-                self.test_table_name: self._full_test_table,
+                self.train_table_name: self.train_table,
+                self.val_table_name: self.val_table,
+                self.test_table_name: self.test_table,
+                self.full_test_table_name: self._full_test_table,
             }
         )
 

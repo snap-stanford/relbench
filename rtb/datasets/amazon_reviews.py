@@ -9,7 +9,6 @@ import pyarrow.json
 
 from rtb.data import Database, RelBenchDataset, Table
 from rtb.tasks.amazon_reviews import CustomerChurnTask, CustomerLTVTask
-from rtb.utils import download_and_extract
 
 
 class AmazonReviewsDataset(RelBenchDataset):

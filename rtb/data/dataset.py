@@ -9,18 +9,10 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 import pandas as pd
 import pooch
 
+from rtb import _pooch
 from rtb.data.database import Database
 from rtb.data.task import Task
-from rtb.utils import download_and_extract
-
-# TODO: use the versioning feature of pooch
-relbench_pooch = pooch.create(
-    path=pooch.os_cache("relbench"),
-    base_url="https://relbench.stanford.edu/staging_data/",  # TODO: change
-    registry={
-        "amazon_reviews-fashion_5_core/db.zip": "53976c20468e5905cdbcf6ff1621f052febaf76b40c16a2e8816d9dee9a51e82",
-    },
-)
+from rtb.utils import unzip_processor
 
 
 class Dataset:
@@ -49,13 +41,6 @@ class Dataset:
         return self.task_cls_dict[task_name](self, *args, **kwargs)
 
 
-def unzip(fname, action, pooch):
-    zip_path = Path(fname)
-    path = zip_path.parent / zip_path.stem
-    shutil.unpack_archive(zip_path, path)
-    return path
-
-
 class RelBenchDataset(Dataset):
     name: str
     val_timestamp: pd.Timestamp
@@ -79,8 +64,10 @@ class RelBenchDataset(Dataset):
             print(f"done in {toc - tic:.2f} seconds.")
 
         else:
-            db_path = relbench_pooch.fetch(
-                f"{self.name}/{self.db_dir}.zip", processor=unzip, progressbar=True
+            db_path = _pooch.fetch(
+                f"{self.name}/{self.db_dir}.zip",
+                processor=unzip_processor,
+                progressbar=True,
             )
             db = Database.load(db_path)
 
@@ -112,4 +99,3 @@ class RelBenchDataset(Dataset):
 
         print(f"upload: {zip_path}")
         print(f"sha256: {sha256}")
-        print("hello")
