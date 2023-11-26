@@ -18,8 +18,8 @@ def test_fake_reviews_dataset():
             "churn",
         }
 
-    input_test_table = task.input_test_table
-    assert set(input_test_table.df.columns) == {
+    test_table = task.test_table
+    assert set(test_table.df.columns) == {
         "timestamp",
         "customer_id",
     }
