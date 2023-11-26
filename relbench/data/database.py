@@ -70,8 +70,7 @@ class Database:
 
         return Database(
             table_dict={
-                name: table.upto(time_stamp) if table.time_col is not None else table
-                for name, table in self.table_dict.items()
+                name: table.upto(time_stamp) for name, table in self.table_dict.items()
             }
         )
 

@@ -102,7 +102,7 @@ class Table:
         r"""Returns a table with all rows upto time."""
 
         if self.time_col is None:
-            raise ValueError("Table has no time column.")
+            return self
 
         return Table(
             df=self.df.query(f"{self.time_col} <= @time_stamp"),
