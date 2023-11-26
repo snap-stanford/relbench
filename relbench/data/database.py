@@ -7,7 +7,7 @@ from typing import Dict, Tuple, Union
 import pandas as pd
 from typing_extensions import Self
 
-from rtb.data.table import Table
+from relbench.data.table import Table
 
 
 class Database:

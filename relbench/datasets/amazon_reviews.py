@@ -7,8 +7,8 @@ import pooch
 import pyarrow as pa
 import pyarrow.json
 
-from rtb.data import Database, RelBenchDataset, Table
-from rtb.tasks.amazon_reviews import CustomerChurnTask, CustomerLTVTask
+from relbench.data import Database, RelBenchDataset, Table
+from relbench.tasks.amazon_reviews import CustomerChurnTask, CustomerLTVTask
 
 
 class AmazonReviewsDataset(RelBenchDataset):

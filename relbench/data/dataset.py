@@ -9,10 +9,10 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 import pandas as pd
 import pooch
 
-from rtb import _pooch
-from rtb.data.database import Database
-from rtb.data.task import Task
-from rtb.utils import unzip_processor
+from relbench import _pooch
+from relbench.data.database import Database
+from relbench.data.task import Task
+from relbench.utils import unzip_processor
 
 
 class Dataset:

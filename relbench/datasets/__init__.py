@@ -1,5 +1,5 @@
-from rtb.datasets.amazon_reviews import AmazonReviewsDataset
-from rtb.datasets.fake_reviews import FakeReviewsDataset
+from relbench.datasets.amazon_reviews import AmazonReviewsDataset
+from relbench.datasets.fake_reviews import FakeReviewsDataset
 
 dataset_cls_list = [
     AmazonReviewsDataset,

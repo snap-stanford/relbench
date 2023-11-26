@@ -11,13 +11,13 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from rtb import _pooch
-from rtb.data.database import Database
-from rtb.data.table import Table
-from rtb.utils import unzip_processor
+from relbench import _pooch
+from relbench.data.database import Database
+from relbench.data.table import Table
+from relbench.utils import unzip_processor
 
 if TYPE_CHECKING:
-    from rtb.data import BenchmarkDataset, Dataset
+    from relbench.data import BenchmarkDataset, Dataset
 
 
 class Task:

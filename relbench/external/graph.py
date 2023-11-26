@@ -12,8 +12,8 @@ from torch_frame.utils import infer_df_stype
 from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
 
-from rtb.data import Database, Table
-from rtb.data.task import Task, TaskType
+from relbench.data import Database, Table
+from relbench.data.task import Task, TaskType
 
 
 def to_unix_time(ser: pd.Series) -> Tensor:

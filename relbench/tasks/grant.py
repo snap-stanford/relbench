@@ -3,11 +3,11 @@ from typing import Dict, Tuple
 
 import pandas as pd
 
-from rtb.data.database import Database
-from rtb.data.dataset import Dataset
-from rtb.data.table import Table
-from rtb.data.task import Task, TaskType
-from rtb.utils import to_unix_time
+from relbench.data.database import Database
+from relbench.data.dataset import Dataset
+from relbench.data.table import Table
+from relbench.data.task import Task, TaskType
+from relbench.utils import to_unix_time
 
 
 class investigator_three_years(Task):
@@ -178,7 +178,7 @@ class program_three_years(Task):
 
 
 class GrantDataset(Dataset):
-    name = "rtb-grant"
+    name = "nsf_grants"
 
     def get_tasks(self) -> Dict[str, Task]:
         r"""Returns a list of tasks defined on the dataset."""

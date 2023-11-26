@@ -3,8 +3,8 @@ import os
 import duckdb
 import pandas as pd
 
-from rtb.data import Database, RelBenchTask, Table
-from rtb.metrics import accuracy, f1, mae, rmse, roc_auc
+from relbench.data import Database, RelBenchTask, Table
+from relbench.metrics import accuracy, f1, mae, rmse, roc_auc
 
 
 class CustomerChurnTask(RelBenchTask):
