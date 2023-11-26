@@ -3,7 +3,7 @@ from torch_frame.config import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
 
 from rtb.datasets import FakeProductDataset
-from rtb.external.graph import make_pkey_fkey_graph
+from rtb.external.graph import get_stype_proposal, make_pkey_fkey_graph
 
 
 def test_make_pkey_fkey_graph(tmp_path):
@@ -11,7 +11,7 @@ def test_make_pkey_fkey_graph(tmp_path):
 
     data = make_pkey_fkey_graph(
         dataset.db,
-        dataset.get_stype_proposal(),
+        get_stype_proposal(dataset.db),
         text_embedder_cfg=TextEmbedderConfig(
             HashTextEmbedder(16),
             batch_size=None,

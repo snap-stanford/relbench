@@ -1,15 +1,19 @@
-from typing import Dict, List, NamedTuple, Optional, Tuple
+import os
+from typing import Any, Dict, NamedTuple, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 import torch
 from torch import Tensor
 from torch_frame import stype
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.data import Dataset
+from torch_frame.utils import infer_df_stype
 from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
 
 from rtb.data import Database, Table
+from rtb.data.task import Task, TaskType
 
 
 def to_unix_time(ser: pd.Series) -> Tensor:
@@ -18,16 +22,49 @@ def to_unix_time(ser: pd.Series) -> Tensor:
     return torch.from_numpy(ser.astype(int).values) // 10**9
 
 
-# TODO: fix
-def dummy_text_embedder(input: List[str]) -> torch.Tensor:
-    r"""Dummy text embedder."""
-    return torch.rand(len(input), 768)
+def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
+    r"""Propose stype for columns of a set of tables in the given database.
+
+    Args:
+        db (Database): : The database object containing a set of tables.
+
+    Returns:
+        Dict[str, Dict[str, Any]]: A dictionary mapping table name into
+            :obj:`col_to_stype` (mapping column names into inferred stypes).
+    """
+
+    inferred_col_to_stype_dict = {}
+    for table_name, table in db.tables.items():
+        # Take the first 10,000 rows for quick stype inference.
+        inferred_col_to_stype = infer_df_stype(table.df)
+
+        # Temporarily removing time_col since StypeEncoder for
+        # stype.timestamp is not yet supported.
+        # TODO: Drop the removing logic once StypeEncoder is supported.
+        # https://github.com/pyg-team/pytorch-frame/pull/225
+        inferred_col_to_stype = {
+            col_name: inferred_stype
+            for col_name, inferred_stype in inferred_col_to_stype.items()
+            if inferred_stype != stype.timestamp
+        }
+
+        # Remove pkey, fkey columns since they will not be used as input
+        # feature.
+        if table.pkey_col is not None:
+            inferred_col_to_stype.pop(table.pkey_col)
+        for fkey in table.fkey_col_to_pkey_table.keys():
+            inferred_col_to_stype.pop(fkey)
+
+        inferred_col_to_stype_dict[table_name] = inferred_col_to_stype
+
+    return inferred_col_to_stype_dict
 
 
 def make_pkey_fkey_graph(
     db: Database,
     col_to_stype_dict: Dict[str, Dict[str, stype]],
     text_embedder_cfg: Optional[TextEmbedderConfig] = None,
+    cache_dir: Optional[str] = None,
 ) -> HeteroData:
     r"""Given a :class:`Database` object, construct a heterogeneous graph with
     primary-foreign key relationships, together with the column stats of each
@@ -37,20 +74,36 @@ def make_pkey_fkey_graph(
         db (Database): A database object containing a set of tables.
         col_to_stype_dict (Dict[str, Dict[str, stype]]): Column to stype for
             each table.
+        cache_dir (str, optional): A directory for storing materialized tensor
+            frames. If specified, we will either cache the file or use the
+            cached file. If not specified, we will not use cached file and
+            re-process everything from scrach without saving the cache.
 
     Returns:
         HeteroData: The heterogeneous :class:`PyG` object with
             :class:`TensorFrame` feature..
     """
     data = HeteroData()
+    if cache_dir is not None:
+        os.makedirs(cache_dir, exist_ok=True)
 
     for table_name, table in db.tables.items():
         # Materialize the tables into tensor frames:
+        df = table.df
+        col_to_stype = col_to_stype_dict[table_name]
+
+        if len(col_to_stype) == 0:  # Add constant feature in case df is empty:
+            col_to_stype = {"__const__": stype.numerical}
+            df = pd.DataFrame({"__const__": np.ones(len(table.df))})
+
+        path = (
+            None if cache_dir is None else os.path.join(cache_dir, f"{table_name}.pt")
+        )
         dataset = Dataset(
-            df=table.df,
-            col_to_stype=col_to_stype_dict[table_name],
+            df=df,
+            col_to_stype=col_to_stype,
             text_embedder_cfg=text_embedder_cfg,
-        ).materialize()
+        ).materialize(path=path)
 
         data[table_name].tf = dataset.tensor_frame
         data[table_name].col_stats = dataset.col_stats
@@ -108,13 +161,12 @@ class TrainTableInput(NamedTuple):
 
 def get_train_table_input(
     train_table: Table,
-    target_col: Optional[str] = None,
-    target_dtype: Optional[torch.dtype] = None,
+    task: Task,
 ) -> TrainTableInput:
     assert len(train_table.fkey_col_to_pkey_table) == 1
     fkey_col, table_name = list(train_table.fkey_col_to_pkey_table.items())[0]
 
-    nodes = torch.from_numpy(train_table.df[fkey_col].values)
+    nodes = torch.from_numpy(train_table.df[fkey_col].astype(int).values)
 
     time: Optional[Tensor] = None
     if train_table.time_col is not None:
@@ -122,10 +174,13 @@ def get_train_table_input(
 
     target: Optional[Tensor] = None
     transform: Optional[AttachTargetTransform] = None
-    if target_col is not None and target_col in train_table.df:
-        target = torch.from_numpy(train_table.df[target_col].values)
-        if target_dtype is not None:
-            target = target.to(target_dtype)
+    if task.target_col in train_table.df:
+        target_type = float
+        if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+            target_type = int
+        target = torch.from_numpy(
+            train_table.df[task.target_col].values.astype(target_type)
+        )
         transform = AttachTargetTransform(table_name, target)
 
     return TrainTableInput(

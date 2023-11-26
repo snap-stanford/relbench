@@ -5,7 +5,8 @@ import torch_frame
 from torch import Tensor
 from torch_frame.data.stats import StatType
 from torch_frame.nn.models import ResNet
-from torch_geometric.nn import HeteroConv, LayerNorm, SAGEConv
+from torch_geometric.nn import (HeteroConv, LayerNorm, PositionalEncoding,
+                                SAGEConv)
 from torch_geometric.typing import EdgeType, NodeType
 from torch_geometric.utils import trim_to_layer
 
@@ -86,12 +87,49 @@ class HeteroEncoder(torch.nn.Module):
         return x_dict
 
 
+class HeteroTemporalEncoder(torch.nn.Module):
+    def __init__(self, node_types: List[NodeType], channels: int):
+        super().__init__()
+
+        self.encoder_dict = torch.nn.ModuleDict(
+            {node_type: PositionalEncoding(channels) for node_type in node_types}
+        )
+        self.lin_dict = torch.nn.ModuleDict(
+            {node_type: torch.nn.Linear(channels, channels) for node_type in node_types}
+        )
+
+    def reset_parameters(self):
+        for encoder in self.encoder_dict.values():
+            encoder.reset_parameters()
+        for lin in self.lin_dict.values():
+            lin.reset_parameters()
+
+    def forward(
+        self,
+        seed_time: Tensor,
+        time_dict: Dict[NodeType, Tensor],
+        batch_dict: Dict[NodeType, Tensor],
+    ) -> Dict[NodeType, Tensor]:
+        out_dict: Dict[NodeType, Tensor] = {}
+
+        for node_type, time in time_dict.items():
+            rel_time = seed_time[batch_dict[node_type]] - time
+            rel_time = rel_time / (60 * 60 * 24)  # Convert seconds to days.
+
+            x = self.encoder_dict[node_type](rel_time)
+            x = self.lin_dict[node_type](x)
+            out_dict[node_type] = x
+
+        return out_dict
+
+
 class HeteroGraphSAGE(torch.nn.Module):
     def __init__(
         self,
         node_types: List[NodeType],
         edge_types: List[EdgeType],
         channels: int,
+        aggr: str = "mean",
         num_layers: int = 2,
     ):
         super().__init__()
@@ -100,7 +138,7 @@ class HeteroGraphSAGE(torch.nn.Module):
         for _ in range(num_layers):
             conv = HeteroConv(
                 {
-                    edge_type: SAGEConv((channels, channels), channels)
+                    edge_type: SAGEConv((channels, channels), channels, aggr=aggr)
                     for edge_type in edge_types
                 },
                 aggr="sum",

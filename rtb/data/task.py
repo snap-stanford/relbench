@@ -80,7 +80,6 @@ class Task:
             table.time_col,
             *table.fkey_col_to_pkey_table.keys(),
         ]
-
         return Table(
             df=table.df[input_cols],
             fkey_col_to_pkey_table=table.fkey_col_to_pkey_table,
