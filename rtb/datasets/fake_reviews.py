@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from rtb.data import Database, Dataset, Table, Task
-from rtb.tasks.fake_reviews import CustomerChurnTask, CustomerLTVTask
+from rtb.tasks.amazon_reviews import CustomerChurnTask, CustomerLTVTask
 
 
 def _generate_random_string(min_length: int, max_length: int) -> str:

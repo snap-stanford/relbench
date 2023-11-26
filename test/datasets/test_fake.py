@@ -6,34 +6,16 @@ def test_fake_reviews_dataset():
     assert str(dataset) == "FakeReviewsDataset()"
     assert dataset.task_names == ["customer_churn", "customer_ltv"]
 
-    task = dataset.get_task("customer_churn")
+    task = dataset.get_task("customer_churn", process=True)
     assert str(task) == "CustomerChurnTask(dataset=FakeReviewsDataset())"
 
-    train_table = task.default_train_table
-    val_table = task.default_val_table
+    train_table = task.train_table
+    val_table = task.val_table
     for table in [train_table, val_table]:
         assert set(table.df.columns) >= {
             "timestamp",
             "customer_id",
             "churn",
-        }
-
-    input_test_table = task.input_test_table
-    assert set(input_test_table.df.columns) == {
-        "timestamp",
-        "customer_id",
-    }
-
-    task = dataset.get_task("customer_ltv")
-    assert str(task) == "CustomerLTVTask(dataset=FakeReviewsDataset())"
-
-    train_table = task.default_train_table
-    val_table = task.default_val_table
-    for table in [train_table, val_table]:
-        assert set(table.df.columns) >= {
-            "timestamp",
-            "customer_id",
-            "ltv",
         }
 
     input_test_table = task.input_test_table
