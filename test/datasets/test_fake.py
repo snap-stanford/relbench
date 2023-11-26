@@ -1,4 +1,4 @@
-from rtb.datasets import FakeReviewsDataset
+from relbench.datasets import FakeReviewsDataset
 
 
 def test_fake_reviews_dataset():
