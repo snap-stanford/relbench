@@ -4,7 +4,7 @@ import duckdb
 import pandas as pd
 
 from relbench.data import Database, RelBenchTask, Table
-from relbench.metrics import accuracy, f1, mae, rmse, roc_auc
+from relbench.metrics import accuracy, f1, mae, rmse, roc_auc, average_precision
 
 
 class CustomerChurnTask(RelBenchTask):
@@ -18,7 +18,7 @@ class CustomerChurnTask(RelBenchTask):
     time_col = "timestamp"
     target_col = "churn"
     timedelta = pd.Timedelta(days=365 * 2)
-    metrics = [accuracy, f1, roc_auc]
+    metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         product = db.table_dict["product"].df

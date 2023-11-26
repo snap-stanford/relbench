@@ -4,7 +4,7 @@ from typing import Dict, Tuple
 import pandas as pd
 import numpy as np
 from relbench.data import Database, RelBenchTask, Table
-from relbench.metrics import accuracy, f1, mae, rmse, roc_auc
+from relbench.metrics import accuracy, f1, mae, rmse, roc_auc, average_precision
 from relbench.utils import get_df_in_window
 from tqdm import tqdm
 
@@ -19,7 +19,7 @@ class UserContributionTask(RelBenchTask):
     time_col = "timestamp"
     target_col = "contribution"
     timedelta = pd.Timedelta(days=365 * 2)
-    metrics = [accuracy, f1, roc_auc]
+    metrics = [average_precision, accuracy, f1, roc_auc]
 
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:

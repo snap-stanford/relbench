@@ -8,4 +8,4 @@ task = dataset.get_task("user_contribution")
 import numpy as np
 pred = np.array([0] * len(task.test_table.df))
 task.evaluate(pred)
-#{'accuracy': 0.9258449514152937, 'f1': 0.0, 'roc_auc': 0.5}
+#{'average_precision': 0.07415504858470638, 'accuracy': 0.9258449514152937, 'f1': 0.0, 'roc_auc': 0.5}
