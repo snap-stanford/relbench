@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 from dataclasses import dataclass
@@ -47,11 +48,11 @@ class Task:
 
         raise NotImplementedError
 
-    def get_default_train_table(self) -> Table:
+    def make_train_table(self) -> Table:
         """Returns the train table for a task."""
 
         return self.make_table(
-            self.dataset.input_db,
+            self.dataset.db,
             pd.date_range(
                 self.dataset.val_timestamp - self.timedelta,
                 self.dataset.min_timestamp,
@@ -59,11 +60,11 @@ class Task:
             ),
         )
 
-    def get_default_val_table(self) -> Table:
+    def make_val_table(self) -> Table:
         r"""Returns the val table for a task."""
 
         return self.make_table(
-            self.dataset.input_db,
+            self.dataset.db,
             pd.Series([self.dataset.val_timestamp]),
         )
 
@@ -80,14 +81,14 @@ class Task:
             time_col=table.time_col,
         )
 
-    def get_input_test_table(self) -> Table:
+    def make_test_table(self) -> Table:
         r"""Returns the test table for a task."""
 
         table = self.make_table(
-            self.dataset._db,
+            self.dataset._full_db,
             pd.Series([self.dataset.test_timestamp]),
         )
-        self._test_table = table
+        self._full_test_table = table
 
         return self._mask_input_cols(table)
 
@@ -98,10 +99,10 @@ class Task:
         metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
     ) -> Dict[str, float]:
         if target_table is None:
-            target_table = self._test_table
+            target_table = self._full_test_table
 
         if metrics is None:
-            metrics = self.benchmark_metrics
+            metrics = self.metrics
 
         true = target_table.df[self.target_col].to_numpy()
 
@@ -119,12 +120,10 @@ class RelBenchTask(Task):
     target_col: str
     metrics: List[Callable[[NDArray, NDArray], float]]
 
-    url_prefix_fmt: str = "http://relbench.stanford.edu/data/{}/tasks/{}"
-
     task_dir: str = "tasks"
-    train_file: str = "train_table.parquet"
-    val_file: str = "val_table.parquet"
-    test_file: str = "test_table.parquet"
+    train_table_name: str = "train"
+    val_table_name: str = "val"
+    test_table_name: str = "full_test"
 
     def __init__(self, dataset: "RelBenchDataset"):
         super().__init__(
@@ -134,66 +133,30 @@ class RelBenchTask(Task):
             metrics=self.metrics,
         )
 
-        self.url_prefix = self.url_prefix_fmt.format(self.dataset.name, self.name)
+    def pack_task(self, stage_path: Union[str, os.PathLike]) -> None:
+        train_table = self.make_train_table()
+        val_table = self.make_val_table()
+        test_table = self.make_test_table()
 
-        self.path_prefix = (
-            self.dataset.root / self.dataset.name / self.task_dir / self.name
+        dummy_db = Database(
+            table_dict={
+                self.train_table_name: train_table,
+                self.val_table_name: val_table,
+                self.test_table_name: self._full_test_table,
+            }
         )
 
-    def get_default_train_table(self, *, download=False, process=False) -> Table:
-        path = self.path_prefix / self.train_file
+        with tempfile.TemporaryDirectory() as tmpdir:
+            task_path = Path(tmpdir) / self.name
+            dummy_db.save(task_path)
 
-        if process:
-            assert not download
+            zip_base_path = (
+                Path(stage_path) / self.dataset.name / self.task_dir / self.name
+            )
+            zip_path = shutil.make_archive(zip_base_path, "zip", task_path)
 
-            table = super().get_default_train_table()
-            table.save(path)
-            shutil.make_archive(str(path), "zip")
+        with open(zip_path, "rb") as f:
+            sha256 = hashlib.sha256(f.read()).hexdigest()
 
-            return table
-
-        else:
-            if download or not path.exists():
-                url = f"{self.url_prefix}/{self.train_file}.zip"
-                download_and_extract(url, path)
-
-            return Table.load(path / self.train_file)
-
-    def get_default_val_table(self, *, download=False, process=False) -> Table:
-        path = self.path_prefix / self.val_file
-
-        if process:
-            assert not download
-
-            table = super().get_default_val_table()
-            table.save(path)
-            shutil.make_archive(str(path), "zip")
-
-            return table
-
-        else:
-            if download or not path.exists():
-                url = f"{self.url_prefix}/{self.val_file}.zip"
-                download_and_extract(url, path)
-
-            return Table.load(path / self.val_file)
-
-    def get_input_test_table(self, *, download=False, process=False) -> Table:
-        path = self.path_prefix / self.test_file
-
-        if process:
-            assert not download
-
-            input_table = super().get_input_test_table()
-            self._test_table.save(path)
-            shutil.make_archive(str(path), "zip")
-
-            return input_table
-
-        else:
-            if download or not path.exists():
-                url = f"{self.url_prefix}/{self.test_file}.zip"
-                download_and_extract(url, path)
-
-            self._test_table = Table.load(path / self.test_file)
-            return self._mask_input_cols(self._test_table)
+        print(f"upload: {zip_path}")
+        print(f"sha256: {sha256}")

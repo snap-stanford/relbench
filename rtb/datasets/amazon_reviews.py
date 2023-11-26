@@ -27,13 +27,15 @@ class AmazonReviewsDataset(RelBenchDataset):
         self,
         category: str = "books",
         use_5_core: bool = True,
+        *,
+        process: bool = False,
     ):
         self.category = category
         self.use_5_core = use_5_core
 
         self.name = f"{self.name}-{category}{'_5_core' if use_5_core else ''}"
 
-        super().__init__()
+        super().__init__(process=process)
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
