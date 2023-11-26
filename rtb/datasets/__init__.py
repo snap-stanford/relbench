@@ -1,31 +1,25 @@
-from rtb.datasets.fake import FakeProductDataset
-from rtb.datasets.forum import ForumDataset
-from rtb.datasets.forum_full import ForumFullDataset
-from rtb.datasets.grant import GrantDataset
-from rtb.datasets.product import ProductDataset
+from rtb.datasets.amazon_reviews import AmazonReviewsDataset
+from rtb.datasets.fake_reviews import FakeReviewsDataset
+
+dataset_cls_list = [
+    AmazonReviewsDataset,
+    FakeReviewsDataset,
+]
+
+dataset_cls_dict = {dataset_cls.name: dataset_cls for dataset_cls in dataset_cls_list}
+
+dataset_names = list(dataset_cls_dict.keys())
 
 
-def get_dataset(name: str, *args, **kwargs):
-    r"""Convenience function to get a dataset by name."""
-
-    if name == FakeProductDataset.name:
-        return FakeProductDataset(*args, **kwargs)
-    if name == ProductDataset.name:
-        return ProductDataset(*args, **kwargs)
-    if name == GrantDataset.name:
-        return GrantDataset(*args, **kwargs)
-    if name == ForumDataset.name:
-        return ForumDataset(*args, **kwargs)
-    if name == ForumFullDataset.name:
-        return ForumFullDataset(*args, **kwargs)
-
-    raise ValueError(f"Unknown dataset name: '{name}'")
+def get_dataset(name: str, *args, **kwargs) -> "Dataset":
+    r"""Returns a dataset by name."""
+    return dataset_cls_dict[name](*args, **kwargs)
 
 
 __all__ = [
-    "FakeProductDataset",
-    "ForumDataset",
-    "GrantDataset",
-    "ProductDataset",
+    "AmazonReviewsDataset",
+    "FakeReviewsDataset",
+    "dataset_cls_dict",
+    "dataset_names",
     "get_dataset",
 ]

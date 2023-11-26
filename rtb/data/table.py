@@ -1,6 +1,7 @@
 import copy
 import json
 import os
+from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
@@ -47,19 +48,6 @@ class Table:
     def __len__(self) -> int:
         r"""Returns the number of rows in the table."""
         return len(self.df)
-
-    def validate(self) -> bool:
-        r"""Validate the table."""
-
-        if self.pkey_col is not None and self.pkey not in self.df.columns:
-            return False
-        # Check if fkey_col_to_pkey_table columns exist
-        for col in self.fkey_col_to_pkey_table:
-            if col not in self.df.columns:
-                return False
-        if self.time_col is not None and self.time_col not in self.df.columns:
-            return False
-        return True
 
     def save(self, path: Union[str, os.PathLike]) -> None:
         r"""Saves the table to a parquet file. Stores other attributes as
@@ -110,22 +98,35 @@ class Table:
             time_col=metadata["time_col"],
         )
 
-    def time_cutoff(self, time_stamp: int) -> Self:
+    def upto(self, time_stamp: pd.Timestamp) -> Self:
         r"""Returns a table with all rows upto time."""
 
         if self.time_col is None:
-            return self
+            raise ValueError("Table has no time column.")
 
-        new_table = copy.copy(self)
-        df = new_table.df
-        df = df[df[self.time_col] <= time_stamp]
-        new_table.df = df
-        return new_table
+        return Table(
+            df=self.df.query(f"{self.time_col} <= @time_stamp"),
+            fkey_col_to_pkey_table=self.fkey_col_to_pkey_table,
+            pkey_col=self.pkey_col,
+            time_col=self.time_col,
+        )
 
-    def get_time_range(self) -> Tuple[int, int]:
-        r"""Returns the earliest and latest timestamp in the table."""
+    @property
+    @lru_cache(maxsize=None)
+    def min_timestamp(self) -> pd.Timestamp:
+        r"""Returns the earliest time in the table."""
 
-        assert self.time_col is not None
+        if self.time_col is None:
+            return ValueError("Table has no time column.")
 
-        ts = self.df[self.time_col]
-        return ts.min(), ts.max()
+        return self.df[self.time_col].min()
+
+    @property
+    @lru_cache(maxsize=None)
+    def max_timestamp(self) -> pd.Timestamp:
+        r"""Returns the latest time in the table."""
+
+        if self.time_col is None:
+            return ValueError("Table has no time column.")
+
+        return self.df[self.time_col].max()
