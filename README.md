@@ -64,7 +64,7 @@ The training/validation/testing tables are automatically generated using pre-def
 task.evaluate(test_pred)
 ```
 
-Additionally, you can get evaluate validation (or training) predictions as such:
+Additionally, you can evaluate validation (or training) predictions as such:
 ```python
 task.evaluate(val_pred, task.val_table)
 ```
