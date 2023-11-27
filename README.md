@@ -35,7 +35,7 @@ Here we describe key functions of RelBench. RelBench provides a collection of AP
 
 To see all available datasets:
 ```python
-from relbench.dataset import dataset_names
+from relbench.datasets import dataset_names
 print(dataset_names)
 ```
 
