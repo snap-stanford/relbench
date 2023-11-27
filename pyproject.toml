@@ -38,7 +38,7 @@ test=[
 	"pytest-cov",
 ]
 dev=[
-	#"pre-commit",
+	"pre-commit",
 ]
 
 [project.urls]
