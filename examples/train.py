@@ -6,6 +6,14 @@ from typing import Dict, List
 
 import torch
 import torch_frame
+from rtb.data.task import TaskType
+from rtb.datasets import get_dataset
+from rtb.external.graph import (
+    get_stype_proposal,
+    get_train_table_input,
+    make_pkey_fkey_graph,
+)
+from rtb.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
 from torch.nn import BCEWithLogitsLoss, L1Loss
@@ -17,13 +25,6 @@ from torch_geometric.sampler import NeighborSampler
 from torch_geometric.typing import EdgeType, NodeType
 from torchmetrics import AUROC, AveragePrecision, MeanAbsoluteError
 from tqdm import tqdm
-
-from rtb.data.task import TaskType
-from rtb.datasets import get_dataset
-from rtb.external.graph import (get_stype_proposal, get_train_table_input,
-                                make_pkey_fkey_graph)
-from rtb.external.nn import (HeteroEncoder, HeteroGraphSAGE,
-                             HeteroTemporalEncoder)
 
 # Stores the informative text columns to retain for each table:
 dataset_to_informative_text_cols = {}

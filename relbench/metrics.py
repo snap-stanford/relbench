@@ -36,15 +36,18 @@ def roc_auc(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
     assert pred.ndim == 1 or pred.shape[1] == 1
     return skm.roc_auc_score(true, pred)
 
+
 def average_precision(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
     assert pred.ndim == 1 or pred.shape[1] == 1
     return skm.average_precision_score(true, pred)
+
 
 def auprc(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
     assert pred.ndim == 1 or pred.shape[1] == 1
     precision, recall, _ = skm.precision_recall_curve(true, pred)
     return skm.auc(recall, precision)
-    
+
+
 ### applicable to multiclass classification only
 
 

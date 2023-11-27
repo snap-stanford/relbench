@@ -1,12 +1,13 @@
 import os
 from typing import Dict, Tuple
 
-import pandas as pd
 import numpy as np
-from relbench.data import Database, RelBenchTask, Table
-from relbench.metrics import accuracy, f1, mae, rmse, roc_auc, average_precision
-from relbench.utils import get_df_in_window
+import pandas as pd
 from tqdm import tqdm
+
+from relbench.data import Database, RelBenchTask, Table
+from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
+from relbench.utils import get_df_in_window
 
 
 class EngageTask(RelBenchTask):
@@ -20,7 +21,6 @@ class EngageTask(RelBenchTask):
     target_col = "contribution"
     timedelta = pd.Timedelta(days=365 * 2)
     metrics = [average_precision, accuracy, f1, roc_auc]
-
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserContributionTask."""
@@ -44,7 +44,9 @@ class EngageTask(RelBenchTask):
 
         def get_values_in_window(row, posts, users):
             posts_window = get_df_in_window(posts, "CreationDate", row, self.timedelta)
-            comments_window = get_df_in_window(comments, "CreationDate", row, self.timedelta)
+            comments_window = get_df_in_window(
+                comments, "CreationDate", row, self.timedelta
+            )
             votes_window = get_df_in_window(votes, "CreationDate", row, self.timedelta)
 
             user_made_posts_in_this_period = posts_window.OwnerUserId.unique()
@@ -136,10 +138,7 @@ class VotesTask(RelBenchTask):
             votes_window = get_df_in_window(votes, "CreationDate", row, self.timedelta)
             posts_exist = posts[
                 (posts.CreationDate <= row["timestamp"])
-                & (
-                    posts.CreationDate
-                    > (row["timestamp"] - pd.Timedelta(days=365 * 2))
-                )
+                & (posts.CreationDate > (row["timestamp"] - pd.Timedelta(days=365 * 2)))
             ]  ## posts exist and active defined by created in the last 2 years
             posts_exist_ids = posts_exist.Id.values
             train_table = pd.DataFrame()

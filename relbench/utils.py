@@ -24,6 +24,5 @@ def unzip_processor(fname: Union[str, Path], action: str, pooch: pooch.Pooch) ->
 
 def get_df_in_window(df, time_col, row, delta):
     return df[
-        (df[time_col] > row["timestamp"])
-        & (df[time_col] <= (row["timestamp"] + delta))
+        (df[time_col] > row["timestamp"]) & (df[time_col] <= (row["timestamp"] + delta))
     ]
