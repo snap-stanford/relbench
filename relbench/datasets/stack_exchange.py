@@ -12,8 +12,8 @@ from relbench.utils import unzip_processor, to_unix_time
 
 class StackExchangeDataset(RelBenchDataset):
     name = "stack_exchange"
-    val_timestamp = pd.Timestamp("2019-09-12")
-    test_timestamp = pd.Timestamp("2021-09-12")
+    val_timestamp = pd.Timestamp("2019-01-01")
+    test_timestamp = pd.Timestamp("2021-01-01")
     task_cls_list = [UserContributionTask, QuestionPopularityTask]
 
     def __init__(
