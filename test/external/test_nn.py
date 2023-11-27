@@ -17,7 +17,6 @@ from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
 
 def test_train_fake_product_dataset(tmp_path):
     dataset = FakeDataset()
-    task_name = "rel-amazon-churn"
 
     data = make_pkey_fkey_graph(
         dataset.db,
@@ -55,7 +54,7 @@ def test_train_fake_product_dataset(tmp_path):
         time_attr="time",
     )
 
-    task = dataset.get_task(task_name, process=True)
+    task = dataset.get_task("rel-amazon-churn", process=True)
 
     for i, table in enumerate([task.train_table, task.val_table, task.test_table]):
         train_table_input = get_train_table_input(table, task=task)
@@ -77,10 +76,7 @@ def test_train_fake_product_dataset(tmp_path):
 
     # Ensure that mini-batch training works ###################################
 
-    train_table_input = get_train_table_input(
-        train_table=train_table,
-        task=task,
-    )
+    train_table_input = get_train_table_input(task.train_table, task=task)
 
     train_loader = NodeLoader(
         data,
