@@ -4,6 +4,7 @@
 
 [![website](https://img.shields.io/badge/website-live-brightgreen)](https://relbench.stanford.edu)
 [![PyPI version](https://badge.fury.io/py/relbench.svg)](https://badge.fury.io/py/relbench)
+[![Testing Status](https://github.com/snap-stanford/relbench/actions/workflows/testing.yml/badge.svg)](https://github.com/snap-stanford/relbench/actions/workflows/testing.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40RelBench)](https://twitter.com/RelBench)
 
@@ -50,6 +51,14 @@ The training/validation/testing tables are automatically generated using pre-def
 ```python
 task.evaluate(pred)
 ```
+
+# Demos
+List of working demos:
+
+| Name  | Description                                             |
+|-------|---------------------------------------------------------|
+| [rel.stackex](examples/stackex/demo_stackex.ipynb)   | exploring `rel-stackex` dataset and tasks                           |
+| [102](tutorials/TDC_102_Data_Functions.ipynb)   | Introduce TDC Data Functions                            |
 
 # Cite RelBench
 
