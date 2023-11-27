@@ -6,15 +6,18 @@ from torch_geometric.loader import NodeLoader
 from torch_geometric.nn import MLP
 from torch_geometric.sampler import NeighborSampler
 
-from rtb.datasets import FakeProductDataset
-from rtb.external.graph import (get_stype_proposal, get_train_table_input,
-                                make_pkey_fkey_graph)
-from rtb.external.nn import HeteroEncoder, HeteroGraphSAGE
+from relbench.datasets import FakeReviewsDataset
+from relbench.external.graph import (
+    get_stype_proposal,
+    get_train_table_input,
+    make_pkey_fkey_graph,
+)
+from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
 
 
 def test_train_fake_product_dataset(tmp_path):
-    dataset = FakeProductDataset(root=tmp_path, process=True)
-    task_name = "churn"
+    dataset = FakeReviewsDataset()
+    task_name = "customer_churn"
 
     data = make_pkey_fkey_graph(
         dataset.db,
@@ -40,7 +43,7 @@ def test_train_fake_product_dataset(tmp_path):
 
     assert len(x_dict) == 3
     assert x_dict["customer"].size() == (100, 64)
-    assert x_dict["review"].size() == (500, 64)
+    assert x_dict["review"].size() == (450, 64)
     assert x_dict["product"].size() == (30, 64)
     assert x.size() == (100, 1)
 
@@ -52,12 +55,9 @@ def test_train_fake_product_dataset(tmp_path):
         time_attr="time",
     )
 
-    task = dataset.tasks[task_name]
-    train_table = dataset.make_train_table(task_name)
-    val_table = dataset.make_val_table(task_name)
-    test_table = dataset.make_test_table(task_name)
+    task = dataset.get_task(task_name, process=True)
 
-    for i, table in enumerate([train_table, val_table, test_table]):
+    for i, table in enumerate([task.train_table, task.val_table, task.test_table]):
         train_table_input = get_train_table_input(table, task=task)
 
         loader = NodeLoader(

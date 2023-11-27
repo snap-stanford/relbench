@@ -35,7 +35,7 @@ class Task:
         self.target_col = target_col
         self.metrics = metrics
 
-        self._test_table = None
+        self._full_test_table = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
@@ -103,14 +103,16 @@ class Task:
     def evaluate(
         self,
         pred: NDArray[np.float64],
-        target: Optional[Union[NDArray[np.float64], NDArray[np.int16]]] = None,
+        target_table: Optional[Table] = None,
         metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
     ) -> Dict[str, float]:
         if metrics is None:
             metrics = self.metrics
 
-        if target is None:
-            target = self._full_test_table.df[self.target_col].to_numpy()
+        if target_table is None:
+            target_table = self._full_test_table
+
+        target = target_table.df[self.target_col].to_numpy()
 
         return {fn.__name__: fn(target, pred) for fn in metrics}
 
@@ -141,7 +143,7 @@ class RelBenchTask(Task):
                 processor=unzip_processor,
                 progressbar=True,
             )
-            self.dummy_db = Database.load(task_path)
+            self._dummy_db = Database.load(task_path)
 
         super().__init__(
             dataset=dataset,
@@ -154,23 +156,23 @@ class RelBenchTask(Task):
     def train_table(self) -> Table:
         if self.process:
             return super().train_table
-        return self.dummy_db.table_dict[self.train_table_name]
+        return self._dummy_db.table_dict[self.train_table_name]
 
     @property
     def val_table(self) -> Table:
         if self.process:
             return super().val_table
-        return self.dummy_db.table_dict[self.val_table_name]
+        return self._dummy_db.table_dict[self.val_table_name]
 
     @property
     def test_table(self) -> Table:
         if self.process:
             return super().test_table
-        self._full_test_table = self.dummy_db.table_dict[self.full_test_table_name]
-        return self.dummy_db.table_dict[self.test_table_name]
+        self._full_test_table = self._dummy_db.table_dict[self.full_test_table_name]
+        return self._dummy_db.table_dict[self.test_table_name]
 
     def pack_tables(self, stage_path: Union[str, os.PathLike]) -> None:
-        dummy_db = Database(
+        _dummy_db = Database(
             table_dict={
                 self.train_table_name: self.train_table,
                 self.val_table_name: self.val_table,
@@ -181,7 +183,7 @@ class RelBenchTask(Task):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             task_path = Path(tmpdir) / self.name
-            dummy_db.save(task_path)
+            _dummy_db.save(task_path)
 
             zip_base_path = (
                 Path(stage_path) / self.dataset.name / self.task_dir / self.name
