@@ -2,12 +2,11 @@ import argparse
 from typing import Dict
 
 import torch
-from torch import Tensor
-from torchmetrics import AUROC, AveragePrecision, MeanAbsoluteError
-
 from rtb.data import Table
 from rtb.data.task import TaskType
 from rtb.datasets import get_dataset
+from torch import Tensor
+from torchmetrics import AUROC, AveragePrecision, MeanAbsoluteError
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="relbench-forum")

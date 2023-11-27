@@ -4,14 +4,13 @@ from typing import Dict
 import pandas as pd
 import torch
 import torch_frame
+from rtb.data.task import TaskType
+from rtb.datasets import get_dataset
 from text_embedder import GloveTextEmbedding
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
 from torch_frame.gbdt import XGBoost
 from torch_frame.typing import Metric
-
-from rtb.data.task import TaskType
-from rtb.datasets import get_dataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rtb-forum")

@@ -4,7 +4,7 @@ import duckdb
 import pandas as pd
 
 from relbench.data import Database, RelBenchTask, Table
-from relbench.metrics import accuracy, f1, mae, rmse, roc_auc, average_precision
+from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
 
 
 class ChurnTask(RelBenchTask):
