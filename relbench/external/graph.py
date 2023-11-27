@@ -13,7 +13,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
 
 from relbench.data import Database, Table
-from relbench.data.task import Task, TaskType
+from relbench.data.task import Task
 
 
 def to_unix_time(ser: pd.Series) -> Tensor:
@@ -34,7 +34,7 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
     """
 
     inferred_col_to_stype_dict = {}
-    for table_name, table in db.tables.items():
+    for table_name, table in db.table_dict.items():
         # Take the first 10,000 rows for quick stype inference.
         inferred_col_to_stype = infer_df_stype(table.df)
 
@@ -87,7 +87,7 @@ def make_pkey_fkey_graph(
     if cache_dir is not None:
         os.makedirs(cache_dir, exist_ok=True)
 
-    for table_name, table in db.tables.items():
+    for table_name, table in db.table_dict.items():
         # Materialize the tables into tensor frames:
         df = table.df
         col_to_stype = col_to_stype_dict[table_name]
@@ -160,31 +160,26 @@ class TrainTableInput(NamedTuple):
 
 
 def get_train_table_input(
-    train_table: Table,
+    table: Table,
     task: Task,
 ) -> TrainTableInput:
-    assert len(train_table.fkey_col_to_pkey_table) == 1
-    fkey_col, table_name = list(train_table.fkey_col_to_pkey_table.items())[0]
-
-    nodes = torch.from_numpy(train_table.df[fkey_col].astype(int).values)
+    nodes = torch.from_numpy(table.df[task.entity_col].astype(int).values)
 
     time: Optional[Tensor] = None
-    if train_table.time_col is not None:
-        time = to_unix_time(train_table.df[train_table.time_col])
+    if table.time_col is not None:
+        time = to_unix_time(table.df[table.time_col])
 
     target: Optional[Tensor] = None
     transform: Optional[AttachTargetTransform] = None
-    if task.target_col in train_table.df:
+    if task.target_col in table.df:
         target_type = float
-        if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+        if task.task_type == "multiclass_classification":
             target_type = int
-        target = torch.from_numpy(
-            train_table.df[task.target_col].values.astype(target_type)
-        )
-        transform = AttachTargetTransform(table_name, target)
+        target = torch.from_numpy(table.df[task.target_col].values.astype(target_type))
+        transform = AttachTargetTransform(task.entity_table, target)
 
     return TrainTableInput(
-        nodes=(table_name, nodes),
+        nodes=(task.entity_table, nodes),
         time=time,
         target=target,
         transform=transform,
