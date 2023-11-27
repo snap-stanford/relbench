@@ -171,7 +171,7 @@ class RelBenchTask(Task):
         self._full_test_table = self._dummy_db.table_dict[self.full_test_table_name]
         return self._dummy_db.table_dict[self.test_table_name]
 
-    def pack_tables(self, stage_path: Union[str, os.PathLike]) -> None:
+    def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
         _dummy_db = Database(
             table_dict={
                 self.train_table_name: self.train_table,
@@ -185,9 +185,7 @@ class RelBenchTask(Task):
             task_path = Path(tmpdir) / self.name
             _dummy_db.save(task_path)
 
-            zip_base_path = (
-                Path(stage_path) / self.dataset.name / self.task_dir / self.name
-            )
+            zip_base_path = Path(root) / self.dataset.name / self.task_dir / self.name
             zip_path = shutil.make_archive(zip_base_path, "zip", task_path)
 
         with open(zip_path, "rb") as f:
@@ -195,3 +193,5 @@ class RelBenchTask(Task):
 
         print(f"upload: {zip_path}")
         print(f"sha256: {sha256}")
+
+        return f"{self.dataset.name}/{self.task_dir}/{self.name}.zip", sha256

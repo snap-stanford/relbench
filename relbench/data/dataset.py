@@ -78,9 +78,9 @@ class RelBenchDataset(Dataset):
     def make_db(self) -> Database:
         raise NotImplementedError
 
-    def pack_db(self, stage_path: Union[str, os.PathLike]) -> None:
+    def pack_db(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
         with tempfile.TemporaryDirectory() as tmpdir:
-            db_path = Path(tmpdir) / "db"
+            db_path = Path(tmpdir) / self.db_dir
             print(f"saving Database object to {db_path}...")
             tic = time.time()
             self._full_db.save(db_path)
@@ -89,7 +89,7 @@ class RelBenchDataset(Dataset):
 
             print("making zip archive for db...")
             tic = time.time()
-            zip_path = Path(stage_path) / self.name / "db"
+            zip_path = Path(root) / self.name / self.db_dir
             zip_path = shutil.make_archive(zip_path, "zip", db_path)
             toc = time.time()
             print(f"done in {toc - tic:.2f} seconds.")
@@ -99,3 +99,5 @@ class RelBenchDataset(Dataset):
 
         print(f"upload: {zip_path}")
         print(f"sha256: {sha256}")
+
+        return f"{self.name}/{self.db_dir}.zip", sha256
