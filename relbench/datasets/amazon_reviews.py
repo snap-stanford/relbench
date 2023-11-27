@@ -13,8 +13,8 @@ from relbench.tasks.amazon_reviews import CustomerChurnTask, CustomerLTVTask
 
 class AmazonReviewsDataset(RelBenchDataset):
     name = "amazon_reviews"
-    val_timestamp = pd.Timestamp("2013-01-01")
-    test_timestamp = pd.Timestamp("2015-01-01")
+    val_timestamp = pd.Timestamp("2014-01-01")
+    test_timestamp = pd.Timestamp("2016-01-01")
     task_cls_list = [CustomerChurnTask, CustomerLTVTask]
 
     category_list = ["books", "fashion"]
