@@ -74,8 +74,8 @@ List of working demos:
 
 | Name  | Description                                             |
 |-------|---------------------------------------------------------|
-| [rel.stackex](examples/stackex/demo-stackex.ipynb)   | exploring `rel-stackex` dataset and tasks                           |
-| [rel.amazon](examples/amazon/demo-amazon.ipynb)   | exploring `rel-amazon` dataset and tasks                           |
+| [rel-stackex](examples/stackex/demo-stackex.ipynb)   | exploring `rel-stackex` dataset and tasks                           |
+| [rel-amazon](examples/amazon/demo-amazon.ipynb)   | exploring `rel-amazon` dataset and tasks                           |
 
 # Cite RelBench
 
