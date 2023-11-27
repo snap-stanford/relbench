@@ -69,7 +69,11 @@ class RelBenchDataset(Dataset):
                 processor=unzip_processor,
                 progressbar=True,
             )
+            print(f"loading Database object from {db_path}...")
+            tic = time.time()
             db = Database.load(db_path)
+            toc = time.time()
+            print(f"done in {toc - tic:.2f} seconds.")
 
         super().__init__(
             db, self.val_timestamp, self.test_timestamp, self.task_cls_list
