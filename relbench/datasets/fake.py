@@ -17,8 +17,8 @@ def _generate_random_string(min_length: int, max_length: int) -> str:
     return random_string
 
 
-class FakeReviewsDataset(Dataset):
-    name = "fake_reviews"
+class FakeDataset(Dataset):
+    name = "rel-fake"
 
     def __init__(
         self, num_products: int = 30, num_customers: int = 100, num_reviews: int = 500

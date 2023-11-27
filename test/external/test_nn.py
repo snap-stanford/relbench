@@ -6,7 +6,7 @@ from torch_geometric.loader import NodeLoader
 from torch_geometric.nn import MLP
 from torch_geometric.sampler import NeighborSampler
 
-from relbench.datasets import FakeReviewsDataset
+from relbench.datasets import FakeDataset
 from relbench.external.graph import (
     get_stype_proposal,
     get_train_table_input,
@@ -16,8 +16,8 @@ from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
 
 
 def test_train_fake_product_dataset(tmp_path):
-    dataset = FakeReviewsDataset()
-    task_name = "customer_churn"
+    dataset = FakeDataset()
+    task_name = "rel-amazon-churn"
 
     data = make_pkey_fkey_graph(
         dataset.db,
