@@ -58,7 +58,7 @@ List of working demos:
 | Name  | Description                                             |
 |-------|---------------------------------------------------------|
 | [rel.stackex](examples/stackex/demo_stackex.ipynb)   | exploring `rel-stackex` dataset and tasks                           |
-| [102](tutorials/TDC_102_Data_Functions.ipynb)   | Introduce TDC Data Functions                            |
+| [rel.amazon](examples/amazon/demo_amazon.ipynb)   | exploring `rel-amazon` dataset and tasks                           |
 
 # Cite RelBench
 
