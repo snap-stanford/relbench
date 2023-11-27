@@ -7,11 +7,11 @@ from relbench.data import Database, RelBenchTask, Table
 from relbench.metrics import accuracy, f1, mae, rmse, roc_auc, average_precision
 
 
-class CustomerChurnTask(RelBenchTask):
+class ChurnTask(RelBenchTask):
     r"""Churn for a customer is 1 if the customer does not review any product
     in the time window, else 0."""
 
-    name = "customer_churn"
+    name = "rel-amazon-churn"
     task_type = "binary_classification"
     entity_col = "customer_id"
     entity_table = "customer"
@@ -64,11 +64,11 @@ class CustomerChurnTask(RelBenchTask):
         )
 
 
-class CustomerLTVTask(RelBenchTask):
+class LTVTask(RelBenchTask):
     r"""LTV (life-time value) for a customer is the sum of prices of products
     that the customer reviews in the time window."""
 
-    name = "customer_ltv"
+    name = "rel-amazon-ltv"
     task_type = "regression"
     entity_col = "customer_id"
     entity_table = "customer"

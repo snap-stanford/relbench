@@ -1,10 +1,10 @@
-from relbench.datasets.amazon_reviews import AmazonReviewsDataset
+from relbench.datasets.amazon import AmazonDataset
 from relbench.datasets.fake_reviews import FakeReviewsDataset
-from relbench.datasets.stack_exchange import StackExchangeDataset
+from relbench.datasets.stackex import StackExDataset
 
 dataset_cls_list = [
-    AmazonReviewsDataset,
-    StackExchangeDataset,
+    AmazonDataset,
+    StackExDataset,
     FakeReviewsDataset,
 ]
 
@@ -19,8 +19,8 @@ def get_dataset(name: str, *args, **kwargs) -> "Dataset":
 
 
 __all__ = [
-    "AmazonReviewsDataset",
-    "StackExchangeDataset",
+    "AmazonDataset",
+    "StackExDataset",
     "FakeReviewsDataset",
     "dataset_cls_dict",
     "dataset_names",
