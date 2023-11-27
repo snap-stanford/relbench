@@ -13,7 +13,7 @@
 
 The Relational Deep Learning Benchmark (RelBench) is a collection of realistic, large-scale, and diverse benchmark datasets for machine learning on relational databases. RelBench supports deep learning framework agnostic data loading, task specification, standardized data splitting, and transforming data into graph format. RelBench also provides standardized evaluation metric computations and a leaderboard for tracking progress.
 
-<p align="center"><img src="https://relbench.stanford.edu/img/relbench-fig.png" alt="pipeline" width="600px" /></p>
+<p align="center"><img src="https://relbench.stanford.edu/img/relbench-fig.png" alt="pipeline" /></p>
 
 **RelBench is in its beta release stage, and we are planning to increase databases and benchmarking in the near future.**
 
@@ -27,7 +27,7 @@ pip install relbench
 
 # Package Usage
 
-Here we describe key functions of RelBench. RelBench provides a collection of APIs for easy access of machine-learning-ready relational databases. 
+Here we describe key functions of RelBench. RelBench provides a collection of APIs for easy access to machine-learning-ready relational databases. 
 
 For a concrete example, to obtain the `rel-stackex` relational database, do:
 
