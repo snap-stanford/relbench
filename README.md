@@ -12,11 +12,13 @@
 
 # Overview
 
-The Relational Deep Learning Benchmark (RelBench) is a collection of realistic, large-scale, and diverse benchmark datasets for machine learning on relational databases. RelBench supports deep learning framework agnostic data loading, task specification, standardized data splitting, and transforming data into graph format. RelBench also provides standardized evaluation metric computations and a leaderboard for tracking progress.
+<!-- The Relational Deep Learning Benchmark (RelBench) is a collection of realistic, large-scale, and diverse benchmark datasets for machine learning on relational databases. RelBench supports deep learning framework agnostic data loading, task specification, standardized data splitting, and transforming data into graph format. RelBench also provides standardized evaluation metric computations and a leaderboard for tracking progress. -->
 
-<p align="center"><img src="https://relbench.stanford.edu/img/relbench-fig.png" alt="pipeline" /></p>
+<!-- <p align="center"><img src="https://relbench.stanford.edu/img/relbench-fig.png" alt="pipeline" /></p> -->
 
-**RelBench is in its beta release stage, and we are planning to increase databases and benchmarking in the near future.**
+Relational Deep Learning is a new approach for end-to-end representation learning on data spread across multiple tables, such as in a _relational database_ (see our [vision paper](https://relbench.stanford.edu/paper.pdf)). RelBench is the accompanying benchmark which seeks to facilitate efficient, robust and reproducible research in this direction. It comprises of a collection of realistic, large-scale, and diverse datasets structured as relational tables, along with machine learning tasks defined on them. It provides full support for data downloading, task specification and standardized evaluation in a ML-framework-agnostic manner. Additionally, there is seamless integration with [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) to load the data as a graph and train GNN models, and with [PyTorch Frame](https://github.com/pyg-team/pytorch-frame) to encode the various types of table columns. Finally, there is a leaderboard for tracking progress.
+
+**RelBench is in its beta release stage, and we are planning to increase datasets and benchmarking in the near future.**
 
 # Installation
 
@@ -28,7 +30,7 @@ pip install relbench
 
 # Package Usage
 
-Here we describe key functions of RelBench. RelBench provides a collection of APIs for easy access to machine-learning-ready relational databases. 
+Here we describe key functions of RelBench. RelBench provides a collection of APIs for easy access to machine-learning-ready relational databases.
 
 For a concrete example, to obtain the `rel-stackex` relational database, do:
 
