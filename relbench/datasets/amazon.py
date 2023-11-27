@@ -22,6 +22,11 @@ class AmazonDataset(RelBenchDataset):
     url_prefix = "https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2"
     _category_to_url_key = {"books": "Books", "fashion": "AMAZON_FASHION"}
 
+    known_hashes = {
+        "meta_Books.json.gz": "80ed7ac64f5967a140401e8d7bf0587d2e5087492de9e94077a7f554ef6b18f0",
+        "Books_5.json.gz": "ded924d1d1a22bae499f1a1c2b39397104304bfdb24232a2dd0aa50e89cd37bb",
+    }
+
     def __init__(
         self,
         category: str = "books",
@@ -45,7 +50,7 @@ class AmazonDataset(RelBenchDataset):
         url = f"{self.url_prefix}/metaFiles2/meta_{url_key}.json.gz"
         path = pooch.retrieve(
             url,
-            known_hash=None,
+            known_hash=self.known_hashes.get(url.split("/")[-1], None),
             progressbar=True,
             processor=pooch.Decompress(),
         )
@@ -116,7 +121,7 @@ class AmazonDataset(RelBenchDataset):
             url = f"{self.url_prefix}/categoryFiles/{url_key}.json.gz"
         path = pooch.retrieve(
             url,
-            known_hash=None,
+            known_hash=self.known_hashes.get(url.split("/")[-1], None),
             progressbar=True,
             processor=pooch.Decompress(),
         )

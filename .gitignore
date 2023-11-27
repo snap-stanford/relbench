@@ -2,4 +2,3 @@ __pycache__
 .ipynb_checkpoints
 /examples/data
 /data
-/staging_data

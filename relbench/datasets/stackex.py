@@ -3,12 +3,13 @@ from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 import pooch
+from tqdm import tqdm
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.stackex import EngageTask, VotesTask
-from relbench.utils import unzip_processor, to_unix_time
+from relbench.utils import to_unix_time, unzip_processor
+
 
 class StackExDataset(RelBenchDataset):
     name = "rel-stackex"
@@ -26,15 +27,14 @@ class StackExDataset(RelBenchDataset):
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
-        url = 'https://relbench.stanford.edu/data/relbench-forum-raw.zip'
-        
+        url = "https://relbench.stanford.edu/data/relbench-forum-raw.zip"
         path = pooch.retrieve(
             url,
-            known_hash=None,
+            known_hash="ad3bf96f35146d50ef48fa198921685936c49b95c6b67a8a47de53e90036745f",
             progressbar=True,
             processor=unzip_processor,
         )
-        path = os.path.join(path, 'raw')
+        path = os.path.join(path, "raw")
         users = pd.read_csv(os.path.join(path, "Users.csv"))
         comments = pd.read_csv(os.path.join(path, "Comments.csv"))
         posts = pd.read_csv(os.path.join(path, "Posts.csv"))
