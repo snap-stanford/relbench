@@ -9,10 +9,10 @@ from relbench.utils import get_df_in_window
 from tqdm import tqdm
 
 
-class UserContributionTask(RelBenchTask):
+class EngageTask(RelBenchTask):
     r"""Predict if a user will make any votes/posts/comments in the next 3 years."""
 
-    name = "user_contribution"
+    name = "rel-stackex-engage"
     task_type = "binary_classification"
     entity_col = "OwnerUserId"
     entity_table = "users"
@@ -106,9 +106,9 @@ class UserContributionTask(RelBenchTask):
         )
 
 
-class QuestionPopularityTask(RelBenchTask):
+class VotesTask(RelBenchTask):
     r"""Predict the number of upvotes that a question that is posted within the last 2 years will receive in the next 6 months. ?"""
-    name = "question_popularity"
+    name = "rel-stackex-votes"
     task_type = "regression"
     entity_col = "PostId"
     entity_table = "posts"

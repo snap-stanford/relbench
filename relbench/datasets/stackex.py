@@ -7,14 +7,14 @@ from tqdm import tqdm
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.stack_exchange import UserContributionTask, QuestionPopularityTask
+from relbench.tasks.stackex import EngageTask, VotesTask
 from relbench.utils import unzip_processor, to_unix_time
 
-class StackExchangeDataset(RelBenchDataset):
-    name = "stack_exchange"
+class StackExDataset(RelBenchDataset):
+    name = "rel-stackex"
     val_timestamp = pd.Timestamp("2019-01-01")
     test_timestamp = pd.Timestamp("2021-01-01")
-    task_cls_list = [UserContributionTask, QuestionPopularityTask]
+    task_cls_list = [EngageTask, VotesTask]
 
     def __init__(
         self,

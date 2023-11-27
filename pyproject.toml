@@ -15,23 +15,30 @@ classifiers = [
 requires-python=">=3.8"
 keywords=[]
 dependencies=[
-	# TODO: add once dependencies are stable
-	# for now we install dependencies with conda (env.yaml)
+	"pandas",
+    "pooch",
+    "pyarrow",
+    "numpy",
+    "duckdb",
+    "requests",
+    "tqdm",
+    "scikit-learn",
+    "typing-extensions"
 ]
 
 [project.optional-dependencies]
 example=[
-	# "torch",
+	"torch",
 	# TODO: revert to non-git
-	# "pytorch_frame@git+https://github.com/pyg-team/pytorch-frame",
-	# "torch_geometric",
+	"pytorch_frame@git+https://github.com/pyg-team/pytorch-frame",
+	"torch_geometric",
 ]
 test=[
-	# "pytest",
-	# "pytest-cov",
+	"pytest",
+	"pytest-cov",
 ]
 dev=[
-	# "pre-commit",
+	#"pre-commit",
 ]
 
 [project.urls]
