@@ -16,14 +16,14 @@ requires-python=">=3.8"
 keywords=[]
 dependencies=[
 	"pandas",
-    "pooch",
-    "pyarrow",
-    "numpy",
-    "duckdb",
-    "requests",
-    "tqdm",
-    "scikit-learn",
-    "typing-extensions"
+	"pooch",
+	"pyarrow",
+	"numpy",
+	"duckdb",
+	"requests",
+	"tqdm",
+	"scikit-learn",
+	"typing-extensions"
 ]
 
 [project.optional-dependencies]
@@ -35,7 +35,6 @@ example=[
 ]
 test=[
 	"pytest",
-	"pytest-cov",
 ]
 dev=[
 	"pre-commit",
