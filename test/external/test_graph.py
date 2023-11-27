@@ -2,12 +2,12 @@ from torch_frame import TensorFrame
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
 
-from relbench.datasets import FakeReviewsDataset
+from relbench.datasets import FakeDataset
 from relbench.external.graph import get_stype_proposal, make_pkey_fkey_graph
 
 
 def test_make_pkey_fkey_graph():
-    dataset = FakeReviewsDataset()
+    dataset = FakeDataset()
 
     data = make_pkey_fkey_graph(
         dataset.db,

@@ -1,13 +1,13 @@
-from relbench.datasets import FakeReviewsDataset
+from relbench.datasets import FakeDataset
 
 
 def test_fake_reviews_dataset():
-    dataset = FakeReviewsDataset()
-    assert str(dataset) == "FakeReviewsDataset()"
-    assert dataset.task_names == ["customer_churn", "customer_ltv"]
+    dataset = FakeDataset()
+    assert str(dataset) == "FakeDataset()"
+    assert dataset.task_names == ["rel-amazon-churn", "rel-amazon-ltv"]
 
-    task = dataset.get_task("customer_churn", process=True)
-    assert str(task) == "CustomerChurnTask(dataset=FakeReviewsDataset())"
+    task = dataset.get_task("rel-amazon-churn", process=True)
+    assert str(task) == "ChurnTask(dataset=FakeDataset())"
 
     train_table = task.train_table
     val_table = task.val_table
