@@ -2,7 +2,7 @@ import hashlib
 import os
 import shutil
 import tempfile
-from dataclasses import dataclass
+from enum import Enum
 from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
@@ -17,7 +17,7 @@ from relbench.data.table import Table
 from relbench.utils import unzip_processor
 
 if TYPE_CHECKING:
-    from relbench.data import BenchmarkDataset, Dataset
+    from relbench.data import Dataset
 
 
 class Task:
@@ -117,9 +117,21 @@ class Task:
         return {fn.__name__: fn(target, pred) for fn in metrics}
 
 
+class TaskType(Enum):
+    r"""The type of the task.
+
+    Attributes:
+        REGRESSION: Regression task.
+        MULTICLASS_CLASSIFICATION: Multi-class classification task.
+        BINARY_CLASSIFICATION: Binary classification task.
+    """
+    REGRESSION = "regression"
+    BINARY_CLASSIFICATION = "binary_classification"
+
+
 class RelBenchTask(Task):
     name: str
-    task_type: str
+    task_type: TaskType
     entity_col: str
     entity_table: str
     time_col: str

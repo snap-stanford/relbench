@@ -4,16 +4,17 @@ from typing import Dict
 import pandas as pd
 import torch
 import torch_frame
-from rtb.data.task import TaskType
-from rtb.datasets import get_dataset
 from text_embedder import GloveTextEmbedding
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
 from torch_frame.gbdt import XGBoost
 from torch_frame.typing import Metric
 
+from relbench.data.task import TaskType
+from relbench.datasets import get_dataset
+
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rtb-forum")
+parser.add_argument("--dataset", type=str, default="rel-stackex")
 parser.add_argument("--task", type=str, default="UserSumCommentScoresTask")
 args = parser.parse_args()
 
@@ -32,17 +33,10 @@ val_table = dataset.make_val_table(args.task)
 test_table = dataset.make_test_table(args.task)
 
 dfs: Dict[str, pd.DataFrame] = {}
-if args.dataset in {"rtb-forum", "relbench-forum"}:
-    if args.dataset == "rtb-forum":
-        col_to_stype = {
-            "Reputation": torch_frame.numerical,
-            "AboutMe": torch_frame.text_embedded,
-            "Age": torch_frame.numerical,
-        }
-    elif args.dataset == "relbench-forum":
-        col_to_stype = {
-            "AboutMe": torch_frame.text_embedded,
-        }
+if args.dataset == "rel-stackex":
+    col_to_stype = {
+        "AboutMe": torch_frame.text_embedded,
+    }
     user_table = dataset.db.tables["users"]
     user_df = user_table.df[[user_table.pkey_col, *col_to_stype.keys()]]
 

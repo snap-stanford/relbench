@@ -6,14 +6,6 @@ from typing import Dict, List
 
 import torch
 import torch_frame
-from rtb.data.task import TaskType
-from rtb.datasets import get_dataset
-from rtb.external.graph import (
-    get_stype_proposal,
-    get_train_table_input,
-    make_pkey_fkey_graph,
-)
-from rtb.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
 from torch.nn import BCEWithLogitsLoss, L1Loss
@@ -26,15 +18,18 @@ from torch_geometric.typing import EdgeType, NodeType
 from torchmetrics import AUROC, AveragePrecision, MeanAbsoluteError
 from tqdm import tqdm
 
+from relbench.data.task import TaskType
+from relbench.datasets import get_dataset
+from relbench.external.graph import (
+    get_stype_proposal,
+    get_train_table_input,
+    make_pkey_fkey_graph,
+)
+from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
+
 # Stores the informative text columns to retain for each table:
 dataset_to_informative_text_cols = {}
-dataset_to_informative_text_cols["rtb-forum"] = {
-    "postHistory": ["Text"],
-    "users": ["AboutMe"],
-    "posts": ["Body", "Title", "Tags"],
-    "comments": ["Text"],
-}
-dataset_to_informative_text_cols["relbench-forum"] = {
+dataset_to_informative_text_cols["rel-stackex"] = {
     "postHistory": ["Text"],
     "users": ["AboutMe"],
     "posts": ["Body", "Title", "Tags"],
@@ -42,7 +37,7 @@ dataset_to_informative_text_cols["relbench-forum"] = {
 }
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="relbench-forum")
+parser.add_argument("--dataset", type=str, default="rel-stackex")
 parser.add_argument("--task", type=str, default="UserContributionTask")
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=100)
@@ -57,17 +52,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 root_dir = "./data"
 
-dataset = get_dataset(name=args.dataset, root=root_dir)
-if args.task not in dataset.tasks:
-    raise ValueError(
-        f"'{args.dataset}' does not support the given task {args.task}. "
-        f"Please choose the task from {list(dataset.tasks.keys())}."
-    )
-
-task = dataset.tasks[args.task]
-train_table = dataset.make_train_table(args.task)
-val_table = dataset.make_val_table(args.task)
-test_table = dataset.make_test_table(args.task)
+dataset = get_dataset(name=args.dataset)
+task = dataset.get_task("rel-stackex-engage")
 
 col_to_stype_dict = get_stype_proposal(dataset.db)
 informative_text_cols: Dict = dataset_to_informative_text_cols[args.dataset]
@@ -95,11 +81,11 @@ sampler = NeighborSampler(  # Initialize sampler only once.
 
 loader_dict: Dict[str, NodeLoader] = {}
 for split, table in [
-    ("train", train_table),
-    ("val", val_table),
-    ("test", test_table),
+    ("train", task.train_table),
+    ("val", task.val_table),
+    ("test", task.test_table),
 ]:
-    table_input = get_train_table_input(train_table=table, task=task)
+    table_input = get_train_table_input(table=table, task=task)
     entity_table = table_input.nodes[0]
     loader_dict[split] = NodeLoader(
         data,

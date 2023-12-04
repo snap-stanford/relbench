@@ -38,16 +38,6 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
         # Take the first 10,000 rows for quick stype inference.
         inferred_col_to_stype = infer_df_stype(table.df)
 
-        # Temporarily removing time_col since StypeEncoder for
-        # stype.timestamp is not yet supported.
-        # TODO: Drop the removing logic once StypeEncoder is supported.
-        # https://github.com/pyg-team/pytorch-frame/pull/225
-        inferred_col_to_stype = {
-            col_name: inferred_stype
-            for col_name, inferred_stype in inferred_col_to_stype.items()
-            if inferred_stype != stype.timestamp
-        }
-
         # Remove pkey, fkey columns since they will not be used as input
         # feature.
         if table.pkey_col is not None:
@@ -102,7 +92,7 @@ def make_pkey_fkey_graph(
         dataset = Dataset(
             df=df,
             col_to_stype=col_to_stype,
-            text_embedder_cfg=text_embedder_cfg,
+            col_to_text_embedder_cfg=text_embedder_cfg,
         ).materialize(path=path)
 
         data[table_name].tf = dataset.tensor_frame

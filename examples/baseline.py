@@ -2,14 +2,15 @@ import argparse
 from typing import Dict
 
 import torch
-from rtb.data import Table
-from rtb.data.task import TaskType
-from rtb.datasets import get_dataset
 from torch import Tensor
 from torchmetrics import AUROC, AveragePrecision, MeanAbsoluteError
 
+from relbench.data import Table
+from relbench.data.task import TaskType
+from relbench.datasets import get_dataset
+
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="relbench-forum")
+parser.add_argument("--dataset", type=str, default="rel-stackex")
 parser.add_argument("--task", type=str, default="UserContributionTask")
 args = parser.parse_args()
 
