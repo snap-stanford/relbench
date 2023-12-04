@@ -122,6 +122,8 @@ def make_pkey_fkey_graph(
             edge_type = (pkey_table_name, f"p2f_{fkey_name}", table_name)
             data[edge_type].edge_index = edge_index
 
+    data.validate()
+
     return data
 
 
