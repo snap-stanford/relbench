@@ -4,10 +4,9 @@ import shutil
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import List, Tuple, Type, Union
 
 import pandas as pd
-import pooch
 
 from relbench import _pooch
 from relbench.data.database import Database
@@ -38,6 +37,11 @@ class Dataset:
         return list(self.task_cls_dict.keys())
 
     def get_task(self, task_name: str, *args, **kwargs) -> Task:
+        if task_name not in self.task_cls_dict:
+            raise ValueError(
+                f"{self.__class__.name} does not support the task {task_name}."
+                f"Please choose from {self.task_names}."
+            )
         return self.task_cls_dict[task_name](self, *args, **kwargs)
 
 

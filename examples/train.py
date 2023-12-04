@@ -1,21 +1,21 @@
 import argparse
 import copy
 import math
-import os
 from typing import Dict, List
 
+import numpy as np
 import torch
 import torch_frame
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
+from torch_frame.data import TensorFrame
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NodeLoader
 from torch_geometric.nn import MLP
 from torch_geometric.sampler import NeighborSampler
 from torch_geometric.typing import EdgeType, NodeType
-from torchmetrics import AUROC, AveragePrecision, MeanAbsoluteError
 from tqdm import tqdm
 
 from relbench.data.task import TaskType
@@ -30,15 +30,16 @@ from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalE
 # Stores the informative text columns to retain for each table:
 dataset_to_informative_text_cols = {}
 dataset_to_informative_text_cols["rel-stackex"] = {
-    "postHistory": ["Text"],
-    "users": ["AboutMe"],
-    "posts": ["Body", "Title", "Tags"],
-    "comments": ["Text"],
+    # TODO: Bring back once bug is fixed.
+    # "postHistory": ["Text"],
+    # "users": ["AboutMe"],
+    # "posts": ["Body", "Title", "Tags"],
+    # "comments": ["Text"],
 }
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
-parser.add_argument("--task", type=str, default="UserContributionTask")
+parser.add_argument("--task", type=str, default="rel-stackex-engage")
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=100)
 parser.add_argument("--batch_size", type=int, default=512)
@@ -53,7 +54,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 root_dir = "./data"
 
 dataset = get_dataset(name=args.dataset)
-task = dataset.get_task("rel-stackex-engage")
+task = dataset.get_task(args.task)
 
 col_to_stype_dict = get_stype_proposal(dataset.db)
 informative_text_cols: Dict = dataset_to_informative_text_cols[args.dataset]
@@ -70,8 +71,10 @@ data: HeteroData = make_pkey_fkey_graph(
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
+    # cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
+
+data.validate()
 
 sampler = NeighborSampler(  # Initialize sampler only once.
     data,
@@ -102,20 +105,17 @@ for split, table in [
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
     out_channels = 1
     loss_fn = BCEWithLogitsLoss()
-    metrics = {
-        "AUROC": AUROC(task="binary").to(device),
-        "AP": AveragePrecision(task="binary").to(device),
-    }
-    tune_metric = "AUROC"
+    tune_metric = "roc_auc"
     higher_is_better = True
 elif task.task_type == TaskType.REGRESSION:
     out_channels = 1
     loss_fn = L1Loss()
-    metrics = {
-        "MAE": MeanAbsoluteError(squared=False).to(device),
-    }
-    tune_metric = "MAE"
+    tune_metric = "mae"
     higher_is_better = False
+
+import pdb
+
+pdb.set_trace()
 
 
 class Model(torch.nn.Module):
@@ -150,7 +150,7 @@ class Model(torch.nn.Module):
 
     def forward(
         self,
-        tf_dict: Dict[NodeType, torch_frame.TensorFrame],
+        tf_dict: Dict[NodeType, TensorFrame],
         edge_index_dict: Dict[EdgeType, Tensor],
         seed_time: Tensor,
         time_dict: Dict[NodeType, Tensor],
@@ -174,15 +174,21 @@ class Model(torch.nn.Module):
         return self.head(x_dict[entity_table])
 
 
+import pdb
+
+pdb.set_trace()
+
 model = Model().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
+import pdb
+
+pdb.set_trace()
 
 
 def train() -> Dict[str, float]:
     model.train()
 
-    for metric in metrics.values():
-        metric.reset()
     loss_accum = count_accum = 0
     for batch in tqdm(loader_dict["train"]):
         batch = batch.to(device)
@@ -205,24 +211,14 @@ def train() -> Dict[str, float]:
         loss_accum += float(loss) * pred.size(0)
         count_accum += pred.size(0)
 
-        for metric in metrics.values():
-            y = batch[entity_table].y
-            if task.task_type == TaskType.BINARY_CLASSIFICATION:
-                y = y.to(torch.long)
-            metric.update(pred, y)
-
-    metric_outputs = {name: float(metric.compute()) for name, metric in metrics.items()}
-    metric_outputs["loss"] = loss_accum / count_accum
-
-    return metric_outputs
+    return loss_accum / count_accum
 
 
 @torch.no_grad()
-def test(loader: NodeLoader) -> float:
+def test(loader: NodeLoader) -> np.ndarray:
     model.eval()
 
-    for metric in metrics.values():
-        metric.reset()
+    pred_list = []
     for batch in tqdm(loader):
         batch = batch.to(device)
         pred = model(
@@ -235,22 +231,17 @@ def test(loader: NodeLoader) -> float:
             batch.num_sampled_edges_dict,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
-
-        for metric in metrics.values():
-            y = batch[entity_table].y
-            if task.task_type == TaskType.BINARY_CLASSIFICATION:
-                y = y.to(torch.long)
-            metric.update(pred, y)
-
-    return {name: float(metric.compute()) for name, metric in metrics.items()}
+        pred_list.append(pred.detach().cpu())
+    return torch.cat(pred_list, dim=0).numpy()
 
 
 state_dict = None
 best_val_metric = 0 if higher_is_better else math.inf
 for epoch in range(1, args.epochs + 1):
-    train_metrics = train()
-    val_metrics = test(loader_dict["val"])
-    print(f"Epoch: {epoch:02d}, Train: {train_metrics}, Val: {val_metrics}")
+    train_loss = train()
+    val_pred = test(loader_dict["val"])
+    val_metrics = task.evaluate(val_pred, val_pred)
+    print(f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}")
 
     if (higher_is_better and val_metrics[tune_metric] > best_val_metric) or (
         not higher_is_better and val_metrics[tune_metric] < best_val_metric
@@ -259,12 +250,14 @@ for epoch in range(1, args.epochs + 1):
         state_dict = copy.deepcopy(model.state_dict())
 
 model.load_state_dict(state_dict)
-val_metrics = test(loader_dict["val"])
-print(f"Best Val: {val_metrics}")
+val_pred = test(loader_dict["val"])
+val_metrics = task.evaluate(val_pred, val_pred)
+print(f"Best Val metrics: {val_metrics}")
 
 # Test if the correct checkpoint gets picked up
 assert val_metrics[tune_metric] == best_val_metric
 
 # NOTE: Commented out for now since test labels are not attached.
-# test_metric = test(loader_dict["test"])
-# print(f"Test {metric_name}: {test_metric:.4f}")
+test_pred = test(loader_dict["test"])
+test_metrics = task.evaluate(test_pred)
+print(f"Best test metrics: {test_metrics}")
