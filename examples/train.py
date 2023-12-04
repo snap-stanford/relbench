@@ -113,10 +113,6 @@ elif task.task_type == TaskType.REGRESSION:
     tune_metric = "mae"
     higher_is_better = False
 
-import pdb
-
-pdb.set_trace()
-
 
 class Model(torch.nn.Module):
     def __init__(self):
@@ -174,16 +170,8 @@ class Model(torch.nn.Module):
         return self.head(x_dict[entity_table])
 
 
-import pdb
-
-pdb.set_trace()
-
 model = Model().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-
-import pdb
-
-pdb.set_trace()
 
 
 def train() -> Dict[str, float]:
