@@ -105,9 +105,9 @@ def make_pkey_fkey_graph(
         # Add edges:
         for fkey_name, pkey_table_name in table.fkey_col_to_pkey_table.items():
             pkey_index = table.df[fkey_name]
-            mask = ~pkey_index.isna()
+            avail_pkeys = db.table_dict[pkey_table_name].df[db.table_dict[pkey_table_name].pkey_col].values
+            mask = ((~pkey_index.isna()) & (pkey_index.isin(avail_pkeys))).astype(bool)
             fkey_index = torch.arange(len(pkey_index))
-
             # Filter dangling foreign keys:
             pkey_index = torch.from_numpy(pkey_index[mask].astype(int).values)
             fkey_index = fkey_index[torch.from_numpy(mask.values)]
