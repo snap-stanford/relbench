@@ -60,6 +60,46 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
     return inferred_col_to_stype_dict
 
 
+def fkey_to_edge_index(
+        fkey: pd.Series,
+        pkey: pd.Series,
+        filter_null: bool = True,
+):
+    r"""Constructs the edges between foreign key and primary key columns.
+    Args:
+        fkey (pandas.Series): The column containing foreign keys
+        pkey (pandas.Series): The referenced column containing primary keys
+        filter_null (bool, Optional): Whether to ignore null values
+
+    Returns:
+        Tensor: The :obj:`edge_index` tensor containing the edges.
+            Note that the foreign key table is treated as the source node type
+            while the primary key table is treated as the destination.
+    """
+    df_fkey = fkey.to_frame('fkey')
+    df_fkey['idx_fkey'] = np.arange(df_fkey.shape[0])
+
+    df_pkey = pkey.to_frame('pkey')
+    df_pkey['idx_pkey'] = np.arange(df_pkey.shape[0])
+
+    if filter_null:
+        df_fkey = df_fkey[~df_fkey['fkey'].isnull()]
+        df_pkey = df_pkey[~df_pkey['pkey'].isnull()]
+
+    merged = pd.merge(
+        left=df_fkey,
+        right=df_pkey,
+        how='inner',
+        left_on='fkey',
+        right_on='pkey',
+        validate='many_to_one'
+    )
+
+    edge_idx = merged[['idx_fkey', 'idx_pkey']].to_numpy().transpose()
+    edge_idx = torch.tensor(edge_idx, dtype=torch.long)
+    return edge_idx
+
+
 def make_pkey_fkey_graph(
     db: Database,
     col_to_stype_dict: Dict[str, Dict[str, stype]],
@@ -102,7 +142,7 @@ def make_pkey_fkey_graph(
         dataset = Dataset(
             df=df,
             col_to_stype=col_to_stype,
-            text_embedder_cfg=text_embedder_cfg,
+            col_to_text_embedder_cfg=text_embedder_cfg,
         ).materialize(path=path)
 
         data[table_name].tf = dataset.tensor_frame
@@ -114,21 +154,17 @@ def make_pkey_fkey_graph(
 
         # Add edges:
         for fkey_name, pkey_table_name in table.fkey_col_to_pkey_table.items():
-            pkey_index = table.df[fkey_name]
-            mask = ~pkey_index.isna()
-            fkey_index = torch.arange(len(pkey_index))
-
-            # Filter dangling foreign keys:
-            pkey_index = torch.from_numpy(pkey_index[mask].astype(int).values)
-            fkey_index = fkey_index[torch.from_numpy(mask.values)]
+            pkey_table = db.table_dict[pkey_table_name]
+            pkey = pkey_table.df[pkey_table.pkey_col]
+            fkey = table.df[fkey_name]
 
             # fkey -> pkey edges
-            edge_index = torch.stack([fkey_index, pkey_index], dim=0)
+            edge_index = fkey_to_edge_index(fkey=fkey, pkey=pkey)
             edge_type = (table_name, f"f2p_{fkey_name}", pkey_table_name)
             data[edge_type].edge_index = edge_index
 
             # pkey -> fkey edges
-            edge_index = torch.stack([pkey_index, fkey_index], dim=0)
+            edge_index = edge_index[[1, 0]].contiguous()
             edge_type = (pkey_table_name, f"p2f_{fkey_name}", table_name)
             data[edge_type].edge_index = edge_index
 
