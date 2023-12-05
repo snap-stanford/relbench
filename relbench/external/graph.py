@@ -61,9 +61,9 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
 
 
 def fkey_to_edge_index(
-        fkey: pd.Series,
-        pkey: pd.Series,
-        filter_null: bool = True,
+    fkey: pd.Series,
+    pkey: pd.Series,
+    filter_null: bool = True,
 ):
     r"""Constructs the edges between foreign key and primary key columns.
     Args:
@@ -76,26 +76,26 @@ def fkey_to_edge_index(
             Note that the foreign key table is treated as the source node type
             while the primary key table is treated as the destination.
     """
-    df_fkey = fkey.to_frame('fkey')
-    df_fkey['idx_fkey'] = np.arange(df_fkey.shape[0])
+    df_fkey = fkey.to_frame("fkey")
+    df_fkey["idx_fkey"] = np.arange(df_fkey.shape[0])
 
-    df_pkey = pkey.to_frame('pkey')
-    df_pkey['idx_pkey'] = np.arange(df_pkey.shape[0])
+    df_pkey = pkey.to_frame("pkey")
+    df_pkey["idx_pkey"] = np.arange(df_pkey.shape[0])
 
     if filter_null:
-        df_fkey = df_fkey[~df_fkey['fkey'].isnull()]
-        df_pkey = df_pkey[~df_pkey['pkey'].isnull()]
+        df_fkey = df_fkey[~df_fkey["fkey"].isnull()]
+        df_pkey = df_pkey[~df_pkey["pkey"].isnull()]
 
     merged = pd.merge(
         left=df_fkey,
         right=df_pkey,
-        how='inner',
-        left_on='fkey',
-        right_on='pkey',
-        validate='many_to_one'
+        how="inner",
+        left_on="fkey",
+        right_on="pkey",
+        validate="many_to_one",
     )
 
-    edge_idx = merged[['idx_fkey', 'idx_pkey']].to_numpy().transpose()
+    edge_idx = merged[["idx_fkey", "idx_pkey"]].to_numpy().transpose()
     edge_idx = torch.tensor(edge_idx, dtype=torch.long)
     return edge_idx
 
