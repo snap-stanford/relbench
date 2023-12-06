@@ -53,7 +53,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 root_dir = "./data"
 
-dataset = get_dataset(name=args.dataset)
+# TODO: remove process=True once correct process data is uploaded.
+dataset = get_dataset(name=args.dataset, process=True)
 task = dataset.get_task(args.task)
 
 col_to_stype_dict = get_stype_proposal(dataset.db)

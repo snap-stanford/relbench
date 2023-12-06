@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from typing import List, Tuple, Type, Union
 
+import numpy as np
 import pandas as pd
 
 from relbench import _pooch
@@ -26,8 +27,8 @@ class Dataset:
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
         self.task_cls_dict = {task_cls.name: task_cls for task_cls in task_cls_list}
-
         self.db = db.upto(test_timestamp)
+        self.validate_and_correct_db()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
@@ -43,6 +44,29 @@ class Dataset:
                 f"Please choose from {self.task_names}."
             )
         return self.task_cls_dict[task_name](self, *args, **kwargs)
+
+    def validate_and_correct_db(self):
+        r"""Validate and correct input db in-place."""
+        # Validate that all primary keys are consecutively index.
+
+        for table_name, table in self.db.table_dict.items():
+            if table.pkey_col is not None:
+                ser = table.df[table.pkey_col]
+                if not (ser.values == np.arange(len(ser))).all():
+                    raise RuntimeError(
+                        f"The primary key column {table.pkey_col} of table "
+                        f"{table_name} is not consecutively index."
+                    )
+
+        # Regard any foreign keys that are larger than primary key table as
+        # dangling foreign keys (represented as None).
+        for table_name, table in self.db.table_dict.items():
+            for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items():
+                num_pkeys = len(self.db.table_dict[pkey_table_name])
+                mask = table.df[fkey_col] >= num_pkeys
+                if mask.any():
+                    table.df.loc[mask, fkey_col] = None
+                assert (table.df[fkey_col] < num_pkeys).all()
 
 
 class RelBenchDataset(Dataset):

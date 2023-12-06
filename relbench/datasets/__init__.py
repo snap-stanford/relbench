@@ -14,7 +14,7 @@ dataset_cls_dict = {dataset_cls.name: dataset_cls for dataset_cls in dataset_cls
 dataset_names = list(dataset_cls_dict.keys())
 
 
-def get_dataset(name: str, *args, **kwargs) -> "RelBenchDataset":
+def get_dataset(name: str, *args, **kwargs) -> RelBenchDataset:
     r"""Returns a dataset by name."""
     return dataset_cls_dict[name](*args, **kwargs)
 

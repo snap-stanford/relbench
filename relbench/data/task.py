@@ -55,7 +55,6 @@ class Task:
     @lru_cache
     def train_table(self) -> Table:
         """Returns the train table for a task."""
-
         return self.make_table(
             self.dataset.db,
             pd.date_range(
@@ -69,7 +68,6 @@ class Task:
     @lru_cache
     def val_table(self) -> Table:
         r"""Returns the val table for a task."""
-
         return self.make_table(
             self.dataset.db,
             pd.Series([self.dataset.val_timestamp]),
@@ -88,17 +86,16 @@ class Task:
         )
 
     @property
-    @lru_cache
+    # @lru_cache
     def test_table(self) -> Table:
         r"""Returns the test table for a task."""
 
-        table = self.make_table(
+        self._full_test_table = self.make_table(
             self.dataset._full_db,
             pd.Series([self.dataset.test_timestamp]),
         )
-        self._full_test_table = table
 
-        return self._mask_input_cols(table)
+        return self._mask_input_cols(self._full_test_table)
 
     def evaluate(
         self,
@@ -146,7 +143,7 @@ class RelBenchTask(Task):
     test_table_name: str = "test"
     full_test_table_name: str = "full_test"
 
-    def __init__(self, dataset: "RelBenchDataset", process: bool = False) -> None:
+    def __init__(self, dataset, process: bool = False) -> None:
         self.process = process
 
         if not process:
