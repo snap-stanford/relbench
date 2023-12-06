@@ -105,12 +105,8 @@ def make_pkey_fkey_graph(
         # Add edges:
         for fkey_name, pkey_table_name in table.fkey_col_to_pkey_table.items():
             pkey_index = table.df[fkey_name]
-            # num_pkeys = len(db.table_dict[pkey_table_name].df)
             # Filter out dangling foreign keys
             mask = ~pkey_index.isna()
-            # Filter out pkeys that are not covered in primary key table.
-            # mask_pkey = pkey_index < num_pkeys
-            # mask = (mask_dangle & mask_pkey).astype(bool)
             fkey_index = torch.arange(len(pkey_index))
             # Filter dangling foreign keys:
             pkey_index = torch.from_numpy(pkey_index[mask].astype(int).values)
