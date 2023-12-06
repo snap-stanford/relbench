@@ -195,7 +195,7 @@ def train() -> Dict[str, float]:
         loss.backward()
         optimizer.step()
 
-        loss_accum += float(loss) * pred.size(0)
+        loss_accum += loss.detach().item() * pred.size(0)
         count_accum += pred.size(0)
 
     return loss_accum / count_accum
