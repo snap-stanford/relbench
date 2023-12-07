@@ -57,7 +57,6 @@ root_dir = "./data"
 
 # TODO: remove process=True once correct data is uploaded.
 dataset = get_dataset(name=args.dataset, process=True)
-# TODO: Setting process=True in get_task seems to be giving different outputs.
 task = dataset.get_task(args.task)
 
 col_to_stype_dict = get_stype_proposal(dataset.db)
