@@ -74,7 +74,7 @@ data: HeteroData = make_pkey_fkey_graph(
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    # cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
+    cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
 
 sampler = NeighborSampler(  # Initialize sampler only once.
@@ -98,7 +98,7 @@ for split, table in [
         input_time=table_input.time,
         transform=table_input.transform,
         batch_size=args.batch_size,
-        shuffle=False,  # split == "train",
+        shuffle=split == "train",
         num_workers=args.num_workers,
         persistent_workers=args.num_workers > 0,
     )
