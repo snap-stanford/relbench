@@ -66,7 +66,6 @@ class Dataset:
                 mask = table.df[fkey_col] >= num_pkeys
                 if mask.any():
                     table.df.loc[mask, fkey_col] = None
-                assert (table.df[fkey_col] < num_pkeys).all()
 
 
 class RelBenchDataset(Dataset):

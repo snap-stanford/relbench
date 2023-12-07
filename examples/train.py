@@ -15,6 +15,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.loader import NodeLoader
 from torch_geometric.nn import MLP
 from torch_geometric.sampler import NeighborSampler
+from torch_geometric.seed import seed_everything
 from torch_geometric.typing import EdgeType, NodeType
 from tqdm import tqdm
 
@@ -30,11 +31,10 @@ from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalE
 # Stores the informative text columns to retain for each table:
 dataset_to_informative_text_cols = {}
 dataset_to_informative_text_cols["rel-stackex"] = {
-    # TODO: Bring back once bug is fixed.
-    # "postHistory": ["Text"],
-    # "users": ["AboutMe"],
-    # "posts": ["Body", "Title", "Tags"],
-    # "comments": ["Text"],
+    "postHistory": ["Text"],
+    "users": ["AboutMe"],
+    "posts": ["Body", "Title", "Tags"],
+    "comments": ["Text"],
 }
 
 parser = argparse.ArgumentParser()
@@ -50,11 +50,13 @@ parser.add_argument("--num_workers", type=int, default=1)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+seed_everything(42)
 
 root_dir = "./data"
 
-# TODO: remove process=True once correct process data is uploaded.
+# TODO: remove process=True once correct data is uploaded.
 dataset = get_dataset(name=args.dataset, process=True)
+# TODO: Setting process=True in get_task seems to be giving different outputs.
 task = dataset.get_task(args.task)
 
 col_to_stype_dict = get_stype_proposal(dataset.db)
@@ -96,7 +98,7 @@ for split, table in [
         input_time=table_input.time,
         transform=table_input.transform,
         batch_size=args.batch_size,
-        shuffle=split == "train",
+        shuffle=False,  # split == "train",
         num_workers=args.num_workers,
         persistent_workers=args.num_workers > 0,
     )
@@ -227,7 +229,7 @@ best_val_metric = 0 if higher_is_better else math.inf
 for epoch in range(1, args.epochs + 1):
     train_loss = train()
     val_pred = test(loader_dict["val"])
-    val_metrics = task.evaluate(val_pred, val_pred)
+    val_metrics = task.evaluate(val_pred, task.val_table)
     print(f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}")
 
     if (higher_is_better and val_metrics[tune_metric] > best_val_metric) or (
@@ -238,7 +240,7 @@ for epoch in range(1, args.epochs + 1):
 
 model.load_state_dict(state_dict)
 val_pred = test(loader_dict["val"])
-val_metrics = task.evaluate(val_pred, val_pred)
+val_metrics = task.evaluate(val_pred, task.val_table)
 print(f"Best Val metrics: {val_metrics}")
 
 # Test if the correct checkpoint gets picked up

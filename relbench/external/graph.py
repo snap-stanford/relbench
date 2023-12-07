@@ -11,6 +11,7 @@ from torch_frame.data import Dataset
 from torch_frame.utils import infer_df_stype
 from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
+from torch_geometric.utils import sort_edge_index
 
 from relbench.data import Database, Table
 from relbench.data.task import Task
@@ -71,7 +72,7 @@ def make_pkey_fkey_graph(
 
     Returns:
         HeteroData: The heterogeneous :class:`PyG` object with
-            :class:`TensorFrame` feature..
+            :class:`TensorFrame` feature.
     """
     data = HeteroData()
     if cache_dir is not None:
@@ -80,6 +81,10 @@ def make_pkey_fkey_graph(
     for table_name, table in db.table_dict.items():
         # Materialize the tables into tensor frames:
         df = table.df
+        # Ensure that pkey is consecutive.
+        if table.pkey_col is not None:
+            assert (df[table.pkey_col].values == np.arange(len(df))).all()
+
         col_to_stype = col_to_stype_dict[table_name]
 
         if len(col_to_stype) == 0:  # Add constant feature in case df is empty:
@@ -104,23 +109,25 @@ def make_pkey_fkey_graph(
 
         # Add edges:
         for fkey_name, pkey_table_name in table.fkey_col_to_pkey_table.items():
-            pkey_index = table.df[fkey_name]
+            pkey_index = df[fkey_name]
             # Filter out dangling foreign keys
             mask = ~pkey_index.isna()
             fkey_index = torch.arange(len(pkey_index))
             # Filter dangling foreign keys:
             pkey_index = torch.from_numpy(pkey_index[mask].astype(int).values)
             fkey_index = fkey_index[torch.from_numpy(mask.values)]
+            # Ensure no dangling fkeys
+            assert (pkey_index < len(db.table_dict[pkey_table_name])).all()
 
             # fkey -> pkey edges
             edge_index = torch.stack([fkey_index, pkey_index], dim=0)
             edge_type = (table_name, f"f2p_{fkey_name}", pkey_table_name)
-            data[edge_type].edge_index = edge_index
+            data[edge_type].edge_index = sort_edge_index(edge_index)
 
             # pkey -> fkey edges
             edge_index = torch.stack([pkey_index, fkey_index], dim=0)
             edge_type = (pkey_table_name, f"p2f_{fkey_name}", table_name)
-            data[edge_type].edge_index = edge_index
+            data[edge_type].edge_index = sort_edge_index(edge_index)
 
     data.validate()
 
