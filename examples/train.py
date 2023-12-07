@@ -42,7 +42,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
 parser.add_argument("--task", type=str, default="rel-stackex-engage")
 parser.add_argument("--lr", type=float, default=0.01)
-parser.add_argument("--epochs", type=int, default=100)
+parser.add_argument("--epochs", type=int, default=3)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
@@ -244,9 +244,10 @@ val_metrics = task.evaluate(val_pred, task.val_table)
 print(f"Best Val metrics: {val_metrics}")
 
 # Test if the correct checkpoint gets picked up
-assert val_metrics[tune_metric] == best_val_metric
+assert math.isclose(
+    val_metrics[tune_metric], best_val_metric, rel_tol=1e-5, abs_tol=1e-5
+)
 
-# NOTE: Commented out for now since test labels are not attached.
 test_pred = test(loader_dict["test"])
 test_metrics = task.evaluate(test_pred)
 print(f"Best test metrics: {test_metrics}")
