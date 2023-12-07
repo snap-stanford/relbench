@@ -127,6 +127,11 @@ class Task:
             target_table = self._full_test_table
 
         target = target_table.df[self.target_col].to_numpy()
+        if len(pred) != len(target):
+            raise ValueError(
+                f"The length of pred and target must be the same (got "
+                f"{len(pred)} and {len(target)}, respectively)."
+            )
 
         return {fn.__name__: fn(target, pred) for fn in metrics}
 
