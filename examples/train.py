@@ -63,7 +63,7 @@ task = dataset.get_task(args.task)
 col_to_stype_dict = get_stype_proposal(dataset.db)
 informative_text_cols: Dict = dataset_to_informative_text_cols[args.dataset]
 for table_name, stype_dict in col_to_stype_dict.items():
-    for col_name, stype in list(stype_dict.items()):
+    for col_name, stype in stype_dict.items():
         # Remove text columns except for the informative ones:
         if stype == torch_frame.text_embedded:
             if col_name not in informative_text_cols.get(table_name, []):
