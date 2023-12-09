@@ -85,8 +85,6 @@ train_dataset = Dataset(
 
 tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
-# Add dummy y for conversion.
-dfs["test"][task.target_col] = dfs["train"][task.target_col][0]
 tf_test = train_dataset.convert_to_tensor_frame(dfs["test"])
 
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
@@ -96,7 +94,7 @@ else:
 
 model = XGBoost(task_type=train_dataset.task_type, metric=tune_metric)
 
-model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=20)
+model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=1)
 
 pred = model.predict(tf_test=tf_train).numpy()
 print(f"Train: {task.evaluate(pred, train_table)}")
