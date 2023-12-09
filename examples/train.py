@@ -20,6 +20,7 @@ from torch_geometric.seed import seed_everything
 from torch_geometric.typing import EdgeType, NodeType
 from tqdm import tqdm
 
+from relbench.data import RelBenchDataset
 from relbench.data.task import TaskType
 from relbench.datasets import get_dataset
 from relbench.external.graph import (
@@ -56,7 +57,7 @@ seed_everything(42)
 root_dir = "./data"
 
 # TODO: remove process=True once correct data is uploaded.
-dataset = get_dataset(name=args.dataset, process=True)
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
 task = dataset.get_task(args.task)
 
 col_to_stype_dict = get_stype_proposal(dataset.db)
