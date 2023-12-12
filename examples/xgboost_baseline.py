@@ -94,7 +94,7 @@ else:
 
 model = XGBoost(task_type=train_dataset.task_type, metric=tune_metric)
 
-model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
+model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=20)
 
 pred = model.predict(tf_test=tf_train).numpy()
 print(f"Train: {task.evaluate(pred, train_table)}")
