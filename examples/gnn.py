@@ -155,6 +155,7 @@ class Model(torch.nn.Module):
         batch_dict: Dict[NodeType, Tensor],
         num_sampled_nodes_dict: Dict[NodeType, List[int]],
         num_sampled_edges_dict: Dict[EdgeType, List[int]],
+        batch_size: int,
     ) -> Tensor:
         x_dict = self.encoder(tf_dict)
 
@@ -169,7 +170,7 @@ class Model(torch.nn.Module):
             num_sampled_edges_dict,
         )
 
-        return self.head(x_dict[entity_table])
+        return self.head(x_dict[entity_table][:batch_size])
 
 
 model = Model().to(device)
@@ -192,6 +193,7 @@ def train() -> Dict[str, float]:
             batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
+            batch_size=args.batch_size,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         loss = loss_fn(pred, batch[entity_table].y)
