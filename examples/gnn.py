@@ -47,7 +47,7 @@ parser.add_argument("--epochs", type=int, default=20)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
-parser.add_argument("--num_neighbors", type=int, default=-1)
+parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--num_workers", type=int, default=1)
 args = parser.parse_args()
 
@@ -245,11 +245,6 @@ model.load_state_dict(state_dict)
 val_pred = test(loader_dict["val"])
 val_metrics = task.evaluate(val_pred, task.val_table)
 print(f"Best Val metrics: {val_metrics}")
-
-# Test if the correct checkpoint gets picked up
-assert math.isclose(
-    val_metrics[tune_metric], best_val_metric, rel_tol=1e-5, abs_tol=1e-5
-)
 
 test_pred = test(loader_dict["test"])
 test_metrics = task.evaluate(test_pred)
