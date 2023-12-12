@@ -1,11 +1,9 @@
-import os
-from typing import Dict, Tuple
-
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
 from relbench.data import Database, RelBenchTask, Table
+from relbench.data.task import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
 from relbench.utils import get_df_in_window
 
@@ -14,7 +12,7 @@ class EngageTask(RelBenchTask):
     r"""Predict if a user will make any votes/posts/comments in the next 3 years."""
 
     name = "rel-stackex-engage"
-    task_type = "binary_classification"
+    task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "OwnerUserId"
     entity_table = "users"
     time_col = "timestamp"
@@ -111,7 +109,7 @@ class EngageTask(RelBenchTask):
 class VotesTask(RelBenchTask):
     r"""Predict the number of upvotes that a question that is posted within the last 2 years will receive in the next 6 months. ?"""
     name = "rel-stackex-votes"
-    task_type = "regression"
+    task_type = TaskType.REGRESSION
     entity_col = "PostId"
     entity_table = "posts"
     time_col = "timestamp"

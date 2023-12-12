@@ -1,9 +1,8 @@
-import os
-
 import duckdb
 import pandas as pd
 
 from relbench.data import Database, RelBenchTask, Table
+from relbench.data.task import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
 
 
@@ -12,7 +11,7 @@ class ChurnTask(RelBenchTask):
     in the time window, else 0."""
 
     name = "rel-amazon-churn"
-    task_type = "binary_classification"
+    task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "customer_id"
     entity_table = "customer"
     time_col = "timestamp"
@@ -69,7 +68,7 @@ class LTVTask(RelBenchTask):
     that the customer reviews in the time window."""
 
     name = "rel-amazon-ltv"
-    task_type = "regression"
+    task_type = TaskType.REGRESSION
     entity_col = "customer_id"
     entity_table = "customer"
     time_col = "timestamp"

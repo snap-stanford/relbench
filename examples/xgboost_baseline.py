@@ -4,92 +4,103 @@ from typing import Dict
 import pandas as pd
 import torch
 import torch_frame
-from rtb.data.task import TaskType
-from rtb.datasets import get_dataset
 from text_embedder import GloveTextEmbedding
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
 from torch_frame.gbdt import XGBoost
 from torch_frame.typing import Metric
+from torch_frame.utils import infer_df_stype
+
+from relbench.data.task import TaskType
+from relbench.datasets import get_dataset
+
+# Stores the informative text columns to retain for each table:
+dataset_to_informative_text_cols = {}
+dataset_to_informative_text_cols["rel-stackex"] = {
+    "postHistory": ["Text"],
+    "users": ["AboutMe"],
+    "posts": ["Body", "Title", "Tags"],
+    "comments": ["Text"],
+}
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rtb-forum")
-parser.add_argument("--task", type=str, default="UserSumCommentScoresTask")
+parser.add_argument("--dataset", type=str, default="rel-stackex")
+parser.add_argument("--task", type=str, default="rel-stackex-engage")
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-dataset = get_dataset(name=args.dataset, root="./data")
-if args.task not in dataset.tasks:
-    raise ValueError(
-        f"'{args.dataset}' does not support the given task {args.task}. "
-        f"Please choose the task from {list(dataset.tasks.keys())}."
-    )
+# TODO: remove process=True once correct data is uploaded.
+dataset = get_dataset(name=args.dataset, process=True)
+task = dataset.get_task(args.task)
 
-task = dataset.tasks[args.task]
-train_table = dataset.make_train_table(args.task)
-val_table = dataset.make_val_table(args.task)
-test_table = dataset.make_test_table(args.task)
+train_table = task.train_table
+val_table = task.val_table
+test_table = task.test_table
 
 dfs: Dict[str, pd.DataFrame] = {}
-if args.dataset in {"rtb-forum", "relbench-forum"}:
-    if args.dataset == "rtb-forum":
-        col_to_stype = {
-            "Reputation": torch_frame.numerical,
-            "AboutMe": torch_frame.text_embedded,
-            "Age": torch_frame.numerical,
-        }
-    elif args.dataset == "relbench-forum":
-        col_to_stype = {
-            "AboutMe": torch_frame.text_embedded,
-        }
-    user_table = dataset.db.tables["users"]
-    user_df = user_table.df[[user_table.pkey_col, *col_to_stype.keys()]]
+entity_table = dataset.db.table_dict[task.entity_table]
+entity_df = entity_table.df
+col_to_stype = infer_df_stype(entity_df)
+if entity_table.pkey_col is not None:
+    del col_to_stype[entity_table.pkey_col]
+for fkey_col in entity_table.fkey_col_to_pkey_table.keys():
+    del col_to_stype[fkey_col]
 
-    if task.task_type == TaskType.BINARY_CLASSIFICATION:
-        col_to_stype[task.target_col] = torch_frame.categorical
-    elif task.task_type == TaskType.REGRESSION:
-        col_to_stype[task.target_col] = torch_frame.numerical
+informative_text_cols: Dict = dataset_to_informative_text_cols[args.dataset].get(
+    task.entity_table, []
+)
+for col_name, stype in list(col_to_stype.items()):
+    # Remove text columns except for the informative ones:
+    if stype == torch_frame.text_embedded:
+        if col_name not in informative_text_cols:
+            del col_to_stype[col_name]
 
-    for split, table in [
-        ("train", train_table),
-        ("val", val_table),
-    ]:
-        # TODO Feature-engineer from neighboring tables.
+if task.task_type == TaskType.BINARY_CLASSIFICATION:
+    col_to_stype[task.target_col] = torch_frame.categorical
+elif task.task_type == TaskType.REGRESSION:
+    col_to_stype[task.target_col] = torch_frame.numerical
 
-        dfs[split] = table.df.merge(
-            user_df,
-            how="left",
-            left_on=list(table.fkey_col_to_pkey_table.keys())[0],
-            right_on=user_table.pkey_col,
-        )
+for split, table in [
+    ("train", train_table),
+    ("val", val_table),
+    ("test", test_table),
+]:
+    dfs[split] = table.df.merge(
+        entity_df,
+        how="left",
+        left_on=list(table.fkey_col_to_pkey_table.keys())[0],
+        right_on=entity_table.pkey_col,
+    )
 
 train_dataset = Dataset(
     df=dfs["train"],
     col_to_stype=col_to_stype,
     target_col=task.target_col,
-    text_embedder_cfg=TextEmbedderConfig(
+    col_to_text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device),
         batch_size=256,
     ),
 ).materialize()
 
 tf_train = train_dataset.tensor_frame
-tf_val = dataset.convert_to_tensor_frame(dfs["val"])
+tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
+tf_test = train_dataset.convert_to_tensor_frame(dfs["test"])
 
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
-    metric = Metric.ROCAUC
+    tune_metric = Metric.ROCAUC
 else:
-    metric = Metric.MAE
+    tune_metric = Metric.MAE
 
-model = XGBoost(task_type=train_dataset.task_type, metric=metric)
+model = XGBoost(task_type=train_dataset.task_type, metric=tune_metric)
 
-model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=20)
+model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
 
-pred = model.predict(tf_test=tf_train)
-score = model.compute_metric(tf_train.y, pred)
-print(f"Train {model.metric}: {score:.4f}")
+pred = model.predict(tf_test=tf_train).numpy()
+print(f"Train: {task.evaluate(pred, train_table)}")
 
-pred = model.predict(tf_test=tf_val)
-score = model.compute_metric(tf_val.y, pred)
-print(f"Val {model.metric}: {score:.4f}")
+pred = model.predict(tf_test=tf_val).numpy()
+print(f"Val: {task.evaluate(pred, val_table)}")
+
+pred = model.predict(tf_test=tf_test).numpy()
+print(f"Test: {task.evaluate(pred)}")

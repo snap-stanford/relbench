@@ -82,7 +82,13 @@ class Database:
         index_map_dict: Dict[str, pd.Series] = {}
         for table_name, table in self.table_dict.items():
             if table.pkey_col is not None:
+                if table.time_col is not None:
+                    table.df = table.df.sort_values(table.time_col).reset_index(
+                        drop=True
+                    )
+
                 ser = table.df[table.pkey_col]
+
                 if ser.nunique() != len(ser):
                     raise RuntimeError(
                         f"The primary key '{table.pkey_col}' "

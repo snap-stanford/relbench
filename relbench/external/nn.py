@@ -49,7 +49,8 @@ class HeteroEncoder(torch.nn.Module):
                 torch_frame.nn.MultiCategoricalEmbeddingEncoder,
                 {},
             ),
-            torch_frame.text_embedded: (torch_frame.nn.LinearEmbeddingEncoder, {}),
+            torch_frame.embedding: (torch_frame.nn.LinearEmbeddingEncoder, {}),
+            torch_frame.timestamp: (torch_frame.nn.TimestampEncoder, {}),
         },
     ):
         super().__init__()

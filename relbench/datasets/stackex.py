@@ -1,10 +1,7 @@
 import os
-from typing import Dict, Tuple
 
-import numpy as np
 import pandas as pd
 import pooch
-from tqdm import tqdm
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.stackex import EngageTask, VotesTask
