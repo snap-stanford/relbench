@@ -220,6 +220,10 @@ def test(loader: NodeLoader) -> np.ndarray:
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
         )
+
+        if task.task_type == TaskType.BINARY_CLASSIFICATION:
+            pred = torch.sigmoid(pred)
+
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         pred_list.append(pred.detach().cpu())
     return torch.cat(pred_list, dim=0).numpy()
