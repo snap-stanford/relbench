@@ -200,7 +200,7 @@ def train() -> Dict[str, float]:
 
 
 @torch.no_grad()
-def test(loader: NodeLoader) -> np.ndarray:
+def test(loader: NeighborLoader) -> np.ndarray:
     model.eval()
 
     pred_list = []
