@@ -91,7 +91,7 @@ for split, table in [
     loader_dict[split] = NeighborLoader(
         data,
         num_neighbors=[args.num_neighbors, args.num_neighbors],
-        time_attr="time")
+        time_attr="time",
         input_nodes=table_input.nodes,
         input_time=table_input.time,
         transform=table_input.transform,
