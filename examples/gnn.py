@@ -13,8 +13,8 @@ from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import TensorFrame
 from torch_geometric.data import HeteroData
-from torch_geometric.nn import MLP
 from torch_geometric.loader import NeighborLoader
+from torch_geometric.nn import MLP
 from torch_geometric.seed import seed_everything
 from torch_geometric.typing import EdgeType, NodeType
 from tqdm import tqdm
