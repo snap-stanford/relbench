@@ -78,7 +78,7 @@ data: HeteroData = make_pkey_fkey_graph(
 )
 
 
-            
+
 
 loader_dict: Dict[str, NodeLoader] = {}
 for split, table in [
