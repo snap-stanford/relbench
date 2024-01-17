@@ -95,6 +95,7 @@ for split, table in [
         input_nodes=table_input.nodes,
         input_time=table_input.time,
         transform=table_input.transform,
+        batch_size=args.batch_size,
         shuffle=split == "train",
         num_workers=args.num_workers,
         persistent_workers=args.num_workers > 0,
