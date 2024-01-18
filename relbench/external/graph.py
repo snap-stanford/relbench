@@ -36,7 +36,6 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
 
     inferred_col_to_stype_dict = {}
     for table_name, table in db.table_dict.items():
-        # Take the first 10,000 rows for quick stype inference.
         inferred_col_to_stype = infer_df_stype(table.df)
 
         # Remove pkey, fkey columns since they will not be used as input

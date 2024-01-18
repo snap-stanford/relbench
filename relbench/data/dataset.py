@@ -58,7 +58,7 @@ class Dataset:
                         f"{table_name} is not consecutively index."
                     )
 
-        # Regard any foreign keys that are larger than primary key table as
+        # Discard any foreign keys that are larger than primary key table as
         # dangling foreign keys (represented as None).
         for table_name, table in self.db.table_dict.items():
             for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items():

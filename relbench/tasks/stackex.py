@@ -107,7 +107,8 @@ class EngageTask(RelBenchTask):
 
 
 class VotesTask(RelBenchTask):
-    r"""Predict the number of upvotes that a question that is posted within the last 2 years will receive in the next 6 months. ?"""
+    r"""Predict the number of upvotes that a question that is posted within the
+    last 2 years will receive in the next 6 months. ?"""
     name = "rel-stackex-votes"
     task_type = TaskType.REGRESSION
     entity_col = "PostId"
