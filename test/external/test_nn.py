@@ -123,7 +123,7 @@ def test_train_fake_product_dataset(tmp_path):
                 batch.num_sampled_nodes_dict,
                 batch.num_sampled_edges_dict,
             )
-            pred = head(x_dict[entity_table]).squeeze(-1)
+            pred = head(x_dict[entity_table]).squeeze(-1).sigmoid()
             pred_list.append(pred.detach().cpu())
         pred = torch.cat(pred_list, dim=0).numpy()
         if split == "val":
