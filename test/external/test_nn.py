@@ -4,9 +4,8 @@ import torch
 import torch.nn.functional as F
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
-from torch_geometric.loader import NodeLoader
+from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
-from torch_geometric.sampler import NeighborSampler
 
 from relbench.data.task import TaskType
 from relbench.datasets import FakeDataset
@@ -49,18 +48,11 @@ def test_train_fake_product_dataset(tmp_path):
     assert x_dict["product"].size() == (30, 64)
     assert x.size() == (100, 1)
 
-    # Ensure that neighbor sampling works on train/val/test splits ############
-
-    sampler = NeighborSampler(
-        data,
-        num_neighbors=[-1, -1],
-        time_attr="time",
-    )
-
+    # Ensure that neighbor loading works on train/val/test splits ############
     task = dataset.get_task("rel-amazon-churn", process=True)
     assert task.task_type == TaskType.BINARY_CLASSIFICATION
 
-    loader_dict: Dict[str, NodeLoader] = {}
+    loader_dict: Dict[str, NeighborLoader] = {}
     for split, table in [
         ("train", task.train_table),
         ("val", task.val_table),
@@ -68,9 +60,10 @@ def test_train_fake_product_dataset(tmp_path):
     ]:
         table_input = get_train_table_input(table=table, task=task)
         entity_table = table_input.nodes[0]
-        loader = NodeLoader(
+        loader = NeighborLoader(
             data,
-            node_sampler=sampler,
+            num_neighbors=[-1, -1],
+            time_attr="time",
             input_nodes=table_input.nodes,
             input_time=table_input.time,
             transform=table_input.transform,
