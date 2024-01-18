@@ -13,9 +13,8 @@ from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import TensorFrame
 from torch_geometric.data import HeteroData
-from torch_geometric.loader import NodeLoader
+from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
-from torch_geometric.sampler import NeighborSampler
 from torch_geometric.seed import seed_everything
 from torch_geometric.typing import EdgeType, NodeType
 from tqdm import tqdm
@@ -78,13 +77,8 @@ data: HeteroData = make_pkey_fkey_graph(
     cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
 
-sampler = NeighborSampler(  # Initialize sampler only once.
-    data,
-    num_neighbors=[args.num_neighbors, args.num_neighbors],
-    time_attr="time",
-)
 
-loader_dict: Dict[str, NodeLoader] = {}
+loader_dict: Dict[str, NeighborLoader] = {}
 for split, table in [
     ("train", task.train_table),
     ("val", task.val_table),
@@ -92,9 +86,10 @@ for split, table in [
 ]:
     table_input = get_train_table_input(table=table, task=task)
     entity_table = table_input.nodes[0]
-    loader_dict[split] = NodeLoader(
+    loader_dict[split] = NeighborLoader(
         data,
-        node_sampler=sampler,
+        num_neighbors=[args.num_neighbors, args.num_neighbors],
+        time_attr="time",
         input_nodes=table_input.nodes,
         input_time=table_input.time,
         transform=table_input.transform,
@@ -205,7 +200,7 @@ def train() -> Dict[str, float]:
 
 
 @torch.no_grad()
-def test(loader: NodeLoader) -> np.ndarray:
+def test(loader: NeighborLoader) -> np.ndarray:
     model.eval()
 
     pred_list = []
