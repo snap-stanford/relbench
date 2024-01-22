@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+import duckdb
 
 from relbench.data import Database, RelBenchTask, Table
 from relbench.data.task import TaskType
@@ -26,77 +27,59 @@ class EngageTask(RelBenchTask):
         comments = db.table_dict["comments"].df
         votes = db.table_dict["votes"].df
         posts = db.table_dict["posts"].df
-        posts = posts[
-            posts.OwnerUserId != -1
-        ]  ## when user id is -1, it is stats exchange community, not a real person
-        posts = posts[posts.OwnerUserId.notnull()]  ## 1153 null posts
-
         users = db.table_dict["users"].df
-        votes = votes[votes.UserId.notnull()]
-        posts = posts[posts.OwnerUserId.notnull()]
 
-        comments = comments[
-            comments.UserId != -1
-        ]  ## when user id is -1, it is stats exchange community, not a real person
-        comments = comments[comments.UserId.notnull()]  ## 2439 null comments
+        df = duckdb.sql(
+            f"""
+            WITH 
+            ALL_ENGAGEMENT AS (
+                SELECT 
+                    p.id,
+                    p.owneruserid as userid,
+                    p.creationdate
+                FROM posts p
+                UNION
+                SELECT
+                    v.id,
+                    v.userid,
+                    v.creationdate
+                FROM votes v
+                UNION
+                SELECT
+                    c.id,
+                    c.userid,
+                    c.creationdate
+                FROM comments c
+            ),
+            
+            ACTIVE_USERS AS (
+                 SELECT 
+                    t.timestamp,
+                    u.id,
+                    count(distinct a.id) as n_engagement
+                FROM timestamp_df t
+                CROSS JOIN users u
+                LEFT JOIN all_engagement a
+                ON u.id = a.UserId
+                    and a.CreationDate <= t.timestamp
+                WHERE u.id != -1 
+                GROUP BY t.timestamp, u.id
+             )   
+                SELECT 
+                    u.timestamp,
+                    u.id as OwnerUserId,
+                    IF(count(distinct a.id) >= 1, 1, 0) as contribution
+                FROM active_users u
+                LEFT JOIN all_engagement a
+                ON u.id = a.UserId
+                    and a.CreationDate > u.timestamp 
+                    and a.CreationDate <= u.timestamp + INTERVAL '{self.timedelta}'
+                where u.n_engagement >= 1
+                GROUP BY u.timestamp, u.id
+            ;
 
-        def get_values_in_window(row, posts, users):
-            posts_window = get_df_in_window(posts, "CreationDate", row, self.timedelta)
-            comments_window = get_df_in_window(
-                comments, "CreationDate", row, self.timedelta
-            )
-            votes_window = get_df_in_window(votes, "CreationDate", row, self.timedelta)
-
-            user_made_posts_in_this_period = posts_window.OwnerUserId.unique()
-            user_made_comments_in_this_period = comments_window.UserId.unique()
-            user_made_votes_in_this_period = votes_window.UserId.unique()
-
-            # user_active_in_this_period = user_made_posts_in_this_period
-
-            user_active_in_this_period = np.union1d(
-                np.union1d(
-                    user_made_posts_in_this_period, user_made_comments_in_this_period
-                ),
-                user_made_votes_in_this_period,
-            )
-
-            users_exist = users[
-                users.CreationDate <= row["timestamp"]
-            ]  ## only looking at existing users
-            users_exist_ids = users_exist.Id.values
-
-            user_made_votes = votes[
-                votes.CreationDate <= row["timestamp"]
-            ].UserId.unique()
-            user_made_comments = comments[
-                comments.CreationDate <= row["timestamp"]
-            ].UserId.unique()
-            user_made_posts = posts[
-                posts.CreationDate <= row["timestamp"]
-            ].OwnerUserId.unique()
-            active_user_before_this_time = np.union1d(
-                np.union1d(user_made_votes, user_made_comments), user_made_posts
-            )
-            # active_user_before_this_time = user_made_posts
-            users_exist_and_active_ids = np.intersect1d(
-                users_exist_ids, active_user_before_this_time
-            )
-
-            user2churn = pd.DataFrame()
-            user2churn["OwnerUserId"] = users_exist_and_active_ids
-            user2churn["timestamp"] = row["timestamp"]
-
-            user2churn["contribution"] = user2churn.OwnerUserId.apply(
-                lambda x: 1 if x in user_active_in_this_period else 0
-            )  ## 1: contributed; 0: not contributed
-            return user2churn
-
-        tqdm.pandas()
-        # Apply function to each time window
-        res = timestamp_df.progress_apply(
-            lambda row: get_values_in_window(row, posts, users), axis=1
-        )
-        df = pd.concat(res.values)
+            """
+        ).df()
 
         return Table(
             df=df,
@@ -117,45 +100,36 @@ class VotesTask(RelBenchTask):
     target_col = "popularity"
     timedelta = pd.Timedelta(days=180)
     metrics = [mae, rmse]
-
+    
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for post_votes_next_month."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         votes = db.table_dict["votes"].df
-        votes = votes[votes.PostId.notnull()]
-        votes = votes[votes.VoteTypeId == 2]  ## upvotes
-
         posts = db.table_dict["posts"].df
-        posts = posts[
-            posts.OwnerUserId != -1
-        ]  ## when user id is -1, it is stats exchange community, not a real person
-        posts = posts[posts.OwnerUserId.notnull()]  ## 1153 null posts
+        
+        df = duckdb.sql(
+            f"""
+                SELECT 
+                    t.timestamp,
+                    p.id as PostId,
+                    count(distinct v.id) as popularity
+                FROM timestamp_df t
+                LEFT JOIN posts p 
+                ON p.CreationDate > t.timestamp - INTERVAL '730 days' 
+                and p.CreationDate <= t.timestamp 
+                and p.owneruserid != -1
+                and p.owneruserid is not null
+                and p.PostTypeId = 1
+                LEFT JOIN votes v
+                ON p.id = v.PostId 
+                and v.CreationDate > t.timestamp 
+                and v.CreationDate <= t.timestamp + INTERVAL '{self.timedelta}'
+                and v.votetypeid = 2
+                GROUP BY t.timestamp, p.id
+            ;
 
-        posts = posts[posts.PostTypeId == 1]  ## just looking at questions
-
-        def get_values_in_window(row, votes, posts):
-            votes_window = get_df_in_window(votes, "CreationDate", row, self.timedelta)
-            posts_exist = posts[
-                (posts.CreationDate <= row["timestamp"])
-                & (posts.CreationDate > (row["timestamp"] - pd.Timedelta(days=365 * 2)))
-            ]  ## posts exist and active defined by created in the last 2 years
-            posts_exist_ids = posts_exist.Id.values
-            train_table = pd.DataFrame()
-            train_table["PostId"] = posts_exist_ids
-            train_table["timestamp"] = row["timestamp"]
-
-            num_of_upvotes = dict(votes_window.groupby("PostId")["Id"].agg(len))
-            train_table["popularity"] = train_table.PostId.apply(
-                lambda x: num_of_upvotes[x] if x in num_of_upvotes else 0
-            )  ## default all existing users have 0 comment scores
-            return train_table
-
-        tqdm.pandas()
-        # Apply function to each row in df_b
-        res = timestamp_df.progress_apply(
-            lambda row: get_values_in_window(row, votes, posts), axis=1
-        )
-        df = pd.concat(res.values)
+            """
+        ).df()
 
         return Table(
             df=df,
