@@ -1,7 +1,7 @@
+import duckdb
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import duckdb
 
 from relbench.data import Database, RelBenchTask, Table
 from relbench.data.task import TaskType
@@ -31,9 +31,9 @@ class EngageTask(RelBenchTask):
 
         df = duckdb.sql(
             f"""
-            WITH 
+            WITH
             ALL_ENGAGEMENT AS (
-                SELECT 
+                SELECT
                     p.id,
                     p.owneruserid as userid,
                     p.creationdate
@@ -51,9 +51,9 @@ class EngageTask(RelBenchTask):
                     c.creationdate
                 FROM comments c
             ),
-            
+
             ACTIVE_USERS AS (
-                 SELECT 
+                 SELECT
                     t.timestamp,
                     u.id,
                     count(distinct a.id) as n_engagement
@@ -62,17 +62,17 @@ class EngageTask(RelBenchTask):
                 LEFT JOIN all_engagement a
                 ON u.id = a.UserId
                     and a.CreationDate <= t.timestamp
-                WHERE u.id != -1 
+                WHERE u.id != -1
                 GROUP BY t.timestamp, u.id
-             )   
-                SELECT 
+             )
+                SELECT
                     u.timestamp,
                     u.id as OwnerUserId,
                     IF(count(distinct a.id) >= 1, 1, 0) as contribution
                 FROM active_users u
                 LEFT JOIN all_engagement a
                 ON u.id = a.UserId
-                    and a.CreationDate > u.timestamp 
+                    and a.CreationDate > u.timestamp
                     and a.CreationDate <= u.timestamp + INTERVAL '{self.timedelta}'
                 where u.n_engagement >= 1
                 GROUP BY u.timestamp, u.id
@@ -100,29 +100,29 @@ class VotesTask(RelBenchTask):
     target_col = "popularity"
     timedelta = pd.Timedelta(days=180)
     metrics = [mae, rmse]
-    
+
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for post_votes_next_month."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         votes = db.table_dict["votes"].df
         posts = db.table_dict["posts"].df
-        
+
         df = duckdb.sql(
             f"""
-                SELECT 
+                SELECT
                     t.timestamp,
                     p.id as PostId,
                     count(distinct v.id) as popularity
                 FROM timestamp_df t
-                LEFT JOIN posts p 
-                ON p.CreationDate > t.timestamp - INTERVAL '730 days' 
-                and p.CreationDate <= t.timestamp 
+                LEFT JOIN posts p
+                ON p.CreationDate > t.timestamp - INTERVAL '730 days'
+                and p.CreationDate <= t.timestamp
                 and p.owneruserid != -1
                 and p.owneruserid is not null
                 and p.PostTypeId = 1
                 LEFT JOIN votes v
-                ON p.id = v.PostId 
-                and v.CreationDate > t.timestamp 
+                ON p.id = v.PostId
+                and v.CreationDate > t.timestamp
                 and v.CreationDate <= t.timestamp + INTERVAL '{self.timedelta}'
                 and v.votetypeid = 2
                 GROUP BY t.timestamp, p.id
