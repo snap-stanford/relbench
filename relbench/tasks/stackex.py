@@ -10,7 +10,7 @@ from relbench.utils import get_df_in_window
 
 
 class EngageTask(RelBenchTask):
-    r"""Predict if a user will make any votes/posts/comments in the next 3 years."""
+    r"""Predict if a user will make any votes/posts/comments in the next 2 years."""
 
     name = "rel-stackex-engage"
     task_type = TaskType.BINARY_CLASSIFICATION
