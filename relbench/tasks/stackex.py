@@ -10,7 +10,7 @@ from relbench.utils import get_df_in_window
 
 
 class EngageTask(RelBenchTask):
-    r"""Predict if a user will make any votes/posts/comments in the next 3 years."""
+    r"""Predict if a user will make any votes/posts/comments in the next 1 year."""
 
     name = "rel-stackex-engage"
     task_type = TaskType.BINARY_CLASSIFICATION
@@ -18,7 +18,7 @@ class EngageTask(RelBenchTask):
     entity_table = "users"
     time_col = "timestamp"
     target_col = "contribution"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365)
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -91,14 +91,14 @@ class EngageTask(RelBenchTask):
 
 class VotesTask(RelBenchTask):
     r"""Predict the number of upvotes that a question that is posted within the
-    last 2 years will receive in the next 6 months. ?"""
+    last 1 year will receive in the next 1 year."""
     name = "rel-stackex-votes"
     task_type = TaskType.REGRESSION
     entity_col = "PostId"
     entity_table = "posts"
     time_col = "timestamp"
     target_col = "popularity"
-    timedelta = pd.Timedelta(days=180)
+    timedelta = pd.Timedelta(days=365)
     metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -115,7 +115,7 @@ class VotesTask(RelBenchTask):
                     count(distinct v.id) as popularity
                 FROM timestamp_df t
                 LEFT JOIN posts p
-                ON p.CreationDate > t.timestamp - INTERVAL '730 days'
+                ON p.CreationDate > t.timestamp - INTERVAL '{self.timedelta} days'
                 and p.CreationDate <= t.timestamp
                 and p.owneruserid != -1
                 and p.owneruserid is not null

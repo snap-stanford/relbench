@@ -11,6 +11,7 @@ from torch_frame.gbdt import XGBoost
 from torch_frame.typing import Metric
 from torch_frame.utils import infer_df_stype
 
+from relbench.data import RelBenchDataset
 from relbench.data.task import TaskType
 from relbench.datasets import get_dataset
 
@@ -30,9 +31,9 @@ args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# TODO: remove process=True once correct data is uploaded.
-dataset = get_dataset(name=args.dataset, process=True)
-task = dataset.get_task(args.task)
+# TODO: remove process=True once correct data/task is uploaded.
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
+task = dataset.get_task(args.task, process=True)
 
 train_table = task.train_table
 val_table = task.val_table

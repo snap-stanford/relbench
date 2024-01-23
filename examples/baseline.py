@@ -18,9 +18,9 @@ args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# TODO: remove process=True once correct data is uploaded.
+# TODO: remove process=True once correct data/task is uploaded.
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
-task = dataset.get_task(args.task)
+task = dataset.get_task(args.task, process=True)
 
 train_table = task.train_table
 val_table = task.val_table

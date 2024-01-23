@@ -115,6 +115,7 @@ def test_train_fake_product_dataset(tmp_path):
 
     for split in ["val", "test"]:
         pred_list = []
+        target_list = []
         for batch in loader_dict[split]:
             x_dict = encoder(batch.tf_dict)
             x_dict = gnn(
@@ -125,6 +126,16 @@ def test_train_fake_product_dataset(tmp_path):
             )
             pred = head(x_dict[entity_table]).squeeze(-1).sigmoid()
             pred_list.append(pred.detach().cpu())
+            if split == "val":
+                target_list.append(batch[entity_table].y.cpu())
+        if split == "val":
+            target = torch.cat(target_list)
+            assert torch.allclose(
+                target,
+                torch.from_numpy(task.val_table.df[task.target_col].values).to(
+                    target.dtype
+                ),
+            )
         pred = torch.cat(pred_list, dim=0).numpy()
         if split == "val":
             task.evaluate(pred, task.val_table)
