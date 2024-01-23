@@ -55,9 +55,9 @@ seed_everything(42)
 
 root_dir = "./data"
 
-# TODO: remove process=True once correct data is uploaded.
+# TODO: remove process=True once correct data/task is uploaded.
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
-task = dataset.get_task(args.task)
+task = dataset.get_task(args.task, process=True)
 
 col_to_stype_dict = get_stype_proposal(dataset.db)
 informative_text_cols: Dict = dataset_to_informative_text_cols[args.dataset]
@@ -76,7 +76,6 @@ data: HeteroData = make_pkey_fkey_graph(
     ),
     cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
-
 
 loader_dict: Dict[str, NeighborLoader] = {}
 for split, table in [

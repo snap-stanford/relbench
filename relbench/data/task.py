@@ -38,7 +38,7 @@ class Task:
         self.entity_col = entity_col
 
         self._full_test_table = None
-        self._cached_table_dict = None
+        self._cached_table_dict = {}
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
@@ -57,7 +57,7 @@ class Task:
     @property
     def train_table(self) -> Table:
         """Returns the train table for a task."""
-        if self._cached_table_dict is None:
+        if "train" not in self._cached_table_dict:
             table = self.make_table(
                 self.dataset.db,
                 pd.date_range(
@@ -66,6 +66,7 @@ class Task:
                     freq=-self.timedelta,
                 ),
             )
+            self._cached_table_dict["train"] = table
         else:
             table = self._cached_table_dict["train"]
         return self.filter_dangling_entities(table)
@@ -73,11 +74,12 @@ class Task:
     @property
     def val_table(self) -> Table:
         r"""Returns the val table for a task."""
-        if self._cached_table_dict is None:
+        if "val" not in self._cached_table_dict:
             table = self.make_table(
                 self.dataset.db,
                 pd.Series([self.dataset.val_timestamp]),
             )
+            self._cached_table_dict["val"] = table
         else:
             table = self._cached_table_dict["val"]
         return self.filter_dangling_entities(table)
@@ -97,11 +99,12 @@ class Task:
     @property
     def test_table(self) -> Table:
         r"""Returns the test table for a task."""
-        if self._cached_table_dict is None:
+        if "full_test" not in self._cached_table_dict:
             full_table = self.make_table(
                 self.dataset._full_db,
                 pd.Series([self.dataset.test_timestamp]),
             )
+            self._cached_table_dict["full_test"] = full_table
         else:
             full_table = self._cached_table_dict["full_test"]
         self._full_test_table = self.filter_dangling_entities(full_table)
@@ -177,6 +180,7 @@ class RelBenchTask(Task):
                 processor=unzip_processor,
                 progressbar=True,
             )
+            # Load cached tables
             self._cached_table_dict = Database.load(task_path).table_dict
 
     def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
