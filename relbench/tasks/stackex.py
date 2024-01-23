@@ -91,7 +91,7 @@ class EngageTask(RelBenchTask):
 
 class VotesTask(RelBenchTask):
     r"""Predict the number of upvotes that a question that is posted within the
-    last 2 years will receive in the next 1 year. ?"""
+    last 1 year will receive in the next 1 year."""
     name = "rel-stackex-votes"
     task_type = TaskType.REGRESSION
     entity_col = "PostId"
@@ -115,7 +115,7 @@ class VotesTask(RelBenchTask):
                     count(distinct v.id) as popularity
                 FROM timestamp_df t
                 LEFT JOIN posts p
-                ON p.CreationDate > t.timestamp - INTERVAL '730 days'
+                ON p.CreationDate > t.timestamp - INTERVAL '{self.timedelta} days'
                 and p.CreationDate <= t.timestamp
                 and p.owneruserid != -1
                 and p.owneruserid is not null
