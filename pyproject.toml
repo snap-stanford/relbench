@@ -29,7 +29,7 @@ dependencies=[
 [project.optional-dependencies]
 example=[
 	"torch",
-	"pytorch_frame>=0.2.0",
+	"pytorch_frame>=0.2.1",
 	"torch_geometric",
 ]
 test=[
