@@ -161,17 +161,19 @@ class UserCommentOnPostTask(RelBenchLinkTask):
 
         
         # step 1: 
+
+        ########### Positive Link Sampling
+
         #     - make table with all (UserID, PostID) pairs for which UserID does comment on PostID in 24hrs. 
         #     - timestamp = time post was made. 
         #     - target = 1 for all rows
         
-        # step 2: 
-        #     - load negative pairs from disk and concatenate to table.
-        #     - neg_sampler = NegativeLinkSampler(name)
-        #     - for (UserID, PostID, timestamp) in table:
-        #         neg_UserID, neg_PostID, neg_timestamp = neg_sampler(UserID, PostID, timestamp)
-        #        add row = (neg_UserID, neg_PostID, neg_timestamp, 0) to df
         
+        ########### Negative Link Sampling 
+
+        # TODO (joshrob) check for false negatives
+        # TODO (joshrob) save negative links to disk to avoid resampling
+
         users = db.table_dict["users"].df[self.source_entity_col].to_numpy()
         posts = db.table_dict["posts"].df[self.destination_entity_col].to_numpy()  
         post_timestamps = db.table_dict["posts"].df[db.table_dict["posts"].time_col].to_numpy()
