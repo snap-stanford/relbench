@@ -1,12 +1,12 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchTask, Table
-from relbench.data.task import TaskType
+from relbench.data import Database, RelBenchNodeTask, Table
+from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
 
 
-class ChurnTask(RelBenchTask):
+class ChurnTask(RelBenchNodeTask):
     r"""Churn for a customer is 1 if the customer does not review any product
     in the time window, else 0."""
 
@@ -63,7 +63,7 @@ class ChurnTask(RelBenchTask):
         )
 
 
-class LTVTask(RelBenchTask):
+class LTVTask(RelBenchNodeTask):
     r"""LTV (life-time value) for a customer is the sum of prices of products
     that the customer reviews in the time window."""
 

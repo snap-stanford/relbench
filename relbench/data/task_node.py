@@ -6,19 +6,22 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
+
 import pandas as pd
 from numpy.typing import NDArray
 
 from relbench import _pooch
 from relbench.data.database import Database
 from relbench.data.table import Table
+from relbench.data.task_base import BaseTask, TaskType
+
 from relbench.utils import unzip_processor
 
 if TYPE_CHECKING:
     from relbench.data import Dataset
 
 
-class Task:
+class NodeTask(BaseTask):
     r"""A task on a dataset."""
 
     def __init__(
@@ -30,10 +33,17 @@ class Task:
         entity_col: str,
         metrics: List[Callable[[NDArray, NDArray], float]],
     ):
-        self.dataset = dataset
-        self.timedelta = timedelta
+        super().__init__(dataset=dataset, 
+                         timedelta=timedelta, 
+                         metrics=metrics)
+        """
+        super(NodeTask, self).__init__(
+            dataset=dataset,
+            timedelta=timedelta,
+            metrics=metrics,
+        )
+        """
         self.target_col = target_col
-        self.metrics = metrics
         self.entity_table = entity_table
         self.entity_col = entity_col
 
@@ -43,79 +53,16 @@ class Task:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
-    def make_table(
-        self,
-        db: Database,
-        timestamps: "pd.Series[pd.Timestamp]",
-    ) -> Table:
-        r"""To be implemented by subclass."""
-
-        # TODO: ensure that tasks follow the right-closed convention
-
-        raise NotImplementedError
-
-    @property
-    def train_table(self) -> Table:
-        """Returns the train table for a task."""
-        if "train" not in self._cached_table_dict:
-            table = self.make_table(
-                self.dataset.db,
-                pd.date_range(
-                    self.dataset.val_timestamp - self.timedelta,
-                    self.dataset.db.min_timestamp,
-                    freq=-self.timedelta,
-                ),
-            )
-            self._cached_table_dict["train"] = table
-        else:
-            table = self._cached_table_dict["train"]
-        return self.filter_dangling_entities(table)
-
-    @property
-    def val_table(self) -> Table:
-        r"""Returns the val table for a task."""
-        if "val" not in self._cached_table_dict:
-            table = self.make_table(
-                self.dataset.db,
-                pd.Series([self.dataset.val_timestamp]),
-            )
-            self._cached_table_dict["val"] = table
-        else:
-            table = self._cached_table_dict["val"]
-        return self.filter_dangling_entities(table)
-
-    def _mask_input_cols(self, table: Table) -> Table:
-        input_cols = [
-            table.time_col,
-            *table.fkey_col_to_pkey_table.keys(),
-        ]
-        return Table(
-            df=table.df[input_cols],
-            fkey_col_to_pkey_table=table.fkey_col_to_pkey_table,
-            pkey_col=table.pkey_col,
-            time_col=table.time_col,
-        )
-
-    @property
-    def test_table(self) -> Table:
-        r"""Returns the test table for a task."""
-        if "full_test" not in self._cached_table_dict:
-            full_table = self.make_table(
-                self.dataset._full_db,
-                pd.Series([self.dataset.test_timestamp]),
-            )
-            self._cached_table_dict["full_test"] = full_table
-        else:
-            full_table = self._cached_table_dict["full_test"]
-        self._full_test_table = self.filter_dangling_entities(full_table)
-        return self._mask_input_cols(self._full_test_table)
 
     def filter_dangling_entities(self, table: Table) -> Table:
         num_entities = len(self.dataset.db.table_dict[self.entity_table])
         filter_mask = table.df[self.entity_col] >= num_entities
+        
         if filter_mask.any():
             table.df = table.df[~filter_mask]
+
         return table
+
 
     def evaluate(
         self,
@@ -139,25 +86,15 @@ class Task:
         return {fn.__name__: fn(target, pred) for fn in metrics}
 
 
-class TaskType(Enum):
-    r"""The type of the task.
 
-    Attributes:
-        REGRESSION: Regression task.
-        MULTICLASS_CLASSIFICATION: Multi-class classification task.
-        BINARY_CLASSIFICATION: Binary classification task.
-    """
-    REGRESSION = "regression"
-    BINARY_CLASSIFICATION = "binary_classification"
+class RelBenchNodeTask(NodeTask):
+    # TODO (joshrob) add new parent class to avoid pack_tables code duplication
 
-
-class RelBenchTask(Task):
     name: str
     task_type: TaskType
     entity_col: str
     entity_table: str
     time_col: str
-
     timedelta: pd.Timedelta
     target_col: str
     metrics: List[Callable[[NDArray, NDArray], float]]
@@ -165,7 +102,8 @@ class RelBenchTask(Task):
     task_dir: str = "tasks"
 
     def __init__(self, dataset, process: bool = False) -> None:
-        super().__init__(
+    
+        super(RelBenchNodeTask, self).__init__(
             dataset=dataset,
             timedelta=self.timedelta,
             target_col=self.target_col,
@@ -173,6 +111,8 @@ class RelBenchTask(Task):
             entity_col=self.entity_col,
             metrics=self.metrics,
         )
+
+
         # Set cached_table_dict
         if not process:
             task_path = _pooch.fetch(

@@ -20,7 +20,7 @@ from torch_geometric.typing import EdgeType, NodeType
 from tqdm import tqdm
 
 from relbench.data import RelBenchDataset
-from relbench.data.task import TaskType
+from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 from relbench.external.graph import (
     get_stype_proposal,

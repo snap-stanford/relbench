@@ -3,13 +3,13 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from relbench.data import Database, RelBenchTask, Table
-from relbench.data.task import TaskType
+from relbench.data import Database, RelBenchNodeTask, RelBenchLinkTask, Table
+from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
 from relbench.utils import get_df_in_window
 
 
-class EngageTask(RelBenchTask):
+class EngageTask(RelBenchNodeTask):
     r"""Predict if a user will make any votes/posts/comments in the next 1 year."""
 
     name = "rel-stackex-engage"
@@ -89,7 +89,7 @@ class EngageTask(RelBenchTask):
         )
 
 
-class VotesTask(RelBenchTask):
+class VotesTask(RelBenchNodeTask):
     r"""Predict the number of upvotes that a question that is posted within the
     last 1 year will receive in the next 1 year."""
     name = "rel-stackex-votes"
@@ -134,6 +134,48 @@ class VotesTask(RelBenchTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+
+class UserCommentOnPostTask(RelBenchLinkTask):
+    r"""Predict if a user will comment on a specific post within 24hrs of the post being made."""
+
+    name = "rel-stackex-comment-on-post"
+    task_type = TaskType.BINARY_CLASSIFICATION
+    source_entity_col = "UserId"
+    source_entity_table = "users"
+    destination_entity_col = "PostID"
+    destination_entity_table = "posts"
+    time_col = "timestamp"
+    target_col = "target"
+    timedelta = pd.Timedelta(days=1)
+    metrics = [] # TODO: add metrics
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        r"""Create Task object for UserCommentOnPostTask."""
+        
+        df = pd.DataFrame(columns=[self.source_entity_col, self.destination_entity_col, 'timestamp', self.target_col])
+
+        
+        # step 1: 
+        #     - make table with all (UserID, PostID) pairs for which UserID does comment on PostID in 24hrs. 
+        #     - timestamp = time post was made. 
+        #     - target = 1 for all rows
+        
+        # step 2: 
+        #     - load negative pairs from disk and concatenate to table.
+        #     - neg_sampler = NegativeLinkSampler(name)
+        #     - for (UserID, PostID, timestamp) in table:
+        #         neg_UserID, neg_PostID, neg_timestamp = neg_sampler(UserID, PostID, timestamp)
+        #        add row = (neg_UserID, neg_PostID, neg_timestamp, 0) to df
+        
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={self.source_entity_col: self.source_entity_table,
+                                   self.destination_entity_col: self.destination_entity_table},
             pkey_col=None,
             time_col=self.time_col,
         )

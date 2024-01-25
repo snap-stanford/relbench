@@ -4,7 +4,7 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.stackex import EngageTask, VotesTask
+from relbench.tasks.stackex import EngageTask, VotesTask, UserCommentOnPostTask
 from relbench.utils import to_unix_time, unzip_processor
 
 
@@ -12,7 +12,7 @@ class StackExDataset(RelBenchDataset):
     name = "rel-stackex"
     val_timestamp = pd.Timestamp("2019-01-01")
     test_timestamp = pd.Timestamp("2021-01-01")
-    task_cls_list = [EngageTask, VotesTask]
+    task_cls_list = [EngageTask, VotesTask, UserCommentOnPostTask]
 
     def __init__(
         self,

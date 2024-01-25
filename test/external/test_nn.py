@@ -7,7 +7,7 @@ from torch_frame.testing.text_embedder import HashTextEmbedder
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
 
-from relbench.data.task import TaskType
+from relbench.data.task_base import TaskType
 from relbench.datasets import FakeDataset
 from relbench.external.graph import (
     get_stype_proposal,

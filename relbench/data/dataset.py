@@ -11,7 +11,7 @@ import pandas as pd
 
 from relbench import _pooch
 from relbench.data.database import Database
-from relbench.data.task import Task
+from relbench.data.task_base import BaseTask
 from relbench.utils import unzip_processor
 
 
@@ -21,7 +21,7 @@ class Dataset:
         db: Database,
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
-        task_cls_list: List[Type[Task]],
+        task_cls_list: List[Type[BaseTask]],
     ) -> None:
         self._full_db = db
         self.val_timestamp = val_timestamp
@@ -37,7 +37,7 @@ class Dataset:
     def task_names(self) -> List[str]:
         return list(self.task_cls_dict.keys())
 
-    def get_task(self, task_name: str, *args, **kwargs) -> Task:
+    def get_task(self, task_name: str, *args, **kwargs) -> BaseTask:
         if task_name not in self.task_cls_dict:
             raise ValueError(
                 f"{self.__class__.name} does not support the task {task_name}."
@@ -72,7 +72,7 @@ class RelBenchDataset(Dataset):
     name: str
     val_timestamp: pd.Timestamp
     test_timestamp: pd.Timestamp
-    task_cls_list: List[Type[Task]]
+    task_cls_list: List[Type[BaseTask]]
 
     db_dir: str = "db"
 

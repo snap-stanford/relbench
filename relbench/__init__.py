@@ -19,6 +19,7 @@ _pooch = pooch.create(
         "rel-stackex/db.zip": "dfb84faa4918c6c4ecac791a69a30a477a7bee097d7295d48c78ceb8f59c997c",
         "rel-stackex/tasks/rel-stackex-engage.zip": "9afce696507cf2f1a2655350a3d944fd411b007c05a389995fe7313084008d18",
         "rel-stackex/tasks/rel-stackex-votes.zip": "0dab5bebd76a95d689c8a3a62026c1c294a252c561fd940e8d9329d165d98a5a",
+        "rel-stackex/tasks/rel-stackex-comment-on-post.zip": "94jvsdfkjzfkja3a62026c1c294a252c561fd94ffjfjfj1919d9v94",
         "rel-amazon-books_5_core/db.zip": "2f6bd920bcfe08cbb7d47115f47f8d798a2ec1a034b6c2f3d8d9906e967454b4",
         "rel-amazon-books_5_core/tasks/rel-amazon-churn.zip": "d3890621b1576a9d5b6bc273cdd2ea2084aeaf9c8055c1421ded84be0c48dacb",
         "rel-amazon-books_5_core/tasks/rel-amazon-ltv.zip": "2e91be0ca5d9f591d8e33a40f70b97db346090a8bb9f3a94f49b147f0dc136be",
