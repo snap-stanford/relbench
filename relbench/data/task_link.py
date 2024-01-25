@@ -65,7 +65,28 @@ class LinkTask(BaseTask):
         metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
     ) -> Dict[str, float]:
         # TODO: (joshrob) implement
-        raise NotImplementedError
+        if metrics is None:
+            metrics = self.metrics
+
+        if target_table is None:
+            target_table = self._full_test_table
+
+        if len(pred) != len(target_table):
+            raise ValueError(
+                f"Length of pred ({len(pred)}) does not match length of target table "
+                f"({len(target_table)})."
+            )
+
+        target = target_table.df[self.target_col].to_numpy()
+
+        # split pred into two arrays according to whether target = 0 or 1 
+        # (i.e. whether the link exists or not)
+        # assumes same collection of negative links are to be used for all positive links
+
+        pred_dict = {"y_pred_pos": pred[target == 1],
+                    "y_pred_neg": pred[target == 0]}
+
+        return {fn.__name__: fn(pred_dict) for fn in metrics} # TODO (joshrob) implement metrics
 
 
 
