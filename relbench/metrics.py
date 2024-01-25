@@ -96,7 +96,7 @@ def hits_at_k_or_mrr(pred_dict, k_value, mrr = False):
             mrr: whether to calculate mrr or hits@k
         
         Returns:
-            a dictionary containing the computed performance metrics
+            the computed performance metric
         """
 
         y_pred_pos = pred_dict["y_pred_pos"]

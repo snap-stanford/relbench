@@ -145,9 +145,9 @@ class UserCommentOnPostTask(RelBenchLinkTask):
 
     name = "rel-stackex-comment-on-post"
     task_type = TaskType.BINARY_CLASSIFICATION
-    source_entity_col = "UserId"
+    source_entity_col = "Id"
     source_entity_table = "users"
-    destination_entity_col = "PostID"
+    destination_entity_col = "Id"
     destination_entity_table = "posts"
     time_col = "timestamp"
     target_col = "target"
@@ -172,10 +172,38 @@ class UserCommentOnPostTask(RelBenchLinkTask):
         #         neg_UserID, neg_PostID, neg_timestamp = neg_sampler(UserID, PostID, timestamp)
         #        add row = (neg_UserID, neg_PostID, neg_timestamp, 0) to df
         
+        users = db.table_dict["users"].df[self.source_entity_col].to_numpy()
+        posts = db.table_dict["posts"].df[self.destination_entity_col].to_numpy()  
+        post_timestamps = db.table_dict["posts"].df[db.table_dict["posts"].time_col].to_numpy()
+
+        NUM_NEGATIVES = 1000
+
+
+        # randomly sample NUM_NEGATIVE negative pairs   
+
+        perm_users = np.random.permutation(len(users))[:NUM_NEGATIVES]
+        neg_UserIDs = users[perm_users]
+
+        perm_posts = np.random.permutation(len(posts))[:NUM_NEGATIVES]
+        neg_PostIDs = posts[perm_posts]
+        post_timestamps = post_timestamps[perm_posts]
+
+        # create dataframe with negative pairs 
+
+        df_neg = pd.DataFrame({"UserId": neg_UserIDs, # WARNING: this is not the same as self.source_entity_col
+                               "PostId": neg_PostIDs, # WARNING: this is not the same as self.destination_entity_col
+                               'timestamp': post_timestamps,
+                               self.target_col: np.zeros(len(neg_UserIDs))
+                               })
+
+
+        #df = pd.concat([df, df_neg], ignore_index=True)
+        df = df_neg
+
         return Table(
             df=df,
-            fkey_col_to_pkey_table={self.source_entity_col: self.source_entity_table,
-                                   self.destination_entity_col: self.destination_entity_table},
+            fkey_col_to_pkey_table={"UserId": self.source_entity_table,
+                                   "PostId": self.destination_entity_table},
             pkey_col=None,
             time_col=self.time_col,
         )

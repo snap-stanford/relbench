@@ -56,7 +56,7 @@ class LinkTask(BaseTask):
 
     def filter_dangling_entities(self, table: Table) -> Table:
         # TODO: (joshrob) implement
-        raise NotImplementedError
+        return table
 
     def evaluate(
         self,
@@ -64,7 +64,7 @@ class LinkTask(BaseTask):
         target_table: Optional[Table] = None,
         metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
     ) -> Dict[str, float]:
-        # TODO: (joshrob) implement
+        
         if metrics is None:
             metrics = self.metrics
 
@@ -86,7 +86,7 @@ class LinkTask(BaseTask):
         pred_dict = {"y_pred_pos": pred[target == 1],
                     "y_pred_neg": pred[target == 0]}
 
-        return {fn.__name__: fn(pred_dict) for fn in metrics} # TODO (joshrob) implement metrics
+        return {fn.__name__ + str(k) : fn(pred_dict, k, mrr) for fn, k, mrr in metrics} # TODO (joshrob) implement metrics
 
 
 
