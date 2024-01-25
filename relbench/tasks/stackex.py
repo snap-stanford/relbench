@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from relbench.data import Database, RelBenchNodeTask, RelBenchLinkTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
+from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc, hits_at_k_or_mrr
 from relbench.utils import get_df_in_window
 
 
@@ -152,7 +152,7 @@ class UserCommentOnPostTask(RelBenchLinkTask):
     time_col = "timestamp"
     target_col = "target"
     timedelta = pd.Timedelta(days=1)
-    metrics = [] # TODO: add metrics
+    metrics = [(hits_at_k_or_mrr, k, mrr) for k, mrr in [(10, False), (20, False), (30, False), (-1, True)]]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserCommentOnPostTask."""
