@@ -157,50 +157,65 @@ class UserCommentOnPostTask(RelBenchLinkTask):
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserCommentOnPostTask."""
         
-        df = pd.DataFrame(columns=[self.source_entity_col, self.destination_entity_col, 'timestamp', self.target_col])
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})    
 
-        
-        # step 1: 
+        users = db.table_dict[self.source_entity_table].df 
+        posts = db.table_dict[self.destination_entity_table].df 
+        comments = db.table_dict["comments"].df
 
-        ########### Positive Link Sampling
-
-        #     - make table with all (UserID, PostID) pairs for which UserID does comment on PostID in 24hrs. 
-        #     - timestamp = time post was made. 
-        #     - target = 1 for all rows
-        
+        df = duckdb.sql(
+                    f"""
+                        SELECT
+                            t.timestamp,
+                            p.id as PostId,
+                            c.UserId as UserId
+                        FROM timestamp_df t
+                        LEFT JOIN posts p
+                        ON p.CreationDate > t.timestamp - INTERVAL '{2 * self.timedelta} days'
+                        and p.CreationDate <= t.timestamp
+                        LEFT JOIN comments c
+                        ON p.id = c.PostId
+                        and c.CreationDate > t.timestamp
+                        and c.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
+                        where c.UserId is not null and p.owneruserid != -1 and p.owneruserid is not null
+                    ;
+                    """
+                ).df()
         
         ########### Negative Link Sampling 
 
         # TODO (joshrob) check for false negatives
         # TODO (joshrob) save negative links to disk to avoid resampling
 
-        users = db.table_dict["users"].df[self.source_entity_col].to_numpy()
-        posts = db.table_dict["posts"].df[self.destination_entity_col].to_numpy()  
-        post_timestamps = db.table_dict["posts"].df[db.table_dict["posts"].time_col].to_numpy()
+        
+        """
+
+        ############## Commented out for now whilst testing postive link code ##############
 
         NUM_NEGATIVES = 1000
-
-
+        
         # randomly sample NUM_NEGATIVE negative pairs   
+        users = users[self.source_entity_col].to_numpy()
+        posts = posts[self.destination_entity_col].to_numpy()
 
         perm_users = np.random.permutation(len(users))[:NUM_NEGATIVES]
         neg_UserIDs = users[perm_users]
 
         perm_posts = np.random.permutation(len(posts))[:NUM_NEGATIVES]
         neg_PostIDs = posts[perm_posts]
-        post_timestamps = post_timestamps[perm_posts]
+        timestamp_df = timestamp_df[perm_posts]
 
         # create dataframe with negative pairs 
 
         df_neg = pd.DataFrame({"UserId": neg_UserIDs, # WARNING: this is not the same as self.source_entity_col
                                "PostId": neg_PostIDs, # WARNING: this is not the same as self.destination_entity_col
-                               'timestamp': post_timestamps,
+                               'timestamp': timestamp_df,
                                self.target_col: np.zeros(len(neg_UserIDs))
                                })
 
 
-        #df = pd.concat([df, df_neg], ignore_index=True)
-        df = df_neg
+        df = pd.concat([df, df_neg], ignore_index=True)
+        """
 
         return Table(
             df=df,
