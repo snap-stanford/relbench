@@ -20,7 +20,11 @@ from relbench.data.task import Task
 def to_unix_time(ser: pd.Series) -> Tensor:
     r"""Converts a :class:`pandas.Timestamp` series to UNIX timestamp
     (in seconds)."""
-    return torch.from_numpy(ser.astype(int).values) // 10**9
+    assert ser.dtype in [np.dtype('datetime64[s]'), np.dtype('datetime64[ns]')]
+    unix_time = torch.from_numpy(ser.astype(int).values)
+    if ser.dtype == np.dtype('datetime64[ns]'):
+        unix_time //= 10**9
+    return unix_time
 
 
 def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
