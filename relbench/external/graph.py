@@ -161,6 +161,7 @@ def get_train_table_input(
     table: Table,
     task: BaseTask,
 ) -> TrainTableInput:
+
     nodes = torch.from_numpy(table.df[task.entity_col].astype(int).values)
 
     time: Optional[Tensor] = None

@@ -145,9 +145,9 @@ class UserCommentOnPostTask(RelBenchLinkTask):
 
     name = "rel-stackex-comment-on-post"
     task_type = TaskType.BINARY_CLASSIFICATION
-    source_entity_col = "Id"
+    source_entity_col = "UserId"
     source_entity_table = "users"
-    destination_entity_col = "Id"
+    destination_entity_col = "PostId"
     destination_entity_table = "posts"
     time_col = "timestamp"
     target_col = "target"
@@ -159,8 +159,8 @@ class UserCommentOnPostTask(RelBenchLinkTask):
         
         timestamp_df = pd.DataFrame({"timestamp": timestamps})    
 
-        users = db.table_dict[self.source_entity_table].df 
-        posts = db.table_dict[self.destination_entity_table].df 
+        users = db.table_dict["users"].df
+        posts = db.table_dict["posts"].df 
         comments = db.table_dict["comments"].df
 
         df = duckdb.sql(
@@ -195,9 +195,9 @@ class UserCommentOnPostTask(RelBenchLinkTask):
         NUM_NEGATIVES = 1000
 
         # randomly sample NUM_NEGATIVE negative pairs   
-        users_arr = users[self.source_entity_col].to_numpy()
-        timestamp_arr = posts["CreationDate"].to_numpy()
-        posts_arr = posts[self.destination_entity_col].to_numpy()
+        users_arr = users[db.table_dict["users"].pkey_col].to_numpy()
+        timestamp_arr = posts[db.table_dict["posts"].time_col].to_numpy()
+        posts_arr = posts[db.table_dict["posts"].pkey_col].to_numpy()
 
         perm_users = np.random.permutation(len(users))[:NUM_NEGATIVES]
         neg_UserIDs = users_arr[perm_users]
@@ -209,9 +209,9 @@ class UserCommentOnPostTask(RelBenchLinkTask):
 
         # create dataframe with negative pairs 
 
-        df_neg = pd.DataFrame({"UserId": neg_UserIDs, # WARNING: this is not the same as self.source_entity_col
-                               "PostId": neg_PostIDs, # WARNING: this is not the same as self.destination_entity_col
-                               'timestamp': timestamp_arr,
+        df_neg = pd.DataFrame({self.source_entity_col: neg_UserIDs, # WARNING: this is not the same as self.source_entity_col
+                               self.destination_entity_col: neg_PostIDs, # WARNING: this is not the same as self.destination_entity_col
+                               self.time_col: timestamp_arr,
                                self.target_col: np.zeros(len(neg_UserIDs))
                                })
 
@@ -221,8 +221,8 @@ class UserCommentOnPostTask(RelBenchLinkTask):
 
         return Table(
             df=df,
-            fkey_col_to_pkey_table={"UserId": self.source_entity_table,
-                                   "PostId": self.destination_entity_table},
+            fkey_col_to_pkey_table={self.source_entity_col: self.source_entity_table,
+                                   self.destination_entity_col: self.destination_entity_table},
             pkey_col=None,
             time_col=self.time_col,
         )
