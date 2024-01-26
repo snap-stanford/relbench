@@ -126,4 +126,3 @@ class TaskType(Enum):
     REGRESSION = "regression"
     BINARY_CLASSIFICATION = "binary_classification"
 
-

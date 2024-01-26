@@ -52,8 +52,6 @@ class LinkTask(BaseTask):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
-
-
     def filter_dangling_entities(self, table: Table) -> Table:
         # TODO: (joshrob) implement
         return table
@@ -86,7 +84,7 @@ class LinkTask(BaseTask):
         pred_dict = {"y_pred_pos": pred[target == 1],
                     "y_pred_neg": pred[target == 0]}
 
-        return {fn.__name__ + str(k) : fn(pred_dict, k, mrr) for fn, k, mrr in metrics} # TODO (joshrob) implement metrics
+        return {fn.__name__ + str(k) : fn(pred_dict, k) for fn, k in metrics} # TODO (joshrob) implement metrics
 
 
 

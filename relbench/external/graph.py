@@ -14,7 +14,7 @@ from torch_geometric.typing import NodeType
 from torch_geometric.utils import sort_edge_index
 
 from relbench.data import Database, Table
-from relbench.data.task_base import Task
+from relbench.data.task_base import BaseTask
 
 
 def to_unix_time(ser: pd.Series) -> Tensor:
@@ -159,7 +159,7 @@ class TrainTableInput(NamedTuple):
 
 def get_train_table_input(
     table: Table,
-    task: 
+    task: BaseTask,
 ) -> TrainTableInput:
     nodes = torch.from_numpy(table.df[task.entity_col].astype(int).values)
 

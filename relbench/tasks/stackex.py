@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from relbench.data import Database, RelBenchNodeTask, RelBenchLinkTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc, hits_at_k_or_mrr
+from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc, hits_at_k, mrr
 from relbench.utils import get_df_in_window
 
 
@@ -151,8 +151,8 @@ class UserCommentOnPostTask(RelBenchLinkTask):
     destination_entity_table = "posts"
     time_col = "timestamp"
     target_col = "target"
-    timedelta = pd.Timedelta(days=1)
-    metrics = [(hits_at_k_or_mrr, k, mrr) for k, mrr in [(10, False), (20, False), (30, False), (-1, True)]]
+    timedelta = pd.Timedelta(days=365)
+    metrics = [(hits_at_k, 10), (hits_at_k, 20), (hits_at_k, 30), (mrr, None)]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserCommentOnPostTask."""
@@ -182,40 +182,42 @@ class UserCommentOnPostTask(RelBenchLinkTask):
                     """
                 ).df()
         
+
+        # add 'target' column of all 1s
+        df[self.target_col] = np.ones(len(df))
+
+
         ########### Negative Link Sampling 
 
         # TODO (joshrob) check for false negatives
         # TODO (joshrob) save negative links to disk to avoid resampling
 
-        
-        """
-
-        ############## Commented out for now whilst testing postive link code ##############
-
         NUM_NEGATIVES = 1000
-        
+
         # randomly sample NUM_NEGATIVE negative pairs   
-        users = users[self.source_entity_col].to_numpy()
-        posts = posts[self.destination_entity_col].to_numpy()
+        users_arr = users[self.source_entity_col].to_numpy()
+        timestamp_arr = posts["CreationDate"].to_numpy()
+        posts_arr = posts[self.destination_entity_col].to_numpy()
 
         perm_users = np.random.permutation(len(users))[:NUM_NEGATIVES]
-        neg_UserIDs = users[perm_users]
+        neg_UserIDs = users_arr[perm_users]
 
         perm_posts = np.random.permutation(len(posts))[:NUM_NEGATIVES]
-        neg_PostIDs = posts[perm_posts]
-        timestamp_df = timestamp_df[perm_posts]
+        neg_PostIDs = posts_arr[perm_posts]
+
+        timestamp_arr = timestamp_arr[perm_posts]
 
         # create dataframe with negative pairs 
 
         df_neg = pd.DataFrame({"UserId": neg_UserIDs, # WARNING: this is not the same as self.source_entity_col
                                "PostId": neg_PostIDs, # WARNING: this is not the same as self.destination_entity_col
-                               'timestamp': timestamp_df,
+                               'timestamp': timestamp_arr,
                                self.target_col: np.zeros(len(neg_UserIDs))
                                })
 
 
         df = pd.concat([df, df_neg], ignore_index=True)
-        """
+
 
         return Table(
             df=df,
