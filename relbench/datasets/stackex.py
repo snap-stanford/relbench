@@ -66,14 +66,14 @@ class StackExDataset(RelBenchDataset):
         votes.drop(columns=["BountyAmount"], inplace=True)
 
         ## change time column to pd timestamp series
-        comments["CreationDate"] =pd.to_datetime(comments["CreationDate"])
-        badges["Date"] =pd.to_datetime(badges["Date"])
-        postLinks["CreationDate"] =pd.to_datetime(postLinks["CreationDate"])
+        comments["CreationDate"] = pd.to_datetime(comments["CreationDate"])
+        badges["Date"] = pd.to_datetime(badges["Date"])
+        postLinks["CreationDate"] = pd.to_datetime(postLinks["CreationDate"])
 
-        postHistory["CreationDate"] =pd.to_datetime(postHistory["CreationDate"])
-        votes["CreationDate"] =pd.to_datetime(votes["CreationDate"])
-        posts["CreationDate"] =pd.to_datetime(posts["CreationDate"])
-        users["CreationDate"] =pd.to_datetime(users["CreationDate"])
+        postHistory["CreationDate"] = pd.to_datetime(postHistory["CreationDate"])
+        votes["CreationDate"] = pd.to_datetime(votes["CreationDate"])
+        posts["CreationDate"] = pd.to_datetime(posts["CreationDate"])
+        users["CreationDate"] = pd.to_datetime(users["CreationDate"])
 
         tables = {}
 
