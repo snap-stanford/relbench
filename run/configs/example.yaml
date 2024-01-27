@@ -1,0 +1,15 @@
+model:
+  channels: 128
+  aggr: "sum"
+  conv: "sage"
+dataset:
+  name: "rel-stackex"
+  cache_dir: "/dfs/scratch0/jiaqihan/projects/relbench/cache"
+  root_dir: "/dfs/scratch0/jiaqihan/projects/relbench/data"
+  task: "rel-stackex-engage"
+loader:
+  num_neighbors: 128
+  num_workers: 1
+  batch_size: 512
+optim:
+  max_epoch: 20
