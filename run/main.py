@@ -6,16 +6,16 @@ from torch_geometric import seed_everything
 import sys
 sys.path.append('./')
 
-from relgym1.config import cfg, dump_cfg, load_cfg, set_run_dir, set_out_dir
-from relgym1.loader import create_loader
-from relgym1.logger import setup_printing
-from relgym1.models.model_builder import create_model
-from relgym1.optimizer import create_optimizer, create_scheduler
-from relgym1.loss import create_loss_fn
-from relgym1.train import train
+from relgym.config import cfg, dump_cfg, load_cfg, set_run_dir, set_out_dir
+from relgym.loader import create_loader
+from relgym.logger import setup_printing
+from relgym.models.model_builder import create_model
+from relgym.optimizer import create_optimizer, create_scheduler
+from relgym.loss import create_loss_fn
+from relgym.train import train
 # from relgym.utils.agg_runs import agg_runs
-from relgym1.utils.comp_budget import params_count
-from relgym1.utils.device import auto_select_device
+from relgym.utils.comp_budget import params_count
+from relgym.utils.device import auto_select_device
 
 
 def parse_args() -> argparse.Namespace:
