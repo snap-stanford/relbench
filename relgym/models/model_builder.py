@@ -5,9 +5,9 @@ from torch_geometric.typing import EdgeType, NodeType
 from torch_geometric.nn import MLP
 from torch_frame import TensorFrame
 
-from relgym1.config import cfg
-from relgym1.models.feature_encoder import HeteroEncoder, HeteroTemporalEncoder
-from relgym1.models.gnn import HeteroGNN
+from relgym.config import cfg
+from relgym.models.feature_encoder import HeteroEncoder, HeteroTemporalEncoder
+from relgym.models.gnn import HeteroGNN
 
 
 def create_model(data, entity_table, to_device=True):
