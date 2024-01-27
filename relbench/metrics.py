@@ -85,16 +85,16 @@ def r2(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 ###### link prediction metrics
 
 def hits_at_k(pred_dict, k_value):
-    out, _ = hits_at_k_and_mrr(pred_dict, k_value, mrr = False)
+    out, _ = hits_at_k_and_mrr(pred_dict, k_value)
     return out
 
 def mrr(pred_dict, k_value):
     del k_value
-    _, out = hits_at_k_and_mrr(pred_dict, -1, mrr = True)
+    _, out = hits_at_k_and_mrr(pred_dict, -1)
     return out
 
 
-def hits_at_k_and_mrr(pred_dict, k_value, mrr = False):
+def hits_at_k_and_mrr(pred_dict, k_value):
         r"""
         compute hist@k and mrr
         reference:

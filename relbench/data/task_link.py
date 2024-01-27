@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 from numpy.typing import NDArray
+import numpy as np
 
 from relbench import _pooch
 from relbench.data.database import Database
@@ -53,13 +54,22 @@ class LinkTask(BaseTask):
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
     def filter_dangling_entities(self, table: Table) -> Table:
-        # TODO: (joshrob) implement
+        src_num_entities = len(self.dataset.db.table_dict[self.source_entity_table])
+        dst_num_entities = len(self.dataset.db.table_dict[self.destination_entity_table])
+        
+        # remove all rows where source or destination entity is out of range
+        filter_mask = (table.df[self.source_entity_col] >= src_num_entities) | (table.df[self.destination_entity_col] >= dst_num_entities)
+
+        if filter_mask.any():
+            table.df = table.df[~filter_mask]
+
         return table
 
     def evaluate(
         self,
         pred: NDArray,
         target_table: Optional[Table] = None,
+        neg_sampling_ratio: Optional[float] = None,
         metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
     ) -> Dict[str, float]:
         
@@ -69,22 +79,29 @@ class LinkTask(BaseTask):
         if target_table is None:
             target_table = self._full_test_table
 
-        if len(pred) != len(target_table):
+        if neg_sampling_ratio is not None:
+            size_target_table_with_negs = int( (neg_sampling_ratio+1) * len(target_table))
+        else:
+            size_target_table_with_negs = len(target_table)
+        if len(pred) != size_target_table_with_negs :
             raise ValueError(
                 f"Length of pred ({len(pred)}) does not match length of target table "
-                f"({len(target_table)})."
+                f"({size_target_table_with_negs})."
             )
 
         target = target_table.df[self.target_col].to_numpy()
 
+        if neg_sampling_ratio is not None:
+            target = np.concatenate((target, np.zeros(int(neg_sampling_ratio*len(target)))))
+
         # split pred into two arrays according to whether target = 0 or 1 
         # (i.e. whether the link exists or not)
-        # assumes same collection of negative links are to be used for all positive links
 
         pred_dict = {"y_pred_pos": pred[target == 1],
                     "y_pred_neg": pred[target == 0]}
 
-        return {fn.__name__ + str(k) : fn(pred_dict, k) for fn, k in metrics} # TODO (joshrob) implement metrics
+        return {fn.__name__ + str(k) if k is not None else fn.__name__: 
+                fn(pred_dict, k) for fn, k in metrics} # TODO (joshrob) implement metrics
 
 
 

@@ -144,31 +144,30 @@ class UserCommentOnPostTask(RelBenchLinkTask):
     r"""Predict if a user will comment on a specific post within 24hrs of the post being made."""
 
     name = "rel-stackex-comment-on-post"
-    task_type = TaskType.BINARY_CLASSIFICATION
+    task_type = TaskType.LINK_PREDICTION
     source_entity_col = "UserId"
     source_entity_table = "users"
     destination_entity_col = "PostId"
     destination_entity_table = "posts"
-    time_col = "timestamp"
+    time_col = "CreationDate"
     target_col = "target"
     timedelta = pd.Timedelta(days=365)
     metrics = [(hits_at_k, 10), (hits_at_k, 20), (hits_at_k, 30), (mrr, None)]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserCommentOnPostTask."""
-        
         timestamp_df = pd.DataFrame({"timestamp": timestamps})    
 
         users = db.table_dict["users"].df
-        posts = db.table_dict["posts"].df 
+        posts = db.table_dict["posts"].df
         comments = db.table_dict["comments"].df
 
         df = duckdb.sql(
                     f"""
                         SELECT
-                            t.timestamp,
-                            p.id as PostId,
-                            c.UserId as UserId
+                            p.CreationDate,
+                            c.UserId as UserId,
+                            p.id as PostId
                         FROM timestamp_df t
                         LEFT JOIN posts p
                         ON p.CreationDate > t.timestamp - INTERVAL '{2 * self.timedelta} days'
@@ -181,12 +180,11 @@ class UserCommentOnPostTask(RelBenchLinkTask):
                     ;
                     """
                 ).df()
-        
 
         # add 'target' column of all 1s
         df[self.target_col] = np.ones(len(df))
 
-
+        """
         ########### Negative Link Sampling 
 
         # TODO (joshrob) check for false negatives
@@ -217,7 +215,7 @@ class UserCommentOnPostTask(RelBenchLinkTask):
 
 
         df = pd.concat([df, df_neg], ignore_index=True)
-
+        """
 
         return Table(
             df=df,
