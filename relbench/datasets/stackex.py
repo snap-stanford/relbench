@@ -61,7 +61,7 @@ class StackExDataset(RelBenchDataset):
                 "Score",
                 "LastEditorDisplayName",
                 "LastEditorUserId",
-                "AcceptedAnswerId"
+                "AcceptedAnswerId",
             ],
             inplace=True,
         )
