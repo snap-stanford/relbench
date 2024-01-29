@@ -72,7 +72,7 @@ class LTVTask(RelBenchTask):
     entity_col = "customer_id"
     entity_table = "customer"
     time_col = "timestamp"
-    target_col = "ltv"
+    target_col = "count_" #"ltv"
     timedelta = pd.Timedelta(days=365 * 2)
     metrics = [mae, rmse]
 
@@ -120,6 +120,111 @@ class LTVTask(RelBenchTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={"customer_id": "customer"},
+            pkey_col=None,
+            time_col="timestamp",
+        )
+
+
+class ProductChurnTask(RelBenchTask):
+    r"""Churn for a product is 1 if the product recieves at least one review
+    in the time window, else 0."""
+
+    name = "rel-amazon-product-churn"
+    task_type = TaskType.BINARY_CLASSIFICATION
+    entity_col = "product_id"
+    entity_table = "product"
+    time_col = "timestamp"
+    target_col = "churn"
+    timedelta = pd.Timedelta(days=365 * 2)
+    metrics = [average_precision, accuracy, f1, roc_auc]
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        product = db.table_dict["product"].df
+        customer = db.table_dict["customer"].df
+        review = db.table_dict["review"].df
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                timestamp,
+                product_id,
+                CAST(
+                    NOT EXISTS (
+                        SELECT 1
+                        FROM review
+                        WHERE
+                            review.product_id = product.product_id AND
+                            review_time > timestamp AND
+                            review_time <= timestamp + INTERVAL '{self.timedelta}'
+                    ) AS INTEGER
+                ) AS churn
+            FROM
+                timestamp_df,
+                product,
+            WHERE
+                EXISTS (
+                    SELECT 1
+                    FROM review
+                    WHERE
+                        review.product_id = product.product_id AND
+                        review_time > timestamp - INTERVAL '{self.timedelta}' AND
+                        review_time <= timestamp
+                )
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+class ProductLTVTask(RelBenchTask):
+    r"""LTV (life-time value) for a product is the numer of times the product
+     is purchased in the time window multiplied by price."""
+
+    name = "rel-amazon-product-ltv"
+    task_type = TaskType.REGRESSION
+    entity_col = "product_id"
+    entity_table = "product"
+    time_col = "timestamp"
+    target_col = "count_" #"ltv"
+    timedelta = pd.Timedelta(days=365 * 2)
+    metrics = [mae, rmse]
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        product = db.table_dict["product"].df
+        customer = db.table_dict["customer"].df
+        review = db.table_dict["review"].df
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                timestamp,
+                product.product_id,
+                COALESCE(SUM(price), 0) AS total_amount,
+                COALESCE(COUNT(price), 0) AS count_
+            FROM
+                timestamp_df,
+                product,
+                review
+            WHERE
+                review.product_id = product.product_id AND
+                review_time > timestamp AND
+                review_time <= timestamp + INTERVAL '{self.timedelta}'
+            GROUP BY
+                timestamp,
+                product.product_id
+            """
+            ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
             pkey_col=None,
             time_col="timestamp",
         )

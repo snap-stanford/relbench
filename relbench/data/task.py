@@ -150,7 +150,6 @@ class TaskType(Enum):
     REGRESSION = "regression"
     BINARY_CLASSIFICATION = "binary_classification"
 
-
 class RelBenchTask(Task):
     name: str
     task_type: TaskType

@@ -29,14 +29,12 @@ from relbench.external.graph import (
 )
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
 
-# Stores the informative text columns to retain for each table:
-dataset_to_informative_text_cols = {}
-dataset_to_informative_text_cols["rel-stackex"] = {
-    "postHistory": ["Text"],
-    "users": ["AboutMe"],
-    "posts": ["Body", "Title", "Tags"],
-    "comments": ["Text"],
-}
+# Loads dict storing the informative text columns to retain for each table:
+import importlib.util
+spec = importlib.util.spec_from_file_location("informative_cols", "examples/informative_cols.py")
+stype_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(stype_module)
+dataset_to_informative_text_cols = stype_module.dataset_to_informative_text_cols
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")

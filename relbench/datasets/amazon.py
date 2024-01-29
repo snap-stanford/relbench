@@ -8,14 +8,14 @@ import pyarrow as pa
 import pyarrow.json
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.amazon import ChurnTask, LTVTask
+from relbench.tasks.amazon import ChurnTask, LTVTask, ProductLTVTask, ProductChurnTask
 
 
 class AmazonDataset(RelBenchDataset):
     name = "rel-amazon"
     val_timestamp = pd.Timestamp("2014-01-01")
     test_timestamp = pd.Timestamp("2016-01-01")
-    task_cls_list = [ChurnTask, LTVTask]
+    task_cls_list = [ChurnTask, LTVTask, ProductChurnTask, ProductLTVTask]
 
     category_list = ["books", "fashion"]
 
@@ -104,6 +104,19 @@ class AmazonDataset(RelBenchDataset):
         pdf.loc[:, "category"] = pdf["category"].apply(
             lambda x: None if x is None or len(x) == 0 else x
         )
+
+        # some rows are stored as ['cat1' 'cat2' 'cat3' ...]
+        # this function maps them to ['cat1', 'cat2', 'cat3', ...] (list of strings)
+        # since otherwise pytorch-frame breaks
+        def fix_column(value):
+            if isinstance(value, str):
+                return value  # Already a string
+            elif value is None:
+                return None
+            else:
+                return list(value)
+        
+        pdf["category"] = pdf["category"].apply(fix_column)
 
         # description is either [] or ["some description"]
         pdf.loc[:, "description"] = pdf["description"].apply(
