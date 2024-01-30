@@ -4,8 +4,8 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.stackex import EngageTask, VotesTask, BadgesTask
-from relbench.utils import to_unix_time, unzip_processor
+from relbench.tasks.stackex import BadgesTask, EngageTask, VotesTask
+from relbench.utils import unzip_processor
 
 
 class StackExDataset(RelBenchDataset):
@@ -65,15 +65,15 @@ class StackExDataset(RelBenchDataset):
         comments.drop(columns=["Score"], inplace=True)
         votes.drop(columns=["BountyAmount"], inplace=True)
 
-        ## change time column to unix time
-        comments["CreationDate"] = to_unix_time(comments["CreationDate"])
-        badges["Date"] = to_unix_time(badges["Date"])
-        postLinks["CreationDate"] = to_unix_time(postLinks["CreationDate"])
+        ## change time column to pd timestamp series
+        comments["CreationDate"] = pd.to_datetime(comments["CreationDate"])
+        badges["Date"] = pd.to_datetime(badges["Date"])
+        postLinks["CreationDate"] = pd.to_datetime(postLinks["CreationDate"])
 
-        postHistory["CreationDate"] = to_unix_time(postHistory["CreationDate"])
-        votes["CreationDate"] = to_unix_time(votes["CreationDate"])
-        posts["CreationDate"] = to_unix_time(posts["CreationDate"])
-        users["CreationDate"] = to_unix_time(users["CreationDate"])
+        postHistory["CreationDate"] = pd.to_datetime(postHistory["CreationDate"])
+        votes["CreationDate"] = pd.to_datetime(votes["CreationDate"])
+        posts["CreationDate"] = pd.to_datetime(posts["CreationDate"])
+        users["CreationDate"] = pd.to_datetime(users["CreationDate"])
 
         tables = {}
 

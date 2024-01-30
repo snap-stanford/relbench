@@ -143,7 +143,6 @@ class VotesTask(RelBenchTask):
         )
 
 
-
 class BadgesTask(RelBenchTask):
     r"""Predict if each user will receive in a new badge the next 1 month."""
     name = "rel-stackex-badges"
@@ -163,24 +162,26 @@ class BadgesTask(RelBenchTask):
 
         df = duckdb.sql(
             f"""
-            SELECT 
+            SELECT
                 t.timestamp,
                 u.Id as UserId,
             CASE WHEN COUNT(b.Id) >= 1 THEN 1 ELSE 0 END AS WillGetBadge
             FROM timestamp_df t
-            LEFT JOIN users u 
+            LEFT JOIN users u
             ON u.CreationDate <= t.timestamp
             LEFT JOIN badges b
                 ON u.Id = b.UserID
-                AND b.Date > t.timestamp 
+                AND b.Date > t.timestamp
                 AND b.Date <= t.timestamp + INTERVAL 2 years
             GROUP BY t.timestamp, u.Id
             """
-            ).df()
+        ).df()
 
         # remove any IderId rows that are NaN
-        df = df.dropna(subset=['UserId'])
-        df[self.entity_col] = df[self.entity_col].astype(int) # for some reason duckdb returns float64 keys
+        df = df.dropna(subset=["UserId"])
+        df[self.entity_col] = df[self.entity_col].astype(
+            int
+        )  # for some reason duckdb returns float64 keys
 
         return Table(
             df=df,
