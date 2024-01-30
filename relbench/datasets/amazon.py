@@ -8,7 +8,7 @@ import pyarrow as pa
 import pyarrow.json
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.amazon import ChurnTask, LTVTask, ProductLTVTask, ProductChurnTask
+from relbench.tasks.amazon import ChurnTask, LTVTask, ProductChurnTask, ProductLTVTask
 
 
 class AmazonDataset(RelBenchDataset):
@@ -115,7 +115,7 @@ class AmazonDataset(RelBenchDataset):
                 return None
             else:
                 return list(value)
-        
+
         pdf["category"] = pdf["category"].apply(fix_column)
 
         # description is either [] or ["some description"]

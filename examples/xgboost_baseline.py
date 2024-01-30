@@ -4,6 +4,10 @@ from typing import Dict
 import pandas as pd
 import torch
 import torch_frame
+from informative_cols import (  # Loads dict storing the informative text columns for each table
+    dataset_to_informative_text_cols,
+)
+from stype import stype_dict  # Load the metadata file as a module
 from text_embedder import GloveTextEmbedding
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
@@ -14,9 +18,6 @@ from torch_frame.utils import infer_df_stype
 from relbench.data import RelBenchDataset
 from relbench.data.task import TaskType
 from relbench.datasets import get_dataset
-
-from stype import stype_dict # Load the metadata file as a module
-from informative_cols import dataset_to_informative_text_cols # Loads dict storing the informative text columns for each table
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
@@ -40,7 +41,9 @@ entity_df = entity_table.df
 if args.dataset in stype_dict:
     col_to_stype = stype_dict[args.dataset][task.entity_table]
 else:
-    raise ValueError(f"Dataset {args.dataset} not found in stype_dict. Please add column types for {args.dataset} in stype.py")
+    raise ValueError(
+        f"Dataset {args.dataset} not found in stype_dict. Please add column types for {args.dataset} in stype.py"
+    )
 
 if entity_table.pkey_col is not None:
     del col_to_stype[entity_table.pkey_col]

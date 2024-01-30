@@ -72,7 +72,7 @@ class LTVTask(RelBenchTask):
     entity_col = "customer_id"
     entity_table = "customer"
     time_col = "timestamp"
-    target_col = "count_" # "ltv"
+    target_col = "count_"  # "ltv"
     timedelta = pd.Timedelta(days=365 * 2)
     metrics = [mae, rmse]
 
@@ -184,14 +184,14 @@ class ProductChurnTask(RelBenchTask):
 
 class ProductLTVTask(RelBenchTask):
     r"""LTV (life-time value) for a product is the numer of times the product
-     is purchased in the time window multiplied by price."""
+    is purchased in the time window multiplied by price."""
 
     name = "rel-amazon-product-ltv"
     task_type = TaskType.REGRESSION
     entity_col = "product_id"
     entity_table = "product"
     time_col = "timestamp"
-    target_col = "count_" # "ltv"
+    target_col = "count_"  # "ltv"
     timedelta = pd.Timedelta(days=365 * 2)
     metrics = [mae, rmse]
 
@@ -220,7 +220,7 @@ class ProductLTVTask(RelBenchTask):
                 timestamp,
                 product.product_id
             """
-            ).df()
+        ).df()
 
         return Table(
             df=df,
