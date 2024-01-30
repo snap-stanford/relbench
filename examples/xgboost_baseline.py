@@ -15,20 +15,8 @@ from relbench.data import RelBenchDataset
 from relbench.data.task import TaskType
 from relbench.datasets import get_dataset
 
-
-# Load the metadata file as a module
-import importlib.util
-spec = importlib.util.spec_from_file_location("stype", "examples/stype.py")
-stype_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(stype_module)
-stype_dict = stype_module.stype_dict
-
-# Loads dict storing the informative text columns to retain for each table:
-spec = importlib.util.spec_from_file_location("informative_cols", "examples/informative_cols.py")
-stype_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(stype_module)
-dataset_to_informative_text_cols = stype_module.dataset_to_informative_text_cols
-
+from stype import stype_dict # Load the metadata file as a module
+from informative_cols import dataset_to_informative_text_cols # Loads dict storing the informative text columns for each table
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
@@ -52,9 +40,8 @@ entity_df = entity_table.df
 if args.dataset in stype_dict:
     col_to_stype = stype_dict[args.dataset][task.entity_table]
 else:
-    # sample 20_000 random rows to speed up infer_df_stype
-    entity_df = entity_df.sample(20_000, random_state=42)
-    col_to_stype = infer_df_stype(entity_df)
+    raise ValueError(f"Dataset {args.dataset} not found in stype_dict. Please add column types for {args.dataset} in stype.py")
+
 if entity_table.pkey_col is not None:
     del col_to_stype[entity_table.pkey_col]
 for fkey_col in entity_table.fkey_col_to_pkey_table.keys():
