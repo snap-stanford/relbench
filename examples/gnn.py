@@ -7,6 +7,9 @@ from typing import Dict, List
 import numpy as np
 import torch
 import torch_frame
+
+# Loads dict storing the informative text columns to retain for each table:
+from informative_cols import dataset_to_informative_text_cols
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
 from torch.nn import BCEWithLogitsLoss, L1Loss
@@ -28,15 +31,6 @@ from relbench.external.graph import (
     make_pkey_fkey_graph,
 )
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
-
-# Stores the informative text columns to retain for each table:
-dataset_to_informative_text_cols = {}
-dataset_to_informative_text_cols["rel-stackex"] = {
-    "postHistory": ["Text"],
-    "users": ["AboutMe"],
-    "posts": ["Body", "Title", "Tags"],
-    "comments": ["Text"],
-}
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
