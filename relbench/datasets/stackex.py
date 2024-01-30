@@ -50,6 +50,7 @@ class StackExDataset(RelBenchDataset):
             columns=["Reputation", "Views", "UpVotes", "DownVotes", "LastAccessDate"],
             inplace=True,
         )
+
         posts.drop(
             columns=[
                 "ViewCount",
@@ -61,6 +62,9 @@ class StackExDataset(RelBenchDataset):
                 "LastEditDate",
                 "LastActivityDate",
                 "Score",
+                "LastEditorDisplayName",
+                "LastEditorUserId",
+                "AcceptedAnswerId",
             ],
             inplace=True,
         )
@@ -134,7 +138,6 @@ class StackExDataset(RelBenchDataset):
             df=pd.DataFrame(posts),
             fkey_col_to_pkey_table={
                 "OwnerUserId": "users",
-                "LastEditorUserId": "users",
                 "ParentId": "posts",  # notice the self-reference
             },
             pkey_col="Id",
