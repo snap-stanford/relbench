@@ -43,7 +43,7 @@ dataset2inferred_stypes = {
             "Body": stype.text_embedded,
             "OwnerUserId": stype.numerical,
             # "LastEditorUserId": stype.numerical,
-            # Uninformative
+            # Uninformative text column
             # "LastEditorDisplayName": stype.text_embedded,
             "Title": stype.text_embedded,
             "Tags": stype.text_embedded,
@@ -52,11 +52,11 @@ dataset2inferred_stypes = {
             "Id": stype.numerical,
             "AccountId": stype.numerical,
             "CreationDate": stype.timestamp,
-            # Uninformative
+            # Uninformative text column
             # "DisplayName": stype.text_embedded,
             # "Location": stype.text_embedded,
             "AboutMe": stype.text_embedded,
-            # Uninformative
+            # Uninformative text column
             # "WebsiteUrl": stype.text_embedded,
         },
         "votes": {
@@ -72,7 +72,7 @@ dataset2inferred_stypes = {
             "Text": stype.text_embedded,
             "CreationDate": stype.timestamp,
             "UserId": stype.numerical,
-            # Uninformative
+            # Uninformative text column
             # "UserDisplayName": stype.text_embedded,
             # "ContentLicense": stype.text_embedded,
         },
@@ -80,7 +80,7 @@ dataset2inferred_stypes = {
             "Id": stype.numerical,
             "UserId": stype.numerical,
             "Class": stype.categorical,
-            # Uninformative
+            # Uninformative text column
             # "Name": stype.text_embedded,
             "Date": stype.timestamp,
             "TagBased": stype.categorical,
@@ -90,13 +90,13 @@ dataset2inferred_stypes = {
             "PostId": stype.numerical,
             "UserId": stype.numerical,
             "PostHistoryTypeId": stype.numerical,
-            # Uninformative
+            # Uninformative text column
             # "UserDisplayName": stype.text_embedded,
             "ContentLicense": stype.categorical,
-            # Uninformative
+            # Uninformative text column
             # "RevisionGUID": stype.text_embedded,
             "Text": stype.text_embedded,
-            # Uninformative
+            # Uninformative text column
             # "Comment": stype.text_embedded,
             "CreationDate": stype.timestamp,
         },
