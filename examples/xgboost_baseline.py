@@ -4,6 +4,10 @@ from typing import Dict
 import pandas as pd
 import torch
 import torch_frame
+from informative_cols import (  # Loads dict storing the informative text columns for each table
+    dataset_to_informative_text_cols,
+)
+from stype import stype_dict  # Load the metadata file as a module
 from text_embedder import GloveTextEmbedding
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
@@ -14,15 +18,6 @@ from torch_frame.utils import infer_df_stype
 from relbench.data import RelBenchDataset
 from relbench.data.task import TaskType
 from relbench.datasets import get_dataset
-
-# Stores the informative text columns to retain for each table:
-dataset_to_informative_text_cols = {}
-dataset_to_informative_text_cols["rel-stackex"] = {
-    "postHistory": ["Text"],
-    "users": ["AboutMe"],
-    "posts": ["Body", "Title", "Tags"],
-    "comments": ["Text"],
-}
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
@@ -42,7 +37,14 @@ test_table = task.test_table
 dfs: Dict[str, pd.DataFrame] = {}
 entity_table = dataset.db.table_dict[task.entity_table]
 entity_df = entity_table.df
-col_to_stype = infer_df_stype(entity_df)
+
+if args.dataset in stype_dict:
+    col_to_stype = stype_dict[args.dataset][task.entity_table]
+else:
+    raise ValueError(
+        f"Dataset {args.dataset} not found in stype_dict. Please add column types for {args.dataset} in stype.py"
+    )
+
 if entity_table.pkey_col is not None:
     del col_to_stype[entity_table.pkey_col]
 for fkey_col in entity_table.fkey_col_to_pkey_table.keys():
@@ -51,6 +53,7 @@ for fkey_col in entity_table.fkey_col_to_pkey_table.keys():
 informative_text_cols: Dict = dataset_to_informative_text_cols[args.dataset].get(
     task.entity_table, []
 )
+
 for col_name, stype in list(col_to_stype.items()):
     # Remove text columns except for the informative ones:
     if stype == torch_frame.text_embedded:

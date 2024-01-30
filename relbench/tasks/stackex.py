@@ -93,13 +93,13 @@ class VotesTask(RelBenchTask):
     r"""Predict the number of upvotes that a question that is posted within the
     last 1 year will receive in the next 1 year."""
     name = "rel-stackex-votes"
-    task_type = TaskType.REGRESSION
+    task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "PostId"
     entity_table = "posts"
     time_col = "timestamp"
     target_col = "popularity"
     timedelta = pd.Timedelta(days=365)
-    metrics = [mae, rmse]
+    metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for post_votes_next_month."""
@@ -130,6 +130,58 @@ class VotesTask(RelBenchTask):
 
             """
         ).df()
+
+        # convert to boolean target
+        # modelling choice since regression targets highly skewed
+        df["popularity"] = (df["popularity"] != 0).astype(int)
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+class BadgesTask(RelBenchTask):
+    r"""Predict if each user will receive in a new badge the next 1 month."""
+    name = "rel-stackex-badges"
+    task_type = TaskType.BINARY_CLASSIFICATION
+    entity_col = "UserId"
+    entity_table = "users"
+    time_col = "timestamp"
+    target_col = "WillGetBadge"
+    timedelta = pd.Timedelta(days=365)
+    metrics = [average_precision, accuracy, f1, roc_auc]
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        r"""Create Task object for post_votes_next_month."""
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        users = db.table_dict["users"].df
+        badges = db.table_dict["badges"].df
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                t.timestamp,
+                u.Id as UserId,
+            CASE WHEN COUNT(b.Id) >= 1 THEN 1 ELSE 0 END AS WillGetBadge
+            FROM timestamp_df t
+            LEFT JOIN users u
+            ON u.CreationDate <= t.timestamp
+            LEFT JOIN badges b
+                ON u.Id = b.UserID
+                AND b.Date > t.timestamp
+                AND b.Date <= t.timestamp + INTERVAL 2 years
+            GROUP BY t.timestamp, u.Id
+            """
+        ).df()
+
+        # remove any IderId rows that are NaN
+        df = df.dropna(subset=["UserId"])
+        df[self.entity_col] = df[self.entity_col].astype(
+            int
+        )  # for some reason duckdb returns float64 keys
 
         return Table(
             df=df,
