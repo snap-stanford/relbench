@@ -6,10 +6,7 @@ from typing import Dict, List
 
 import numpy as np
 import torch
-import torch_frame
-from inferred_stypes import (  # Load the metadata file as a module
-    dataset2inferred_stypes,
-)
+from inferred_stypes import dataset2inferred_stypes
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
 from torch.nn import BCEWithLogitsLoss, L1Loss
