@@ -37,12 +37,12 @@ dataset2inferred_stypes = {
         "posts": {
             "Id": stype.numerical,
             "PostTypeId": stype.numerical,
-            "AcceptedAnswerId": stype.numerical,
+            # "AcceptedAnswerId": stype.numerical,
             "ParentId": stype.numerical,
             "CreationDate": stype.timestamp,
             "Body": stype.text_embedded,
             "OwnerUserId": stype.numerical,
-            "LastEditorUserId": stype.numerical,
+            # "LastEditorUserId": stype.numerical,
             # Uninformative
             # "LastEditorDisplayName": stype.text_embedded,
             "Title": stype.text_embedded,
