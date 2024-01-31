@@ -81,7 +81,7 @@ def make_pkey_fkey_graph(
             assert (df[table.pkey_col].values == np.arange(len(df))).all()
 
         col_to_stype = col_to_stype_dict[table_name]
-        
+
         # Remove pkey, fkey columns since they will not be used as input
         # feature.
         if table.pkey_col is not None:
