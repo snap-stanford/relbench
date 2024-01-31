@@ -6,10 +6,7 @@ from typing import Dict, List
 
 import numpy as np
 import torch
-import torch_frame
-
-# Loads dict storing the informative text columns to retain for each table:
-from informative_cols import dataset_to_informative_text_cols
+from inferred_stypes import dataset2inferred_stypes
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
 from torch.nn import BCEWithLogitsLoss, L1Loss
@@ -53,14 +50,7 @@ root_dir = "./data"
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
 task = dataset.get_task(args.task, process=True)
 
-col_to_stype_dict = get_stype_proposal(dataset.db)
-informative_text_cols: Dict = dataset_to_informative_text_cols[args.dataset]
-for table_name, stype_dict in col_to_stype_dict.items():
-    for col_name, stype in list(stype_dict.items()):
-        # Remove text columns except for the informative ones:
-        if stype == torch_frame.text_embedded:
-            if col_name not in informative_text_cols.get(table_name, []):
-                del stype_dict[col_name]
+col_to_stype_dict = dataset2inferred_stypes[args.dataset]
 
 data: HeteroData = make_pkey_fkey_graph(
     dataset.db,
