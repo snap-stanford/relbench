@@ -61,7 +61,6 @@ class StackExDataset(RelBenchDataset):
                 "Score",
                 "LastEditorDisplayName",
                 "LastEditorUserId",
-                "AcceptedAnswerId",
             ],
             inplace=True,
         )
@@ -136,6 +135,7 @@ class StackExDataset(RelBenchDataset):
             fkey_col_to_pkey_table={
                 "OwnerUserId": "users",
                 "ParentId": "posts",  # notice the self-reference
+                "AcceptedAnswerId": "posts",
             },
             pkey_col="Id",
             time_col="CreationDate",
