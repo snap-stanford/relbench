@@ -2,7 +2,7 @@ from torch_frame import stype
 
 # TODO (joshrob) move to dataset definition datasets/amazon.py etc.
 
-stype_dict = {
+dataset2inferred_stypes = {
     "rel-amazon": {
         "product": {
             "product_id": stype.numerical,
@@ -37,14 +37,14 @@ stype_dict = {
         "posts": {
             "Id": stype.numerical,
             "PostTypeId": stype.numerical,
-            "AcceptedAnswerId": stype.numerical,
+            # "AcceptedAnswerId": stype.numerical,
             "ParentId": stype.numerical,
             "CreationDate": stype.timestamp,
             "Body": stype.text_embedded,
             "OwnerUserId": stype.numerical,
-            "LastEditorUserId": stype.numerical,
-            "LastEditorDisplayName": stype.text_embedded,
-            "LastActivityDate": stype.timestamp,
+            # "LastEditorUserId": stype.numerical,
+            # Uninformative text column
+            # "LastEditorDisplayName": stype.text_embedded,
             "Title": stype.text_embedded,
             "Tags": stype.text_embedded,
         },
@@ -52,10 +52,12 @@ stype_dict = {
             "Id": stype.numerical,
             "AccountId": stype.numerical,
             "CreationDate": stype.timestamp,
-            "DisplayName": stype.text_embedded,
-            "Location": stype.text_embedded,
+            # Uninformative text column
+            # "DisplayName": stype.text_embedded,
+            # "Location": stype.text_embedded,
             "AboutMe": stype.text_embedded,
-            "WebsiteUrl": stype.text_embedded,
+            # Uninformative text column
+            # "WebsiteUrl": stype.text_embedded,
         },
         "votes": {
             "Id": stype.numerical,
@@ -70,14 +72,16 @@ stype_dict = {
             "Text": stype.text_embedded,
             "CreationDate": stype.timestamp,
             "UserId": stype.numerical,
-            "UserDisplayName": stype.text_embedded,
-            "ContentLicense": stype.text_embedded,
+            # Uninformative text column
+            # "UserDisplayName": stype.text_embedded,
+            # "ContentLicense": stype.text_embedded,
         },
         "badges": {
             "Id": stype.numerical,
             "UserId": stype.numerical,
             "Class": stype.categorical,
-            "Name": stype.text_embedded,
+            # Uninformative text column
+            # "Name": stype.text_embedded,
             "Date": stype.timestamp,
             "TagBased": stype.categorical,
         },
@@ -86,11 +90,14 @@ stype_dict = {
             "PostId": stype.numerical,
             "UserId": stype.numerical,
             "PostHistoryTypeId": stype.numerical,
-            "UserDisplayName": stype.text_embedded,
+            # Uninformative text column
+            # "UserDisplayName": stype.text_embedded,
             "ContentLicense": stype.categorical,
-            "RevisionGUID": stype.text_embedded,
+            # Uninformative text column
+            # "RevisionGUID": stype.text_embedded,
             "Text": stype.text_embedded,
-            "Comment": stype.text_embedded,
+            # Uninformative text column
+            # "Comment": stype.text_embedded,
             "CreationDate": stype.timestamp,
         },
     },
