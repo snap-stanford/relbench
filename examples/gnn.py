@@ -38,6 +38,13 @@ dataset_to_informative_text_cols["rel-stackex"] = {
     "comments": ["Text"],
 }
 
+dataset_to_informative_text_cols["rel-f1"] = {
+    "circuits": ["name", "location", "country"],
+    "races": ["name"],
+    "drivers": ["forename", "surname", "nationality"]
+}
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
 parser.add_argument("--task", type=str, default="rel-stackex-engage")
