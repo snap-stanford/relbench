@@ -2,6 +2,7 @@ from relbench.data import RelBenchDataset
 from relbench.datasets.amazon import AmazonDataset
 from relbench.datasets.fake import FakeDataset
 from relbench.datasets.stackex import StackExDataset
+from relbench.datasets.f1 import F1Dataset
 
 dataset_cls_list = [
     AmazonDataset,
@@ -22,6 +23,7 @@ def get_dataset(name: str, *args, **kwargs) -> RelBenchDataset:
 __all__ = [
     "AmazonDataset",
     "StackExDataset",
+    "F1Dataset",
     "FakeDataset",
     "dataset_cls_dict",
     "dataset_names",
