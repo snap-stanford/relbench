@@ -7,6 +7,7 @@ from relbench.datasets.f1 import F1Dataset
 dataset_cls_list = [
     AmazonDataset,
     StackExDataset,
+    F1Dataset,
     FakeDataset,
 ]
 

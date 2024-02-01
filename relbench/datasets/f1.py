@@ -5,8 +5,7 @@ import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.f1 import PointsTask
-from relbench.utils import to_unix_time, unzip_processor
-
+from relbench.utils import unzip_processor
 
 class F1Dataset(RelBenchDataset):
 
@@ -82,7 +81,7 @@ class F1Dataset(RelBenchDataset):
         races['time'] = races['time'].replace(r'^\\N$', '00:00:00', regex=True)
         races["date"] = races['date'] + ' ' + races['time']
         ## change time column to unix time
-        races["date"] = to_unix_time(races["date"])
+        races["date"] = pd.to_datetime(races["date"])
 
         # add time column to results table
         results = results.merge(races[['raceId', 'date']], on='raceId', how='left')

@@ -8,8 +8,6 @@ from relbench.data.task import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
 from relbench.utils import get_df_in_window
 
-
-
 class PointsTask(RelBenchTask):
     r"""Predict the finishing position of each driver in a race."""
     name = "rel-f1-points"
