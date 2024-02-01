@@ -37,6 +37,7 @@ parser.add_argument("--epochs", type=int, default=20)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
+parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--num_workers", type=int, default=1)
 args = parser.parse_args()
@@ -48,7 +49,6 @@ root_dir = "./data"
 
 # TODO: remove process=True once correct data/task is uploaded.
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
-breakpoint()
 task = dataset.get_task(args.task, process=True)
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
@@ -118,6 +118,7 @@ class Model(torch.nn.Module):
             edge_types=data.edge_types,
             channels=args.channels,
             aggr=args.aggr,
+            num_layers=args.num_layers,
         )
         self.head = MLP(
             args.channels,
@@ -147,7 +148,6 @@ class Model(torch.nn.Module):
             num_sampled_nodes_dict,
             num_sampled_edges_dict,
         )
-
         return self.head(x_dict[entity_table][: seed_time.size(0)])
 
 

@@ -4,15 +4,15 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.f1 import PointsTask
+from relbench.tasks.f1 import PointsTask, ConstructorPointsTask, DidNotFinishTask
 from relbench.utils import unzip_processor
 
 class F1Dataset(RelBenchDataset):
 
     name = "rel-f1"
     val_timestamp = pd.Timestamp("2000-01-01")
-    test_timestamp = pd.Timestamp("2010-01-01")
-    task_cls_list = [PointsTask]
+    test_timestamp = pd.Timestamp("2015-01-01")
+    task_cls_list = [PointsTask, ConstructorPointsTask, DidNotFinishTask]
 
     def __init__(
         self,
@@ -35,7 +35,9 @@ class F1Dataset(RelBenchDataset):
         results = pd.read_csv(os.path.join(path, "results.csv"))
         races = pd.read_csv(os.path.join(path, "races.csv"))
         standings = pd.read_csv(os.path.join(path, "driver_standings.csv"))
-
+        constructors = pd.read_csv(os.path.join(path, "constructors.csv"))
+        constructor_results = pd.read_csv(os.path.join(path, "constructor_results.csv"))
+        constructor_standings = pd.read_csv(os.path.join(path, "constructor_standings.csv"))
 
         ## remove columns that are irrelevant, leak time, or have too many missing values
         races.drop(
@@ -49,7 +51,7 @@ class F1Dataset(RelBenchDataset):
                      "quali_date",
                      "quali_time",
                      "sprint_date",
-                     "sprint_time"
+                     "sprint_time",
             ],
             inplace=True,
         )
@@ -59,23 +61,30 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
-
         drivers.drop(
             columns=["number", "url"],
             inplace=True,
         )
 
         results.drop(
-            columns=["constructorId", "statusId"],
+            columns=["positionText"],
             inplace=True,
         )
-
 
         standings.drop(
             columns=["positionText"],
             inplace=True,
         )
 
+        constructors.drop(
+            columns=["url"],
+            inplace=True,
+        )
+
+        constructor_standings.drop(
+            columns=["positionText"],
+            inplace=True,
+        )
 
         ## replase missing data and combine date and time columns
         races['time'] = races['time'].replace(r'^\\N$', '00:00:00', regex=True)
@@ -89,6 +98,9 @@ class F1Dataset(RelBenchDataset):
         # add time column to standings table
         standings = standings.merge(races[['raceId', 'date']], on='raceId', how='left')
 
+        constructor_results = constructor_results.merge(races[['raceId', 'date']], on='raceId', how='left')
+
+        constructor_standings = constructor_standings.merge(races[['raceId', 'date']], on='raceId', how='left')
 
         tables = {}
 
@@ -131,6 +143,31 @@ class F1Dataset(RelBenchDataset):
                 "driverId": "drivers"},
             pkey_col="driverStandingsId",
             time_col="date" 
+        )
+
+        tables["constructors"] = Table(
+            df=pd.DataFrame(constructors),
+            fkey_col_to_pkey_table={},
+            pkey_col="constructorId",
+            time_col=None,
+        )
+
+        tables["constructor_results"] = Table(
+            df=pd.DataFrame(constructor_results),
+            fkey_col_to_pkey_table={
+                'raceId': 'races',
+                'constructorId': 'constructors'},
+            pkey_col="constructorResultsId",
+            time_col="date"
+        )
+
+        tables["constructor_standings"] = Table(
+            df=pd.DataFrame(constructor_standings),
+            fkey_col_to_pkey_table={
+                "raceId": "races",
+                "constructorId": "constructors"},
+            pkey_col="constructorStandingsId",
+            time_col="date"
         )
  
         return Database(tables)

@@ -133,7 +133,7 @@ class VotesTask(RelBenchTask):
 
         # convert to boolean target
         # modelling choice since regression targets highly skewed
-        df["popularity"] = (df["popularity"] != 0).astype(int)
+        #df["popularity"] = (df["popularity"] != 0).astype(int)
 
         return Table(
             df=df,
@@ -144,7 +144,7 @@ class VotesTask(RelBenchTask):
 
 
 class BadgesTask(RelBenchTask):
-    r"""Predict if each user will receive in a new badge the next 1 month."""
+    r"""Predict if each user will receive in a new badge the next 2 years?"""
     name = "rel-stackex-badges"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "UserId"
