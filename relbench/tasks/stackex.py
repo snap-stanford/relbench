@@ -133,7 +133,7 @@ class VotesTask(RelBenchTask):
 
         # convert to boolean target
         # modelling choice since regression targets highly skewed
-        #df["popularity"] = (df["popularity"] != 0).astype(int)
+        df["popularity"] = (df["popularity"] != 0).astype(int)
 
         return Table(
             df=df,
