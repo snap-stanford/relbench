@@ -10,6 +10,7 @@ from relbench.utils import unzip_processor
 
 class StackExDataset(RelBenchDataset):
     name = "rel-stackex"
+    # 2 years gap
     val_timestamp = pd.Timestamp("2019-01-01")
     test_timestamp = pd.Timestamp("2021-01-01")
     task_cls_list = [EngageTask, VotesTask, BadgesTask]
@@ -64,7 +65,6 @@ class StackExDataset(RelBenchDataset):
                 "Score",
                 "LastEditorDisplayName",
                 "LastEditorUserId",
-                "AcceptedAnswerId",
             ],
             inplace=True,
         )
@@ -139,6 +139,7 @@ class StackExDataset(RelBenchDataset):
             fkey_col_to_pkey_table={
                 "OwnerUserId": "users",
                 "ParentId": "posts",  # notice the self-reference
+                "AcceptedAnswerId": "posts",
             },
             pkey_col="Id",
             time_col="CreationDate",
