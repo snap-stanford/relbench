@@ -4,11 +4,11 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.f1 import PointsTask, ConstructorPointsTask, DidNotFinishTask
+from relbench.tasks.f1 import ConstructorPointsTask, DidNotFinishTask, PointsTask
 from relbench.utils import unzip_processor
 
-class F1Dataset(RelBenchDataset):
 
+class F1Dataset(RelBenchDataset):
     name = "rel-f1"
     val_timestamp = pd.Timestamp("2000-01-01")
     test_timestamp = pd.Timestamp("2015-01-01")
@@ -24,7 +24,7 @@ class F1Dataset(RelBenchDataset):
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
-        path = "relbench/datasets/f1-temp" # temporary path for development
+        path = "relbench/datasets/f1-temp"  # temporary path for development
 
         path = os.path.join(path, "raw")
 
@@ -37,22 +37,25 @@ class F1Dataset(RelBenchDataset):
         standings = pd.read_csv(os.path.join(path, "driver_standings.csv"))
         constructors = pd.read_csv(os.path.join(path, "constructors.csv"))
         constructor_results = pd.read_csv(os.path.join(path, "constructor_results.csv"))
-        constructor_standings = pd.read_csv(os.path.join(path, "constructor_standings.csv"))
+        constructor_standings = pd.read_csv(
+            os.path.join(path, "constructor_standings.csv")
+        )
         lap_times = pd.read_csv(os.path.join(path, "lap_times.csv"))
 
         ## remove columns that are irrelevant, leak time, or have too many missing values
         races.drop(
-            columns=["url",
-                     "fp1_date",
-                     "fp1_time",
-                     "fp2_date",
-                     "fp2_time",
-                     "fp3_date",
-                     "fp3_time",
-                     "quali_date",
-                     "quali_time",
-                     "sprint_date",
-                     "sprint_time",
+            columns=[
+                "url",
+                "fp1_date",
+                "fp1_time",
+                "fp2_date",
+                "fp2_time",
+                "fp3_date",
+                "fp3_time",
+                "quali_date",
+                "quali_time",
+                "sprint_date",
+                "sprint_time",
             ],
             inplace=True,
         )
@@ -93,27 +96,31 @@ class F1Dataset(RelBenchDataset):
         )
 
         ## replase missing data and combine date and time columns
-        races['time'] = races['time'].replace(r'^\\N$', '00:00:00', regex=True)
-        races["date"] = races['date'] + ' ' + races['time']
+        races["time"] = races["time"].replace(r"^\\N$", "00:00:00", regex=True)
+        races["date"] = races["date"] + " " + races["time"]
         ## change time column to unix time
         races["date"] = pd.to_datetime(races["date"])
 
         # add time column to other tables
-        results = results.merge(races[['raceId', 'date']], on='raceId', how='left')
-        standings = standings.merge(races[['raceId', 'date']], on='raceId', how='left')
-        constructor_results = constructor_results.merge(races[['raceId', 'date']], on='raceId', how='left')
-        constructor_standings = constructor_standings.merge(races[['raceId', 'date']], on='raceId', how='left')
-        lap_times = lap_times.merge(races[['raceId', 'date']], on='raceId', how='left')
+        results = results.merge(races[["raceId", "date"]], on="raceId", how="left")
+        standings = standings.merge(races[["raceId", "date"]], on="raceId", how="left")
+        constructor_results = constructor_results.merge(
+            races[["raceId", "date"]], on="raceId", how="left"
+        )
+        constructor_standings = constructor_standings.merge(
+            races[["raceId", "date"]], on="raceId", how="left"
+        )
+        lap_times = lap_times.merge(races[["raceId", "date"]], on="raceId", how="left")
 
         # add missing pkey colum to lap_times
-        lap_times['lapId'] = lap_times.index
+        lap_times["lapId"] = lap_times.index
 
         tables = {}
 
         tables["races"] = Table(
             df=pd.DataFrame(races),
             fkey_col_to_pkey_table={
-                "circuitId": "circuits",  
+                "circuitId": "circuits",
             },
             pkey_col="raceId",
             time_col="date",
@@ -135,20 +142,16 @@ class F1Dataset(RelBenchDataset):
 
         tables["results"] = Table(
             df=pd.DataFrame(results),
-            fkey_col_to_pkey_table={
-                "raceId": "races", 
-                "driverId": "drivers"},
+            fkey_col_to_pkey_table={"raceId": "races", "driverId": "drivers"},
             pkey_col="resultId",
             time_col="date",
         )
 
         tables["standings"] = Table(
             df=pd.DataFrame(standings),
-            fkey_col_to_pkey_table={
-                "raceId": "races",
-                "driverId": "drivers"},
+            fkey_col_to_pkey_table={"raceId": "races", "driverId": "drivers"},
             pkey_col="driverStandingsId",
-            time_col="date" 
+            time_col="date",
         )
 
         tables["constructors"] = Table(
@@ -160,29 +163,23 @@ class F1Dataset(RelBenchDataset):
 
         tables["constructor_results"] = Table(
             df=pd.DataFrame(constructor_results),
-            fkey_col_to_pkey_table={
-                'raceId': 'races',
-                'constructorId': 'constructors'},
+            fkey_col_to_pkey_table={"raceId": "races", "constructorId": "constructors"},
             pkey_col="constructorResultsId",
-            time_col="date"
+            time_col="date",
         )
 
         tables["constructor_standings"] = Table(
             df=pd.DataFrame(constructor_standings),
-            fkey_col_to_pkey_table={
-                "raceId": "races",
-                "constructorId": "constructors"},
+            fkey_col_to_pkey_table={"raceId": "races", "constructorId": "constructors"},
             pkey_col="constructorStandingsId",
-            time_col="date"
+            time_col="date",
         )
 
         tables["lap_times"] = Table(
             df=pd.DataFrame(lap_times),
-            fkey_col_to_pkey_table={
-                "raceId": "races",
-                "driverId": "drivers"},
+            fkey_col_to_pkey_table={"raceId": "races", "driverId": "drivers"},
             pkey_col="lapId",
-            time_col="date"
+            time_col="date",
         )
- 
+
         return Database(tables)
