@@ -22,10 +22,7 @@ from tqdm import tqdm
 from relbench.data import RelBenchDataset
 from relbench.data.task import TaskType
 from relbench.datasets import get_dataset
-from relbench.external.graph import (
-    get_train_table_input,
-    make_pkey_fkey_graph,
-)
+from relbench.external.graph import get_train_table_input, make_pkey_fkey_graph
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
 
 parser = argparse.ArgumentParser()
@@ -93,7 +90,9 @@ elif task.task_type == TaskType.REGRESSION:
     tune_metric = "mae"
     higher_is_better = False
     # Get the clamp value at inference time
-    clamp_min, clamp_max = np.percentile(task.train_table.df[task.target_col].to_numpy(), [2, 98])
+    clamp_min, clamp_max = np.percentile(
+        task.train_table.df[task.target_col].to_numpy(), [2, 98]
+    )
 
 
 class Model(torch.nn.Module):
