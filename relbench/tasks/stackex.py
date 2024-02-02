@@ -93,13 +93,13 @@ class VotesTask(RelBenchTask):
     r"""Predict the number of upvotes that a question that is posted within the
     last 1 year will receive in the next 1 year."""
     name = "rel-stackex-votes"
-    task_type = TaskType.BINARY_CLASSIFICATION
+    task_type = TaskType.REGRESSION  #TaskType.BINARY_CLASSIFICATION
     entity_col = "PostId"
     entity_table = "posts"
     time_col = "timestamp"
     target_col = "popularity"
     timedelta = pd.Timedelta(days=365)
-    metrics = [average_precision, accuracy, f1, roc_auc]
+    metrics = [mae, rmse] #[average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for post_votes_next_month."""
@@ -131,9 +131,11 @@ class VotesTask(RelBenchTask):
             """
         ).df()
 
-        # convert to boolean target
+
         # modelling choice since regression targets highly skewed
-        df["popularity"] = (df["popularity"] != 0).astype(int)
+        #df[self.target_col] = df[self.target_col].apply(lambda x: np.log(x+1))
+
+        #df["popularity"] = (df["popularity"] != 0).astype(int)
 
         return Table(
             df=df,

@@ -180,5 +180,13 @@ dataset2inferred_stypes = {
             'wins': stype.numerical,
             'date': stype.timestamp,
         },
+        'lap_times': {
+            'raceId': stype.numerical,
+            'driverId': stype.numerical,
+            'lap': stype.numerical,
+            'position': stype.numerical,
+            'milliseconds': stype.numerical,
+            'lapId': stype.numerical,
+        },
     }
 }

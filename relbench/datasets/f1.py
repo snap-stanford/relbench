@@ -38,6 +38,7 @@ class F1Dataset(RelBenchDataset):
         constructors = pd.read_csv(os.path.join(path, "constructors.csv"))
         constructor_results = pd.read_csv(os.path.join(path, "constructor_results.csv"))
         constructor_standings = pd.read_csv(os.path.join(path, "constructor_standings.csv"))
+        lap_times = pd.read_csv(os.path.join(path, "lap_times.csv"))
 
         ## remove columns that are irrelevant, leak time, or have too many missing values
         races.drop(
@@ -86,21 +87,26 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
+        lap_times.drop(
+            columns=["time"],
+            inplace=True,
+        )
+
         ## replase missing data and combine date and time columns
         races['time'] = races['time'].replace(r'^\\N$', '00:00:00', regex=True)
         races["date"] = races['date'] + ' ' + races['time']
         ## change time column to unix time
         races["date"] = pd.to_datetime(races["date"])
 
-        # add time column to results table
+        # add time column to other tables
         results = results.merge(races[['raceId', 'date']], on='raceId', how='left')
-
-        # add time column to standings table
         standings = standings.merge(races[['raceId', 'date']], on='raceId', how='left')
-
         constructor_results = constructor_results.merge(races[['raceId', 'date']], on='raceId', how='left')
-
         constructor_standings = constructor_standings.merge(races[['raceId', 'date']], on='raceId', how='left')
+        lap_times = lap_times.merge(races[['raceId', 'date']], on='raceId', how='left')
+
+        # add missing pkey colum to lap_times
+        lap_times['lapId'] = lap_times.index
 
         tables = {}
 
@@ -167,6 +173,15 @@ class F1Dataset(RelBenchDataset):
                 "raceId": "races",
                 "constructorId": "constructors"},
             pkey_col="constructorStandingsId",
+            time_col="date"
+        )
+
+        tables["lap_times"] = Table(
+            df=pd.DataFrame(lap_times),
+            fkey_col_to_pkey_table={
+                "raceId": "races",
+                "driverId": "drivers"},
+            pkey_col="lapId",
             time_col="date"
         )
  

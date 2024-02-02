@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import duckdb   
+import numpy as np
 
 from relbench.data import Database, RelBenchTask, Table
 from relbench.data.task import TaskType
@@ -16,7 +17,7 @@ class PointsTask(RelBenchTask):
     entity_table = "drivers"
     time_col = "date"
     target_col = "points"
-    timedelta = pd.Timedelta(days=30)
+    timedelta = pd.Timedelta(days=365)
     metrics = [mae, rmse] #[average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -59,9 +60,11 @@ class PointsTask(RelBenchTask):
         # make into binary classification task
         #df[self.target_col] = df[self.target_col].apply(lambda x: 1 if x > 0. else 0)
         
-        mean = 3.021777777777778
-        std = 5.299464335614526
-        df[self.target_col] = (df[self.target_col] - mean) / std
+        #mean = 3.021777777777778
+        #std = 5.299464335614526
+        #df[self.target_col] = (df[self.target_col] - mean) / std
+
+        #df[self.target_col] = df[self.target_col].apply(lambda x: np.log(x+1))
 
         return Table(
             df=df,
