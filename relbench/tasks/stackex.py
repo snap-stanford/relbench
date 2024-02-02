@@ -164,7 +164,7 @@ class BadgesTask(RelBenchTask):
             LEFT JOIN badges b
                 ON u.Id = b.UserID
                 AND b.Date > t.timestamp
-                AND b.Date <= t.timestamp + INTERVAL {self.timedelta}
+                AND b.Date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, u.Id
             """
         ).df()
