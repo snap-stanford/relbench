@@ -179,7 +179,6 @@ def train() -> Dict[str, float]:
             batch.num_sampled_edges_dict,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
-
         loss = loss_fn(pred, batch[entity_table].y)
         loss.backward()
         optimizer.step()
