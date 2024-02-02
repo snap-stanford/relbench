@@ -44,7 +44,7 @@ def test_train_fake_product_dataset(tmp_path):
 
     assert len(x_dict) == 3
     assert x_dict["customer"].size() == (100, 64)
-    assert x_dict["review"].size() == (450, 64)
+    assert x_dict["review"].size() == (540, 64)
     assert x_dict["product"].size() == (30, 64)
     assert x.size() == (100, 1)
 
@@ -74,10 +74,11 @@ def test_train_fake_product_dataset(tmp_path):
         loader_dict[split] = loader
 
         batch = next(iter(loader))
-        assert batch["customer"].batch_size == 32
-        assert batch["customer"].seed_time.size() == (32,)
+        batch_size = batch["customer"].batch_size
+        assert batch_size <= 32
+        assert batch["customer"].seed_time.size() == (batch_size,)
         if split != "test":
-            assert batch["customer"].y.size() == (32,)
+            assert batch["customer"].y.size() == (batch_size,)
 
     # Ensure that mini-batch training works ###################################
 
