@@ -120,7 +120,7 @@ class VotesTask(RelBenchTask):
                 LEFT JOIN votes v
                 ON p.id = v.PostId
                 and v.CreationDate > t.timestamp
-                and v.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
+                and v.CreationDate <= t.timestamp + INTERVAL '{self.timedelta}'
                 and v.votetypeid = 2
                 GROUP BY t.timestamp, p.id
             ;
@@ -137,7 +137,7 @@ class VotesTask(RelBenchTask):
 
 
 class BadgesTask(RelBenchTask):
-    r"""Predict if each user will receive in a new badge the next 2 years."""
+    r"""Predict if each user will receive in a new badge the next 1 year."""
     name = "rel-stackex-badges"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "UserId"
@@ -164,7 +164,7 @@ class BadgesTask(RelBenchTask):
             LEFT JOIN badges b
                 ON u.Id = b.UserID
                 AND b.Date > t.timestamp
-                AND b.Date <= t.timestamp + INTERVAL 2 years
+                AND b.Date <= t.timestamp + INTERVAL {self.timedelta}
             GROUP BY t.timestamp, u.Id
             """
         ).df()
