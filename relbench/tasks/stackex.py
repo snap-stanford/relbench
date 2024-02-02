@@ -22,7 +22,6 @@ class EngageTask(RelBenchTask):
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for UserContributionTask."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         comments = db.table_dict["comments"].df
         votes = db.table_dict["votes"].df
@@ -90,19 +89,18 @@ class EngageTask(RelBenchTask):
 
 
 class VotesTask(RelBenchTask):
-    r"""Predict the number of upvotes that a question that is posted within the
-    last 1 year will receive in the next 1 year."""
+    r"""Predict the number of upvotes that an existing question will receive in
+    the next 2 years."""
     name = "rel-stackex-votes"
-    task_type = TaskType.BINARY_CLASSIFICATION
+    task_type = TaskType.REGRESSION
     entity_col = "PostId"
     entity_table = "posts"
     time_col = "timestamp"
     target_col = "popularity"
-    timedelta = pd.Timedelta(days=365)
-    metrics = [average_precision, accuracy, f1, roc_auc]
+    timedelta = pd.Timedelta(days=365 * 2)
+    metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for post_votes_next_month."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         votes = db.table_dict["votes"].df
         posts = db.table_dict["posts"].df
@@ -115,25 +113,20 @@ class VotesTask(RelBenchTask):
                     count(distinct v.id) as popularity
                 FROM timestamp_df t
                 LEFT JOIN posts p
-                ON p.CreationDate > t.timestamp - INTERVAL '{self.timedelta} days'
-                and p.CreationDate <= t.timestamp
+                ON p.CreationDate <= t.timestamp
                 and p.owneruserid != -1
                 and p.owneruserid is not null
                 and p.PostTypeId = 1
                 LEFT JOIN votes v
                 ON p.id = v.PostId
                 and v.CreationDate > t.timestamp
-                and v.CreationDate <= t.timestamp + INTERVAL '{self.timedelta}'
+                and v.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
                 and v.votetypeid = 2
                 GROUP BY t.timestamp, p.id
             ;
 
             """
         ).df()
-
-        # convert to boolean target
-        # modelling choice since regression targets highly skewed
-        df["popularity"] = (df["popularity"] != 0).astype(int)
 
         return Table(
             df=df,
@@ -144,7 +137,7 @@ class VotesTask(RelBenchTask):
 
 
 class BadgesTask(RelBenchTask):
-    r"""Predict if each user will receive in a new badge the next 1 month."""
+    r"""Predict if each user will receive in a new badge the next 2 years."""
     name = "rel-stackex-badges"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "UserId"
@@ -155,7 +148,6 @@ class BadgesTask(RelBenchTask):
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for post_votes_next_month."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         users = db.table_dict["users"].df
         badges = db.table_dict["badges"].df
