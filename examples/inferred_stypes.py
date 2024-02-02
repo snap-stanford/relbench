@@ -37,7 +37,7 @@ dataset2inferred_stypes = {
         "posts": {
             "Id": stype.numerical,
             "PostTypeId": stype.numerical,
-            # "AcceptedAnswerId": stype.numerical,
+            "AcceptedAnswerId": stype.numerical,
             "ParentId": stype.numerical,
             "CreationDate": stype.timestamp,
             "Body": stype.text_embedded,
