@@ -32,6 +32,14 @@ class Task:
     ):
         self.dataset = dataset
         self.timedelta = timedelta
+        time_diff = self.dataset.test_timestamp - self.dataset.val_timestamp
+        if time_diff < self.timedelta:
+            raise ValueError(
+                f"timedelta cannot be larger than the difference between val "
+                f"and test timestamps (timedelta: {timedelta}, time "
+                f"diff: {time_diff})."
+            )
+
         self.target_col = target_col
         self.metrics = metrics
         self.entity_table = entity_table
@@ -58,13 +66,19 @@ class Task:
     def train_table(self) -> Table:
         """Returns the train table for a task."""
         if "train" not in self._cached_table_dict:
+            timestamps = pd.date_range(
+                self.dataset.val_timestamp - self.timedelta,
+                self.dataset.db.min_timestamp,
+                freq=-self.timedelta,
+            )
+            if len(timestamps) < 3:
+                raise RuntimeError(
+                    f"The number of training time frames is too few. "
+                    f"({len(timestamps)} given)"
+                )
             table = self.make_table(
                 self.dataset.db,
-                pd.date_range(
-                    self.dataset.val_timestamp - self.timedelta,
-                    self.dataset.db.min_timestamp,
-                    freq=-self.timedelta,
-                ),
+                timestamps,
             )
             self._cached_table_dict["train"] = table
         else:
@@ -75,6 +89,16 @@ class Task:
     def val_table(self) -> Table:
         r"""Returns the val table for a task."""
         if "val" not in self._cached_table_dict:
+            if (
+                self.dataset.val_timestamp + self.timedelta
+                > self.dataset.db.max_timestamp
+            ):
+                raise RuntimeError(
+                    "val timestamp + timedelta is larger than max timestamp! "
+                    "This would cause val labels to be generated with "
+                    "insufficient aggregation time."
+                )
+
             table = self.make_table(
                 self.dataset.db,
                 pd.Series([self.dataset.val_timestamp]),
@@ -83,6 +107,30 @@ class Task:
         else:
             table = self._cached_table_dict["val"]
         return self.filter_dangling_entities(table)
+
+    @property
+    def test_table(self) -> Table:
+        r"""Returns the test table for a task."""
+        if "full_test" not in self._cached_table_dict:
+            if (
+                self.dataset.test_timestamp + self.timedelta
+                > self.dataset._full_db.max_timestamp
+            ):
+                raise RuntimeError(
+                    "test timestamp + timedelta is larger than max timestamp! "
+                    "This would cause test labels to be generated with "
+                    "insufficient aggregation time."
+                )
+
+            full_table = self.make_table(
+                self.dataset._full_db,
+                pd.Series([self.dataset.test_timestamp]),
+            )
+            self._cached_table_dict["full_test"] = full_table
+        else:
+            full_table = self._cached_table_dict["full_test"]
+        self._full_test_table = self.filter_dangling_entities(full_table)
+        return self._mask_input_cols(self._full_test_table)
 
     def _mask_input_cols(self, table: Table) -> Table:
         input_cols = [
@@ -95,20 +143,6 @@ class Task:
             pkey_col=table.pkey_col,
             time_col=table.time_col,
         )
-
-    @property
-    def test_table(self) -> Table:
-        r"""Returns the test table for a task."""
-        if "full_test" not in self._cached_table_dict:
-            full_table = self.make_table(
-                self.dataset._full_db,
-                pd.Series([self.dataset.test_timestamp]),
-            )
-            self._cached_table_dict["full_test"] = full_table
-        else:
-            full_table = self._cached_table_dict["full_test"]
-        self._full_test_table = self.filter_dangling_entities(full_table)
-        return self._mask_input_cols(self._full_test_table)
 
     def filter_dangling_entities(self, table: Table) -> Table:
         num_entities = len(self.dataset.db.table_dict[self.entity_table])
