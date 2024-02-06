@@ -31,6 +31,10 @@ def create_model(data, entity_table, to_device=True):
                     for node_type in data.node_types
                 },
                 node_to_col_stats=data.col_stats_dict,
+                torch_frame_model_kwargs={
+                    "channels": cfg.torch_frame_model.channels,
+                    "num_layers": cfg.torch_frame_model.num_layers,
+                }
             )
             self.temporal_encoder = HeteroTemporalEncoder(
                 node_types=[
@@ -44,10 +48,13 @@ def create_model(data, entity_table, to_device=True):
                 edge_types=data.edge_types,
                 channels=cfg.model.channels,
                 aggr=cfg.model.aggr,
+                num_layers=cfg.model.num_layers,
+                use_self_join=cfg.model.use_self_join,
+                node_type_considered=cfg.model.node_type_considered,
             )
             self.head = MLP(
                 cfg.model.channels,
-                out_channels=1,  # TODO: hard coding here, need to polish
+                out_channels=1,  # TODO: hard coding here, need to be task specific
                 num_layers=1,
             )
 

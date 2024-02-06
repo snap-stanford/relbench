@@ -8,7 +8,7 @@ from relgym.utils.epoch import is_ckpt_epoch, is_eval_epoch
 from relbench.data.task import TaskType
 
 
-def train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn):
+def train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn, loss_utils):
     model.train()
 
     loss_accum = count_accum = 0
@@ -38,7 +38,7 @@ def train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn)
 
 
 @torch.no_grad()
-def eval_epoch(loader_dict, model, task, entity_table, loss_fn, split='val'):
+def eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, split='val'):
     model.eval()
 
     pred_list = []
@@ -56,6 +56,8 @@ def eval_epoch(loader_dict, model, task, entity_table, loss_fn, split='val'):
 
         if task.task_type == TaskType.BINARY_CLASSIFICATION:
             pred = torch.sigmoid(pred)
+        elif task.task_type == TaskType.REGRESSION:
+            pred = torch.clamp(pred, loss_utils['clamp_min'], loss_utils['clamp_max'])
 
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         pred_list.append(pred.detach().cpu())
@@ -70,7 +72,7 @@ def eval_epoch(loader_dict, model, task, entity_table, loss_fn, split='val'):
     return metrics
 
 
-def train(loader_dict, model, optimizer, scheduler, task, entity_table, loss_fn):
+def train(loader_dict, model, optimizer, scheduler, task, entity_table, loss_fn, loss_utils):
     r"""
     The core training pipeline
 
@@ -82,16 +84,17 @@ def train(loader_dict, model, optimizer, scheduler, task, entity_table, loss_fn)
 
     """
     start_epoch = 0
+    early_stop_counter = 0
     # if cfg.train.auto_resume:
     #     start_epoch = load_ckpt(model, optimizer, scheduler)
     #     logging.info('Start from epoch {}'.format(start_epoch))
 
     best_val_metric = 0 if cfg.higher_is_better else math.inf
     for cur_epoch in range(start_epoch, cfg.optim.max_epoch):
-        train_loss = train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn)
+        train_loss = train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn, loss_utils)
         logging.info(f"Epoch: {cur_epoch:02d}, Train loss: {train_loss}")
         if is_eval_epoch(cur_epoch):
-            metrics = eval_epoch(loader_dict, model, task, entity_table, loss_fn, split='val')
+            metrics = eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, split='val')
             logging.info(f"Val metrics: {metrics}")
             cur_val_metric = metrics[cfg.tune_metric]
             # Save the best model
@@ -99,15 +102,24 @@ def train(loader_dict, model, optimizer, scheduler, task, entity_table, loss_fn)
                     not cfg.higher_is_better and cur_val_metric < best_val_metric):
                 save_ckpt(model, optimizer, scheduler, best=True)
                 best_val_metric = cur_val_metric
+                early_stop_counter = 0
+            else:
+                early_stop_counter += 1
+            if cfg.optim.early_stop is not None and early_stop_counter >= cfg.optim.early_stop:
+                logging.info(f"Early stopped with counter {early_stop_counter} at epoch {cur_epoch}")
+                break
+            else:
+                logging.info(f"Early stop counter {early_stop_counter}")
+
         if is_ckpt_epoch(cur_epoch):
             save_ckpt(model, optimizer, scheduler, cur_epoch)
 
     # Test, load the best model
     load_ckpt(model, best=True)
     logging.info("Model loaded for evaluation")
-    metrics = eval_epoch(loader_dict, model, task, entity_table, loss_fn, split='val')
+    metrics = eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, split='val')
     logging.info(f"Val metrics: {metrics}")
-    metrics = eval_epoch(loader_dict, model, task, entity_table, loss_fn, split='test')
+    metrics = eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, split='test')
     logging.info(f"Test metrics: {metrics}")
 
     logging.info('Task done, results saved in {}'.format(cfg.out_dir))

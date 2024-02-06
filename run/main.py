@@ -38,6 +38,9 @@ def parse_args() -> argparse.Namespace:
                         default=None,
                         nargs=argparse.REMAINDER,
                         help='See graphgym/config.py for remaining options.')
+    parser.add_argument('--auto_select_device',
+                        action='store_true',
+                        help='Automatically select gpu for training.')
 
     return parser.parse_args()
 
@@ -57,20 +60,23 @@ if __name__ == '__main__':
         setup_printing()
         # Set configurations for each run
         seed_everything(cfg.seed)
-        auto_select_device()
+        if args.auto_select_device:
+            auto_select_device()
+        else:
+            cfg.device = 'cuda'
         # Set machine learning pipeline
         loader_dict, entity_table, task, data = create_loader()
         model = create_model(data=data, entity_table=entity_table, to_device=cfg.device)
         optimizer = create_optimizer(model.parameters())
         scheduler = create_scheduler(optimizer)
-        loss_fn = create_loss_fn(task)
+        loss_fn, loss_utils = create_loss_fn(task)
         # Print model info
         logging.info(model)
         logging.info(cfg)
         cfg.params = params_count(model)
         logging.info('Num parameters: %s', cfg.params)
         # Start training
-        train(loader_dict, model, optimizer, scheduler, task, entity_table, loss_fn)
+        train(loader_dict, model, optimizer, scheduler, task, entity_table, loss_fn, loss_utils)
         logging.info(f'Complete trial {i}')
         cfg.seed = cfg.seed + 1
 

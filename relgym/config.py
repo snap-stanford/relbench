@@ -41,9 +41,6 @@ def set_cfg(cfg):
     # Max threads used by PyTorch
     cfg.num_threads = 6
 
-    # The metric for selecting the best epoch for each run
-    cfg.metric_best = 'auto'
-
     # ----------------------------------------------------------------------- #
     # Loader options
     # ----------------------------------------------------------------------- #
@@ -95,18 +92,38 @@ def set_cfg(cfg):
     cfg.val = CN()
 
     # ----------------------------------------------------------------------- #
+    # Torch Frame Model options
+    # ----------------------------------------------------------------------- #
+    cfg.torch_frame_model = CN()
+
+    # The hidden channels for the model
+    cfg.torch_frame_model.channels = 128
+
+    # The aggregation method
+    cfg.torch_frame_model.num_layers = 2
+
+    # ----------------------------------------------------------------------- #
     # Model options
     # ----------------------------------------------------------------------- #
     cfg.model = CN()
 
     # The hidden channels for the model
-    cfg.model.channels = 0
+    cfg.model.channels = 128
 
     # The aggregation method
     cfg.model.aggr = None
 
     # The graph convolution operation, in ['sage', 'gat', 'gc']
     cfg.model.conv = None
+
+    # The number of conv layers
+    cfg.model.num_layers = 2
+
+    # Use self join
+    cfg.model.use_self_join = False
+
+    # Self join type list
+    cfg.model.node_type_considered = None
 
     # ----------------------------------------------------------------------- #
     # GNN options
@@ -141,6 +158,9 @@ def set_cfg(cfg):
 
     # Maximal number of epochs
     cfg.optim.max_epoch = 20
+
+    # Number of earlystopping counter
+    cfg.optim.early_stop = None
 
 
 def dump_cfg(cfg):
