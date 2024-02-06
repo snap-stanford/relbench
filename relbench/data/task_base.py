@@ -29,6 +29,14 @@ class BaseTask:
     ):
         self.dataset = dataset
         self.timedelta = timedelta
+        time_diff = self.dataset.test_timestamp - self.dataset.val_timestamp
+        if time_diff < self.timedelta:
+            raise ValueError(
+                f"timedelta cannot be larger than the difference between val "
+                f"and test timestamps (timedelta: {timedelta}, time "
+                f"diff: {time_diff})."
+            )
+
         self.metrics = metrics
 
         self._full_test_table = None
@@ -36,7 +44,7 @@ class BaseTask:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
-
+    
     def make_table(
         self,
         db: Database,
@@ -52,13 +60,19 @@ class BaseTask:
     def train_table(self) -> Table:
         """Returns the train table for a task."""
         if "train" not in self._cached_table_dict:
+            timestamps = pd.date_range(
+                self.dataset.val_timestamp - self.timedelta,
+                self.dataset.db.min_timestamp,
+                freq=-self.timedelta,
+            )
+            if len(timestamps) < 3:
+                raise RuntimeError(
+                    f"The number of training time frames is too few. "
+                    f"({len(timestamps)} given)"
+                )
             table = self.make_table(
                 self.dataset.db,
-                pd.date_range(
-                    self.dataset.val_timestamp - self.timedelta,
-                    self.dataset.db.min_timestamp,
-                    freq=-self.timedelta,
-                ),
+                timestamps,
             )
             self._cached_table_dict["train"] = table
         else:
@@ -69,6 +83,16 @@ class BaseTask:
     def val_table(self) -> Table:
         r"""Returns the val table for a task."""
         if "val" not in self._cached_table_dict:
+            if (
+                self.dataset.val_timestamp + self.timedelta
+                > self.dataset.db.max_timestamp
+            ):
+                raise RuntimeError(
+                    "val timestamp + timedelta is larger than max timestamp! "
+                    "This would cause val labels to be generated with "
+                    "insufficient aggregation time."
+                )
+
             table = self.make_table(
                 self.dataset.db,
                 pd.Series([self.dataset.val_timestamp]),
@@ -77,6 +101,30 @@ class BaseTask:
         else:
             table = self._cached_table_dict["val"]
         return self.filter_dangling_entities(table)
+
+    @property
+    def test_table(self) -> Table:
+        r"""Returns the test table for a task."""
+        if "full_test" not in self._cached_table_dict:
+            if (
+                self.dataset.test_timestamp + self.timedelta
+                > self.dataset._full_db.max_timestamp
+            ):
+                raise RuntimeError(
+                    "test timestamp + timedelta is larger than max timestamp! "
+                    "This would cause test labels to be generated with "
+                    "insufficient aggregation time."
+                )
+
+            full_table = self.make_table(
+                self.dataset._full_db,
+                pd.Series([self.dataset.test_timestamp]),
+            )
+            self._cached_table_dict["full_test"] = full_table
+        else:
+            full_table = self._cached_table_dict["full_test"]
+        self._full_test_table = self.filter_dangling_entities(full_table)
+        return self._mask_input_cols(self._full_test_table)
 
     def _mask_input_cols(self, table: Table) -> Table:
         input_cols = [
@@ -89,21 +137,7 @@ class BaseTask:
             pkey_col=table.pkey_col,
             time_col=table.time_col,
         )
-
-    @property
-    def test_table(self) -> Table:
-        r"""Returns the test table for a task."""
-        if "full_test" not in self._cached_table_dict:
-            full_table = self.make_table(
-                self.dataset._full_db,
-                pd.Series([self.dataset.test_timestamp]),
-            )
-            self._cached_table_dict["full_test"] = full_table
-        else:
-            full_table = self._cached_table_dict["full_test"]
-        self._full_test_table = self.filter_dangling_entities(full_table)
-        return self._mask_input_cols(self._full_test_table)
-
+    
     def filter_dangling_entities(self, table: Table) -> Table:
         r"""Filter out dangling entities from a table."""
         raise NotImplementedError
@@ -127,3 +161,44 @@ class TaskType(Enum):
     BINARY_CLASSIFICATION = "binary_classification"
     LINK_PREDICTION = "link_prediction"
 
+
+class RelBenchBaseTask:
+    name: str
+    task_dir: str = "tasks"
+    metrics: List[Callable[[NDArray, NDArray], float]]
+
+    def __init__(self, dataset, process: bool = False) -> None:
+        # Common initialization logic
+        self.dataset = dataset
+        if not process:
+            task_path = _pooch.fetch(
+                f"{dataset.name}/{self.task_dir}/{self.name}.zip",
+                processor=unzip_processor,
+                progressbar=True,
+            )
+            self._cached_table_dict = Database.load(task_path).table_dict
+
+    def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
+        _dummy_db = Database(
+            table_dict={
+                "train": self.train_table,
+                "val": self.val_table,
+                "test": self.test_table,
+                "full_test": self._full_test_table,
+            }
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            task_path = Path(tmpdir) / self.name
+            _dummy_db.save(task_path)
+
+            zip_base_path = Path(root) / self.dataset.name / self.task_dir / self.name
+            zip_path = shutil.make_archive(zip_base_path, "zip", task_path)
+
+        with open(zip_path, "rb") as f:
+            sha256 = hashlib.sha256(f.read()).hexdigest()
+
+        print(f"upload: {zip_path}")
+        print(f"sha256: {sha256}")
+
+        return f"{self.dataset.name}/{self.task_dir}/{self.name}.zip", sha256

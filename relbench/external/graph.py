@@ -20,7 +20,11 @@ from relbench.data.task_base import BaseTask
 def to_unix_time(ser: pd.Series) -> Tensor:
     r"""Converts a :class:`pandas.Timestamp` series to UNIX timestamp
     (in seconds)."""
-    return torch.from_numpy(ser.astype(int).values) // 10**9
+    assert ser.dtype in [np.dtype("datetime64[s]"), np.dtype("datetime64[ns]")]
+    unix_time = torch.from_numpy(ser.astype(int).values)
+    if ser.dtype == np.dtype("datetime64[ns]"):
+        unix_time //= 10**9
+    return unix_time
 
 
 def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
@@ -37,14 +41,6 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
     inferred_col_to_stype_dict = {}
     for table_name, table in db.table_dict.items():
         inferred_col_to_stype = infer_df_stype(table.df)
-
-        # Remove pkey, fkey columns since they will not be used as input
-        # feature.
-        if table.pkey_col is not None:
-            inferred_col_to_stype.pop(table.pkey_col)
-        for fkey in table.fkey_col_to_pkey_table.keys():
-            inferred_col_to_stype.pop(fkey)
-
         inferred_col_to_stype_dict[table_name] = inferred_col_to_stype
 
     return inferred_col_to_stype_dict
@@ -85,6 +81,13 @@ def make_pkey_fkey_graph(
             assert (df[table.pkey_col].values == np.arange(len(df))).all()
 
         col_to_stype = col_to_stype_dict[table_name]
+
+        # Remove pkey, fkey columns since they will not be used as input
+        # feature.
+        if table.pkey_col is not None:
+            col_to_stype.pop(table.pkey_col)
+        for fkey in table.fkey_col_to_pkey_table.keys():
+            col_to_stype.pop(fkey)
 
         if len(col_to_stype) == 0:  # Add constant feature in case df is empty:
             col_to_stype = {"__const__": stype.numerical}

@@ -4,6 +4,7 @@ from typing import Dict
 import pandas as pd
 import torch
 import torch_frame
+from inferred_stypes import dataset2inferred_stypes
 from text_embedder import GloveTextEmbedding
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
@@ -14,15 +15,6 @@ from torch_frame.utils import infer_df_stype
 from relbench.data import RelBenchDataset
 from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
-
-# Stores the informative text columns to retain for each table:
-dataset_to_informative_text_cols = {}
-dataset_to_informative_text_cols["rel-stackex"] = {
-    "postHistory": ["Text"],
-    "users": ["AboutMe"],
-    "posts": ["Body", "Title", "Tags"],
-    "comments": ["Text"],
-}
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
@@ -42,20 +34,13 @@ test_table = task.test_table
 dfs: Dict[str, pd.DataFrame] = {}
 entity_table = dataset.db.table_dict[task.entity_table]
 entity_df = entity_table.df
-col_to_stype = infer_df_stype(entity_df)
+
+col_to_stype = dataset2inferred_stypes[args.dataset][task.entity_table]
+
 if entity_table.pkey_col is not None:
     del col_to_stype[entity_table.pkey_col]
 for fkey_col in entity_table.fkey_col_to_pkey_table.keys():
     del col_to_stype[fkey_col]
-
-informative_text_cols: Dict = dataset_to_informative_text_cols[args.dataset].get(
-    task.entity_table, []
-)
-for col_name, stype in list(col_to_stype.items()):
-    # Remove text columns except for the informative ones:
-    if stype == torch_frame.text_embedded:
-        if col_name not in informative_text_cols:
-            del col_to_stype[col_name]
 
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
     col_to_stype[task.target_col] = torch_frame.categorical

@@ -8,6 +8,7 @@ from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc, hits_at_k, mrr
 from relbench.utils import get_df_in_window
 
+######## node prediction tasks ########
 
 class EngageTask(RelBenchNodeTask):
     r"""Predict if a user will make any votes/posts/comments in the next 1 year."""
@@ -22,7 +23,6 @@ class EngageTask(RelBenchNodeTask):
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for UserContributionTask."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         comments = db.table_dict["comments"].df
         votes = db.table_dict["votes"].df
@@ -90,19 +90,18 @@ class EngageTask(RelBenchNodeTask):
 
 
 class VotesTask(RelBenchNodeTask):
-    r"""Predict the number of upvotes that a question that is posted within the
-    last 1 year will receive in the next 1 year."""
+    r"""Predict the number of upvotes that an existing question will receive in
+    the next 2 years."""
     name = "rel-stackex-votes"
     task_type = TaskType.REGRESSION
     entity_col = "PostId"
     entity_table = "posts"
     time_col = "timestamp"
     target_col = "popularity"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 * 2)
     metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for post_votes_next_month."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         votes = db.table_dict["votes"].df
         posts = db.table_dict["posts"].df
@@ -115,8 +114,7 @@ class VotesTask(RelBenchNodeTask):
                     count(distinct v.id) as popularity
                 FROM timestamp_df t
                 LEFT JOIN posts p
-                ON p.CreationDate > t.timestamp - INTERVAL '{self.timedelta} days'
-                and p.CreationDate <= t.timestamp
+                ON p.CreationDate <= t.timestamp
                 and p.owneruserid != -1
                 and p.owneruserid is not null
                 and p.PostTypeId = 1
@@ -139,6 +137,54 @@ class VotesTask(RelBenchNodeTask):
         )
 
 
+class BadgesTask(RelBenchNodeTask):
+    r"""Predict if each user will receive in a new badge the next 1 year."""
+    name = "rel-stackex-badges"
+    task_type = TaskType.BINARY_CLASSIFICATION
+    entity_col = "UserId"
+    entity_table = "users"
+    time_col = "timestamp"
+    target_col = "WillGetBadge"
+    timedelta = pd.Timedelta(days=365)
+    metrics = [average_precision, accuracy, f1, roc_auc]
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        users = db.table_dict["users"].df
+        badges = db.table_dict["badges"].df
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                t.timestamp,
+                u.Id as UserId,
+            CASE WHEN COUNT(b.Id) >= 1 THEN 1 ELSE 0 END AS WillGetBadge
+            FROM timestamp_df t
+            LEFT JOIN users u
+            ON u.CreationDate <= t.timestamp
+            LEFT JOIN badges b
+                ON u.Id = b.UserID
+                AND b.Date > t.timestamp
+                AND b.Date <= t.timestamp + INTERVAL '{self.timedelta}'
+            GROUP BY t.timestamp, u.Id
+            """
+        ).df()
+
+        # remove any IderId rows that are NaN
+        df = df.dropna(subset=["UserId"])
+        df[self.entity_col] = df[self.entity_col].astype(
+            int
+        )  # for some reason duckdb returns float64 keys
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+######## link prediction tasks ########
 
 class UserCommentOnPostTask(RelBenchLinkTask):
     r"""Predict if a user will comment on a specific post within 24hrs of the post being made."""
@@ -181,41 +227,9 @@ class UserCommentOnPostTask(RelBenchLinkTask):
                     """
                 ).df()
 
-        # add 'target' column of all 1s
+        # add 'target' column of all 1s. 
+        # TODO (joshrob) this can probably be moved to training script
         df[self.target_col] = np.ones(len(df))
-
-        """
-        ########### Negative Link Sampling 
-
-        # TODO (joshrob) check for false negatives
-        # TODO (joshrob) save negative links to disk to avoid resampling
-
-        NUM_NEGATIVES = 1000
-
-        # randomly sample NUM_NEGATIVE negative pairs   
-        users_arr = users[db.table_dict["users"].pkey_col].to_numpy()
-        timestamp_arr = posts[db.table_dict["posts"].time_col].to_numpy()
-        posts_arr = posts[db.table_dict["posts"].pkey_col].to_numpy()
-
-        perm_users = np.random.permutation(len(users))[:NUM_NEGATIVES]
-        neg_UserIDs = users_arr[perm_users]
-
-        perm_posts = np.random.permutation(len(posts))[:NUM_NEGATIVES]
-        neg_PostIDs = posts_arr[perm_posts]
-
-        timestamp_arr = timestamp_arr[perm_posts]
-
-        # create dataframe with negative pairs 
-
-        df_neg = pd.DataFrame({self.source_entity_col: neg_UserIDs, # WARNING: this is not the same as self.source_entity_col
-                               self.destination_entity_col: neg_PostIDs, # WARNING: this is not the same as self.destination_entity_col
-                               self.time_col: timestamp_arr,
-                               self.target_col: np.zeros(len(neg_UserIDs))
-                               })
-
-
-        df = pd.concat([df, df_neg], ignore_index=True)
-        """
 
         return Table(
             df=df,
