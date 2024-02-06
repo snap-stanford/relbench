@@ -84,9 +84,11 @@ def r2(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 
 ###### link prediction metrics
 
+
 def hits_at_k(pred_dict, k_value):
     out, _ = hits_at_k_and_mrr(pred_dict, k_value)
     return out
+
 
 def mrr(pred_dict, k_value):
     del k_value
@@ -95,28 +97,28 @@ def mrr(pred_dict, k_value):
 
 
 def hits_at_k_and_mrr(pred_dict, k_value):
-        r"""
-        compute hist@k and mrr
-        reference:
-            - https://github.com/snap-stanford/ogb/blob/d5c11d91c9e1c22ed090a2e0bbda3fe357de66e7/ogb/linkproppred/evaluate.py#L214
-        
-        Parameters:
-            pred_dict: keys y_pred_pos, y_pred_neg
-            k_value: the desired 'k' value for calculating metric@k
-            mrr: whether to calculate mrr or hits@k
-        
-        Returns:
-            the computed performance metric
-        """
+    r"""
+    compute hist@k and mrr
+    reference:
+        - https://github.com/snap-stanford/ogb/blob/d5c11d91c9e1c22ed090a2e0bbda3fe357de66e7/ogb/linkproppred/evaluate.py#L214
 
-        y_pred_pos = pred_dict["y_pred_pos"]
-        y_pred_neg = pred_dict["y_pred_neg"]
+    Parameters:
+        pred_dict: keys y_pred_pos, y_pred_neg
+        k_value: the desired 'k' value for calculating metric@k
+        mrr: whether to calculate mrr or hits@k
 
-        y_pred_pos = y_pred_pos.reshape(-1, 1)
-        optimistic_rank = (y_pred_neg >= y_pred_pos).sum(axis=1)
-        pessimistic_rank = (y_pred_neg > y_pred_pos).sum(axis=1)
-        ranking_list = 0.5 * (optimistic_rank + pessimistic_rank) + 1
-        hitsK_list = (ranking_list <= k_value).astype(np.float32)
-        mrr_list = 1./ranking_list.astype(np.float32)
+    Returns:
+        the computed performance metric
+    """
 
-        return hitsK_list.mean(), mrr_list.mean()
+    y_pred_pos = pred_dict["y_pred_pos"]
+    y_pred_neg = pred_dict["y_pred_neg"]
+
+    y_pred_pos = y_pred_pos.reshape(-1, 1)
+    optimistic_rank = (y_pred_neg >= y_pred_pos).sum(axis=1)
+    pessimistic_rank = (y_pred_neg > y_pred_pos).sum(axis=1)
+    ranking_list = 0.5 * (optimistic_rank + pessimistic_rank) + 1
+    hitsK_list = (ranking_list <= k_value).astype(np.float32)
+    mrr_list = 1.0 / ranking_list.astype(np.float32)
+
+    return hitsK_list.mean(), mrr_list.mean()

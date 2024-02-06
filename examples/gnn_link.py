@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch_frame
+import torch_geometric.transforms as T
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
 from torch.nn import BCEWithLogitsLoss, L1Loss
@@ -18,16 +19,14 @@ from torch_geometric.loader import LinkNeighborLoader
 from torch_geometric.nn import MLP
 from torch_geometric.seed import seed_everything
 from torch_geometric.typing import EdgeType, NodeType
-import torch_geometric.transforms as T
-
 from tqdm import tqdm
 
 from relbench.data import RelBenchDataset
 from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 from relbench.external.graph import (
-    get_stype_proposal,
     get_link_train_table_input,
+    get_stype_proposal,
     make_pkey_fkey_graph,
 )
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
@@ -89,19 +88,20 @@ for split, table in [
     ("test", task.test_table),
 ]:
     table_input = get_link_train_table_input(table=table, task=task)
-    
-    if split == "train": # TODO (joshrob) remove once fixed val/test indexing bug
+
+    if split == "train":  # TODO (joshrob) remove once fixed val/test indexing bug
         # add training links to data
         edge_type = table_input.edge_label_index[0]
         data[edge_type].edge_index = table_input.edge_label_index[1]
-        #data[train_edge_type].edge_label_index = table_input.edge_label_index[1]
-        data[edge_type].edge_label = torch.ones(table_input.edge_label_index[1].shape[1])
-
+        # data[train_edge_type].edge_label_index = table_input.edge_label_index[1]
+        data[edge_type].edge_label = torch.ones(
+            table_input.edge_label_index[1].shape[1]
+        )
 
     loader_dict[split] = LinkNeighborLoader(
         data,
         num_neighbors=[args.num_neighbors, args.num_neighbors],
-        neg_sampling_ratio=args.neg_sampling_ratio, # negatives are sampled on the fly at ratio 2:1
+        neg_sampling_ratio=args.neg_sampling_ratio,  # negatives are sampled on the fly at ratio 2:1
         time_attr="time",
         edge_label=data[edge_type].edge_label,
         edge_label_index=(edge_type, data[edge_type].edge_index),
@@ -120,8 +120,9 @@ if task.task_type == TaskType.LINK_PREDICTION:
 
 class LinkPredictor(torch.nn.Module):
     # borrowed from https://github.com/snap-stanford/ogb/blob/master/examples/linkproppred/ddi/gnn.py
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
-                 dropout=0.5):
+    def __init__(
+        self, in_channels, hidden_channels, out_channels, num_layers, dropout=0.5
+    ):
         super(LinkPredictor, self).__init__()
 
         self.lins = torch.nn.ModuleList()
@@ -182,7 +183,7 @@ class Model(torch.nn.Module):
         tf_dict: Dict[NodeType, TensorFrame],
         edge_index_dict: Dict[EdgeType, Tensor],
         edge_label_index: Tensor,
-        #seed_time: Tensor,
+        # seed_time: Tensor,
         time_dict: Dict[NodeType, Tensor],
         batch_dict: Dict[NodeType, Tensor],
         num_sampled_nodes_dict: Dict[NodeType, List[int]],
@@ -190,9 +191,8 @@ class Model(torch.nn.Module):
     ) -> Tensor:
         x_dict = self.encoder(tf_dict)
 
-
         """
-        # TODO (joshrob) fix seed time to enable relative time encoding      
+        # TODO (joshrob) fix seed time to enable relative time encoding
 
         rel_time_dict = self.temporal_encoder(seed_time, time_dict, batch_dict)
 
@@ -225,14 +225,18 @@ def train() -> Dict[str, float]:
         batch = batch.to(device)
 
         optimizer.zero_grad()
-        edge_label = batch[(task.source_entity_table, "train_link",task.destination_entity_table)].edge_label
-        edge_label_index = batch[(task.source_entity_table, "train_link",task.destination_entity_table)].edge_label_index
+        edge_label = batch[
+            (task.source_entity_table, "train_link", task.destination_entity_table)
+        ].edge_label
+        edge_label_index = batch[
+            (task.source_entity_table, "train_link", task.destination_entity_table)
+        ].edge_label_index
 
         out = model(
             batch.tf_dict,
             batch.edge_index_dict,
             edge_label_index,
-            #batch[entity_table].seed_time,
+            # batch[entity_table].seed_time,
             batch.time_dict,
             batch.batch_dict,
             batch.num_sampled_nodes_dict,
@@ -258,13 +262,15 @@ def test(loader: LinkNeighborLoader) -> np.ndarray:
     for batch in tqdm(loader):
         batch = batch.to(device)
 
-        edge_label_index = batch[(task.source_entity_table, "train_link",task.destination_entity_table)].edge_label_index
+        edge_label_index = batch[
+            (task.source_entity_table, "train_link", task.destination_entity_table)
+        ].edge_label_index
 
         pred = model(
             batch.tf_dict,
             batch.edge_index_dict,
             edge_label_index,
-            #batch[entity_table].seed_time,
+            # batch[entity_table].seed_time,
             batch.time_dict,
             batch.batch_dict,
             batch.num_sampled_nodes_dict,

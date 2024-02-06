@@ -2,8 +2,8 @@ from .database import Database
 from .dataset import Dataset, RelBenchDataset
 from .table import Table
 from .task_base import BaseTask
-from .task_node import RelBenchNodeTask, NodeTask
-from .task_link import RelBenchLinkTask, LinkTask
+from .task_link import LinkTask, RelBenchLinkTask
+from .task_node import NodeTask, RelBenchNodeTask
 
 __all__ = [
     "Table",
@@ -11,8 +11,7 @@ __all__ = [
     "BaseTask",
     "NodeTask",
     "RelBenchNodeTask",
-    "LinkTask"
-    "RelBenchLinkTask",
+    "LinkTask" "RelBenchLinkTask",
     "Dataset",
     "RelBenchDataset",
 ]
