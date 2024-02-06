@@ -9,7 +9,7 @@ import torch
 from inferred_stypes import dataset2inferred_stypes
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
-from torch.nn import BCEWithLogitsLoss, L1Loss
+from torch.nn import BCEWithLogitsLoss, L1Loss, MSELoss
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import TensorFrame
 from torch_geometric.data import HeteroData
@@ -32,7 +32,7 @@ parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
-parser.add_argument("--aggr", type=str, default="sum")
+parser.add_argument("--aggr", type=str, nargs="*", default=["sum"])
 parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--num_workers", type=int, default=1)
@@ -89,11 +89,23 @@ elif task.task_type == TaskType.REGRESSION:
     out_channels = 1
     loss_fn = L1Loss()
     tune_metric = "mae"
+
+    #loss_fn = MSELoss()
+    #tune_metric = "rmse"
     higher_is_better = False
     # Get the clamp value at inference time
     clamp_min, clamp_max = np.percentile(
         task.train_table.df[task.target_col].to_numpy(), [2, 98]
     )
+elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+    out_channels = task.num_classes
+    CE = torch.nn.CrossEntropyLoss()
+
+    def loss_fn(pred: Tensor, target: Tensor) -> Tensor:
+        target = target.type(torch.long)
+        return CE(pred, target)
+    tune_metric = "accuracy"
+    higher_is_better = True
 
 
 class Model(torch.nn.Module):

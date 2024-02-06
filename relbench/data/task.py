@@ -149,6 +149,7 @@ class TaskType(Enum):
     """
     REGRESSION = "regression"
     BINARY_CLASSIFICATION = "binary_classification"
+    MULTICLASS_CLASSIFICATION = "multiclass_classification"
 
 
 class RelBenchTask(Task):
