@@ -53,6 +53,7 @@ class TrialDataset(RelBenchDataset):
         studies = studies[studies.completion_date_type == 'Actual']
         ## there are 27 trials before 1975
         studies = studies[studies.start_date > '1975-01-01']
+        studies = studies[studies.nct_id.notnull()]
         #print('studies actual', len(studies))
         nct_id_use = studies.nct_id.values
         
@@ -83,7 +84,7 @@ class TrialDataset(RelBenchDataset):
 
         reported_event_totals = reported_event_totals[['id', 'nct_id', 'event_type', 'classification', 'subjects_affected', 'subjects_at_risk']]
 
-        drop_withdrawals.drop(columns=['result_group_id', 'ctgov_group_code'], inplace = True)
+        drop_withdrawals.drop(columns=['result_group_id', 'ctgov_group_code', 'drop_withdraw_comment', 'reason_comment', 'count_units'], inplace = True)
         ## filter to nct_id with actual completion date
         #print('outcomes before filter', len(outcomes))
         #for df in [outcomes, outcome_analyses, drop_withdrawals, reported_event_totals, designs, eligibilities, interventions, conditions, facilities, sponsors]:
