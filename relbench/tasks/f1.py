@@ -12,13 +12,13 @@ from relbench.utils import get_df_in_window
 class PointsTask(RelBenchTask):
     r"""Predict the finishing position of each driver in a race."""
     name = "rel-f1-points"
-    task_type = TaskType.REGRESSION # TaskType.BINARY_CLASSIFICATION
+    task_type = TaskType.REGRESSION 
     entity_col = "driverId"
     entity_table = "drivers"
     time_col = "date"
     target_col = "points"
-    timedelta = pd.Timedelta(days=365)
-    metrics = [mae, rmse] #[average_precision, accuracy, f1, roc_auc]
+    timedelta = pd.Timedelta(days=60)
+    metrics = [mae, rmse] 
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for results_position_next_race."""
@@ -57,18 +57,8 @@ class PointsTask(RelBenchTask):
             """
         ).df()
 
-        # make into binary classification task
-        #df[self.target_col] = df[self.target_col].apply(lambda x: 1 if x > 0. else 0)
-        # delta = 60 days
-        #mean = 2.303289
-        #std = 4.804828
-
-        # delta = 365 days
-        mean = 6.299388
-        std = 14.304231
-        df[self.target_col] = (df[self.target_col] - mean) / std
-
-        #df[self.target_col] = df[self.target_col].apply(lambda x: np.log(x+1))
+        # use log as target
+        df[self.target_col] = df[self.target_col].apply(lambda x: np.log(x+1))
 
         return Table(
             df=df,
@@ -114,111 +104,6 @@ class PointsTask(RelBenchTask):
             full_table = self._cached_table_dict["full_test"]
         self._full_test_table = self.filter_dangling_entities(full_table)
         return self._mask_input_cols(self._full_test_table)
-
-
-
-
-class PodiumTask(RelBenchTask):
-    r"""Predict the finishing position of each driver in a race."""
-    name = "rel-f1-podium"
-    task_type = TaskType.MULTICLASS_CLASSIFICATION 
-    entity_col = "driverId"
-    entity_table = "drivers"
-    time_col = "date"
-    target_col = "podium"
-    timedelta = pd.Timedelta(days=180) # pd.Timedelta(days=60)
-    metrics = [accuracy]
-    num_classes = 4
-
-    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for results_position_next_race."""
-        timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        
-        results = db.table_dict["results"].df
-        drivers = db.table_dict["drivers"].df
-        races = db.table_dict["races"].df
-
-        df = duckdb.sql(
-            f"""
-                SELECT
-                    t.timestamp as date,
-                    dri.driverId as driverId,
-                    CASE
-                        WHEN MIN(re.positionOrder) <= 3 THEN 1
-                        WHEN MIN(re.positionOrder) BETWEEN 4 AND 6 THEN 2
-                        WHEN MIN(re.positionOrder) BETWEEN 7 AND 10 THEN 3
-                        ELSE 0
-                    END AS podium
-                FROM 
-                    timestamp_df t
-                LEFT JOIN 
-                    results re
-                ON 
-                    re.date <= t.timestamp + INTERVAL '{self.timedelta}'
-                    and re.date  > t.timestamp
-                LEFT JOIN 
-                    drivers dri
-                ON 
-                    re.driverId = dri.driverId
-                WHERE
-                    dri.driverId IN (
-                        SELECT DISTINCT driverId
-                        FROM results
-                        WHERE date > t.timestamp - INTERVAL '1 year'
-                    )
-                GROUP BY t.timestamp, dri.driverId
-                
-            ;
-            """
-        ).df()
-
-        df["podium"] = df["podium"].astype('int64')
-
-        return Table(
-            df=df,
-            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
-            pkey_col=None,
-            time_col=self.time_col,
-        )
-    
-
-    @property
-    def val_table(self) -> Table:
-        r"""Returns the val table for a task."""
-        if "val" not in self._cached_table_dict:
-            table = self.make_table(
-                self.dataset.db,
-                pd.date_range(
-                    self.dataset.test_timestamp - (self.dataset.test_timestamp-self.dataset.val_timestamp)/2- self.timedelta,
-                    self.dataset.val_timestamp,
-                    freq=-self.timedelta,
-                ),
-            )
-            self._cached_table_dict["val"] = table
-        else:
-            table = self._cached_table_dict["val"]
-        return self.filter_dangling_entities(table)
-
-
-
-    @property
-    def test_table(self) -> Table:
-        r"""Returns the test table for a task."""
-        if "full_test" not in self._cached_table_dict:
-            full_table = self.make_table(
-                self.dataset._full_db,
-                pd.date_range(
-                    self.dataset.test_timestamp,
-                    self.dataset.test_timestamp - (self.dataset.test_timestamp-self.dataset.val_timestamp)/2- self.timedelta,
-                    freq=-self.timedelta,
-                ),
-            )
-            self._cached_table_dict["full_test"] = full_table
-        else:
-            full_table = self._cached_table_dict["full_test"]
-        self._full_test_table = self.filter_dangling_entities(full_table)
-        return self._mask_input_cols(self._full_test_table)
-
 
 
 
@@ -226,13 +111,13 @@ class PodiumTask(RelBenchTask):
 class ConstructorPointsTask(RelBenchTask):
     r"""Predict the finishing position of each driver in a race."""
     name = "rel-f1-points-constructor"
-    task_type =TaskType.REGRESSION # TaskType.BINARY_CLASSIFICATION # TaskType.REGRESSION
+    task_type =TaskType.REGRESSION
     entity_col = "constructorId"
     entity_table = "constructors"
     time_col = "date"
     target_col = "points"
-    timedelta = pd.Timedelta(days=30)
-    metrics = [mae, rmse] #[average_precision, accuracy, f1, roc_auc]
+    timedelta = pd.Timedelta(days=60)
+    metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for results_position_next_race."""
@@ -270,9 +155,8 @@ class ConstructorPointsTask(RelBenchTask):
             """
         ).df()
 
-        # make into binary classification task
-        #df[self.target_col] = df[self.target_col].apply(lambda x: 1 if x > 0. else 0)
-        
+        # use log as target
+        df[self.target_col] = df[self.target_col].apply(lambda x: np.log(x+1))
 
         return Table(
             df=df,
@@ -323,7 +207,7 @@ class ConstructorPointsTask(RelBenchTask):
 class DidNotFinishTask(RelBenchTask):
     r"""Predict the if each driver will DNF (not finish) a race in the next time period."""
     name = "rel-f1-dnf"
-    task_type = TaskType.BINARY_CLASSIFICATION # TaskType.REGRESSION
+    task_type = TaskType.BINARY_CLASSIFICATION 
     entity_col = "driverId"
     entity_table = "drivers"
     time_col = "date"
@@ -419,6 +303,107 @@ class DidNotFinishTask(RelBenchTask):
             full_table = self._cached_table_dict["full_test"]
         self._full_test_table = self.filter_dangling_entities(full_table)
         return self._mask_input_cols(self._full_test_table)
+
+
+
+
+class QualifyingTask(RelBenchTask):
+    r"""Predict the finishing position of each driver in a race."""
+    name = "rel-f1-qualifying"
+    task_type =  TaskType.BINARY_CLASSIFICATION 
+    entity_col = "driverId"
+    entity_table = "drivers"
+    time_col = "date"
+    target_col = "qualifying"
+    timedelta = pd.Timedelta(days=30) 
+    metrics = [average_precision, accuracy, f1, roc_auc] 
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        r"""Create Task object for results_position_next_race."""
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        
+        qualifying = db.table_dict["qualifying"].df
+        drivers = db.table_dict["drivers"].df
+
+        df = duckdb.sql(
+            f"""
+                SELECT
+                    t.timestamp as date,
+                    dri.driverId as driverId,
+                    CASE
+                        WHEN MIN(qu.position) <= 3 THEN 1
+                        ELSE 0
+                    END AS qualifying
+                FROM 
+                    timestamp_df t
+                LEFT JOIN 
+                    qualifying qu
+                ON 
+                    qu.date <= t.timestamp + INTERVAL '{self.timedelta}'
+                    and qu.date  > t.timestamp
+                LEFT JOIN 
+                    drivers dri
+                ON 
+                    qu.driverId = dri.driverId
+                WHERE
+                    dri.driverId IN (
+                        SELECT DISTINCT driverId
+                        FROM qualifying
+                        WHERE date > t.timestamp - INTERVAL '1 year'
+                    )
+                GROUP BY t.timestamp, dri.driverId
+                
+            ;
+            """
+        ).df()
+
+        df["qualifying"] = df["qualifying"].astype('int64')
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+    
+
+    @property
+    def val_table(self) -> Table:
+        r"""Returns the val table for a task."""
+        if "val" not in self._cached_table_dict:
+            table = self.make_table(
+                self.dataset.db,
+                pd.date_range(
+                    self.dataset.test_timestamp - (self.dataset.test_timestamp-self.dataset.val_timestamp)/2- self.timedelta,
+                    self.dataset.val_timestamp,
+                    freq=-self.timedelta,
+                ),
+            )
+            self._cached_table_dict["val"] = table
+        else:
+            table = self._cached_table_dict["val"]
+        return self.filter_dangling_entities(table)
+
+
+
+    @property
+    def test_table(self) -> Table:
+        r"""Returns the test table for a task."""
+        if "full_test" not in self._cached_table_dict:
+            full_table = self.make_table(
+                self.dataset._full_db,
+                pd.date_range(
+                    self.dataset.test_timestamp,
+                    self.dataset.test_timestamp - (self.dataset.test_timestamp-self.dataset.val_timestamp)/2- self.timedelta,
+                    freq=-self.timedelta,
+                ),
+            )
+            self._cached_table_dict["full_test"] = full_table
+        else:
+            full_table = self._cached_table_dict["full_test"]
+        self._full_test_table = self.filter_dangling_entities(full_table)
+        return self._mask_input_cols(self._full_test_table)
+
 
 
 

@@ -4,7 +4,7 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.f1 import PointsTask, ConstructorPointsTask, DidNotFinishTask, PodiumTask
+from relbench.tasks.f1 import PointsTask, ConstructorPointsTask, DidNotFinishTask, QualifyingTask
 from relbench.utils import unzip_processor
 
 class F1Dataset(RelBenchDataset):
@@ -12,7 +12,7 @@ class F1Dataset(RelBenchDataset):
     name = "rel-f1"
     val_timestamp = pd.Timestamp("2000-01-01")
     test_timestamp = pd.Timestamp("2015-01-01")
-    task_cls_list = [PointsTask, ConstructorPointsTask, DidNotFinishTask, PodiumTask]
+    task_cls_list = [PointsTask, ConstructorPointsTask, DidNotFinishTask, QualifyingTask]
 
     def __init__(
         self,
@@ -40,8 +40,6 @@ class F1Dataset(RelBenchDataset):
         constructor_standings = pd.read_csv(os.path.join(path, "constructor_standings.csv"))
         lap_times = pd.read_csv(os.path.join(path, "lap_times.csv"))
         qualifying = pd.read_csv(os.path.join(path, "qualifying.csv"))  
-        sprint_results = pd.read_csv(os.path.join(path, "sprint_results.csv"))
-        pit_stops = pd.read_csv(os.path.join(path, "pit_stops.csv"))
 
         ## remove columns that are irrelevant, leak time, or have too many missing values
         races.drop(
@@ -100,16 +98,6 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
-        sprint_results.drop(
-            columns=["positionText"],
-            inplace=True,
-        )
-
-        pit_stops.drop(
-            columns=["time"],
-            inplace=True,
-        )
-
 
         ## replase missing data and combine date and time columns
         races['time'] = races['time'].replace(r'^\\N$', '00:00:00', regex=True)
@@ -129,14 +117,6 @@ class F1Dataset(RelBenchDataset):
         # 
         # that the qualifying time is the day before the main race
         qualifying['date'] = qualifying['date'] - pd.Timedelta(days=1)
-
-        sprint_results = sprint_results.merge(races[['raceId', 'date']], on='raceId', how='left')
-        # rename resultId to sprintResultId to distinguish from results
-        sprint_results.rename(columns={'resultId': 'sprintResultId'}, inplace=True)
-
-        pit_stops = pit_stops.merge(races[['raceId', 'date']], on='raceId', how='left')
-        # add id column to pit_stops
-        pit_stops['pitStopId'] = pit_stops.index
 
         # add missing pkey colum to lap_times
         lap_times['lapId'] = lap_times.index
@@ -228,25 +208,4 @@ class F1Dataset(RelBenchDataset):
             time_col="date"
         )
 
-
-        """
-        tables["sprint_results"] = Table(
-            df=pd.DataFrame(sprint_results),
-            fkey_col_to_pkey_table={
-                "raceId": "races",
-                "driverId": "drivers",
-                "constructorId": "constructors"},
-            pkey_col="sprintResultId",
-            time_col="date"
-        )
-
-        tables["pit_stops"] = Table(
-            df=pd.DataFrame(pit_stops),
-            fkey_col_to_pkey_table={
-                "raceId": "races",
-                "driverId": "drivers"},
-            pkey_col="pitStopId",
-            time_col="date"
-        )
-        """
         return Database(tables)
