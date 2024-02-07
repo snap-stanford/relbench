@@ -212,20 +212,20 @@ class UserCommentOnPostTask(RelBenchLinkTask):
 
         df = duckdb.sql(
             f"""
-                        SELECT
-                            t.timestamp,
-                            c.UserId as UserId,
-                            p.id as PostId
-                        FROM timestamp_df t
-                        LEFT JOIN posts p
-                        ON p.CreationDate <= t.timestamp
-                        LEFT JOIN comments c
-                        ON p.id = c.PostId
-                        and c.CreationDate > t.timestamp
-                        and c.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
-                        where c.UserId is not null and p.owneruserid != -1 and p.owneruserid is not null
-                    ;
-                    """
+                SELECT
+                    t.timestamp,
+                    c.UserId as UserId,
+                    p.id as PostId
+                FROM timestamp_df t
+                LEFT JOIN posts p
+                ON p.CreationDate <= t.timestamp
+                LEFT JOIN comments c
+                ON p.id = c.PostId
+                and c.CreationDate > t.timestamp
+                and c.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
+                where c.UserId is not null and p.owneruserid != -1 and p.owneruserid is not null
+            ;
+            """
         ).df()
 
         return Table(
