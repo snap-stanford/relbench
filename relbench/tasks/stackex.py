@@ -213,13 +213,12 @@ class UserCommentOnPostTask(RelBenchLinkTask):
         df = duckdb.sql(
             f"""
                         SELECT
-                            p.CreationDate,
+                            t.timestamp,
                             c.UserId as UserId,
                             p.id as PostId
                         FROM timestamp_df t
                         LEFT JOIN posts p
-                        ON p.CreationDate > t.timestamp - INTERVAL '{2 * self.timedelta} days'
-                        and p.CreationDate <= t.timestamp
+                        ON p.CreationDate <= t.timestamp
                         LEFT JOIN comments c
                         ON p.id = c.PostId
                         and c.CreationDate > t.timestamp
