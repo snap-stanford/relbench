@@ -213,7 +213,7 @@ class UserCommentOnPostTask(RelBenchLinkTask):
         df = duckdb.sql(
             f"""
                         SELECT
-                            p.CreationDate,
+                            t.timestamp as timestamp,
                             c.UserId as UserId,
                             p.id as PostId
                         FROM timestamp_df t
