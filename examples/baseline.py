@@ -6,7 +6,7 @@ import pandas as pd
 import torch
 
 from relbench.data import RelBenchDataset, Table
-from relbench.data.task import TaskType
+from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 
 parser = argparse.ArgumentParser()

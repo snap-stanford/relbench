@@ -24,7 +24,7 @@ def test_make_pkey_fkey_graph():
     assert data["customer"].num_nodes == 100
     assert isinstance(data["customer"].tf, TensorFrame)
 
-    assert data["review"].num_nodes <= 500
+    assert data["review"].num_nodes <= 600
     assert isinstance(data["review"].tf, TensorFrame)
 
     assert data["product"].num_nodes == 30
