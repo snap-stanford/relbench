@@ -14,7 +14,7 @@ import numpy as np
 from relbench import _pooch
 from relbench.data.database import Database
 from relbench.data.table import Table
-from relbench.data.task_base import BaseTask, TaskType, RelBenchBaseTask
+from relbench.data.task_base import BaseTask, TaskType, _pack_tables
 from relbench.utils import unzip_processor
 
 if TYPE_CHECKING:
@@ -73,39 +73,12 @@ class LinkTask(BaseTask):
         metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
     ) -> Dict[str, float]:
         
-        if metrics is None:
-            metrics = self.metrics
-
-        if target_table is None:
-            target_table = self._full_test_table
-
-        if neg_sampling_ratio is not None:
-            size_target_table_with_negs = int( (neg_sampling_ratio+1) * len(target_table))
-        else:
-            size_target_table_with_negs = len(target_table)
-        if len(pred) != size_target_table_with_negs :
-            raise ValueError(
-                f"Length of pred ({len(pred)}) does not match length of target table "
-                f"({size_target_table_with_negs})."
-            )
-
-        target = target_table.df[self.target_col].to_numpy()
-
-        if neg_sampling_ratio is not None:
-            target = np.concatenate((target, np.zeros(int(neg_sampling_ratio*len(target)))))
-
-        # split pred into two arrays according to whether target = 0 or 1 
-        # (i.e. whether the link exists or not)
-
-        pred_dict = {"y_pred_pos": pred[target == 1],
-                    "y_pred_neg": pred[target == 0]}
-
-        return {fn.__name__ + str(k) if k is not None else fn.__name__: 
-                fn(pred_dict, k) for fn, k in metrics} # TODO (joshrob) implement metrics
+        raise NotImplementedError
 
 
     
-class RelBenchLinkTask(RelBenchBaseTask, LinkTask):
+class RelBenchLinkTask(LinkTask):
+    name: str
     source_entity_col: str
     source_entity_table: str
     destination_entity_col: str
@@ -113,9 +86,9 @@ class RelBenchLinkTask(RelBenchBaseTask, LinkTask):
     time_col: str
     timedelta: pd.Timedelta
     target_col: str
+    task_dir: str = "tasks"
 
-    def __init__(self, dataset, process: bool = False) -> None:
-        RelBenchBaseTask.__init__(self, dataset, process)
+    def __init__(self, dataset: str, process: bool = False) -> None:
         LinkTask.__init__(self,
                           dataset=dataset,
                           timedelta=self.timedelta,
@@ -125,3 +98,11 @@ class RelBenchLinkTask(RelBenchBaseTask, LinkTask):
                           destination_entity_table=self.destination_entity_table,
                           destination_entity_col=self.destination_entity_col,
                           metrics=self.metrics)
+
+        if not process:
+            self.set_cached_table_dict(self.name, self.task_dir, self.dataset.name)
+
+        def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
+           return  _pack_tables(self, root)
+
+

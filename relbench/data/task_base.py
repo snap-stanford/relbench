@@ -147,6 +147,18 @@ class BaseTask:
         self):
         r"""Evaluate a prediction table."""
         raise NotImplementedError
+    
+
+    def set_cached_table_dict(self, task_name: str, task_dir: str, dataset_name: str) -> Dict[str, Table]:  
+        task_path = _pooch.fetch(
+            f"{dataset_name}/{task_dir}/{task_name}.zip",
+            processor=unzip_processor,
+            progressbar=True,
+        )
+        
+        self._cached_table_dict = Database.load(task_path).table_dict
+
+
 
 
 class TaskType(Enum):
@@ -162,43 +174,27 @@ class TaskType(Enum):
     LINK_PREDICTION = "link_prediction"
 
 
-class RelBenchBaseTask:
-    name: str
-    task_dir: str = "tasks"
-    metrics: List[Callable[[NDArray, NDArray], float]]
+def _pack_tables(task, root: Union[str, os.PathLike]) -> Tuple[str, str]:
+    _dummy_db = Database(
+        table_dict={
+            "train": task.train_table,
+            "val": task.val_table,
+            "test": task.test_table,
+            "full_test": task._full_test_table,
+        }
+    )
 
-    def __init__(self, dataset, process: bool = False) -> None:
-        # Common initialization logic
-        self.dataset = dataset
-        if not process:
-            task_path = _pooch.fetch(
-                f"{dataset.name}/{self.task_dir}/{self.name}.zip",
-                processor=unzip_processor,
-                progressbar=True,
-            )
-            self._cached_table_dict = Database.load(task_path).table_dict
+    with tempfile.TemporaryDirectory() as tmpdir:
+        task_path = Path(tmpdir) / task.name
+        _dummy_db.save(task_path)
 
-    def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
-        _dummy_db = Database(
-            table_dict={
-                "train": self.train_table,
-                "val": self.val_table,
-                "test": self.test_table,
-                "full_test": self._full_test_table,
-            }
-        )
+        zip_base_path = Path(root) / task.dataset.name / task.task_dir / task.name
+        zip_path = shutil.make_archive(zip_base_path, "zip", task_path)
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            task_path = Path(tmpdir) / self.name
-            _dummy_db.save(task_path)
+    with open(zip_path, "rb") as f:
+        sha256 = hashlib.sha256(f.read()).hexdigest()
 
-            zip_base_path = Path(root) / self.dataset.name / self.task_dir / self.name
-            zip_path = shutil.make_archive(zip_base_path, "zip", task_path)
+    print(f"upload: {zip_path}")
+    print(f"sha256: {sha256}")
 
-        with open(zip_path, "rb") as f:
-            sha256 = hashlib.sha256(f.read()).hexdigest()
-
-        print(f"upload: {zip_path}")
-        print(f"sha256: {sha256}")
-
-        return f"{self.dataset.name}/{self.task_dir}/{self.name}.zip", sha256
+    return f"{task.dataset.name}/{task.task_dir}/{task.name}.zip", sha256
