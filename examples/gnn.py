@@ -150,15 +150,12 @@ class Model(torch.nn.Module):
             num_sampled_nodes_dict,
             num_sampled_edges_dict,
         )
-<<<<<<< HEAD
-        return self.head(x_dict[entity_table][: seed_time.size(0)])
-=======
+
 
         out = self.head(x_dict[entity_table][: seed_time.size(0)])
         if not self.training and task.task_type == TaskType.REGRESSION:
             out = torch.clamp(out, clamp_min, clamp_max)
         return out
->>>>>>> 7187b09f8a8aa4841d78ca24b6c9da5a5ac6c48f
 
 
 model = Model().to(device)
