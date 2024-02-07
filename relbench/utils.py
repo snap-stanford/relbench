@@ -20,4 +20,3 @@ def get_df_in_window(df, time_col, row, delta):
     return df[
         (df[time_col] > row["timestamp"]) & (df[time_col] <= (row["timestamp"] + delta))
     ]
-

@@ -3,12 +3,20 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from relbench.data import Database, RelBenchNodeTask, RelBenchLinkTask, Table
+from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
+from relbench.metrics import (
+    accuracy,
+    average_precision,
+    f1,
+    mae,
+    rmse,
+    roc_auc,
+)
 from relbench.utils import get_df_in_window
 
 ######## node prediction tasks ########
+
 
 class EngageTask(RelBenchNodeTask):
     r"""Predict if a user will make any votes/posts/comments in the next 1 year."""
@@ -186,6 +194,7 @@ class BadgesTask(RelBenchNodeTask):
 
 ######## link prediction tasks ########
 
+
 class UserCommentOnPostTask(RelBenchLinkTask):
     r"""Predict if a user will comment on a specific post within 24hrs of the post being made."""
 
@@ -202,14 +211,14 @@ class UserCommentOnPostTask(RelBenchLinkTask):
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserCommentOnPostTask."""
-        timestamp_df = pd.DataFrame({"timestamp": timestamps})    
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         users = db.table_dict["users"].df
         posts = db.table_dict["posts"].df
         comments = db.table_dict["comments"].df
 
         df = duckdb.sql(
-                    f"""
+            f"""
                         SELECT
                             p.CreationDate,
                             c.UserId as UserId,
@@ -225,13 +234,15 @@ class UserCommentOnPostTask(RelBenchLinkTask):
                         where c.UserId is not null and p.owneruserid != -1 and p.owneruserid is not null
                     ;
                     """
-                ).df()
+        ).df()
 
 
         return Table(
             df=df,
-            fkey_col_to_pkey_table={self.source_entity_col: self.source_entity_table,
-                                   self.destination_entity_col: self.destination_entity_table},
+            fkey_col_to_pkey_table={
+                self.source_entity_col: self.source_entity_table,
+                self.destination_entity_col: self.destination_entity_table,
+            },
             pkey_col=None,
             time_col=self.time_col,
         )

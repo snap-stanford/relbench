@@ -6,7 +6,6 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
-
 import pandas as pd
 from numpy.typing import NDArray
 
@@ -49,16 +48,14 @@ class NodeTask(BaseTask):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
-
     def filter_dangling_entities(self, table: Table) -> Table:
         num_entities = len(self.dataset.db.table_dict[self.entity_table])
         filter_mask = table.df[self.entity_col] >= num_entities
-        
+
         if filter_mask.any():
             table.df = table.df[~filter_mask]
 
         return table
-
 
     def evaluate(
         self,

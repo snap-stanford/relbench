@@ -6,10 +6,9 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
-
+import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-import numpy as np
 
 from relbench import _pooch
 from relbench.data.database import Database
@@ -55,10 +54,14 @@ class LinkTask(BaseTask):
 
     def filter_dangling_entities(self, table: Table) -> Table:
         src_num_entities = len(self.dataset.db.table_dict[self.source_entity_table])
-        dst_num_entities = len(self.dataset.db.table_dict[self.destination_entity_table])
-        
+        dst_num_entities = len(
+            self.dataset.db.table_dict[self.destination_entity_table]
+        )
+
         # remove all rows where source or destination entity is out of range
-        filter_mask = (table.df[self.source_entity_col] >= src_num_entities) | (table.df[self.destination_entity_col] >= dst_num_entities)
+        filter_mask = (table.df[self.source_entity_col] >= src_num_entities) | (
+            table.df[self.destination_entity_col] >= dst_num_entities
+        )
 
         if filter_mask.any():
             table.df = table.df[~filter_mask]

@@ -44,7 +44,7 @@ class BaseTask:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
-    
+
     def make_table(
         self,
         db: Database,
@@ -137,14 +137,12 @@ class BaseTask:
             pkey_col=table.pkey_col,
             time_col=table.time_col,
         )
-    
+
     def filter_dangling_entities(self, table: Table) -> Table:
         r"""Filter out dangling entities from a table."""
         raise NotImplementedError
-    
 
-    def evaluate(
-        self):
+    def evaluate(self):
         r"""Evaluate a prediction table."""
         raise NotImplementedError
     
