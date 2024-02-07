@@ -1,6 +1,5 @@
 from relbench.data import RelBenchDataset
 from relbench.datasets.amazon import AmazonDataset
-from relbench.datasets.f1 import F1Dataset
 from relbench.datasets.fake import FakeDataset
 from relbench.datasets.stackex import StackExDataset
 
