@@ -80,4 +80,3 @@ def rmse(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 
 def r2(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
     return skm.r2_score(true, pred)
-

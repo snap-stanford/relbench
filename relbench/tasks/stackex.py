@@ -5,14 +5,7 @@ from tqdm import tqdm
 
 from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import (
-    accuracy,
-    average_precision,
-    f1,
-    mae,
-    rmse,
-    roc_auc,
-)
+from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
 from relbench.utils import get_df_in_window
 
 ######## node prediction tasks ########
@@ -207,7 +200,7 @@ class UserCommentOnPostTask(RelBenchLinkTask):
     time_col = "CreationDate"
     target_col = "target"
     timedelta = pd.Timedelta(days=365)
-    metrics = None # TODO: add metrics
+    metrics = None  # TODO: add metrics
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserCommentOnPostTask."""
@@ -235,7 +228,6 @@ class UserCommentOnPostTask(RelBenchLinkTask):
                     ;
                     """
         ).df()
-
 
         return Table(
             df=df,

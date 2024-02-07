@@ -145,18 +145,17 @@ class BaseTask:
     def evaluate(self):
         r"""Evaluate a prediction table."""
         raise NotImplementedError
-    
 
-    def set_cached_table_dict(self, task_name: str, task_dir: str, dataset_name: str) -> Dict[str, Table]:  
+    def set_cached_table_dict(
+        self, task_name: str, task_dir: str, dataset_name: str
+    ) -> Dict[str, Table]:
         task_path = _pooch.fetch(
             f"{dataset_name}/{task_dir}/{task_name}.zip",
             processor=unzip_processor,
             progressbar=True,
         )
-        
+
         self._cached_table_dict = Database.load(task_path).table_dict
-
-
 
 
 class TaskType(Enum):

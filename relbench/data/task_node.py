@@ -13,9 +13,7 @@ from relbench import _pooch
 from relbench.data.database import Database
 from relbench.data.table import Table
 from relbench.data.task_base import BaseTask, TaskType, _pack_tables
-
 from relbench.utils import unzip_processor
-
 
 if TYPE_CHECKING:
     from relbench.data import Dataset
@@ -79,8 +77,6 @@ class NodeTask(BaseTask):
         return {fn.__name__: fn(target, pred) for fn in metrics}
 
 
-
-
 class RelBenchNodeTask(NodeTask):
     name: str
     entity_col: str
@@ -91,18 +87,18 @@ class RelBenchNodeTask(NodeTask):
     task_dir: str = "tasks"
 
     def __init__(self, dataset: str, process: bool = False) -> None:
-        NodeTask.__init__(self,
-                          dataset=dataset,
-                          timedelta=self.timedelta,
-                          target_col=self.target_col,
-                          entity_table=self.entity_table,
-                          entity_col=self.entity_col,
-                          metrics=self.metrics)
-        
+        NodeTask.__init__(
+            self,
+            dataset=dataset,
+            timedelta=self.timedelta,
+            target_col=self.target_col,
+            entity_table=self.entity_table,
+            entity_col=self.entity_col,
+            metrics=self.metrics,
+        )
+
         if not process:
             self.set_cached_table_dict(self.name, self.task_dir, self.dataset.name)
 
         def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
-           return  _pack_tables(self, root)
-
-
+            return _pack_tables(self, root)

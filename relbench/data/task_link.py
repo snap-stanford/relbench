@@ -75,11 +75,9 @@ class LinkTask(BaseTask):
         neg_sampling_ratio: Optional[float] = None,
         metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
     ) -> Dict[str, float]:
-        
         raise NotImplementedError
 
 
-    
 class RelBenchLinkTask(LinkTask):
     name: str
     source_entity_col: str
@@ -92,20 +90,20 @@ class RelBenchLinkTask(LinkTask):
     task_dir: str = "tasks"
 
     def __init__(self, dataset: str, process: bool = False) -> None:
-        LinkTask.__init__(self,
-                          dataset=dataset,
-                          timedelta=self.timedelta,
-                          target_col=self.target_col,
-                          source_entity_table=self.source_entity_table,
-                          source_entity_col=self.source_entity_col,
-                          destination_entity_table=self.destination_entity_table,
-                          destination_entity_col=self.destination_entity_col,
-                          metrics=self.metrics)
+        LinkTask.__init__(
+            self,
+            dataset=dataset,
+            timedelta=self.timedelta,
+            target_col=self.target_col,
+            source_entity_table=self.source_entity_table,
+            source_entity_col=self.source_entity_col,
+            destination_entity_table=self.destination_entity_table,
+            destination_entity_col=self.destination_entity_col,
+            metrics=self.metrics,
+        )
 
         if not process:
             self.set_cached_table_dict(self.name, self.task_dir, self.dataset.name)
 
         def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
-           return  _pack_tables(self, root)
-
-
+            return _pack_tables(self, root)
