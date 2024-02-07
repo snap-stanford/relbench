@@ -3,13 +3,15 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from relbench.data import Database, RelBenchTask, Table
-from relbench.data.task import TaskType
+from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
+from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
 from relbench.utils import get_df_in_window
 
+######## node prediction tasks ########
 
-class EngageTask(RelBenchTask):
+
+class EngageTask(RelBenchNodeTask):
     r"""Predict if a user will make any votes/posts/comments in the next 1 year."""
 
     name = "rel-stackex-engage"
@@ -88,7 +90,7 @@ class EngageTask(RelBenchTask):
         )
 
 
-class VotesTask(RelBenchTask):
+class VotesTask(RelBenchNodeTask):
     r"""Predict the number of upvotes that an existing question will receive in
     the next 2 years."""
     name = "rel-stackex-votes"
@@ -136,7 +138,7 @@ class VotesTask(RelBenchTask):
         )
 
 
-class BadgesTask(RelBenchTask):
+class BadgesTask(RelBenchNodeTask):
     r"""Predict if each user will receive in a new badge the next 1 year."""
     name = "rel-stackex-badges"
     task_type = TaskType.BINARY_CLASSIFICATION
@@ -164,7 +166,7 @@ class BadgesTask(RelBenchTask):
             LEFT JOIN badges b
                 ON u.Id = b.UserID
                 AND b.Date > t.timestamp
-                AND b.Date <= t.timestamp + INTERVAL {self.timedelta}
+                AND b.Date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, u.Id
             """
         ).df()
@@ -178,6 +180,60 @@ class BadgesTask(RelBenchTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+######## link prediction tasks ########
+
+
+class UserCommentOnPostTask(RelBenchLinkTask):
+    r"""Predict if a user will comment on a specific post within 24hrs of the post being made."""
+
+    name = "rel-stackex-comment-on-post"
+    task_type = TaskType.LINK_PREDICTION
+    source_entity_col = "UserId"
+    source_entity_table = "users"
+    destination_entity_col = "PostId"
+    destination_entity_table = "posts"
+    time_col = "CreationDate"
+    target_col = "target"
+    timedelta = pd.Timedelta(days=365)
+    metrics = None  # TODO: add metrics
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        r"""Create Task object for UserCommentOnPostTask."""
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        users = db.table_dict["users"].df
+        posts = db.table_dict["posts"].df
+        comments = db.table_dict["comments"].df
+
+        df = duckdb.sql(
+            f"""
+                        SELECT
+                            t.timestamp,
+                            c.UserId as UserId,
+                            p.id as PostId
+                        FROM timestamp_df t
+                        LEFT JOIN posts p
+                        ON p.CreationDate <= t.timestamp
+                        LEFT JOIN comments c
+                        ON p.id = c.PostId
+                        and c.CreationDate > t.timestamp
+                        and c.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
+                        where c.UserId is not null and p.owneruserid != -1 and p.owneruserid is not null
+                    ;
+                    """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.source_entity_col: self.source_entity_table,
+                self.destination_entity_col: self.destination_entity_table,
+            },
             pkey_col=None,
             time_col=self.time_col,
         )

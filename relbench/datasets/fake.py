@@ -7,7 +7,7 @@ from typing import Dict, Union
 import numpy as np
 import pandas as pd
 
-from relbench.data import Database, Dataset, Table, Task
+from relbench.data import Database, Dataset, Table
 from relbench.tasks.amazon import ChurnTask, LTVTask
 
 

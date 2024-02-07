@@ -14,7 +14,7 @@ from torch_geometric.typing import NodeType
 from torch_geometric.utils import sort_edge_index
 
 from relbench.data import Database, Table
-from relbench.data.task import Task
+from relbench.data.task_base import BaseTask
 
 
 def to_unix_time(ser: pd.Series) -> Tensor:
@@ -154,15 +154,16 @@ class AttachTargetTransform:
 
 
 class TrainTableInput(NamedTuple):
-    nodes: Tuple[NodeType, Tensor]
     time: Optional[Tensor]
     target: Optional[Tensor]
     transform: Optional[AttachTargetTransform]
+    nodes: Tuple[NodeType, Tensor] = None  # (entity_table, nodes) for node task
+    edge_label_index: Optional[Tensor] = None  # (2, num_edges) for link task
 
 
 def get_train_table_input(
     table: Table,
-    task: Task,
+    task: BaseTask,
 ) -> TrainTableInput:
     nodes = torch.from_numpy(table.df[task.entity_col].astype(int).values)
 
@@ -184,4 +185,29 @@ def get_train_table_input(
         time=time,
         target=target,
         transform=transform,
+    )
+
+
+def get_link_train_table_input(
+    table: Table,
+    task: BaseTask,
+) -> TrainTableInput:
+    nodes_source = table.df[task.source_entity_col].astype(int).values
+    nodes_destination = table.df[task.destination_entity_col].astype(int).values
+
+    # collect all link indices
+    links = torch.from_numpy(np.stack((nodes_source, nodes_destination), axis=0))
+
+    time: Optional[Tensor] = None
+    if table.time_col is not None:
+        time = to_unix_time(table.df[table.time_col])
+
+    return TrainTableInput(
+        edge_label_index=(
+            (task.source_entity_table, "train_link", task.destination_entity_table),
+            links,
+        ),
+        time=time,
+        target=None,
+        transform=None,
     )
