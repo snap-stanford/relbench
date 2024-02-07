@@ -7,7 +7,7 @@ from typing import Dict, Union
 import numpy as np
 import pandas as pd
 
-from relbench.data import Database, Dataset, Table, Task
+from relbench.data import Database, Dataset, Table
 from relbench.tasks.amazon import ChurnTask, LTVTask
 
 
@@ -21,7 +21,7 @@ class FakeDataset(Dataset):
     name = "rel-fake"
 
     def __init__(
-        self, num_products: int = 30, num_customers: int = 100, num_reviews: int = 500
+        self, num_products: int = 30, num_customers: int = 100, num_reviews: int = 600
     ):
         db = self.make_db(num_products, num_customers, num_reviews)
         db.reindex_pkeys_and_fkeys()
@@ -61,7 +61,7 @@ class FakeDataset(Dataset):
                     f"product_id_{random.randint(0, num_products-1)}"
                     for _ in range(num_reviews)
                 ],
-                "review_time": pd.to_datetime(10 * np.arange(num_reviews), unit="D"),
+                "review_time": pd.to_datetime(15 * np.arange(num_reviews), unit="D"),
                 "rating": np.random.randint(1, 6, size=(num_reviews,)),
             }
         )

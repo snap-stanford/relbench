@@ -4,15 +4,21 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.stackex import BadgesTask, EngageTask, VotesTask
+from relbench.tasks.stackex import (
+    BadgesTask,
+    EngageTask,
+    UserCommentOnPostTask,
+    VotesTask,
+)
 from relbench.utils import unzip_processor
 
 
 class StackExDataset(RelBenchDataset):
     name = "rel-stackex"
+    # 2 years gap
     val_timestamp = pd.Timestamp("2019-01-01")
     test_timestamp = pd.Timestamp("2021-01-01")
-    task_cls_list = [EngageTask, VotesTask, BadgesTask]
+    task_cls_list = [EngageTask, VotesTask, BadgesTask, UserCommentOnPostTask]
 
     def __init__(
         self,

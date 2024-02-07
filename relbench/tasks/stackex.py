@@ -3,13 +3,15 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from relbench.data import Database, RelBenchTask, Table
-from relbench.data.task import TaskType
+from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
+from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
 from relbench.utils import get_df_in_window
 
+######## node prediction tasks ########
 
-class EngageTask(RelBenchTask):
+
+class EngageTask(RelBenchNodeTask):
     r"""Predict if a user will make any votes/posts/comments in the next 1 year."""
 
     name = "rel-stackex-engage"
@@ -22,7 +24,6 @@ class EngageTask(RelBenchTask):
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for UserContributionTask."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         comments = db.table_dict["comments"].df
         votes = db.table_dict["votes"].df
@@ -89,20 +90,19 @@ class EngageTask(RelBenchTask):
         )
 
 
-class VotesTask(RelBenchTask):
-    r"""Predict the number of upvotes that a question that is posted within the
-    last 1 year will receive in the next 1 year."""
+class VotesTask(RelBenchNodeTask):
+    r"""Predict the number of upvotes that an existing question will receive in
+    the next 2 years."""
     name = "rel-stackex-votes"
-    task_type = TaskType.BINARY_CLASSIFICATION
+    task_type = TaskType.REGRESSION
     entity_col = "PostId"
     entity_table = "posts"
     time_col = "timestamp"
     target_col = "popularity"
-    timedelta = pd.Timedelta(days=365)
-    metrics = [average_precision, accuracy, f1, roc_auc]
+    timedelta = pd.Timedelta(days=365 * 2)
+    metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for post_votes_next_month."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         votes = db.table_dict["votes"].df
         posts = db.table_dict["posts"].df
@@ -115,8 +115,7 @@ class VotesTask(RelBenchTask):
                     count(distinct v.id) as popularity
                 FROM timestamp_df t
                 LEFT JOIN posts p
-                ON p.CreationDate > t.timestamp - INTERVAL '{self.timedelta} days'
-                and p.CreationDate <= t.timestamp
+                ON p.CreationDate <= t.timestamp
                 and p.owneruserid != -1
                 and p.owneruserid is not null
                 and p.PostTypeId = 1
@@ -131,10 +130,6 @@ class VotesTask(RelBenchTask):
             """
         ).df()
 
-        # convert to boolean target
-        # modelling choice since regression targets highly skewed
-        df["popularity"] = (df["popularity"] != 0).astype(int)
-
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
@@ -143,8 +138,8 @@ class VotesTask(RelBenchTask):
         )
 
 
-class BadgesTask(RelBenchTask):
-    r"""Predict if each user will receive in a new badge the next 2 years?"""
+class BadgesTask(RelBenchNodeTask):
+    r"""Predict if each user will receive in a new badge the next 1 year."""
     name = "rel-stackex-badges"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "UserId"
@@ -155,7 +150,6 @@ class BadgesTask(RelBenchTask):
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for post_votes_next_month."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         users = db.table_dict["users"].df
         badges = db.table_dict["badges"].df
@@ -172,7 +166,7 @@ class BadgesTask(RelBenchTask):
             LEFT JOIN badges b
                 ON u.Id = b.UserID
                 AND b.Date > t.timestamp
-                AND b.Date <= t.timestamp + INTERVAL 2 years
+                AND b.Date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, u.Id
             """
         ).df()
@@ -186,6 +180,61 @@ class BadgesTask(RelBenchTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+######## link prediction tasks ########
+
+
+class UserCommentOnPostTask(RelBenchLinkTask):
+    r"""Predict if a user will comment on a specific post within 24hrs of the post being made."""
+
+    name = "rel-stackex-comment-on-post"
+    task_type = TaskType.LINK_PREDICTION
+    source_entity_col = "UserId"
+    source_entity_table = "users"
+    destination_entity_col = "PostId"
+    destination_entity_table = "posts"
+    time_col = "CreationDate"
+    target_col = "target"
+    timedelta = pd.Timedelta(days=365)
+    metrics = None  # TODO: add metrics
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        r"""Create Task object for UserCommentOnPostTask."""
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        users = db.table_dict["users"].df
+        posts = db.table_dict["posts"].df
+        comments = db.table_dict["comments"].df
+
+        df = duckdb.sql(
+            f"""
+                        SELECT
+                            t.timestamp as timestamp,
+                            c.UserId as UserId,
+                            p.id as PostId
+                        FROM timestamp_df t
+                        LEFT JOIN posts p
+                        ON p.CreationDate > t.timestamp - INTERVAL '{2 * self.timedelta} days'
+                        and p.CreationDate <= t.timestamp
+                        LEFT JOIN comments c
+                        ON p.id = c.PostId
+                        and c.CreationDate > t.timestamp
+                        and c.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
+                        where c.UserId is not null and p.owneruserid != -1 and p.owneruserid is not null
+                    ;
+                    """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.source_entity_col: self.source_entity_table,
+                self.destination_entity_col: self.destination_entity_table,
+            },
             pkey_col=None,
             time_col=self.time_col,
         )

@@ -20,20 +20,16 @@ from torch_geometric.typing import EdgeType, NodeType
 from tqdm import tqdm
 
 from relbench.data import RelBenchDataset
-from relbench.data.task import TaskType
+from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
-from relbench.external.graph import (
-    get_stype_proposal,
-    get_train_table_input,
-    make_pkey_fkey_graph,
-)
+from relbench.external.graph import get_train_table_input, make_pkey_fkey_graph
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
 parser.add_argument("--task", type=str, default="rel-stackex-engage")
 parser.add_argument("--lr", type=float, default=0.01)
-parser.add_argument("--epochs", type=int, default=20)
+parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
@@ -83,6 +79,7 @@ for split, table in [
         persistent_workers=args.num_workers > 0,
     )
 
+clamp_min, clamp_max = None, None
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
     out_channels = 1
     loss_fn = BCEWithLogitsLoss()
@@ -93,6 +90,10 @@ elif task.task_type == TaskType.REGRESSION:
     loss_fn = L1Loss()
     tune_metric = "mae"
     higher_is_better = False
+    # Get the clamp value at inference time
+    clamp_min, clamp_max = np.percentile(
+        task.train_table.df[task.target_col].to_numpy(), [2, 98]
+    )
 
 
 class Model(torch.nn.Module):
@@ -123,6 +124,7 @@ class Model(torch.nn.Module):
         self.head = MLP(
             args.channels,
             out_channels=out_channels,
+            norm="batch_norm",
             num_layers=1,
         )
 
@@ -148,7 +150,15 @@ class Model(torch.nn.Module):
             num_sampled_nodes_dict,
             num_sampled_edges_dict,
         )
+<<<<<<< HEAD
         return self.head(x_dict[entity_table][: seed_time.size(0)])
+=======
+
+        out = self.head(x_dict[entity_table][: seed_time.size(0)])
+        if not self.training and task.task_type == TaskType.REGRESSION:
+            out = torch.clamp(out, clamp_min, clamp_max)
+        return out
+>>>>>>> 7187b09f8a8aa4841d78ca24b6c9da5a5ac6c48f
 
 
 model = Model().to(device)

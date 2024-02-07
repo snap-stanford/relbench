@@ -6,7 +6,7 @@ import pandas as pd
 import torch
 
 from relbench.data import RelBenchDataset, Table
-from relbench.data.task import TaskType
+from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 
 parser = argparse.ArgumentParser()
@@ -53,7 +53,7 @@ def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, floa
         pred = np.random.rand(len(pred_table))
     elif name == "majority":
         past_target = train_table.df[task.target_col].astype(int)
-        majority_label = int(past_target.mode())
+        majority_label = int(past_target.mode().iloc[0])
         pred = torch.full((len(pred_table),), fill_value=majority_label)
     else:
         raise ValueError("Unknown eval name called {name}.")
