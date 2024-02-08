@@ -9,7 +9,7 @@ import torch
 from inferred_stypes import dataset2inferred_stypes
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
-from torch.nn import BCEWithLogitsLoss, L1Loss, MSELoss
+from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import TensorFrame
 from torch_geometric.data import HeteroData
