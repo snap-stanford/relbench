@@ -187,9 +187,9 @@ dataset2inferred_stypes = {
             "constructorId": stype.numerical,
             "number": stype.numerical,
             "position": stype.numerical,
-            #"q1": stype.timestamp,
-            #"q2": stype.timestamp,
-            #"q3": stype.timestamp,
+            # "q1": stype.timestamp,
+            # "q2": stype.timestamp,
+            # "q3": stype.timestamp,
         },
         "lap_times": {
             "lapId": stype.numerical,
@@ -197,9 +197,8 @@ dataset2inferred_stypes = {
             "driverId": stype.numerical,
             "lap": stype.numerical,
             "position": stype.numerical,
-            #"time": stype.timestamp,
+            # "time": stype.timestamp,
             "milliseconds": stype.numerical,
         },
-
-    }
+    },
 }
