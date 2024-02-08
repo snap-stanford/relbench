@@ -5,7 +5,7 @@ import numpy as np
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.trial import OutcomeTask
+from relbench.tasks.trial import OutcomeTask, AdverseEventTask, WithdrawalTask
 from relbench.utils import unzip_processor
 
 
@@ -14,7 +14,7 @@ class TrialDataset(RelBenchDataset):
     # 2 years gap
     val_timestamp = pd.Timestamp("2019-01-01")
     test_timestamp = pd.Timestamp("2021-01-01")
-    task_cls_list = [OutcomeTask]
+    task_cls_list = [OutcomeTask, AdverseEventTask, WithdrawalTask]
 
     def __init__(
         self,
@@ -26,10 +26,10 @@ class TrialDataset(RelBenchDataset):
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
-        url = "https://relbench.stanford.edu/data/relbench-trial-raw.zip"
+        url = "https://relbench.stanford.edu/data/relbench-trial.zip"
         path = pooch.retrieve(
             url,
-            known_hash="455a544ca917e43175032ac21ad43395dae468f9853463f383bc94ddd3e5f83c",
+            known_hash="3f7376b7d901177157b3c5b048221884e936b45d05e809c7875403183ca9e13d",
             progressbar=True,
             processor=unzip_processor,
         )
@@ -39,8 +39,11 @@ class TrialDataset(RelBenchDataset):
         drop_withdrawals = pd.read_csv(os.path.join(path, "drop_withdrawals.txt"), sep = '|')
         designs = pd.read_csv(os.path.join(path, "designs.txt"), sep = '|')
         eligibilities = pd.read_csv(os.path.join(path, "eligibilities.txt"), sep = '|')
-        interventions = pd.read_csv(os.path.join(path, "interventions.txt"), sep = '|')
-        conditions = pd.read_csv(os.path.join(path, "conditions.txt"), sep = '|')
+        interventions = pd.read_csv(os.path.join(path, "browse_interventions.txt"), sep = '|')
+        interventions = interventions[interventions.mesh_type == 'mesh-list'] ### just looking at root identity
+        conditions = pd.read_csv(os.path.join(path, "browse_conditions.txt"), sep = '|')
+        conditions = conditions[conditions.mesh_type == 'mesh-list'] ### just looking at root identity
+        
         reported_event_totals = pd.read_csv(os.path.join(path, "reported_event_totals.txt"), sep = '|')
         sponsors = pd.read_csv(os.path.join(path, "sponsors.txt"), sep = '|')
         facilities = pd.read_csv(os.path.join(path, "facilities.txt"), sep = '|')
@@ -85,6 +88,8 @@ class TrialDataset(RelBenchDataset):
         reported_event_totals = reported_event_totals[['id', 'nct_id', 'event_type', 'classification', 'subjects_affected', 'subjects_at_risk']]
 
         drop_withdrawals.drop(columns=['result_group_id', 'ctgov_group_code', 'drop_withdraw_comment', 'reason_comment', 'count_units'], inplace = True)
+        conditions.drop(columns=['downcase_mesh_term', "mesh_type"], inplace = True)
+        interventions.drop(columns=['downcase_mesh_term', "mesh_type"], inplace = True)
         ## filter to nct_id with actual completion date
         #print('outcomes before filter', len(outcomes))
         #for df in [outcomes, outcome_analyses, drop_withdrawals, reported_event_totals, designs, eligibilities, interventions, conditions, facilities, sponsors]:
@@ -104,12 +109,34 @@ class TrialDataset(RelBenchDataset):
         ## infer time stamps
         ## tables that is available after trial ends
         for df in [outcomes, outcome_analyses, drop_withdrawals, reported_event_totals]:
-            df['inferred_date'] = df.nct_id.apply(lambda x: nct2end_date[x])
+            df['date'] = df.nct_id.apply(lambda x: nct2end_date[x])
 
         ## tables that is available as trial starts
         for df in [designs, eligibilities, interventions, conditions, facilities, sponsors]:
-            df['inferred_date'] = df.nct_id.apply(lambda x: nct2start_date[x])
-            
+            df['date'] = df.nct_id.apply(lambda x: nct2start_date[x])
+
+        ## create separate entity tables for sponsor/facility/condition/intervention since some tasks are asking them
+        sponsor2id = dict(zip(sponsors.name.unique(), range(len(sponsors.name.unique()))))
+        sponsors['sponsor_id'] = sponsors.name.apply(lambda x: sponsor2id[x])
+        sponsor_trial = sponsors[['id','nct_id','sponsor_id','lead_or_collaborator','date']]
+        sponsors = sponsors[['sponsor_id', 'name', 'agency_class']].drop_duplicates('sponsor_id').reset_index(drop = True)
+
+        facility2id = dict(zip(facilities.name.unique(), range(len(facilities.name.unique()))))
+        facilities['facility_id'] = facilities.name.apply(lambda x: facility2id[x])
+        facility_trial = facilities[['id', 'nct_id', 'facility_id','date' ]]
+        facilities = facilities[['facility_id', 'name', 'city', 'state', 'zip', 'country']].drop_duplicates('facility_id').reset_index(drop = True)
+
+        condition2id = dict(zip(conditions.mesh_term.unique(), range(len(conditions.mesh_term.unique()))))
+        conditions['condition_id'] = conditions.mesh_term.apply(lambda x: condition2id[x])
+        condition_trial = conditions[['id', 'nct_id', 'condition_id', 'date']]
+        conditions = conditions[['condition_id', 'mesh_term']].drop_duplicates('condition_id').reset_index(drop = True)
+
+        intervention2id = dict(zip(interventions.mesh_term.unique(), range(len(interventions.mesh_term.unique()))))
+        interventions['intervention_id'] = interventions.mesh_term.apply(lambda x: intervention2id[x])
+        intervention_trial = interventions[['id', 'nct_id', 'intervention_id', 'date']]
+        interventions = interventions[['intervention_id', 'mesh_term']].drop_duplicates('intervention_id').reset_index(drop = True)
+        
+        
         tables = {}
 
         tables["studies"] = Table(
@@ -125,7 +152,7 @@ class TrialDataset(RelBenchDataset):
                 "nct_id": "studies",
             },
             pkey_col="id",
-            time_col="inferred_date",
+            time_col="date",
         )
 
         tables["outcome_analyses"] = Table(
@@ -135,7 +162,7 @@ class TrialDataset(RelBenchDataset):
                 "outcome_id": "outcomes"
             },
             pkey_col="id",
-            time_col="inferred_date",
+            time_col="date",
         )
 
         tables["drop_withdrawals"] = Table(
@@ -144,7 +171,7 @@ class TrialDataset(RelBenchDataset):
                 "nct_id": "studies",
             },
             pkey_col="id",
-            time_col="inferred_date",
+            time_col="date",
         )
 
         tables["reported_event_totals"] = Table(
@@ -153,7 +180,7 @@ class TrialDataset(RelBenchDataset):
                 "nct_id": "studies",
             },
             pkey_col="id",
-            time_col="inferred_date",
+            time_col="date",
         )
 
         tables["designs"] = Table(
@@ -162,7 +189,7 @@ class TrialDataset(RelBenchDataset):
                 "nct_id": "studies",
             },
             pkey_col="id",
-            time_col="inferred_date",
+            time_col="date",
         )
 
         tables["eligibilities"] = Table(
@@ -171,42 +198,74 @@ class TrialDataset(RelBenchDataset):
                 "nct_id": "studies",
             },
             pkey_col="id",
-            time_col="inferred_date",
+            time_col="date",
         )
 
         tables["interventions"] = Table(
             df=interventions,
-            fkey_col_to_pkey_table={
-                "nct_id": "studies",
-            },
-            pkey_col="id",
-            time_col="inferred_date",
+            fkey_col_to_pkey_table={},
+            pkey_col="intervention_id",
+            time_col=None,
         )
 
         tables["conditions"] = Table(
             df=conditions,
-            fkey_col_to_pkey_table={
-                "nct_id": "studies",
-            },
-            pkey_col="id",
-            time_col="inferred_date",
+            fkey_col_to_pkey_table={},
+            pkey_col="condition_id",
+            time_col=None,
         )
 
         tables["facilities"] = Table(
             df=facilities,
-            fkey_col_to_pkey_table={
-                "nct_id": "studies",
-            },
-            pkey_col="id",
-            time_col="inferred_date",
+            fkey_col_to_pkey_table={},
+            pkey_col="facility_id",
+            time_col=None,
         )
 
         tables["sponsors"] = Table(
             df=sponsors,
+            fkey_col_to_pkey_table={},
+            pkey_col="sponsor_id",
+            time_col=None,
+        )
+
+        tables["interventions_studies"] = Table(
+            df=intervention_trial,
             fkey_col_to_pkey_table={
                 "nct_id": "studies",
+                "intervention_id": "interventions"
             },
             pkey_col="id",
-            time_col="inferred_date",
+            time_col="date",
+        )
+
+        tables["conditions_studies"] = Table(
+            df=condition_trial,
+            fkey_col_to_pkey_table={
+                "nct_id": "studies",
+                "condition_id": "conditions"
+            },
+            pkey_col="id",
+            time_col="date",
+        )
+
+        tables["facilities_studies"] = Table(
+            df=facility_trial,
+            fkey_col_to_pkey_table={
+                "nct_id": "studies",
+                "facility_id": "facilities"
+            },
+            pkey_col="id",
+            time_col="date",
+        )
+
+        tables["sponsors_studies"] = Table(
+            df=sponsor_trial,
+            fkey_col_to_pkey_table={
+                "nct_id": "studies",
+                "sponsor_id": "sponsors"
+            },
+            pkey_col="id",
+            time_col="date",
         )
         return Database(tables)

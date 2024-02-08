@@ -29,7 +29,7 @@ class OutcomeTask(RelBenchTask):
                     oa.nct_id,
                     oa.p_value,
                     s.start_date,
-                    oa.inferred_date
+                    oa.date
                 FROM outcome_analyses oa
                 LEFT JOIN outcomes o
                 ON oa.outcome_id = o.id 
@@ -51,8 +51,8 @@ class OutcomeTask(RelBenchTask):
             FROM timestamp_df t
             LEFT JOIN TRIAL_INFO tr
             ON tr.start_date <= t.timestamp
-                and tr.inferred_date > t.timestamp
-                and tr.inferred_date <= t.timestamp + INTERVAL '{self.timedelta}'
+                and tr.date > t.timestamp
+                and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, tr.nct_id;
             """ 
         ).df()
@@ -85,7 +85,7 @@ class AdverseEventTask(RelBenchTask):
                     r.nct_id,
                     r.event_type,
                     r.subjects_affected,
-                    r.inferred_date,
+                    r.date,
                     s.start_date
                 FROM reported_event_totals r
                 LEFT JOIN studies s
@@ -100,8 +100,8 @@ class AdverseEventTask(RelBenchTask):
             FROM timestamp_df t
             LEFT JOIN TRIAL_INFO tr
             ON tr.start_date <= t.timestamp
-                and tr.inferred_date > t.timestamp
-                and tr.inferred_date <= t.timestamp + INTERVAL '{self.timedelta}'
+                and tr.date > t.timestamp
+                and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, tr.nct_id;
             """ 
         ).df()
@@ -134,7 +134,7 @@ class WithdrawalTask(RelBenchTask):
                     d.nct_id,
                     d.reason,
                     s.start_date,
-                    d.inferred_date
+                    d.date
                 FROM drop_withdrawals d
                 LEFT JOIN studies s
                 ON s.nct_id = d.nct_id 
@@ -152,8 +152,8 @@ class WithdrawalTask(RelBenchTask):
             FROM timestamp_df t
             LEFT JOIN TRIAL_INFO tr
             ON tr.start_date <= t.timestamp
-                and tr.inferred_date > t.timestamp
-                and tr.inferred_date <= t.timestamp + INTERVAL '{self.timedelta}'
+                and tr.date > t.timestamp
+                and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, tr.nct_id;
             """ 
         ).df()
