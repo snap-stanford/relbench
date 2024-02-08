@@ -4,12 +4,12 @@ from tqdm import tqdm
 import duckdb   
 import numpy as np
 
-from relbench.data import Database, RelBenchTask, Table
-from relbench.data.task import TaskType
+from relbench.data import Database, RelBenchNodeTask, Table
+from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
 from relbench.utils import get_df_in_window
 
-class PointsTask(RelBenchTask):
+class PointsTask(RelBenchNodeTask):
     r"""Predict the finishing position of each driver in a race."""
     name = "rel-f1-points"
     task_type = TaskType.REGRESSION 
@@ -107,8 +107,7 @@ class PointsTask(RelBenchTask):
 
 
 
-
-class ConstructorPointsTask(RelBenchTask):
+class ConstructorPointsTask(RelBenchNodeTask):
     r"""Predict the finishing position of each driver in a race."""
     name = "rel-f1-points-constructor"
     task_type =TaskType.REGRESSION
@@ -204,7 +203,7 @@ class ConstructorPointsTask(RelBenchTask):
         return self._mask_input_cols(self._full_test_table)
 
 
-class DidNotFinishTask(RelBenchTask):
+class DidNotFinishTask(RelBenchNodeTask):
     r"""Predict the if each driver will DNF (not finish) a race in the next time period."""
     name = "rel-f1-dnf"
     task_type = TaskType.BINARY_CLASSIFICATION 
@@ -307,7 +306,7 @@ class DidNotFinishTask(RelBenchTask):
 
 
 
-class QualifyingTask(RelBenchTask):
+class QualifyingTask(RelBenchNodeTask):
     r"""Predict the finishing position of each driver in a race."""
     name = "rel-f1-qualifying"
     task_type =  TaskType.BINARY_CLASSIFICATION 
