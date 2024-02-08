@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 class NodeTask(BaseTask):
-    r"""A task on a dataset."""
+    r"""A link prediction task on a dataset."""
 
     def __init__(
         self,
@@ -87,8 +87,7 @@ class RelBenchNodeTask(NodeTask):
     task_dir: str = "tasks"
 
     def __init__(self, dataset: str, process: bool = False) -> None:
-        NodeTask.__init__(
-            self,
+        super().__init__(
             dataset=dataset,
             timedelta=self.timedelta,
             target_col=self.target_col,
