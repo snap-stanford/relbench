@@ -7,7 +7,11 @@ def test_fake_reviews_dataset():
     dataset = FakeDataset()
     assert dataset.db.max_timestamp < dataset.test_timestamp
     assert str(dataset) == "FakeDataset()"
-    assert dataset.task_names == ["rel-amazon-churn", "rel-amazon-ltv"]
+    assert dataset.task_names == [
+        "rel-amazon-churn",
+        "rel-amazon-ltv",
+        "rel-amazon-rec",
+    ]
 
     task = dataset.get_task("rel-amazon-churn", process=True)
     assert str(task) == "ChurnTask(dataset=FakeDataset())"
