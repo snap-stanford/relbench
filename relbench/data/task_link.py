@@ -21,13 +21,12 @@ if TYPE_CHECKING:
 
 
 class LinkTask(BaseTask):
-    r"""A task on a dataset."""
+    r"""A link prediction task on a dataset."""
 
     def __init__(
         self,
         dataset: "Dataset",
         timedelta: pd.Timedelta,
-        target_col: str,
         source_entity_table: str,
         source_entity_col: str,
         destination_entity_table: str,
@@ -40,7 +39,6 @@ class LinkTask(BaseTask):
             metrics=metrics,
         )
 
-        self.target_col = target_col
         self.source_entity_table = source_entity_table
         self.source_entity_col = source_entity_col
         self.destination_entity_table = destination_entity_table
@@ -58,9 +56,14 @@ class LinkTask(BaseTask):
             self.dataset.db.table_dict[self.destination_entity_table]
         )
 
-        # remove all rows where source or destination entity is out of range
+        # filter dangling destination entities from a list
+        table.df[self.destination_entity_col] = table.df[
+            self.destination_entity_col
+        ].apply(lambda x: [i for i in x if i < dst_num_entities])
+
+        # filter dangling source entities and empty list (after above filtering)
         filter_mask = (table.df[self.source_entity_col] >= src_num_entities) | (
-            table.df[self.destination_entity_col] >= dst_num_entities
+            ~table.df[self.destination_entity_col].map(bool)
         )
 
         if filter_mask.any():
@@ -86,15 +89,12 @@ class RelBenchLinkTask(LinkTask):
     destination_entity_table: str
     time_col: str
     timedelta: pd.Timedelta
-    target_col: str
     task_dir: str = "tasks"
 
     def __init__(self, dataset: str, process: bool = False) -> None:
-        LinkTask.__init__(
-            self,
+        super().__init__(
             dataset=dataset,
             timedelta=self.timedelta,
-            target_col=self.target_col,
             source_entity_table=self.source_entity_table,
             source_entity_col=self.source_entity_col,
             destination_entity_table=self.destination_entity_table,
