@@ -5,7 +5,7 @@ import numpy as np
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.trial import OutcomeTask, AdverseEventTask, WithdrawalTask
+from relbench.tasks.trial import OutcomeTask, AdverseEventTask, WithdrawalTask, SiteSuccessTask, SponsorConditionTask
 from relbench.utils import unzip_processor
 
 
@@ -14,7 +14,7 @@ class TrialDataset(RelBenchDataset):
     # 2 years gap
     val_timestamp = pd.Timestamp("2019-01-01")
     test_timestamp = pd.Timestamp("2021-01-01")
-    task_cls_list = [OutcomeTask, AdverseEventTask, WithdrawalTask]
+    task_cls_list = [OutcomeTask, AdverseEventTask, WithdrawalTask, SiteSuccessTask, SponsorConditionTask]
 
     def __init__(
         self,
@@ -55,7 +55,7 @@ class TrialDataset(RelBenchDataset):
         #print('studies', len(studies))
         studies = studies[studies.completion_date_type == 'Actual']
         ## there are 27 trials before 1975
-        studies = studies[studies.start_date > '1975-01-01']
+        studies = studies[studies.start_date >= '2000-01-01']
         studies = studies[studies.nct_id.notnull()]
         #print('studies actual', len(studies))
         nct_id_use = studies.nct_id.values
