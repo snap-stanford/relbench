@@ -38,19 +38,22 @@ class EngageTask(RelBenchNodeTask):
                     p.id,
                     p.owneruserid as userid,
                     p.creationdate
-                FROM posts p
+                FROM
+                    posts p
                 UNION
                 SELECT
                     v.id,
                     v.userid,
                     v.creationdate
-                FROM votes v
+                FROM
+                    votes v
                 UNION
                 SELECT
                     c.id,
                     c.userid,
                     c.creationdate
-                FROM comments c
+                FROM
+                    comments c
             ),
 
             ACTIVE_USERS AS (
@@ -70,13 +73,18 @@ class EngageTask(RelBenchNodeTask):
                     u.timestamp,
                     u.id as OwnerUserId,
                     IF(count(distinct a.id) >= 1, 1, 0) as contribution
-                FROM active_users u
-                LEFT JOIN all_engagement a
-                ON u.id = a.UserId
-                    and a.CreationDate > u.timestamp
-                    and a.CreationDate <= u.timestamp + INTERVAL '{self.timedelta}'
-                where u.n_engagement >= 1
-                GROUP BY u.timestamp, u.id
+                FROM
+                    active_users u
+                LEFT JOIN
+                    all_engagement a
+                ON
+                    u.id = a.UserId AND
+                    a.CreationDate > u.timestamp AND
+                    a.CreationDate <= u.timestamp + INTERVAL '{self.timedelta}'
+                where
+                    u.n_engagement >= 1
+                GROUP BY
+                    u.timestamp, u.id
             ;
 
             """
@@ -109,22 +117,29 @@ class VotesTask(RelBenchNodeTask):
 
         df = duckdb.sql(
             f"""
-                SELECT
-                    t.timestamp,
-                    p.id as PostId,
-                    count(distinct v.id) as popularity
-                FROM timestamp_df t
-                LEFT JOIN posts p
-                ON p.CreationDate <= t.timestamp
-                and p.owneruserid != -1
-                and p.owneruserid is not null
-                and p.PostTypeId = 1
-                LEFT JOIN votes v
-                ON p.id = v.PostId
-                and v.CreationDate > t.timestamp
-                and v.CreationDate <= t.timestamp + INTERVAL '{self.timedelta}'
-                and v.votetypeid = 2
-                GROUP BY t.timestamp, p.id
+            SELECT
+                t.timestamp,
+                p.id AS PostId,
+                COUNT(distinct v.id) AS popularity
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                posts p
+            ON
+                p.CreationDate <= t.timestamp AND
+                p.owneruserid != -1 AND
+                p.owneruserid is not null AND
+                p.PostTypeId = 1
+            LEFT JOIN
+                votes v
+            ON
+                p.id = v.PostId AND
+                v.CreationDate > t.timestamp AND
+                v.CreationDate <= t.timestamp + INTERVAL '{self.timedelta}' AND
+                v.votetypeid = 2
+            GROUP BY
+                t.timestamp,
+                p.id
             ;
 
             """
@@ -159,15 +174,23 @@ class BadgesTask(RelBenchNodeTask):
             SELECT
                 t.timestamp,
                 u.Id as UserId,
-            CASE WHEN COUNT(b.Id) >= 1 THEN 1 ELSE 0 END AS WillGetBadge
-            FROM timestamp_df t
-            LEFT JOIN users u
-            ON u.CreationDate <= t.timestamp
-            LEFT JOIN badges b
-                ON u.Id = b.UserID
+            CASE WHEN
+                COUNT(b.Id) >= 1 THEN 1 ELSE 0 END AS WillGetBadge
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                users u
+            ON
+                u.CreationDate <= t.timestamp
+            LEFT JOIN
+                badges b
+            ON
+                u.Id = b.UserID
                 AND b.Date > t.timestamp
                 AND b.Date <= t.timestamp + INTERVAL '{self.timedelta}'
-            GROUP BY t.timestamp, u.Id
+            GROUP BY
+                t.timestamp,
+                u.Id
             """
         ).df()
 
@@ -197,8 +220,7 @@ class UserCommentOnPostTask(RelBenchLinkTask):
     source_entity_table = "users"
     destination_entity_col = "PostId"
     destination_entity_table = "posts"
-    time_col = "CreationDate"
-    target_col = "target"
+    time_col = "timestamp"
     timedelta = pd.Timedelta(days=365)
     metrics = None  # TODO: add metrics
 
@@ -212,20 +234,28 @@ class UserCommentOnPostTask(RelBenchLinkTask):
 
         df = duckdb.sql(
             f"""
-                        SELECT
-                            t.timestamp,
-                            c.UserId as UserId,
-                            p.id as PostId
-                        FROM timestamp_df t
-                        LEFT JOIN posts p
-                        ON p.CreationDate <= t.timestamp
-                        LEFT JOIN comments c
-                        ON p.id = c.PostId
-                        and c.CreationDate > t.timestamp
-                        and c.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
-                        where c.UserId is not null and p.owneruserid != -1 and p.owneruserid is not null
-                    ;
-                    """
+            SELECT
+                t.timestamp,
+                c.UserId as UserId,
+                LIST(DISTINCT p.id) AS PostId
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                posts p
+            ON
+                p.CreationDate <= t.timestamp
+            LEFT JOIN
+                comments c
+            ON
+                p.id = c.PostId AND
+                c.CreationDate > t.timestamp AND
+                c.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
+            WHERE
+                c.UserId is not null AND
+                p.owneruserid != -1 AND
+                p.owneruserid is not null
+            ;
+            """
         ).df()
 
         return Table(
