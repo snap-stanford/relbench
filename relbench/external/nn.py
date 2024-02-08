@@ -115,9 +115,11 @@ class HeteroTemporalEncoder(torch.nn.Module):
         for node_type, time in time_dict.items():
             try:
                 rel_time = seed_time[batch_dict[node_type]] - time
-            except: # TODO (josh) this is a massive hack to fix an issue i came across with the 
-                    # F1 dataset and still dont understand
-                rel_time = seed_time[batch_dict[node_type]] - time[batch_dict[node_type]]
+            except:  # TODO (josh) this is a massive hack to fix an issue i came across with the
+                # F1 dataset and still dont understand
+                rel_time = (
+                    seed_time[batch_dict[node_type]] - time[batch_dict[node_type]]
+                )
             rel_time = rel_time / (60 * 60 * 24)  # Convert seconds to days.
 
             x = self.encoder_dict[node_type](rel_time)

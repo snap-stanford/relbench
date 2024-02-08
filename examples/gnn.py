@@ -68,7 +68,9 @@ for split, table in [
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
         data,
-        num_neighbors=[int(args.num_neighbors / 2**i) for i in range(args.num_layers)],
+        num_neighbors=[
+            int(args.num_neighbors / 2**i) for i in range(args.num_layers)
+        ],
         time_attr="time",
         input_nodes=table_input.nodes,
         input_time=table_input.time,
