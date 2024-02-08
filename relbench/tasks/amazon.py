@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchNodeTask, Table
+from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
 
@@ -227,4 +227,56 @@ class ProductLTVTask(RelBenchNodeTask):
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
             pkey_col=None,
             time_col="timestamp",
+        )
+
+
+class RecommendationTask(RelBenchLinkTask):
+    r"""Predict the list of distinct items each customer will purchase in the
+    next two years."""
+
+    name = "rel-amazon-rec"
+    task_type = TaskType.LINK_PREDICTION
+    source_entity_col = "customer_id"
+    source_entity_table = "customer"
+    destination_entity_col = "product_id"
+    destination_entity_table = "product"
+    time_col = "timestamp"
+    timedelta = pd.Timedelta(days=365 * 2)
+    metrics = None
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        # product = db.table_dict["product"].df
+        customer = db.table_dict["customer"].df
+        review = db.table_dict["review"].df
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                t.timestamp,
+                review.customer_id,
+                LIST(DISTINCT review.product_id) AS product_id
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                review
+            ON
+                review.review_time > t.timestamp AND
+                review.review_time <= t.timestamp + INTERVAL '{self.timedelta} days'
+            WHERE
+                review.customer_id is not null and review.product_id is not null
+            GROUP BY
+                t.timestamp,
+                review.customer_id
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.source_entity_col: self.source_entity_table,
+                self.destination_entity_col: self.destination_entity_table,
+            },
+            pkey_col=None,
+            time_col=self.time_col,
         )

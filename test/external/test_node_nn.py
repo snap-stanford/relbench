@@ -17,7 +17,7 @@ from relbench.external.graph import (
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
 
 
-def test_train_fake_product_dataset(tmp_path):
+def test_node_train_fake_product_dataset(tmp_path):
     dataset = FakeDataset()
 
     data = make_pkey_fkey_graph(
