@@ -45,7 +45,11 @@ def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, floa
         pred = df["__target__"].fillna(0).astype(float).values
     elif name == "entity_mode":
         fkey = list(train_table.fkey_col_to_pkey_table.keys())[0]
-        df = train_table.df.groupby(fkey)[task.target_col].apply(lambda x: x.mode().iloc[0] if not x.mode().empty else 0).reset_index()
+        df = (
+            train_table.df.groupby(fkey)[task.target_col]
+            .apply(lambda x: x.mode().iloc[0] if not x.mode().empty else 0)
+            .reset_index()
+        )
         df.rename(columns={task.target_col: "__target__"}, inplace=True)
         df = pred_table.df.merge(df, how="left", on=fkey)
         pred = df["__target__"].fillna(0).astype(int).values
@@ -104,9 +108,7 @@ elif task.task_type == TaskType.BINARY_CLASSIFICATION:
         print(f"Test: {test_metrics}")
 
 elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-    eval_name_list = ["random", 
-                      "majority",
-                      "entity_mode"]
+    eval_name_list = ["random", "majority", "entity_mode"]
     for name in eval_name_list:
         train_metrics = evaluate(train_table, train_table, name=name)
         val_metrics = evaluate(train_table, val_table, name=name)

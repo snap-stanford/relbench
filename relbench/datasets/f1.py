@@ -4,7 +4,12 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.f1 import PointsTask, ConstructorPointsTask, DidNotFinishTask, QualifyingTask
+from relbench.tasks.f1 import (
+    ConstructorPointsTask,
+    DidNotFinishTask,
+    PointsTask,
+    QualifyingTask,
+)
 from relbench.utils import unzip_processor
 
 
@@ -12,7 +17,12 @@ class F1Dataset(RelBenchDataset):
     name = "rel-f1"
     val_timestamp = pd.Timestamp("2000-01-01")
     test_timestamp = pd.Timestamp("2015-01-01")
-    task_cls_list = [PointsTask, ConstructorPointsTask, DidNotFinishTask, QualifyingTask]
+    task_cls_list = [
+        PointsTask,
+        ConstructorPointsTask,
+        DidNotFinishTask,
+        QualifyingTask,
+    ]
 
     def __init__(
         self,
@@ -40,7 +50,7 @@ class F1Dataset(RelBenchDataset):
         constructor_standings = pd.read_csv(
             os.path.join(path, "constructor_standings.csv")
         )
-        qualifying = pd.read_csv(os.path.join(path, "qualifying.csv"))  
+        qualifying = pd.read_csv(os.path.join(path, "qualifying.csv"))
 
         ## remove columns that are irrelevant, leak time, or have too many missing values
         races.drop(
@@ -95,7 +105,6 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
-
         ## replase missing data and combine date and time columns
         races["time"] = races["time"].replace(r"^\\N$", "00:00:00", regex=True)
         races["date"] = races["date"] + " " + races["time"]
@@ -112,13 +121,13 @@ class F1Dataset(RelBenchDataset):
             races[["raceId", "date"]], on="raceId", how="left"
         )
 
-        qualifying = qualifying.merge(races[['raceId', 'date']], on='raceId', how='left')
-        
-        # subtract a day from the date to account for the fact 
+        qualifying = qualifying.merge(
+            races[["raceId", "date"]], on="raceId", how="left"
+        )
+
+        # subtract a day from the date to account for the fact
         # that the qualifying time is the day before the main race
-        qualifying['date'] = qualifying['date'] - pd.Timedelta(days=1)
-
-
+        qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
 
         tables = {}
 
@@ -185,9 +194,10 @@ class F1Dataset(RelBenchDataset):
             fkey_col_to_pkey_table={
                 "raceId": "races",
                 "driverId": "drivers",
-                "constructorId": "constructors"},
+                "constructorId": "constructors",
+            },
             pkey_col="qualifyId",
-            time_col="date"
+            time_col="date",
         )
 
         return Database(tables)
