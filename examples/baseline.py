@@ -96,4 +96,3 @@ elif task.task_type == TaskType.BINARY_CLASSIFICATION:
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
         print(f"Test: {test_metrics}")
-
