@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, NamedTuple, Optional, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -13,8 +13,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
 from torch_geometric.utils import sort_edge_index
 
-from relbench.data import Database, Table
-from relbench.data.task_base import BaseTask
+from relbench.data import Database, LinkTask, NodeTask, Table
 
 
 def to_unix_time(ser: pd.Series) -> Tensor:
@@ -153,18 +152,17 @@ class AttachTargetTransform:
         return batch
 
 
-class TrainTableInput(NamedTuple):
+class NodeTrainTableInput(NamedTuple):
+    nodes: Tuple[NodeType, Tensor]
     time: Optional[Tensor]
     target: Optional[Tensor]
     transform: Optional[AttachTargetTransform]
-    nodes: Tuple[NodeType, Tensor] = None  # (entity_table, nodes) for node task
-    edge_label_index: Optional[Tensor] = None  # (2, num_edges) for link task
 
 
-def get_train_table_input(
+def get_node_train_table_input(
     table: Table,
-    task: BaseTask,
-) -> TrainTableInput:
+    task: NodeTask,
+) -> NodeTrainTableInput:
     nodes = torch.from_numpy(table.df[task.entity_col].astype(int).values)
 
     time: Optional[Tensor] = None
@@ -180,7 +178,7 @@ def get_train_table_input(
         target = torch.from_numpy(table.df[task.target_col].values.astype(target_type))
         transform = AttachTargetTransform(task.entity_table, target)
 
-    return TrainTableInput(
+    return NodeTrainTableInput(
         nodes=(task.entity_table, nodes),
         time=time,
         target=target,
@@ -188,26 +186,41 @@ def get_train_table_input(
     )
 
 
+class LinkTrainTableInput(NamedTuple):
+    r"""Trainining table input for link prediction.
+
+    - source_nodes is a Tensor of source node indices.
+    - desstination_nodes[i] gives a list of destination node indices for source_nodes[i]
+    - num_destination_nodes is the total number of destination nodes (used to perform negative sampling).
+    - time is a Tensor of time for source_nodes
+    """
+    source_nodes: Tuple[NodeType, Tensor]
+    destination_nodes: Tuple[NodeType, List[List[int]]]
+    num_destination_nodes: int
+    time: Optional[Tensor]
+
+
 def get_link_train_table_input(
     table: Table,
-    task: BaseTask,
-) -> TrainTableInput:
-    nodes_source = table.df[task.source_entity_col].astype(int).values
-    nodes_destination = table.df[task.destination_entity_col].astype(int).values
-
-    # collect all link indices
-    links = torch.from_numpy(np.stack((nodes_source, nodes_destination), axis=0))
+    task: LinkTask,
+) -> LinkTrainTableInput:
+    source_node_idx: Tensor = torch.from_numpy(
+        table.df[task.source_entity_col].astype(int).values
+    )
+    destination_node_idx: List[List[int]] = table.df[
+        task.destination_entity_col
+    ].to_list()
+    num_destination_nodes = len(
+        task.dataset.db.table_dict[task.destination_entity_table]
+    )
 
     time: Optional[Tensor] = None
     if table.time_col is not None:
         time = to_unix_time(table.df[table.time_col])
 
-    return TrainTableInput(
-        edge_label_index=(
-            (task.source_entity_table, "train_link", task.destination_entity_table),
-            links,
-        ),
+    return LinkTrainTableInput(
+        source_nodes=(task.source_entity_table, source_node_idx),
+        destination_nodes=(task.destination_entity_table, destination_node_idx),
+        num_destination_nodes=num_destination_nodes,
         time=time,
-        target=None,
-        transform=None,
     )
