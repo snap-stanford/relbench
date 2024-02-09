@@ -63,7 +63,7 @@ for split, table in [
     ("train", task.train_table),
     ("val", task.val_table),
     ("test", task.test_table),
-]:
+]:  
     table_input = get_train_table_input(table=table, task=task)
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
@@ -80,6 +80,7 @@ for split, table in [
         num_workers=args.num_workers,
         persistent_workers=args.num_workers > 0,
     )
+
 
 clamp_min, clamp_max = None, None
 if task.task_type == TaskType.BINARY_CLASSIFICATION:

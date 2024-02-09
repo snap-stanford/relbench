@@ -5,9 +5,8 @@ import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.f1 import (
-    ConstructorPointsTask,
     DidNotFinishTask,
-    PointsTask,
+    PositionTask,
     QualifyingTask,
 )
 from relbench.utils import unzip_processor
@@ -15,11 +14,12 @@ from relbench.utils import unzip_processor
 
 class F1Dataset(RelBenchDataset):
     name = "rel-f1"
-    val_timestamp = pd.Timestamp("2000-01-01")
-    test_timestamp = pd.Timestamp("2015-01-01")
+    val_timestamp = pd.Timestamp("2005-01-01") 
+    test_timestamp = pd.Timestamp("2010-01-01")
+    end_timestamp = pd.Timestamp("2015-01-01") # final timestamp for making test table
+    start_timestamp = pd.Timestamp("1950-01-01") # only data after this time is used
     task_cls_list = [
-        PointsTask,
-        ConstructorPointsTask,
+        PositionTask,
         DidNotFinishTask,
         QualifyingTask,
     ]
@@ -200,4 +200,9 @@ class F1Dataset(RelBenchDataset):
             time_col="date",
         )
 
-        return Database(tables)
+
+        db = Database(tables)
+        # only use data after start_timestamp (=1982)
+        db = db.after(self.start_timestamp)
+
+        return db

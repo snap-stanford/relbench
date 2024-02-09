@@ -53,6 +53,15 @@ class Database:
             for table in self.table_dict.values()
             if table.time_col is not None
         )
+    
+    def max_timestamp(self) -> pd.Timestamp:
+        r"""Returns the latest timestamp in the database."""
+
+        return max(
+            table.max_timestamp
+            for table in self.table_dict.values()
+            if table.time_col is not None
+        )
 
     @property
     @lru_cache(maxsize=None)
@@ -71,6 +80,16 @@ class Database:
         return Database(
             table_dict={
                 name: table.upto(time_stamp) for name, table in self.table_dict.items()
+            }
+        )
+    
+
+    def after(self, time_stamp: pd.Timestamp) -> Self:
+        r"""Returns a database with all rows after time_stamp."""
+
+        return Database(
+            table_dict={
+                name: table.after(time_stamp) for name, table in self.table_dict.items()
             }
         )
 

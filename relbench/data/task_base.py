@@ -95,12 +95,17 @@ class BaseTask:
 
             table = self.make_table(
                 self.dataset.db,
-                pd.Series([self.dataset.val_timestamp]),
+                pd.date_range(
+                    self.dataset.val_timestamp,
+                    self.dataset.test_timestamp - self.timedelta,
+                    freq=self.timedelta,
+                ),
             )
             self._cached_table_dict["val"] = table
         else:
             table = self._cached_table_dict["val"]
         return self.filter_dangling_entities(table)
+
 
     @property
     def test_table(self) -> Table:
@@ -116,9 +121,19 @@ class BaseTask:
                     "insufficient aggregation time."
                 )
 
+            # end_timestamp is optionally set in dataset definition
+            if self.dataset.end_timestamp is None:
+                end_timestamp = self.dataset._full_db.max_timestamp - self.timedelta
+            else:
+                end_timestamp = self.dataset.end_timestamp
+
             full_table = self.make_table(
                 self.dataset._full_db,
-                pd.Series([self.dataset.test_timestamp]),
+                pd.date_range(
+                    self.dataset.test_timestamp,
+                    end_timestamp,
+                    freq=self.timedelta,
+                ),
             )
             self._cached_table_dict["full_test"] = full_table
         else:
