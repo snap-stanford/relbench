@@ -137,7 +137,6 @@ class AmazonDataset(RelBenchDataset):
             known_hash=self.known_hashes.get(url.split("/")[-1], None),
             progressbar=True,
             processor=pooch.Decompress(),
-            path=self.cache_dir,
         )
         print(f"reading review and customer info from {path}...")
         tic = time.time()

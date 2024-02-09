@@ -4,20 +4,16 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.f1 import (
-    DidNotFinishTask,
-    PositionTask,
-    QualifyingTask,
-)
+from relbench.tasks.f1 import DidNotFinishTask, PositionTask, QualifyingTask
 from relbench.utils import unzip_processor
 
 
 class F1Dataset(RelBenchDataset):
     name = "rel-f1"
-    val_timestamp = pd.Timestamp("2005-01-01") 
+    val_timestamp = pd.Timestamp("2005-01-01")
     test_timestamp = pd.Timestamp("2010-01-01")
-    end_timestamp = pd.Timestamp("2015-01-01") # final timestamp for making test table
-    start_timestamp = pd.Timestamp("1950-01-01") # only data after this time is used
+    end_timestamp = pd.Timestamp("2015-01-01")  # final timestamp for making test table
+    start_timestamp = pd.Timestamp("1950-01-01")  # only data after this time is used
     task_cls_list = [
         PositionTask,
         DidNotFinishTask,
@@ -199,7 +195,6 @@ class F1Dataset(RelBenchDataset):
             pkey_col="qualifyId",
             time_col="date",
         )
-
 
         db = Database(tables)
         # only use data after start_timestamp (=1982)

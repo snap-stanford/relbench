@@ -35,7 +35,7 @@ class Dataset:
             end_timestamp = self.end_timestamp
 
         self.db = db.upto(end_timestamp)
-        
+
         self.validate_and_correct_db()
 
     def __repr__(self) -> str:
