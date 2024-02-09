@@ -15,7 +15,7 @@ class AmazonDataset(RelBenchDataset):
     name = "rel-amazon"
     val_timestamp = pd.Timestamp("2014-01-01")
     test_timestamp = pd.Timestamp("2016-01-01") # first timestamp for making test table
-    end_timestamp = test_timestamp   # final timestamp for making test table
+    max_eval_time_frames = 1
     task_cls_list = [ChurnTask, LTVTask, ProductChurnTask, ProductLTVTask]
 
     category_list = ["books", "fashion"]

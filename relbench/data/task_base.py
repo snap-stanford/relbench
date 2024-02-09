@@ -120,17 +120,13 @@ class BaseTask:
                     "insufficient aggregation time."
                 )
 
-            # end_timestamp is optionally set in dataset definition
-            if self.dataset.end_timestamp is None:
-                end_timestamp = self.dataset._full_db.max_timestamp - self.timedelta
-            else:
-                end_timestamp = self.dataset.end_timestamp
 
             full_table = self.make_table(
                 self.dataset._full_db,
                 pd.date_range(
                     self.dataset.test_timestamp,
-                    end_timestamp,
+                    self.dataset.test_timestamp
+                        + self.timedelta * (self.dataset.max_eval_time_frames -1),
                     freq=self.timedelta,
                 ),
             )

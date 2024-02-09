@@ -10,7 +10,7 @@ from relbench.utils import get_df_in_window
 
 
 class PositionTask(RelBenchNodeTask):
-    r"""Predict the average finishing position of each driver in a race."""
+    r"""Predict the average finishing position of each driver all races in the next 2 months."""
     name = "rel-f1-position"
     task_type = TaskType.REGRESSION
     entity_col = "driverId"
@@ -66,7 +66,7 @@ class PositionTask(RelBenchNodeTask):
 
 
 class DidNotFinishTask(RelBenchNodeTask):
-    r"""Predict the if each driver will DNF (not finish) a race in the next time period."""
+    r"""Predict the if each driver will DNF (not finish) a race in the next 1 month."""
     name = "rel-f1-dnf"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "driverId"
@@ -116,9 +116,6 @@ class DidNotFinishTask(RelBenchNodeTask):
             """
         ).df()
 
-        # make into binary classification task
-        df[self.target_col] = df[self.target_col].apply(lambda x: 1 if x > 0.0 else 0)
-
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
@@ -128,7 +125,7 @@ class DidNotFinishTask(RelBenchNodeTask):
 
 
 class QualifyingTask(RelBenchNodeTask):
-    r"""Predict the finishing position of each driver in a race."""
+    r"""Predict if each driver will qualify in the top-3 for a race within the next 1 month."""
     name = "rel-f1-qualifying"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "driverId"
