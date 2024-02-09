@@ -21,18 +21,14 @@ class Dataset:
         db: Database,
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
+        end_timestamp: pd.Timestamp,
         task_cls_list: List[Type[BaseTask]],
     ) -> None:
         self._full_db = db
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
+        self.end_timestamp = end_timestamp  
         self.task_cls_dict = {task_cls.name: task_cls for task_cls in task_cls_list}
-
-        # end_timestamp is optionally set in dataset definition
-        if self.end_timestamp is None:
-            end_timestamp = self._full_db.max_timestamp - self.timedelta
-        else:
-            end_timestamp = self.end_timestamp
 
         self.db = db.upto(end_timestamp)
 
@@ -111,7 +107,7 @@ class RelBenchDataset(Dataset):
             print(f"done in {toc - tic:.2f} seconds.")
 
         super().__init__(
-            db, self.val_timestamp, self.test_timestamp, self.task_cls_list
+            db, self.val_timestamp, self.test_timestamp, self.end_timestamp, self.task_cls_list
         )
 
     def make_db(self) -> Database:

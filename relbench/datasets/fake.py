@@ -26,12 +26,13 @@ class FakeDataset(Dataset):
         db = self.make_db(num_products, num_customers, num_reviews)
         db.reindex_pkeys_and_fkeys()
         val_timestamp = db.min_timestamp + 0.8 * (db.max_timestamp - db.min_timestamp)
-        test_timestamp = db.min_timestamp + 0.9 * (db.max_timestamp - db.min_timestamp)
-        end_timestamp = None # unused
+        test_timestamp = db.min_timestamp + 0.9 * (db.max_timestamp - db.min_timestamp)  # first timestamp for making test table
+        end_timestamp = test_timestamp  # final timestamp for making test table
         super().__init__(
             db=db,
             val_timestamp=val_timestamp,
             test_timestamp=test_timestamp,
+            end_timestamp=end_timestamp,
             task_cls_list=[ChurnTask, LTVTask, RecommendationTask],
         )
 

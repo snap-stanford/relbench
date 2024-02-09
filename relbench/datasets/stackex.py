@@ -17,8 +17,8 @@ class StackExDataset(RelBenchDataset):
     name = "rel-stackex"
     # 2 years gap
     val_timestamp = pd.Timestamp("2019-01-01")
-    test_timestamp = pd.Timestamp("2021-01-01")
-    end_timestamp = None # unused
+    test_timestamp = pd.Timestamp("2021-01-01") # first timestamp for making test table
+    end_timestamp = test_timestamp # final timestamp for making test table
     task_cls_list = [EngageTask, VotesTask, BadgesTask, UserCommentOnPostTask]
 
     def __init__(
