@@ -27,6 +27,7 @@ class FakeDataset(Dataset):
         db.reindex_pkeys_and_fkeys()
         val_timestamp = db.min_timestamp + 0.8 * (db.max_timestamp - db.min_timestamp)
         test_timestamp = db.min_timestamp + 0.9 * (db.max_timestamp - db.min_timestamp)
+        end_timestamp = None # unused
         super().__init__(
             db=db,
             val_timestamp=val_timestamp,

@@ -18,6 +18,7 @@ class StackExDataset(RelBenchDataset):
     # 2 years gap
     val_timestamp = pd.Timestamp("2019-01-01")
     test_timestamp = pd.Timestamp("2021-01-01")
+    end_timestamp = None # unused
     task_cls_list = [EngageTask, VotesTask, BadgesTask, UserCommentOnPostTask]
 
     def __init__(
