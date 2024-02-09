@@ -30,7 +30,7 @@ class Dataset:
         self.end_timestamp = end_timestamp  
         self.task_cls_dict = {task_cls.name: task_cls for task_cls in task_cls_list}
 
-        self.db = db.upto(end_timestamp)
+        self.db = db.upto(test_timestamp)
 
         self.validate_and_correct_db()
 
