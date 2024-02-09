@@ -1,19 +1,17 @@
-from typing import Dict, List, Optional
 from functools import partial
+from typing import Dict, List, Optional
 
 import torch
 from torch import Tensor
-from torch_geometric.nn import HeteroConv, LayerNorm, SAGEConv, GATConv
+from torch.nn.functional import cosine_similarity
+from torch_geometric.nn import MLP, GATConv, HeteroConv, LayerNorm, SAGEConv
 from torch_geometric.typing import EdgeType, NodeType
 from torch_geometric.utils import trim_to_layer
-from torch_geometric.nn import MLP
 from torch_scatter import scatter
-from torch.nn.functional import cosine_similarity
-
 
 conv_name_to_func = {
-    'sage': SAGEConv,
-    'gat': partial(GATConv, add_self_loops=False),
+    "sage": SAGEConv,
+    "gat": partial(GATConv, add_self_loops=False),
 }
 
 
@@ -22,11 +20,11 @@ class SelfJoinLayer(torch.nn.Module):
         super().__init__()
         if node_type_considered is None:
             node_type_considered = []
-        elif node_type_considered == 'all':
+        elif node_type_considered == "all":
             node_type_considered = node_types
         else:
             assert type(node_type_considered) is list
-        self.score_type = 'mlp'
+        self.score_type = "mlp"
         self.msg_dict = torch.nn.ModuleDict()
         self.upd_dict = torch.nn.ModuleDict()
 
@@ -34,8 +32,12 @@ class SelfJoinLayer(torch.nn.Module):
         for node_type in node_types:
             if node_type not in self.node_type_considered:
                 continue
-            self.msg_dict[node_type] = MLP(channel_list=[channels * 2, channels, channels])
-            self.upd_dict[node_type] = MLP(channel_list=[channels * 2, channels, channels])
+            self.msg_dict[node_type] = MLP(
+                channel_list=[channels * 2, channels, channels]
+            )
+            self.upd_dict[node_type] = MLP(
+                channel_list=[channels * 2, channels, channels]
+            )
 
     def forward(self, x_dict: Dict):
         upd_x_dict = {}
@@ -44,33 +46,50 @@ class SelfJoinLayer(torch.nn.Module):
                 upd_x_dict[node_type] = feature
                 continue
             # Aggregate feature with similarity weighting
-            sim_score = cosine_similarity(feature[:, None, :], feature[None, :, :], dim=-1) + 1  # [N, N]
+            sim_score = (
+                cosine_similarity(feature[:, None, :], feature[None, :, :], dim=-1) + 1
+            )  # [N, N]
             # sort
             index_sampled = torch.topk(sim_score, k=20, dim=1).indices  # [N, K]
-            edge_index_i = torch.arange(index_sampled.size(0)
-                                        ).to(sim_score.device).unsqueeze(-1).repeat(1, index_sampled.size(1)).view(-1)
+            edge_index_i = (
+                torch.arange(index_sampled.size(0))
+                .to(sim_score.device)
+                .unsqueeze(-1)
+                .repeat(1, index_sampled.size(1))
+                .view(-1)
+            )
             # [NK]
             edge_index_j = index_sampled.view(-1)  # [NK]
             edge_index = torch.stack((edge_index_i, edge_index_j), dim=0)  # [2, NK]
 
-            h_i, h_j = feature[edge_index[0]], feature[edge_index[1]]  # [M, H], M = N * K
+            h_i, h_j = (
+                feature[edge_index[0]],
+                feature[edge_index[1]],
+            )  # [M, H], M = N * K
             # Compute score
-            if self.score_type == 'mlp':
-                score = self.msg_dict[node_type](torch.cat((h_i, h_j), dim=-1))  # [M, H]
-            elif self.score_type == 'cos':
+            if self.score_type == "mlp":
+                score = self.msg_dict[node_type](
+                    torch.cat((h_i, h_j), dim=-1)
+                )  # [M, H]
+            elif self.score_type == "cos":
                 score = (h_i * h_j).sum(dim=-1, keepdim=True) / (
-                            torch.norm(h_i, dim=-1, p=2, keepdim=True) * torch.norm(h_j, dim=-1, p=2, keepdim=True)
+                    torch.norm(h_i, dim=-1, p=2, keepdim=True)
+                    * torch.norm(h_j, dim=-1, p=2, keepdim=True)
                 )  # [M, 1]
             else:
                 raise NotImplementedError(self.score_type)
             # Aggregate
-            if self.score_type == 'mlp':
-                h_agg = scatter(score, edge_index[0], dim=0, reduce='sum')  # [N, H]
-            elif self.score_type == 'cos':
-                h_agg = scatter(score * h_j, edge_index[0], dim=0, reduce='sum')  # [N, H]
+            if self.score_type == "mlp":
+                h_agg = scatter(score, edge_index[0], dim=0, reduce="sum")  # [N, H]
+            elif self.score_type == "cos":
+                h_agg = scatter(
+                    score * h_j, edge_index[0], dim=0, reduce="sum"
+                )  # [N, H]
             else:
                 raise NotImplementedError(self.score_type)
-            feature = feature + self.upd_dict[node_type](torch.cat((feature, h_agg), dim=-1))  # [N, H]
+            feature = feature + self.upd_dict[node_type](
+                torch.cat((feature, h_agg), dim=-1)
+            )  # [N, H]
             upd_x_dict[node_type] = feature
         return upd_x_dict
 

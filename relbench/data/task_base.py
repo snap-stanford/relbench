@@ -106,7 +106,6 @@ class BaseTask:
             table = self._cached_table_dict["val"]
         return self.filter_dangling_entities(table)
 
-
     @property
     def test_table(self) -> Table:
         r"""Returns the test table for a task."""

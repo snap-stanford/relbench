@@ -28,7 +28,6 @@ class PositionTask(RelBenchNodeTask):
         drivers = db.table_dict["drivers"].df
         races = db.table_dict["races"].df
 
-
         df = duckdb.sql(
             f"""
                 SELECT
@@ -186,4 +185,3 @@ class QualifyingTask(RelBenchNodeTask):
             pkey_col=None,
             time_col=self.time_col,
         )
-

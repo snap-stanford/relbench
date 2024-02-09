@@ -1,9 +1,10 @@
+from typing import Dict, List
+
 import torch
 from torch import Tensor
-from typing import Dict, List
-from torch_geometric.typing import EdgeType, NodeType
-from torch_geometric.nn import MLP
 from torch_frame import TensorFrame
+from torch_geometric.nn import MLP
+from torch_geometric.typing import EdgeType, NodeType
 
 from relgym.config import cfg
 from relgym.models.feature_encoder import HeteroEncoder, HeteroTemporalEncoder
@@ -34,11 +35,13 @@ def create_model(data, entity_table, to_device=True):
                 torch_frame_model_kwargs={
                     "channels": cfg.torch_frame_model.channels,
                     "num_layers": cfg.torch_frame_model.num_layers,
-                }
+                },
             )
             self.temporal_encoder = HeteroTemporalEncoder(
                 node_types=[
-                    node_type for node_type in data.node_types if "time" in data[node_type]
+                    node_type
+                    for node_type in data.node_types
+                    if "time" in data[node_type]
                 ],
                 channels=cfg.model.channels,
             )
@@ -59,14 +62,14 @@ def create_model(data, entity_table, to_device=True):
             )
 
         def forward(
-                self,
-                tf_dict: Dict[NodeType, TensorFrame],
-                edge_index_dict: Dict[EdgeType, Tensor],
-                seed_time: Tensor,
-                time_dict: Dict[NodeType, Tensor],
-                batch_dict: Dict[NodeType, Tensor],
-                num_sampled_nodes_dict: Dict[NodeType, List[int]],
-                num_sampled_edges_dict: Dict[EdgeType, List[int]],
+            self,
+            tf_dict: Dict[NodeType, TensorFrame],
+            edge_index_dict: Dict[EdgeType, Tensor],
+            seed_time: Tensor,
+            time_dict: Dict[NodeType, Tensor],
+            batch_dict: Dict[NodeType, Tensor],
+            num_sampled_nodes_dict: Dict[NodeType, List[int]],
+            num_sampled_edges_dict: Dict[EdgeType, List[int]],
         ) -> Tensor:
             x_dict = self.encoder(tf_dict)
 

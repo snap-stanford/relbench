@@ -120,4 +120,3 @@ class HeteroTemporalEncoder(torch.nn.Module):
             out_dict[node_type] = x
 
         return out_dict
-

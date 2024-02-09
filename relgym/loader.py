@@ -1,17 +1,16 @@
-from typing import Dict
 import os
-from torch_geometric.loader import NeighborLoader
-from torch_geometric.data import HeteroData
+from typing import Dict
+
 from torch_frame.config.text_embedder import TextEmbedderConfig
+from torch_geometric.data import HeteroData
+from torch_geometric.loader import NeighborLoader
+
 from examples.inferred_stypes import dataset2inferred_stypes
 from examples.text_embedder import GloveTextEmbedding  # May not be the best practice
-from relgym.config import cfg
 from relbench.data import RelBenchDataset
 from relbench.datasets import get_dataset
-from relbench.external.graph import (
-    get_train_table_input,
-    make_pkey_fkey_graph,
-)
+from relbench.external.graph import get_train_table_input, make_pkey_fkey_graph
+from relgym.config import cfg
 
 
 def create_dataset_and_task():
@@ -40,7 +39,9 @@ def transform_dataset_to_graph(dataset: RelBenchDataset):
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=GloveTextEmbedding(device=device), batch_size=256
         ),
-        cache_dir=os.path.join(cfg.dataset.root_dir, f"{cfg.dataset.name}_materialized_cache"),
+        cache_dir=os.path.join(
+            cfg.dataset.root_dir, f"{cfg.dataset.name}_materialized_cache"
+        ),
     )
 
     return data
@@ -57,7 +58,9 @@ def get_loader_and_entity(data, task):
         entity_table = table_input.nodes[0]
         loader_dict[split] = NeighborLoader(
             data,
-            num_neighbors=[cfg.loader.num_neighbors for _ in range(cfg.model.num_layers)],
+            num_neighbors=[
+                cfg.loader.num_neighbors for _ in range(cfg.model.num_layers)
+            ],
             time_attr="time",
             input_nodes=table_input.nodes,
             input_time=table_input.time,
