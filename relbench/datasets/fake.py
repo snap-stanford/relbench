@@ -32,7 +32,7 @@ class FakeDataset(Dataset):
             db=db,
             val_timestamp=val_timestamp,
             test_timestamp=test_timestamp,
-            end_timestamp=end_timestamp,
+            max_eval_time_frames=max_eval_time_frames,
             task_cls_list=[ChurnTask, LTVTask, RecommendationTask],
         )
 
