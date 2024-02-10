@@ -120,13 +120,12 @@ class BaseTask:
                     "insufficient aggregation time."
                 )
 
-
             full_table = self.make_table(
                 self.dataset._full_db,
                 pd.date_range(
                     self.dataset.test_timestamp,
                     self.dataset.test_timestamp
-                        + self.timedelta * (self.dataset.max_eval_time_frames -1),
+                    + self.timedelta * (self.dataset.max_eval_time_frames - 1),
                     freq=self.timedelta,
                 ),
             )

@@ -11,7 +11,7 @@ from relbench.utils import unzip_processor
 class F1Dataset(RelBenchDataset):
     name = "rel-f1"
     val_timestamp = pd.Timestamp("2005-01-01")
-    test_timestamp = pd.Timestamp("2010-01-01") # first timestamp for making test table
+    test_timestamp = pd.Timestamp("2010-01-01")  # first timestamp for making test table
     max_eval_time_frames = 30
     start_timestamp = pd.Timestamp("1950-01-01")  # only data after this time is used
     task_cls_list = [
