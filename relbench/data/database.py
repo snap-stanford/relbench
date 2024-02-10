@@ -83,15 +83,6 @@ class Database:
             }
         )
 
-    def after(self, time_stamp: pd.Timestamp) -> Self:
-        r"""Returns a database with all rows after time_stamp."""
-
-        return Database(
-            table_dict={
-                name: table.after(time_stamp) for name, table in self.table_dict.items()
-            }
-        )
-
     def reindex_pkeys_and_fkeys(self) -> None:
         r"""Mapping primary and foreign keys into indices according to
         the ordering in the primary key tables.

@@ -196,8 +196,4 @@ class F1Dataset(RelBenchDataset):
             time_col="date",
         )
 
-        db = Database(tables)
-        # only use data after start_timestamp
-        db = db.after(self.start_timestamp)
-
         return Database(tables)
