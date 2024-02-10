@@ -21,13 +21,13 @@ class Dataset:
         db: Database,
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
-        end_timestamp: pd.Timestamp,
+        max_eval_time_frames: int,
         task_cls_list: List[Type[BaseTask]],
     ) -> None:
         self._full_db = db
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
-        self.end_timestamp = end_timestamp  
+        self.max_eval_time_frames = max_eval_time_frames
         self.task_cls_dict = {task_cls.name: task_cls for task_cls in task_cls_list}
 
         self.db = db.upto(test_timestamp)
