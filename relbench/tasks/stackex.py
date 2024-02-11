@@ -3,13 +3,15 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from relbench.data import Database, RelBenchTask, Table
-from relbench.data.task import TaskType
+from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
+from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
 from relbench.utils import get_df_in_window
 
+######## node prediction tasks ########
 
-class EngageTask(RelBenchTask):
+
+class EngageTask(RelBenchNodeTask):
     r"""Predict if a user will make any votes/posts/comments in the next 1 year."""
 
     name = "rel-stackex-engage"
@@ -36,19 +38,22 @@ class EngageTask(RelBenchTask):
                     p.id,
                     p.owneruserid as userid,
                     p.creationdate
-                FROM posts p
+                FROM
+                    posts p
                 UNION
                 SELECT
                     v.id,
                     v.userid,
                     v.creationdate
-                FROM votes v
+                FROM
+                    votes v
                 UNION
                 SELECT
                     c.id,
                     c.userid,
                     c.creationdate
-                FROM comments c
+                FROM
+                    comments c
             ),
 
             ACTIVE_USERS AS (
@@ -68,13 +73,18 @@ class EngageTask(RelBenchTask):
                     u.timestamp,
                     u.id as OwnerUserId,
                     IF(count(distinct a.id) >= 1, 1, 0) as contribution
-                FROM active_users u
-                LEFT JOIN all_engagement a
-                ON u.id = a.UserId
-                    and a.CreationDate > u.timestamp
-                    and a.CreationDate <= u.timestamp + INTERVAL '{self.timedelta}'
-                where u.n_engagement >= 1
-                GROUP BY u.timestamp, u.id
+                FROM
+                    active_users u
+                LEFT JOIN
+                    all_engagement a
+                ON
+                    u.id = a.UserId AND
+                    a.CreationDate > u.timestamp AND
+                    a.CreationDate <= u.timestamp + INTERVAL '{self.timedelta}'
+                where
+                    u.n_engagement >= 1
+                GROUP BY
+                    u.timestamp, u.id
             ;
 
             """
@@ -88,7 +98,7 @@ class EngageTask(RelBenchTask):
         )
 
 
-class VotesTask(RelBenchTask):
+class VotesTask(RelBenchNodeTask):
     r"""Predict the number of upvotes that an existing question will receive in
     the next 2 years."""
     name = "rel-stackex-votes"
@@ -107,22 +117,29 @@ class VotesTask(RelBenchTask):
 
         df = duckdb.sql(
             f"""
-                SELECT
-                    t.timestamp,
-                    p.id as PostId,
-                    count(distinct v.id) as popularity
-                FROM timestamp_df t
-                LEFT JOIN posts p
-                ON p.CreationDate <= t.timestamp
-                and p.owneruserid != -1
-                and p.owneruserid is not null
-                and p.PostTypeId = 1
-                LEFT JOIN votes v
-                ON p.id = v.PostId
-                and v.CreationDate > t.timestamp
-                and v.CreationDate <= t.timestamp + INTERVAL '{self.timedelta}'
-                and v.votetypeid = 2
-                GROUP BY t.timestamp, p.id
+            SELECT
+                t.timestamp,
+                p.id AS PostId,
+                COUNT(distinct v.id) AS popularity
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                posts p
+            ON
+                p.CreationDate <= t.timestamp AND
+                p.owneruserid != -1 AND
+                p.owneruserid is not null AND
+                p.PostTypeId = 1
+            LEFT JOIN
+                votes v
+            ON
+                p.id = v.PostId AND
+                v.CreationDate > t.timestamp AND
+                v.CreationDate <= t.timestamp + INTERVAL '{self.timedelta}' AND
+                v.votetypeid = 2
+            GROUP BY
+                t.timestamp,
+                p.id
             ;
 
             """
@@ -136,7 +153,7 @@ class VotesTask(RelBenchTask):
         )
 
 
-class BadgesTask(RelBenchTask):
+class BadgesTask(RelBenchNodeTask):
     r"""Predict if each user will receive in a new badge the next 1 year."""
     name = "rel-stackex-badges"
     task_type = TaskType.BINARY_CLASSIFICATION
@@ -157,15 +174,23 @@ class BadgesTask(RelBenchTask):
             SELECT
                 t.timestamp,
                 u.Id as UserId,
-            CASE WHEN COUNT(b.Id) >= 1 THEN 1 ELSE 0 END AS WillGetBadge
-            FROM timestamp_df t
-            LEFT JOIN users u
-            ON u.CreationDate <= t.timestamp
-            LEFT JOIN badges b
-                ON u.Id = b.UserID
+            CASE WHEN
+                COUNT(b.Id) >= 1 THEN 1 ELSE 0 END AS WillGetBadge
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                users u
+            ON
+                u.CreationDate <= t.timestamp
+            LEFT JOIN
+                badges b
+            ON
+                u.Id = b.UserID
                 AND b.Date > t.timestamp
                 AND b.Date <= t.timestamp + INTERVAL '{self.timedelta}'
-            GROUP BY t.timestamp, u.Id
+            GROUP BY
+                t.timestamp,
+                u.Id
             """
         ).df()
 
@@ -178,6 +203,67 @@ class BadgesTask(RelBenchTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+######## link prediction tasks ########
+
+
+class UserCommentOnPostTask(RelBenchLinkTask):
+    r"""Predict if a user will comment on a specific post within 24hrs of the post being made."""
+
+    name = "rel-stackex-comment-on-post"
+    task_type = TaskType.LINK_PREDICTION
+    source_entity_col = "UserId"
+    source_entity_table = "users"
+    destination_entity_col = "PostId"
+    destination_entity_table = "posts"
+    time_col = "timestamp"
+    timedelta = pd.Timedelta(days=365)
+    metrics = None  # TODO: add metrics
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        r"""Create Task object for UserCommentOnPostTask."""
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        users = db.table_dict["users"].df
+        posts = db.table_dict["posts"].df
+        comments = db.table_dict["comments"].df
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                t.timestamp,
+                c.UserId as UserId,
+                LIST(DISTINCT p.id) AS PostId
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                posts p
+            ON
+                p.CreationDate <= t.timestamp
+            LEFT JOIN
+                comments c
+            ON
+                p.id = c.PostId AND
+                c.CreationDate > t.timestamp AND
+                c.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
+            WHERE
+                c.UserId is not null AND
+                p.owneruserid != -1 AND
+                p.owneruserid is not null
+            ;
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.source_entity_col: self.source_entity_table,
+                self.destination_entity_col: self.destination_entity_table,
+            },
             pkey_col=None,
             time_col=self.time_col,
         )

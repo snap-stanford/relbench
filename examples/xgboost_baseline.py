@@ -13,7 +13,7 @@ from torch_frame.typing import Metric
 from torch_frame.utils import infer_df_stype
 
 from relbench.data import RelBenchDataset
-from relbench.data.task import TaskType
+from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 
 parser = argparse.ArgumentParser()
