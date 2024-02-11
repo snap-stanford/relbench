@@ -172,6 +172,7 @@ class TaskType(Enum):
     MULTILABEL_CLASSIFICATION = "multilabel_classification"
     LINK_PREDICTION = "link_prediction"
 
+
 def _pack_tables(task, root: Union[str, os.PathLike]) -> Tuple[str, str]:
     _dummy_db = Database(
         table_dict={

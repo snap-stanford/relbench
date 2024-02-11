@@ -37,9 +37,9 @@ class OutcomeTask(RelBenchNodeTask):
                     oa.date
                 FROM outcome_analyses oa
                 LEFT JOIN outcomes o
-                ON oa.outcome_id = o.id 
+                ON oa.outcome_id = o.id
                 LEFT JOIN studies s
-                ON s.nct_id = o.nct_id 
+                ON s.nct_id = o.nct_id
                 where (oa.p_value_modifier is null or oa.p_value_modifier != '>')
                 and oa.p_value >=0
                 and oa.p_value <=1
@@ -49,7 +49,7 @@ class OutcomeTask(RelBenchNodeTask):
             SELECT
                 t.timestamp,
                 tr.nct_id,
-                CASE 
+                CASE
                     WHEN MIN(tr.p_value) <= 0.05 THEN 1
                     ELSE 0
                 END AS outcome
@@ -59,7 +59,7 @@ class OutcomeTask(RelBenchNodeTask):
                 and tr.date > t.timestamp
                 and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, tr.nct_id;
-            """ 
+            """
         ).df()
 
         return Table(
@@ -86,7 +86,7 @@ class AdverseEventTask(RelBenchNodeTask):
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         reported_event_totals = db.table_dict["reported_event_totals"].df
         studies = db.table_dict["studies"].df
-        
+
         df = duckdb.sql(
             f"""
             WITH TRIAL_INFO AS (
@@ -101,7 +101,7 @@ class AdverseEventTask(RelBenchNodeTask):
                 ON r.nct_id = s.nct_id
                 WHERE r.event_type = 'serious' or r.event_type = 'deaths'
             )
-        
+
             SELECT
                 t.timestamp,
                 tr.nct_id,
@@ -112,7 +112,7 @@ class AdverseEventTask(RelBenchNodeTask):
                 and tr.date > t.timestamp
                 and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, tr.nct_id;
-            """ 
+            """
         ).df()
 
         return Table(
@@ -139,7 +139,7 @@ class WithdrawalTask(RelBenchNodeTask):
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         drop_withdrawals = db.table_dict["drop_withdrawals"].df
         studies = db.table_dict["studies"].df
-        
+
         df = duckdb.sql(
             f"""
             WITH TRIAL_INFO AS (
@@ -150,14 +150,14 @@ class WithdrawalTask(RelBenchNodeTask):
                     d.date
                 FROM drop_withdrawals d
                 LEFT JOIN studies s
-                ON s.nct_id = d.nct_id 
+                ON s.nct_id = d.nct_id
                 WHERE d.reason IN ('Withdrawal by Subject', 'Adverse Event', 'Lost to Follow-up',
                'Protocol Violation', 'Death', 'Physician Decision', 'Lack of Efficacy',
                'Pregnancy', 'Progressive Disease', 'Disease Progression',
                'Sponsor Decision', 'Disease progression', 'Progressive disease',
                'Study Terminated by Sponsor', 'Non-compliance')
             )
-        
+
             SELECT
                 t.timestamp,
                 tr.nct_id,
@@ -168,22 +168,36 @@ class WithdrawalTask(RelBenchNodeTask):
                 and tr.date > t.timestamp
                 and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, tr.nct_id;
-            """ 
+            """
         ).df()
         import numpy as np
-        reasons = ['Withdrawal by Subject', 'Adverse Event', 'Lost to Follow-up',
-        'Protocol Violation', 'Death', 'Physician Decision', 'Lack of Efficacy',
-        'Pregnancy', 'Progressive Disease', 'Disease Progression',
-        'Sponsor Decision', 'Disease progression', 'Progressive disease',
-        'Study Terminated by Sponsor', 'Non-compliance']
+
+        reasons = [
+            "Withdrawal by Subject",
+            "Adverse Event",
+            "Lost to Follow-up",
+            "Protocol Violation",
+            "Death",
+            "Physician Decision",
+            "Lack of Efficacy",
+            "Pregnancy",
+            "Progressive Disease",
+            "Disease Progression",
+            "Sponsor Decision",
+            "Disease progression",
+            "Progressive disease",
+            "Study Terminated by Sponsor",
+            "Non-compliance",
+        ]
         labels = range(len(reasons))
         self.label2reason = dict(zip(reasons, labels))
-        
+
         def map_reasons(x):
-            return np.unique([self.label2reason[i] for i in x.split(',')]).tolist()
-        df = df[df['withdraw_reasons'].notnull()]
-        df['withdraw_reasons'] = df.withdraw_reasons.apply(lambda x: map_reasons(x))
-        
+            return np.unique([self.label2reason[i] for i in x.split(",")]).tolist()
+
+        df = df[df["withdraw_reasons"].notnull()]
+        df["withdraw_reasons"] = df.withdraw_reasons.apply(lambda x: map_reasons(x))
+
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
@@ -214,7 +228,7 @@ class SiteSuccessTask(RelBenchNodeTask):
         outcome_analyses = db.table_dict["outcome_analyses"].df
         studies = db.table_dict["studies"].df
         outcomes = db.table_dict["outcomes"].df
-        
+
         df = duckdb.sql(
             f"""
             WITH TRIAL_INFO AS (
@@ -224,14 +238,14 @@ class SiteSuccessTask(RelBenchNodeTask):
                     oa.date,
                 FROM outcome_analyses oa
                 LEFT JOIN outcomes o
-                ON oa.outcome_id = o.id 
+                ON oa.outcome_id = o.id
                 where (oa.p_value_modifier is null or oa.p_value_modifier != '>')
                 and oa.p_value >=0
                 and oa.p_value <=1
                 and o.outcome_type = 'Primary'
                 GROUP BY oa.nct_id, oa.date
             )
-        
+
             SELECT
                 t.timestamp,
                 fs.facility_id,
@@ -242,7 +256,7 @@ class SiteSuccessTask(RelBenchNodeTask):
             ON tr.date > t.timestamp
                 and tr.date <= t.timestamp + INTERVAL '{dataset.timedelta}'
             GROUP BY t.timestamp, fs.facility_id;
-            """ 
+            """
         ).df()
 
         return Table(
@@ -269,7 +283,7 @@ class SponsorConditionTask(RelBenchLinkTask):
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         sponsors_studies = db.table_dict["sponsors_studies"].df
         condition_study = db.table_dict["conditions_studies"].df
-        
+
         df = duckdb.sql(
             f"""
             SELECT
@@ -282,14 +296,14 @@ class SponsorConditionTask(RelBenchLinkTask):
             ON cs.date > t.timestamp
                 and cs.date <= t.timestamp + INTERVAL '{dataset.timedelta}'
             GROUP BY t.timestamp, cs.condition_id, ss.sponsor_id;
-            """ 
+            """
         ).df()
 
         return Table(
             df=df,
             fkey_col_to_pkey_table={
                 self.source_entity_col: self.source_entity_table,
-                self.destination_entity_col: self.destination_entity_table
+                self.destination_entity_col: self.destination_entity_table,
             },
             pkey_col=None,
             time_col=self.time_col,
