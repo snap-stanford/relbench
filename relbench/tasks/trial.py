@@ -3,14 +3,14 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from relbench.data import Database, RelBenchTask, Table
-from relbench.data.task import TaskType
+from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
+from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc, multilabel_f1_micro, multilabel_f1_macro
 from relbench.utils import get_df_in_window
 
 
-class OutcomeTask(RelBenchTask):
-    r"""Predict if a trial will achieve its primary outcome."""
+class OutcomeTask(RelBenchNodeTask):
+    r"""Predict if the trials in the next 1 year will achieve its primary outcome."""
 
     name = "rel-trial-outcome"
     task_type = TaskType.BINARY_CLASSIFICATION
@@ -70,8 +70,8 @@ class OutcomeTask(RelBenchTask):
         )
 
 
-class AdverseEventTask(RelBenchTask):
-    r"""Predict the number of affected patients with severe advsere events/death for the trial."""
+class AdverseEventTask(RelBenchNodeTask):
+    r"""Predict the number of affected patients with severe advsere events/death for the trial in the next 1 year."""
 
     name = "rel-trial-adverse"
     task_type = TaskType.REGRESSION
@@ -123,8 +123,8 @@ class AdverseEventTask(RelBenchTask):
         )
 
 
-class WithdrawalTask(RelBenchTask):
-    r"""Predict the the set of reasons of withdrawals for each trial"""
+class WithdrawalTask(RelBenchNodeTask):
+    r"""Predict the the set of reasons of withdrawals for each trial in the next 1 year"""
 
     name = "rel-trial-withdrawal"
     task_type = TaskType.MULTILABEL_CLASSIFICATION
@@ -133,7 +133,7 @@ class WithdrawalTask(RelBenchTask):
     time_col = "timestamp"
     target_col = "withdraw_reasons"
     timedelta = pd.Timedelta(days=365)
-    metrics = [mae, rmse]
+    metrics = [multilabel_f1_micro, multilabel_f1_macro]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -195,8 +195,8 @@ class WithdrawalTask(RelBenchTask):
         return self.label2reason
 
 
-class SiteSuccessTask(RelBenchTask):
-    r"""Predict the success rate of a trial site in the next 3 years."""
+class SiteSuccessTask(RelBenchNodeTask):
+    r"""Predict the success rate of a trial site in the next 2 years."""
 
     name = "rel-trial-site"
     task_type = TaskType.REGRESSION
@@ -204,7 +204,7 @@ class SiteSuccessTask(RelBenchTask):
     entity_table = "facilities"
     time_col = "timestamp"
     target_col = "success_rate"
-    timedelta = pd.Timedelta(days=365*3)
+    timedelta = pd.Timedelta(days=365*2)
     metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -252,17 +252,17 @@ class SiteSuccessTask(RelBenchTask):
             time_col=self.time_col,
         )
 
-class SponsorConditionTask(RelBenchTask):
-    r"""Predict if a sponsor will have a trial on a condition in the next 3 years."""
+class SponsorConditionTask(RelBenchLinkTask):
+    r"""Predict if a sponsor will have a trial on a condition in the next 2 years."""
 
     name = "rel-trial-sponsor-condition"
-    task_type = TaskType.REGRESSION
+    task_type = TaskType.LINK_PREDICTION
     source_entity_col = "condition_id"
     source_entity_table = "conditions"
     destination_entity_col = "sponsor_id"
     destination_entity_table = "sponsors"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365*3)
+    timedelta = pd.Timedelta(days=365*2)
     metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
