@@ -5,7 +5,16 @@ from tqdm import tqdm
 
 from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc, multilabel_f1_micro, multilabel_f1_macro
+from relbench.metrics import (
+    accuracy,
+    average_precision,
+    f1,
+    mae,
+    multilabel_f1_macro,
+    multilabel_f1_micro,
+    rmse,
+    roc_auc,
+)
 from relbench.utils import get_df_in_window
 
 
@@ -218,7 +227,7 @@ class SiteSuccessTask(RelBenchNodeTask):
     entity_table = "facilities"
     time_col = "timestamp"
     target_col = "success_rate"
-    timedelta = pd.Timedelta(days=365*2)
+    timedelta = pd.Timedelta(days=365 * 2)
     metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -266,6 +275,7 @@ class SiteSuccessTask(RelBenchNodeTask):
             time_col=self.time_col,
         )
 
+
 class SponsorConditionTask(RelBenchLinkTask):
     r"""Predict if a sponsor will have a trial on a condition in the next 2 years."""
 
@@ -276,7 +286,7 @@ class SponsorConditionTask(RelBenchLinkTask):
     destination_entity_col = "sponsor_id"
     destination_entity_table = "sponsors"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365*2)
+    timedelta = pd.Timedelta(days=365 * 2)
     metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:

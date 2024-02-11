@@ -83,7 +83,7 @@ def r2(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 
 
 ####### Multilabel metrics
-## TODO: revisit Multi-label metrics 
+## TODO: revisit Multi-label metrics
 def multilabel_f1_micro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
     return skm.f1_score(true, pred, average="micro")
 
