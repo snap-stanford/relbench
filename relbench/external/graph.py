@@ -190,12 +190,13 @@ class LinkTrainTableInput(NamedTuple):
     r"""Trainining table input for link prediction.
 
     - source_nodes is a Tensor of source node indices.
-    - desstination_nodes[i] gives a list of destination node indices for source_nodes[i]
-    - num_destination_nodes is the total number of destination nodes (used to perform negative sampling).
+    - destination_nodes[i] gives a list of destination node indices for source_nodes[i]
+    - num_destination_nodes is the total number of destination nodes
+        (used to perform negative sampling).
     - time is a Tensor of time for source_nodes
     """
     source_nodes: Tuple[NodeType, Tensor]
-    destination_nodes: Tuple[NodeType, List[List[int]]]
+    destination_nodes_list: Tuple[NodeType, List[List[int]]]
     num_destination_nodes: int
     time: Optional[Tensor]
 
@@ -220,7 +221,7 @@ def get_link_train_table_input(
 
     return LinkTrainTableInput(
         source_nodes=(task.source_entity_table, source_node_idx),
-        destination_nodes=(task.destination_entity_table, destination_node_idx),
+        destination_nodes_list=(task.destination_entity_table, destination_node_idx),
         num_destination_nodes=num_destination_nodes,
         time=time,
     )
