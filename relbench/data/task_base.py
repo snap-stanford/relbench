@@ -181,9 +181,11 @@ class TaskType(Enum):
         REGRESSION: Regression task.
         MULTICLASS_CLASSIFICATION: Multi-class classification task.
         BINARY_CLASSIFICATION: Binary classification task.
+        MULTILABEL_CLASSIFICATION: Multi-label classification task.
     """
     REGRESSION = "regression"
     BINARY_CLASSIFICATION = "binary_classification"
+    MULTILABEL_CLASSIFICATION = "multilabel_classification"
     LINK_PREDICTION = "link_prediction"
 
 
