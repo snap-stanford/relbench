@@ -97,7 +97,6 @@ class BaseTask:
             stop_timestamp = min(self.dataset.val_timestamp + self.timedelta * (self.dataset.max_eval_time_frames -1),
                                  self.dataset.test_timestamp - self.timedelta)
             
-
             table = self.make_table(
                 self.dataset.db,
                 pd.date_range(

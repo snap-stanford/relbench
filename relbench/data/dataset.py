@@ -107,7 +107,11 @@ class RelBenchDataset(Dataset):
             print(f"done in {toc - tic:.2f} seconds.")
 
         super().__init__(
-            db, self.val_timestamp, self.test_timestamp, self.max_eval_time_frames, self.task_cls_list
+            db,
+            self.val_timestamp,
+            self.test_timestamp,
+            self.max_eval_time_frames,
+            self.task_cls_list,
         )
 
     def make_db(self) -> Database:
