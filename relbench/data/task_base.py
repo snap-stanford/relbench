@@ -92,11 +92,14 @@ class BaseTask:
                     "This would cause val labels to be generated with "
                     "insufficient aggregation time."
                 )
-            
+
             # must stop by test_timestamp - timedelta to avoid time leakage
-            stop_timestamp = min(self.dataset.val_timestamp + self.timedelta * (self.dataset.max_eval_time_frames -1),
-                                 self.dataset.test_timestamp - self.timedelta)
-            
+            stop_timestamp = min(
+                self.dataset.val_timestamp
+                + self.timedelta * (self.dataset.max_eval_time_frames - 1),
+                self.dataset.test_timestamp - self.timedelta,
+            )
+
             table = self.make_table(
                 self.dataset.db,
                 pd.date_range(
@@ -124,9 +127,12 @@ class BaseTask:
                     "insufficient aggregation time."
                 )
 
-            # must stop by max_timestamp - timedelta 
-            stop_timestamp = min(self.dataset.test_timestamp + self.timedelta * (self.dataset.max_eval_time_frames -1),
-                                 self.dataset._full_db.max_timestamp - self.timedelta)
+            # must stop by max_timestamp - timedelta
+            stop_timestamp = min(
+                self.dataset.test_timestamp
+                + self.timedelta * (self.dataset.max_eval_time_frames - 1),
+                self.dataset._full_db.max_timestamp - self.timedelta,
+            )
 
             full_table = self.make_table(
                 self.dataset._full_db,
