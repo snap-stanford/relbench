@@ -12,7 +12,7 @@ from relbench.utils import get_df_in_window
 
 
 class EngageTask(RelBenchNodeTask):
-    r"""Predict if a user will make any votes/posts/comments in the next 1 year."""
+    r"""Predict if a user will make any votes/posts/comments in the next 2 years."""
 
     name = "rel-stackex-engage"
     task_type = TaskType.BINARY_CLASSIFICATION
@@ -20,7 +20,7 @@ class EngageTask(RelBenchNodeTask):
     entity_table = "users"
     time_col = "timestamp"
     target_col = "contribution"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 * 2)
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -154,14 +154,14 @@ class VotesTask(RelBenchNodeTask):
 
 
 class BadgesTask(RelBenchNodeTask):
-    r"""Predict if each user will receive in a new badge the next 1 year."""
+    r"""Predict if each user will receive in a new badge the next 2 years."""
     name = "rel-stackex-badges"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "UserId"
     entity_table = "users"
     time_col = "timestamp"
     target_col = "WillGetBadge"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 * 2)
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -221,7 +221,7 @@ class UserCommentOnPostTask(RelBenchLinkTask):
     destination_entity_col = "PostId"
     destination_entity_table = "posts"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 * 2)
     metrics = None  # TODO: add metrics
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
