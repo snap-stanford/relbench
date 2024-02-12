@@ -32,11 +32,11 @@ class F1Dataset(RelBenchDataset):
         url = "https://relbench.stanford.edu/data/relbench-f1-raw.zip"
         path = pooch.retrieve(
             url,
-            known_hash='5552653fc4f0442427c6299cae0615e4acb7677a9a07b29b87b0e93736ced061',
+            known_hash="5552653fc4f0442427c6299cae0615e4acb7677a9a07b29b87b0e93736ced061",
             progressbar=True,
             processor=unzip_processor,
         )
-        
+
         path = os.path.join(path, "f1-temp/raw")
 
         print("Current working directory:", os.getcwd())
