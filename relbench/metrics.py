@@ -80,3 +80,29 @@ def rmse(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 
 def r2(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
     return skm.r2_score(true, pred)
+
+
+####### Multilabel metrics
+## TODO: revisit Multi-label metrics
+def multilabel_f1_micro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
+    return skm.f1_score(true, pred, average="micro")
+
+
+def multilabel_f1_macro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
+    return skm.f1_score(true, pred, average="macro")
+
+
+def multilabel_recall_micro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
+    return skm.recall_score(true, pred, average="micro")
+
+
+def multilabel_recall_macro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
+    return skm.recall_score(true, pred, average="macro")
+
+
+def multilabel_precision_micro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
+    return skm.precision_score(true, pred, average="micro")
+
+
+def multilabel_precision_macro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
+    return skm.precision_score(true, pred, average="macro")
