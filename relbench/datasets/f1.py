@@ -32,7 +32,7 @@ class F1Dataset(RelBenchDataset):
         url = "https://relbench.stanford.edu/data/relbench-f1-raw.zip"
         path = pooch.retrieve(
             url,
-            known_hash='2933348953b30aa9723b4831fea8071b336b74977bbcf1fb059da63a04f06eba',
+            known_hash="2933348953b30aa9723b4831fea8071b336b74977bbcf1fb059da63a04f06eba",
             progressbar=True,
             processor=unzip_processor,
         )
