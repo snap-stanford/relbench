@@ -22,7 +22,7 @@ from tqdm import tqdm
 from relbench.data import RelBenchDataset
 from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
-from relbench.external.graph import get_train_table_input, make_pkey_fkey_graph
+from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
 
 parser = argparse.ArgumentParser()
@@ -63,7 +63,7 @@ for split, table in [
     ("val", task.val_table),
     ("test", task.test_table),
 ]:
-    table_input = get_train_table_input(table=table, task=task)
+    table_input = get_node_train_table_input(table=table, task=task)
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
         data,
