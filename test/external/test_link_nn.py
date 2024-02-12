@@ -10,8 +10,8 @@ from torch_geometric.nn import MLP
 from relbench.data.task_base import TaskType
 from relbench.datasets import FakeDataset
 from relbench.external.graph import (
+    get_link_train_table_input,
     get_stype_proposal,
-    get_train_table_input,
     make_pkey_fkey_graph,
 )
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
@@ -42,4 +42,4 @@ def test_link_train_fake_product_dataset(tmp_path):
         ("val", task.val_table),
         ("test", task.test_table),
     ]:
-        pass
+        table_input = get_link_train_table_input(table, task)
