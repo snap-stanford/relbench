@@ -94,7 +94,7 @@ class BaseTask:
                 )
 
             # must stop by test_timestamp - timedelta to avoid time leakage
-            stop_timestamp = min(
+            end_timestamp = min(
                 self.dataset.val_timestamp
                 + self.timedelta * (self.dataset.max_eval_time_frames - 1),
                 self.dataset.test_timestamp - self.timedelta,
@@ -104,7 +104,7 @@ class BaseTask:
                 self.dataset.db,
                 pd.date_range(
                     self.dataset.val_timestamp,
-                    stop_timestamp,
+                    end_timestamp,
                     freq=self.timedelta,
                 ),
             )
@@ -128,7 +128,7 @@ class BaseTask:
                 )
 
             # must stop by max_timestamp - timedelta
-            stop_timestamp = min(
+            end_timestamp = min(
                 self.dataset.test_timestamp
                 + self.timedelta * (self.dataset.max_eval_time_frames - 1),
                 self.dataset._full_db.max_timestamp - self.timedelta,
@@ -138,7 +138,7 @@ class BaseTask:
                 self.dataset._full_db,
                 pd.date_range(
                     self.dataset.test_timestamp,
-                    stop_timestamp,
+                    end_timestamp,
                     freq=self.timedelta,
                 ),
             )
