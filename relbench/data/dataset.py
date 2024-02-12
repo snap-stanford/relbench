@@ -24,6 +24,16 @@ class Dataset:
         max_eval_time_frames: int,
         task_cls_list: List[Type[BaseTask]],
     ) -> None:
+        r"""Class holding database and task table construction logic.
+
+        Args:
+            db (Database): The database object.
+            val_timestamp (pd.Timestamp): The first timestamp for making val table.
+            test_timestamp (pd.Timestamp): The first timestamp for making test table.
+            max_eval_time_frames (int): The maximum number of unique timestamps used to build test and val tables.
+            task_cls_list (List[Type[BaseTask]]): A list of allowed tasks for this database.
+
+        """
         self._full_db = db
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
