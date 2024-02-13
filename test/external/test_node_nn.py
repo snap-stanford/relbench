@@ -7,17 +7,17 @@ from torch_frame.testing.text_embedder import HashTextEmbedder
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
 
-from relbench.data.task import TaskType
+from relbench.data.task_base import TaskType
 from relbench.datasets import FakeDataset
 from relbench.external.graph import (
+    get_node_train_table_input,
     get_stype_proposal,
-    get_train_table_input,
     make_pkey_fkey_graph,
 )
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
 
 
-def test_train_fake_product_dataset(tmp_path):
+def test_node_train_fake_product_dataset(tmp_path):
     dataset = FakeDataset()
 
     data = make_pkey_fkey_graph(
@@ -58,8 +58,7 @@ def test_train_fake_product_dataset(tmp_path):
         ("val", task.val_table),
         ("test", task.test_table),
     ]:
-        table_input = get_train_table_input(table=table, task=task)
-        entity_table = table_input.nodes[0]
+        table_input = get_node_train_table_input(table=table, task=task)
         loader = NeighborLoader(
             data,
             num_neighbors=[-1, -1],
@@ -82,7 +81,7 @@ def test_train_fake_product_dataset(tmp_path):
 
     # Ensure that mini-batch training works ###################################
 
-    train_table_input = get_train_table_input(task.train_table, task=task)
+    train_table_input = get_node_train_table_input(task.train_table, task=task)
 
     optimizer = torch.optim.Adam(
         list(encoder.parameters()) + list(gnn.parameters()) + list(head.parameters()),

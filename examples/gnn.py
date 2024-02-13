@@ -20,9 +20,9 @@ from torch_geometric.typing import EdgeType, NodeType
 from tqdm import tqdm
 
 from relbench.data import RelBenchDataset
-from relbench.data.task import TaskType
+from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
-from relbench.external.graph import get_train_table_input, make_pkey_fkey_graph
+from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
 
 parser = argparse.ArgumentParser()
@@ -33,6 +33,7 @@ parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
+parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--num_workers", type=int, default=1)
 args = parser.parse_args()
@@ -63,11 +64,13 @@ for split, table in [
     ("val", task.val_table),
     ("test", task.test_table),
 ]:
-    table_input = get_train_table_input(table=table, task=task)
+    table_input = get_node_train_table_input(table=table, task=task)
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
         data,
-        num_neighbors=[args.num_neighbors, args.num_neighbors],
+        num_neighbors=[
+            int(args.num_neighbors / 2**i) for i in range(args.num_layers)
+        ],
         time_attr="time",
         input_nodes=table_input.nodes,
         input_time=table_input.time,
@@ -77,6 +80,7 @@ for split, table in [
         num_workers=args.num_workers,
         persistent_workers=args.num_workers > 0,
     )
+
 
 clamp_min, clamp_max = None, None
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
@@ -118,6 +122,7 @@ class Model(torch.nn.Module):
             edge_types=data.edge_types,
             channels=args.channels,
             aggr=args.aggr,
+            num_layers=args.num_layers,
         )
         self.head = MLP(
             args.channels,
