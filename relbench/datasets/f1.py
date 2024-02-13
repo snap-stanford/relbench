@@ -23,7 +23,9 @@ class F1Dataset(RelBenchDataset):
         self,
         *,
         process: bool = False,
+        cache_dir: str = None,
     ):
+        self.cache_dir = cache_dir
         self.name = f"{self.name}"
         super().__init__(process=process)
 
@@ -35,6 +37,7 @@ class F1Dataset(RelBenchDataset):
             known_hash="2933348953b30aa9723b4831fea8071b336b74977bbcf1fb059da63a04f06eba",
             progressbar=True,
             processor=unzip_processor,
+            path=self.cache_dir,
         )
 
         path = os.path.join(path, "raw")
@@ -82,7 +85,7 @@ class F1Dataset(RelBenchDataset):
         )
 
         results.drop(
-            columns=["positionText"],
+            columns=["positionText", "time"],
             inplace=True,
         )
 
