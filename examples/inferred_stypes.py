@@ -140,7 +140,7 @@ dataset2inferred_stypes = {
             "positionOrder": stype.numerical,
             "points": stype.numerical,
             "laps": stype.numerical,
-            #"time": stype.timestamp,
+            # "time": stype.timestamp,
             "milliseconds": stype.numerical,
             "fastestLap": stype.numerical,
             "rank": stype.numerical,
