@@ -23,18 +23,22 @@ class F1Dataset(RelBenchDataset):
         self,
         *,
         process: bool = False,
+        cache_dir: str = None,
     ):
+        self.cache_dir = cache_dir
         self.name = f"{self.name}"
         super().__init__(process=process)
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
         url = "https://relbench.stanford.edu/data/relbench-f1-raw.zip"
+
         path = pooch.retrieve(
             url,
             known_hash="2933348953b30aa9723b4831fea8071b336b74977bbcf1fb059da63a04f06eba",
             progressbar=True,
             processor=unzip_processor,
+            path=self.cache_dir,
         )
 
         path = os.path.join(path, "raw")
@@ -72,7 +76,7 @@ class F1Dataset(RelBenchDataset):
         )
 
         circuits.drop(
-            columns=["url"],
+            columns=["url", "alt"],
             inplace=True,
         )
 
@@ -82,7 +86,12 @@ class F1Dataset(RelBenchDataset):
         )
 
         results.drop(
-            columns=["positionText"],
+            columns=[
+                "positionText",
+                "time",
+                "fastestLapTime",
+                "fastestLapSpeed",
+            ],
             inplace=True,
         )
 
@@ -130,6 +139,21 @@ class F1Dataset(RelBenchDataset):
         # that the qualifying time is the day before the main race
         qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
 
+        # replace "\N" with NaN in all tables
+        results = results.replace(r"^\\N$", np.nan, regex=True)
+
+        # Convert non-numeric values to NaN in the specified column
+        results["rank"] = pd.to_numeric(results["rank"], errors="coerce")
+        results["number"] = pd.to_numeric(results["number"], errors="coerce")
+        results["grid"] = pd.to_numeric(results["grid"], errors="coerce")
+        results["position"] = pd.to_numeric(results["position"], errors="coerce")
+        results["points"] = pd.to_numeric(results["points"], errors="coerce")
+        results["laps"] = pd.to_numeric(results["laps"], errors="coerce")
+        results["milliseconds"] = pd.to_numeric(
+            results["milliseconds"], errors="coerce"
+        )
+        results["fastestLap"] = pd.to_numeric(results["fastestLap"], errors="coerce")
+
         tables = {}
 
         tables["races"] = Table(
@@ -157,7 +181,11 @@ class F1Dataset(RelBenchDataset):
 
         tables["results"] = Table(
             df=pd.DataFrame(results),
-            fkey_col_to_pkey_table={"raceId": "races", "driverId": "drivers"},
+            fkey_col_to_pkey_table={
+                "raceId": "races",
+                "driverId": "drivers",
+                "constructorId": "constructors",
+            },
             pkey_col="resultId",
             time_col="date",
         )

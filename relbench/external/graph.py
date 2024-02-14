@@ -95,6 +95,7 @@ def make_pkey_fkey_graph(
         path = (
             None if cache_dir is None else os.path.join(cache_dir, f"{table_name}.pt")
         )
+
         dataset = Dataset(
             df=df,
             col_to_stype=col_to_stype,
