@@ -119,7 +119,7 @@ dataset2inferred_stypes = {
             "country": stype.categorical,
             "lat": stype.numerical,
             "lng": stype.numerical,
-            "alt": stype.numerical,
+            # "alt": stype.numerical,
         },
         "drivers": {
             "driverId": stype.numerical,
@@ -134,6 +134,8 @@ dataset2inferred_stypes = {
             "resultId": stype.numerical,
             "raceId": stype.numerical,
             "driverId": stype.numerical,
+            "constructorId": stype.numerical,
+            "statusId": stype.categorical,
             "number": stype.numerical,
             "grid": stype.numerical,
             "position": stype.numerical,
@@ -144,8 +146,8 @@ dataset2inferred_stypes = {
             "milliseconds": stype.numerical,
             "fastestLap": stype.numerical,
             "rank": stype.numerical,
-            "fastestLapTime": stype.timestamp,
-            "fastestLapSpeed": stype.numerical,
+            # "fastestLapTime": stype.timestamp,
+            # "fastestLapSpeed": stype.numerical,
             "date": stype.timestamp,
         },
         "standings": {
