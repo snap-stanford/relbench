@@ -21,13 +21,27 @@ class Dataset:
         db: Database,
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
+        max_eval_time_frames: int,
         task_cls_list: List[Type[BaseTask]],
     ) -> None:
+        r"""Class holding database and task table construction logic.
+
+        Args:
+            db (Database): The database object.
+            val_timestamp (pd.Timestamp): The first timestamp for making val table.
+            test_timestamp (pd.Timestamp): The first timestamp for making test table.
+            max_eval_time_frames (int): The maximum number of unique timestamps used to build test and val tables.
+            task_cls_list (List[Type[BaseTask]]): A list of allowed tasks for this database.
+
+        """
         self._full_db = db
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
+        self.max_eval_time_frames = max_eval_time_frames
         self.task_cls_dict = {task_cls.name: task_cls for task_cls in task_cls_list}
+
         self.db = db.upto(test_timestamp)
+
         self.validate_and_correct_db()
 
     def __repr__(self) -> str:
@@ -103,7 +117,11 @@ class RelBenchDataset(Dataset):
             print(f"done in {toc - tic:.2f} seconds.")
 
         super().__init__(
-            db, self.val_timestamp, self.test_timestamp, self.task_cls_list
+            db,
+            self.val_timestamp,
+            self.test_timestamp,
+            self.max_eval_time_frames,
+            self.task_cls_list,
         )
 
     def make_db(self) -> Database:
