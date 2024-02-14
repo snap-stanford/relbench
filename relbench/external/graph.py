@@ -101,7 +101,7 @@ def make_pkey_fkey_graph(
             col_to_stype=col_to_stype,
             col_to_text_embedder_cfg=text_embedder_cfg,
         ).materialize(path=path)
-    
+
         data[table_name].tf = dataset.tensor_frame
         data[table_name].col_stats = dataset.col_stats
 

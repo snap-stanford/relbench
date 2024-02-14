@@ -76,8 +76,7 @@ class F1Dataset(RelBenchDataset):
         )
 
         circuits.drop(
-            columns=["url",
-                     "alt"],
+            columns=["url", "alt"],
             inplace=True,
         )
 
@@ -87,11 +86,12 @@ class F1Dataset(RelBenchDataset):
         )
 
         results.drop(
-            columns=["positionText",
-                     "time",
-                     "fastestLapTime",
-                     "fastestLapSpeed",
-                     ],
+            columns=[
+                "positionText",
+                "time",
+                "fastestLapTime",
+                "fastestLapSpeed",
+            ],
             inplace=True,
         )
 
@@ -143,14 +143,16 @@ class F1Dataset(RelBenchDataset):
         results = results.replace(r"^\\N$", np.nan, regex=True)
 
         # Convert non-numeric values to NaN in the specified column
-        results["rank"] = pd.to_numeric(results["rank"], errors='coerce')
-        results["number"] = pd.to_numeric(results["number"], errors='coerce')
-        results["grid"] = pd.to_numeric(results["grid"], errors='coerce')
-        results["position"] = pd.to_numeric(results["position"], errors='coerce')
-        results["points"] = pd.to_numeric(results["points"], errors='coerce')
-        results["laps"] = pd.to_numeric(results["laps"], errors='coerce')
-        results["milliseconds"] = pd.to_numeric(results["milliseconds"], errors='coerce')
-        results["fastestLap"] = pd.to_numeric(results["fastestLap"], errors='coerce')
+        results["rank"] = pd.to_numeric(results["rank"], errors="coerce")
+        results["number"] = pd.to_numeric(results["number"], errors="coerce")
+        results["grid"] = pd.to_numeric(results["grid"], errors="coerce")
+        results["position"] = pd.to_numeric(results["position"], errors="coerce")
+        results["points"] = pd.to_numeric(results["points"], errors="coerce")
+        results["laps"] = pd.to_numeric(results["laps"], errors="coerce")
+        results["milliseconds"] = pd.to_numeric(
+            results["milliseconds"], errors="coerce"
+        )
+        results["fastestLap"] = pd.to_numeric(results["fastestLap"], errors="coerce")
 
         tables = {}
 
@@ -179,10 +181,11 @@ class F1Dataset(RelBenchDataset):
 
         tables["results"] = Table(
             df=pd.DataFrame(results),
-            fkey_col_to_pkey_table={"raceId": "races", 
-                                    "driverId": "drivers",
-                                    "constructorId": "constructors",
-                                    },
+            fkey_col_to_pkey_table={
+                "raceId": "races",
+                "driverId": "drivers",
+                "constructorId": "constructors",
+            },
             pkey_col="resultId",
             time_col="date",
         )
