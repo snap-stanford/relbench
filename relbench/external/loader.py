@@ -301,14 +301,6 @@ class CustomLinkLoader(DataLoader):
         if self.filter_per_worker:
             return super()._get_iterator()
 
-        # if not self.is_cuda_available and not self.cpu_affinity_enabled:
-        # TODO: Add manual page for best CPU practices
-        # link = ...
-        # Warning('Dataloader CPU affinity opt is not enabled, consider '
-        #          'switching it on with enable_cpu_affinity() or see CPU '
-        #          f'best practices for PyG [{link}])')
-
-        # Execute `filter_fn` in the main process:
         return DataLoaderIterator(super()._get_iterator(), self.filter_fn)
 
     def __repr__(self) -> str:
