@@ -90,9 +90,10 @@ def test_node_train_fake_product_dataset(tmp_path):
     entity_table = train_table_input.nodes[0]
 
     # Training
+    encoder.train()
+    gnn.train()
+    head.train()
     for batch in loader_dict["train"]:
-        optimizer.zero_grad()
-
         x_dict = encoder(batch.tf_dict)
         x_dict = gnn(
             x_dict,
