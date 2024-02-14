@@ -91,6 +91,7 @@ class F1Dataset(RelBenchDataset):
         results.drop(
             columns=["positionText", 
                      "time",
+                     "rank",
                      "milliseconds",
                      "fastestLapTime",
                      "fastestLapSpeed",
@@ -147,8 +148,10 @@ class F1Dataset(RelBenchDataset):
         qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
 
 
-        circuits = circuits.replace("\\N", np.nan)
-        results = results.replace("\\N", np.nan)
+        circuits = circuits.replace(r"^\\N$", np.nan, regex=True)
+        # replace "\N" with NaN in all tables
+        results = results.replace(r"^\\N$", np.nan, regex=True)
+
         tables = {}
 
         tables["races"] = Table(
@@ -176,7 +179,9 @@ class F1Dataset(RelBenchDataset):
 
         tables["results"] = Table(
             df=pd.DataFrame(results),
-            fkey_col_to_pkey_table={"raceId": "races", "driverId": "drivers"},
+            fkey_col_to_pkey_table={"raceId": "races", 
+                                    "driverId": "drivers",
+                                    "constructorId": "constructors"},
             pkey_col="resultId",
             time_col="date",
         )
