@@ -12,7 +12,7 @@ from relbench.utils import get_df_in_window
 
 
 class EngageTask(RelBenchNodeTask):
-    r"""Predict if a user will make any votes/posts/comments in the next 1 year."""
+    r"""Predict if a user will make any votes/posts/comments in the next 2 years."""
 
     name = "rel-stackex-engage"
     task_type = TaskType.BINARY_CLASSIFICATION
@@ -20,7 +20,7 @@ class EngageTask(RelBenchNodeTask):
     entity_table = "users"
     time_col = "timestamp"
     target_col = "contribution"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 * 2)
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -154,14 +154,14 @@ class VotesTask(RelBenchNodeTask):
 
 
 class BadgesTask(RelBenchNodeTask):
-    r"""Predict if each user will receive in a new badge the next 1 year."""
+    r"""Predict if each user will receive in a new badge the next 2 years."""
     name = "rel-stackex-badges"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "UserId"
     entity_table = "users"
     time_col = "timestamp"
     target_col = "WillGetBadge"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 * 2)
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -216,12 +216,12 @@ class UserCommentOnPostTask(RelBenchLinkTask):
 
     name = "rel-stackex-comment-on-post"
     task_type = TaskType.LINK_PREDICTION
-    source_entity_col = "UserId"
-    source_entity_table = "users"
-    destination_entity_col = "PostId"
-    destination_entity_table = "posts"
+    src_entity_col = "UserId"
+    src_entity_table = "users"
+    dst_entity_col = "PostId"
+    dst_entity_table = "posts"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 * 2)
     metrics = None  # TODO: add metrics
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -261,8 +261,8 @@ class UserCommentOnPostTask(RelBenchLinkTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={
-                self.source_entity_col: self.source_entity_table,
-                self.destination_entity_col: self.destination_entity_table,
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
             },
             pkey_col=None,
             time_col=self.time_col,

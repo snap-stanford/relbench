@@ -236,10 +236,10 @@ class RecommendationTask(RelBenchLinkTask):
 
     name = "rel-amazon-rec"
     task_type = TaskType.LINK_PREDICTION
-    source_entity_col = "customer_id"
-    source_entity_table = "customer"
-    destination_entity_col = "product_id"
-    destination_entity_table = "product"
+    src_entity_col = "customer_id"
+    src_entity_table = "customer"
+    dst_entity_col = "product_id"
+    dst_entity_table = "product"
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=365 * 2)
     metrics = None
@@ -274,8 +274,8 @@ class RecommendationTask(RelBenchLinkTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={
-                self.source_entity_col: self.source_entity_table,
-                self.destination_entity_col: self.destination_entity_table,
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
             },
             pkey_col=None,
             time_col=self.time_col,

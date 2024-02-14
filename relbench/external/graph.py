@@ -95,6 +95,7 @@ def make_pkey_fkey_graph(
         path = (
             None if cache_dir is None else os.path.join(cache_dir, f"{table_name}.pt")
         )
+
         dataset = Dataset(
             df=df,
             col_to_stype=col_to_stype,
@@ -189,39 +190,47 @@ def get_node_train_table_input(
 class LinkTrainTableInput(NamedTuple):
     r"""Trainining table input for link prediction.
 
-    - source_nodes is a Tensor of source node indices.
-    - destination_nodes[i] gives a list of destination node indices for source_nodes[i]
-    - num_destination_nodes is the total number of destination nodes
+    - src_nodes is a Tensor of source node indices.
+    - src_to_dst_nodes is PyTorch sparse tensor in csr format.
+        src_to_dst_nodes[src_node_idx] gives a tensor of destination node
+        indices for src_node_idx.
+    - num_dst_nodes is the total number of destination nodes.
         (used to perform negative sampling).
-    - time is a Tensor of time for source_nodes
+    - src_time is a Tensor of time for src_nodes
     """
-    source_nodes: Tuple[NodeType, Tensor]
-    destination_nodes_list: Tuple[NodeType, List[List[int]]]
-    num_destination_nodes: int
-    time: Optional[Tensor]
+    src_nodes: Tuple[NodeType, Tensor]
+    src_to_dst_nodes: Tuple[NodeType, Tensor]
+    num_dst_nodes: int
+    src_time: Optional[Tensor]
 
 
 def get_link_train_table_input(
     table: Table,
     task: LinkTask,
 ) -> LinkTrainTableInput:
-    source_node_idx: Tensor = torch.from_numpy(
-        table.df[task.source_entity_col].astype(int).values
+    src_node_idx: Tensor = torch.from_numpy(
+        table.df[task.src_entity_col].astype(int).values
     )
-    destination_node_idx: List[List[int]] = table.df[
-        task.destination_entity_col
-    ].to_list()
-    num_destination_nodes = len(
-        task.dataset.db.table_dict[task.destination_entity_table]
+    num_dst_nodes = len(task.dataset.db.table_dict[task.dst_entity_table])
+    num_src_nodes = len(src_node_idx)
+    exploded = table.df[[task.src_entity_col, task.dst_entity_col]].explode(
+        column=task.dst_entity_col
     )
+    coo_indices = torch.from_numpy(exploded.values.astype(int)).transpose(0, 1)
+    sparse_coo = torch.sparse_coo_tensor(
+        coo_indices,
+        torch.ones(coo_indices.size(1), dtype=bool),
+        (num_src_nodes, num_dst_nodes),
+    )
+    sparse_csr = sparse_coo.to_sparse_csr()
 
     time: Optional[Tensor] = None
     if table.time_col is not None:
         time = to_unix_time(table.df[table.time_col])
 
     return LinkTrainTableInput(
-        source_nodes=(task.source_entity_table, source_node_idx),
-        destination_nodes_list=(task.destination_entity_table, destination_node_idx),
-        num_destination_nodes=num_destination_nodes,
-        time=time,
+        src_nodes=(task.src_entity_table, src_node_idx),
+        src_to_dst_nodes=(task.dst_entity_table, sparse_csr),
+        num_dst_nodes=num_dst_nodes,
+        src_time=time,
     )

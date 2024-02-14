@@ -93,9 +93,20 @@ class BaseTask:
                     "insufficient aggregation time."
                 )
 
+            # must stop by test_timestamp - timedelta to avoid time leakage
+            end_timestamp = min(
+                self.dataset.val_timestamp
+                + self.timedelta * (self.dataset.max_eval_time_frames - 1),
+                self.dataset.test_timestamp - self.timedelta,
+            )
+
             table = self.make_table(
                 self.dataset.db,
-                pd.Series([self.dataset.val_timestamp]),
+                pd.date_range(
+                    self.dataset.val_timestamp,
+                    end_timestamp,
+                    freq=self.timedelta,
+                ),
             )
             self._cached_table_dict["val"] = table
         else:
@@ -116,9 +127,20 @@ class BaseTask:
                     "insufficient aggregation time."
                 )
 
+            # must stop by max_timestamp - timedelta
+            end_timestamp = min(
+                self.dataset.test_timestamp
+                + self.timedelta * (self.dataset.max_eval_time_frames - 1),
+                self.dataset._full_db.max_timestamp - self.timedelta,
+            )
+
             full_table = self.make_table(
                 self.dataset._full_db,
-                pd.Series([self.dataset.test_timestamp]),
+                pd.date_range(
+                    self.dataset.test_timestamp,
+                    end_timestamp,
+                    freq=self.timedelta,
+                ),
             )
             self._cached_table_dict["full_test"] = full_table
         else:
