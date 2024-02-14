@@ -1,7 +1,7 @@
 import os
 
-import numpy as np
 import pandas as pd
+import numpy as np
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
@@ -33,6 +33,7 @@ class F1Dataset(RelBenchDataset):
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
         url = "https://relbench.stanford.edu/data/relbench-f1-raw.zip"
+
         path = pooch.retrieve(
             url,
             known_hash="2933348953b30aa9723b4831fea8071b336b74977bbcf1fb059da63a04f06eba",
@@ -77,8 +78,6 @@ class F1Dataset(RelBenchDataset):
 
         circuits.drop(
             columns=["url",
-                     "lat",
-                     "lng",
                      "alt"],
             inplace=True,
         )
@@ -89,17 +88,9 @@ class F1Dataset(RelBenchDataset):
         )
 
         results.drop(
-            columns=["positionText", 
+            columns=["positionText",
                      "time",
-                     "rank",
-                     "milliseconds",
-                     "fastestLapTime",
-                     "fastestLapSpeed",
-                     "fastestLap",
-                     "positionOrder",
-                     "laps",
-                     "points",
-                     "position"],
+                     ],
             inplace=True,
         )
 
@@ -147,10 +138,9 @@ class F1Dataset(RelBenchDataset):
         # that the qualifying time is the day before the main race
         qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
 
-
-        circuits = circuits.replace(r"^\\N$", np.nan, regex=True)
         # replace "\N" with NaN in all tables
         results = results.replace(r"^\\N$", np.nan, regex=True)
+
 
         tables = {}
 
@@ -181,7 +171,8 @@ class F1Dataset(RelBenchDataset):
             df=pd.DataFrame(results),
             fkey_col_to_pkey_table={"raceId": "races", 
                                     "driverId": "drivers",
-                                    "constructorId": "constructors"},
+                                    "constructorId": "constructors",
+                                    },
             pkey_col="resultId",
             time_col="date",
         )
