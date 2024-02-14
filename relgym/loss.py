@@ -1,5 +1,5 @@
 from relgym.config import cfg
-from relbench.data.task import TaskType
+from relbench.data.task_base import TaskType
 from torch.nn import BCEWithLogitsLoss, L1Loss
 import numpy as np
 

@@ -6,7 +6,8 @@ model:
   aggr: "sum"
   conv: "sage"
   num_layers: 2
-  use_self_join: false
+  use_self_join: true
+  node_type_considered: ['users']
 dataset:
   name: "rel-stackex"
   cache_dir: "/dfs/scratch0/jiaqihan/projects/relbench/cache"

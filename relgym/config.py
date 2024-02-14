@@ -55,6 +55,9 @@ def set_cfg(cfg):
     # Batch size
     cfg.loader.batch_size = None
 
+    # Temporal strategy in 'uniform', 'last'
+    cfg.loader.temporal_strategy = 'uniform'
+
     # ----------------------------------------------------------------------- #
     # Dataset options
     # ----------------------------------------------------------------------- #
@@ -110,8 +113,11 @@ def set_cfg(cfg):
     # The hidden channels for the model
     cfg.model.channels = 128
 
-    # The aggregation method
-    cfg.model.aggr = None
+    # The aggregation method of GNN message passing
+    cfg.model.aggr = "sum"
+
+    # The aggregation method of the heterogeneous information
+    cfg.model.hetero_aggr = "sum"
 
     # The graph convolution operation, in ['sage', 'gat', 'gc']
     cfg.model.conv = None

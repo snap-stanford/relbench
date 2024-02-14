@@ -4,16 +4,15 @@ torch_frame_model:
 model:
   channels: 128
   aggr: "sum"
-  hetero_aggr: "sum"
   conv: "sage"
   num_layers: 2
   use_self_join: true
-  node_type_considered: ['users']
+  node_type_considered: ['customer']
 dataset:
-  name: "rel-stackex"
+  name: "rel-amazon"
   cache_dir: "/dfs/scratch0/jiaqihan/projects/relbench/cache"
   root_dir: "/dfs/scratch0/jiaqihan/projects/relbench/data"
-  task: "rel-stackex-engage"
+  task: "rel-amazon-ltv"
   # All tasks:
   # rel-stackex: rel-stackex-engage, rel-stackex-votes, rel-stackex-badges
   # rel-amazon: rel-amazon-churn, rel-amazon-ltv, rel-amazon-product-churn, rel-amazon-product-ltv
@@ -21,7 +20,6 @@ loader:
   num_neighbors: 128
   num_workers: 1
   batch_size: 512
-  temporal_strategy: 'uniform'
 optim:
   max_epoch: 30
   early_stop: 10

@@ -4,19 +4,19 @@ torch_frame_model:
 model:
   channels: 128
   aggr: "sum"
-  hetero_aggr: "sum"
   conv: "sage"
   num_layers: 2
   use_self_join: true
-  node_type_considered: ['users']
+  node_type_considered: ['drivers']
 dataset:
-  name: "rel-stackex"
+  name: "rel-f1"
   cache_dir: "/dfs/scratch0/jiaqihan/projects/relbench/cache"
   root_dir: "/dfs/scratch0/jiaqihan/projects/relbench/data"
-  task: "rel-stackex-engage"
+  task: "rel-f1-position"
   # All tasks:
   # rel-stackex: rel-stackex-engage, rel-stackex-votes, rel-stackex-badges
   # rel-amazon: rel-amazon-churn, rel-amazon-ltv, rel-amazon-product-churn, rel-amazon-product-ltv
+  # rel-f1: rel-f1-position, rel-f1-dnf, rel-f1-qualifying
 loader:
   num_neighbors: 128
   num_workers: 1

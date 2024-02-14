@@ -1,5 +1,6 @@
 from typing import Dict
 import os
+import copy
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.data import HeteroData
 from torch_frame.config.text_embedder import TextEmbedderConfig
@@ -9,7 +10,7 @@ from relgym.config import cfg
 from relbench.data import RelBenchDataset
 from relbench.datasets import get_dataset
 from relbench.external.graph import (
-    get_train_table_input,
+    get_node_train_table_input,
     make_pkey_fkey_graph,
 )
 
@@ -32,7 +33,7 @@ def create_dataset_and_task():
 
 def transform_dataset_to_graph(dataset: RelBenchDataset):
     device = cfg.device
-    col_to_stype_dict = dataset2inferred_stypes[cfg.dataset.name]
+    col_to_stype_dict = copy.deepcopy(dataset2inferred_stypes[cfg.dataset.name])
 
     data: HeteroData = make_pkey_fkey_graph(
         dataset.db,
@@ -53,12 +54,14 @@ def get_loader_and_entity(data, task):
         ("val", task.val_table),
         ("test", task.test_table),
     ]:
-        table_input = get_train_table_input(table=table, task=task)
+        table_input = get_node_train_table_input(table=table, task=task)
         entity_table = table_input.nodes[0]
         loader_dict[split] = NeighborLoader(
             data,
-            num_neighbors=[cfg.loader.num_neighbors for _ in range(cfg.model.num_layers)],
+            # num_neighbors=[cfg.loader.num_neighbors for _ in range(cfg.model.num_layers)],
+            num_neighbors=[int(cfg.loader.num_neighbors / 2**i) for i in range(cfg.model.num_layers)],
             time_attr="time",
+            temporal_strategy=cfg.loader.temporal_strategy,
             input_nodes=table_input.nodes,
             input_time=table_input.time,
             transform=table_input.transform,

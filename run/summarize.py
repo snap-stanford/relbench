@@ -1,6 +1,6 @@
 import os
 
-yaml_collection_path = 'stackex-badges_model.channels_32_64_128_model.num_layers_2_3_model.use_self_join_False_optim.base_lr_0.01_0.005_0.001'
+yaml_collection_path = 'stackex-votes_model.channels_64_128_model.num_layers_2_3_model.use_self_join_True_False_optim.base_lr_0.01_0.001'
 
 base_dir = 'results'
 seed = 42

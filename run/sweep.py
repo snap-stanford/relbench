@@ -23,9 +23,13 @@ def main() -> None:
     hyperparameters = {
         'model.channels': [64, 128],
         # 'model.conv': ['sage', 'gat'],
-        'model.num_layers': [2, 3],
+        'model.num_layers': [2, 3, 4],
         'model.use_self_join': [True, False],
-        'optim.base_lr': [0.01, 0.001],
+        # 'model.aggr': ['sum', 'mean', 'max'],
+        # 'model.hetero_aggr': ['sum', 'mean', 'max'],
+        'optim.base_lr': [0.01, 0.005, 0.001],
+        # 'loader.num_neighbors': [16, 32, 64, 128, 256],
+        # 'loader.temporal_strategy': ['uniform', 'last']
     }
 
     repeats = args.repeats  # number of seeds to run
@@ -40,6 +44,7 @@ def main() -> None:
         value_str = '_'.join(str(value) for value in values)
         output_folder += f'_{param}_{value_str}'
 
+    print(f'config files output to {output_folder}')
     os.makedirs(output_folder, exist_ok=False)
 
     # Generate all combinations of hyperparameter values

@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 from functools import partial
 
 import torch
+import torch.nn as nn
 from torch import Tensor
 from torch_geometric.nn import HeteroConv, LayerNorm, SAGEConv, GATConv
 from torch_geometric.typing import EdgeType, NodeType
@@ -29,6 +30,7 @@ class SelfJoinLayer(torch.nn.Module):
         self.score_type = 'mlp'
         self.msg_dict = torch.nn.ModuleDict()
         self.upd_dict = torch.nn.ModuleDict()
+        # self.attn_dict = torch.nn.ModuleDict()
 
         self.node_type_considered = node_type_considered
         for node_type in node_types:
@@ -36,6 +38,10 @@ class SelfJoinLayer(torch.nn.Module):
                 continue
             self.msg_dict[node_type] = MLP(channel_list=[channels * 2, channels, channels])
             self.upd_dict[node_type] = MLP(channel_list=[channels * 2, channels, channels])
+            # self.attn_dict[node_type] = nn.Sequential(
+            #     nn.TransformerEncoderLayer(d_model=channels, nhead=4, batch_first=True),
+            #     nn.TransformerEncoderLayer(d_model=channels, nhead=4, batch_first=True),
+            # )
 
     def forward(self, x_dict: Dict):
         upd_x_dict = {}
@@ -71,6 +77,10 @@ class SelfJoinLayer(torch.nn.Module):
             else:
                 raise NotImplementedError(self.score_type)
             feature = feature + self.upd_dict[node_type](torch.cat((feature, h_agg), dim=-1))  # [N, H]
+
+            # use self attention
+            # feature = self.attn_dict[node_type](feature)
+
             upd_x_dict[node_type] = feature
         return upd_x_dict
 
@@ -83,6 +93,7 @@ class HeteroGNN(torch.nn.Module):
         edge_types: List[EdgeType],
         channels: int,
         aggr: str = "mean",
+        hetero_aggr: str = "sum",
         num_layers: int = 2,
         use_self_join: bool = False,
         **kwargs,
@@ -97,7 +108,7 @@ class HeteroGNN(torch.nn.Module):
                     edge_type: conv_func((channels, channels), channels, aggr=aggr)
                     for edge_type in edge_types
                 },
-                aggr="sum",
+                aggr=hetero_aggr,
             )
             self.convs.append(conv)
 

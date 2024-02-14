@@ -48,6 +48,7 @@ def create_model(data, entity_table, to_device=True):
                 edge_types=data.edge_types,
                 channels=cfg.model.channels,
                 aggr=cfg.model.aggr,
+                hetero_aggr=cfg.model.hetero_aggr,
                 num_layers=cfg.model.num_layers,
                 use_self_join=cfg.model.use_self_join,
                 node_type_considered=cfg.model.node_type_considered,
