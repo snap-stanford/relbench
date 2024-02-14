@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import pandas as pd
 import pooch
 
@@ -75,7 +76,10 @@ class F1Dataset(RelBenchDataset):
         )
 
         circuits.drop(
-            columns=["url"],
+            columns=["url",
+                     "lat",
+                     "lng",
+                     "alt"],
             inplace=True,
         )
 
@@ -85,7 +89,16 @@ class F1Dataset(RelBenchDataset):
         )
 
         results.drop(
-            columns=["positionText", "time"],
+            columns=["positionText", 
+                     "time",
+                     "milliseconds",
+                     "fastestLapTime",
+                     "fastestLapSpeed",
+                     "fastestLap",
+                     "positionOrder",
+                     "laps",
+                     "points",
+                     "position"],
             inplace=True,
         )
 
@@ -133,6 +146,9 @@ class F1Dataset(RelBenchDataset):
         # that the qualifying time is the day before the main race
         qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
 
+
+        circuits = circuits.replace("\\N", np.nan)
+        results = results.replace("\\N", np.nan)
         tables = {}
 
         tables["races"] = Table(

@@ -95,11 +95,14 @@ def make_pkey_fkey_graph(
         path = (
             None if cache_dir is None else os.path.join(cache_dir, f"{table_name}.pt")
         )
+        #try:
         dataset = Dataset(
             df=df,
             col_to_stype=col_to_stype,
             col_to_text_embedder_cfg=text_embedder_cfg,
         ).materialize(path=path)
+        #except:
+        #    breakpoint()
 
         data[table_name].tf = dataset.tensor_frame
         data[table_name].col_stats = dataset.col_stats
