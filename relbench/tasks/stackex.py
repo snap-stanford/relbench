@@ -216,10 +216,10 @@ class UserCommentOnPostTask(RelBenchLinkTask):
 
     name = "rel-stackex-comment-on-post"
     task_type = TaskType.LINK_PREDICTION
-    source_entity_col = "UserId"
-    source_entity_table = "users"
-    destination_entity_col = "PostId"
-    destination_entity_table = "posts"
+    src_entity_col = "UserId"
+    src_entity_table = "users"
+    dst_entity_col = "PostId"
+    dst_entity_table = "posts"
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=365)
     metrics = None  # TODO: add metrics
@@ -261,8 +261,8 @@ class UserCommentOnPostTask(RelBenchLinkTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={
-                self.source_entity_col: self.source_entity_table,
-                self.destination_entity_col: self.destination_entity_table,
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
             },
             pkey_col=None,
             time_col=self.time_col,

@@ -27,10 +27,10 @@ class LinkTask(BaseTask):
         self,
         dataset: "Dataset",
         timedelta: pd.Timedelta,
-        source_entity_table: str,
-        source_entity_col: str,
-        destination_entity_table: str,
-        destination_entity_col: str,
+        src_entity_table: str,
+        src_entity_col: str,
+        dst_entity_table: str,
+        dst_entity_col: str,
         metrics: List[Callable[[NDArray, NDArray], float]],
     ):
         super().__init__(
@@ -39,10 +39,10 @@ class LinkTask(BaseTask):
             metrics=metrics,
         )
 
-        self.source_entity_table = source_entity_table
-        self.source_entity_col = source_entity_col
-        self.destination_entity_table = destination_entity_table
-        self.destination_entity_col = destination_entity_col
+        self.src_entity_table = src_entity_table
+        self.src_entity_col = src_entity_col
+        self.dst_entity_table = dst_entity_table
+        self.dst_entity_col = dst_entity_col
 
         self._full_test_table = None
         self._cached_table_dict = {}
@@ -51,19 +51,17 @@ class LinkTask(BaseTask):
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
     def filter_dangling_entities(self, table: Table) -> Table:
-        src_num_entities = len(self.dataset.db.table_dict[self.source_entity_table])
-        dst_num_entities = len(
-            self.dataset.db.table_dict[self.destination_entity_table]
-        )
+        src_num_entities = len(self.dataset.db.table_dict[self.src_entity_table])
+        dst_num_entities = len(self.dataset.db.table_dict[self.dst_entity_table])
 
         # filter dangling destination entities from a list
-        table.df[self.destination_entity_col] = table.df[
-            self.destination_entity_col
-        ].apply(lambda x: [i for i in x if i < dst_num_entities])
+        table.df[self.dst_entity_col] = table.df[self.dst_entity_col].apply(
+            lambda x: [i for i in x if i < dst_num_entities]
+        )
 
         # filter dangling source entities and empty list (after above filtering)
-        filter_mask = (table.df[self.source_entity_col] >= src_num_entities) | (
-            ~table.df[self.destination_entity_col].map(bool)
+        filter_mask = (table.df[self.src_entity_col] >= src_num_entities) | (
+            ~table.df[self.dst_entity_col].map(bool)
         )
 
         if filter_mask.any():
@@ -83,10 +81,10 @@ class LinkTask(BaseTask):
 
 class RelBenchLinkTask(LinkTask):
     name: str
-    source_entity_col: str
-    source_entity_table: str
-    destination_entity_col: str
-    destination_entity_table: str
+    src_entity_col: str
+    src_entity_table: str
+    dst_entity_col: str
+    dst_entity_table: str
     time_col: str
     timedelta: pd.Timedelta
     task_dir: str = "tasks"
@@ -95,10 +93,10 @@ class RelBenchLinkTask(LinkTask):
         super().__init__(
             dataset=dataset,
             timedelta=self.timedelta,
-            source_entity_table=self.source_entity_table,
-            source_entity_col=self.source_entity_col,
-            destination_entity_table=self.destination_entity_table,
-            destination_entity_col=self.destination_entity_col,
+            src_entity_table=self.src_entity_table,
+            src_entity_col=self.src_entity_col,
+            dst_entity_table=self.dst_entity_table,
+            dst_entity_col=self.dst_entity_col,
             metrics=self.metrics,
         )
 
