@@ -109,6 +109,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
             # [batch_size, batch_size]
             neg_score = x_src @ x_neg_dst.t()
         else:
+            # [batch_size, ]
             neg_score = torch.sum(x_src * x_neg_dst, dim=1)
         diff_score = pos_score - neg_score
         # BPR loss
