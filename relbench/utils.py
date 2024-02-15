@@ -1,12 +1,8 @@
-import os
 import shutil
 from pathlib import Path
 from typing import Union
 
-import pandas as pd
 import pooch
-import requests
-from tqdm import tqdm
 
 
 def unzip_processor(fname: Union[str, Path], action: str, pooch: pooch.Pooch) -> Path:
