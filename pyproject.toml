@@ -31,7 +31,7 @@ example=[
 	"torch",
 	"pytorch_frame>=0.2.1",
 	"torch_geometric",
-	"faiss",
+	"faiss-cpu",
 ]
 test=[
 	"pytest",
