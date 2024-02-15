@@ -1,11 +1,19 @@
 import duckdb
-import numpy as np
 import pandas as pd
-from tqdm import tqdm
 
 from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
+from relbench.metrics import (
+    accuracy,
+    average_precision,
+    f1,
+    link_prediction_map,
+    link_prediction_precision,
+    link_prediction_recall,
+    mae,
+    rmse,
+    roc_auc,
+)
 from relbench.utils import get_df_in_window
 
 ######## node prediction tasks ########
@@ -222,7 +230,8 @@ class UserCommentOnPostTask(RelBenchLinkTask):
     dst_entity_table = "posts"
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=365 * 2)
-    metrics = None  # TODO: add metrics
+    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
+    eval_k = 10
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserCommentOnPostTask."""
