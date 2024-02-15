@@ -281,10 +281,10 @@ class SponsorConditionTask(RelBenchLinkTask):
 
     name = "rel-trial-sponsor-condition"
     task_type = TaskType.LINK_PREDICTION
-    source_entity_col = "condition_id"
-    source_entity_table = "conditions"
-    destination_entity_col = "sponsor_id"
-    destination_entity_table = "sponsors"
+    src_entity_col = "condition_id"
+    src_entity_table = "conditions"
+    dst_entity_col = "sponsor_id"
+    dst_entity_table = "sponsors"
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=365 * 2)
     metrics = [mae, rmse]
@@ -312,8 +312,8 @@ class SponsorConditionTask(RelBenchLinkTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={
-                self.source_entity_col: self.source_entity_table,
-                self.destination_entity_col: self.destination_entity_table,
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
             },
             pkey_col=None,
             time_col=self.time_col,
