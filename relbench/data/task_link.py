@@ -84,11 +84,11 @@ class LinkTask(BaseTask):
 
     @property
     def val_seed_time(self) -> int:
-        return to_unix_time(pd.Series([self.dataset.val_timestamp]))[0].item()
+        return to_unix_time(pd.Series([self.dataset.val_timestamp]))[0]
 
     @property
     def test_seed_time(self) -> int:
-        return to_unix_time(pd.Series([self.dataset.val_timestamp]))[0].item()
+        return to_unix_time(pd.Series([self.dataset.val_timestamp]))[0]
 
 
 class RelBenchLinkTask(LinkTask):

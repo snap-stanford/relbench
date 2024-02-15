@@ -98,7 +98,9 @@ def make_pkey_fkey_graph(
 
         # Add time attribute:
         if table.time_col is not None:
-            data[table_name].time = to_unix_time(table.df[table.time_col])
+            data[table_name].time = torch.from_numpy(
+                to_unix_time(table.df[table.time_col])
+            )
 
         # Add edges:
         for fkey_name, pkey_table_name in table.fkey_col_to_pkey_table.items():
@@ -159,7 +161,7 @@ def get_node_train_table_input(
 
     time: Optional[Tensor] = None
     if table.time_col is not None:
-        time = to_unix_time(table.df[table.time_col])
+        time = torch.from_numpy(to_unix_time(table.df[table.time_col]))
 
     target: Optional[Tensor] = None
     transform: Optional[AttachTargetTransform] = None
@@ -215,7 +217,7 @@ def get_link_train_table_input(
 
     time: Optional[Tensor] = None
     if table.time_col is not None:
-        time = to_unix_time(table.df[table.time_col])
+        time = torch.from_numpy(to_unix_time(table.df[table.time_col]))
 
     return LinkTrainTableInput(
         src_nodes=(task.src_entity_table, src_node_idx),
