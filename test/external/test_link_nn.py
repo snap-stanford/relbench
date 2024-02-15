@@ -81,15 +81,20 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     eval_loaders_dict: Dict[str, Tuple[NeighborLoader, NeighborLoader]] = {}
     for split in ["val", "test"]:
         seed_time = task.val_seed_time if split == "val" else task.test_seed_time
+        target_table = task.val_table if split == "val" else task.test_table
         src_loader = NeighborLoader(
             data,
             num_neighbors=[-1, -1],
             time_attr="time",
-            input_nodes=(task.src_entity_table, torch.arange(task.num_src_nodes)),
+            input_nodes=(
+                task.src_entity_table,
+                torch.from_numpy(target_table.df[task.src_entity_col].values),
+            ),
             input_time=torch.full(
                 size=(task.num_src_nodes,), fill_value=seed_time, dtype=torch.long
             ),
             batch_size=32,
+            shuffle=False,
         )
         dst_loader = NeighborLoader(
             data,
@@ -100,6 +105,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
                 size=(task.num_src_nodes,), fill_value=seed_time, dtype=torch.long
             ),
             batch_size=32,
+            shuffle=False,
         )
         eval_loaders_dict[split] = (src_loader, dst_loader)
 
@@ -148,7 +154,6 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     encoder.eval()
     gnn.eval()
 
-    k = 5
     for split in ["val", "test"]:
         dst_embs = []
         src_loader, dst_loader = eval_loaders_dict[split]
@@ -163,7 +168,11 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
         pred_index_mat_list = []
         for batch in src_loader:
             emb = model_forward(batch, task.src_entity_table)
-            _, pred_index_mat = mips.search(emb, k=k)
+            _, pred_index_mat = mips.search(emb, k=task.eval_k)
             pred_index_mat_list.append(pred_index_mat)
-        pred = torch.cat(pred_index_mat_list, dim=0)
-        assert pred.shape == (task.num_src_nodes, k)
+        pred = torch.cat(pred_index_mat_list, dim=0).numpy()
+
+        if split == "val":
+            task.evaluate(pred, task.val_table)
+        else:
+            task.evaluate(pred)

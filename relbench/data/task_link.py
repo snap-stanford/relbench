@@ -1,6 +1,7 @@
 import os
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
@@ -25,6 +26,7 @@ class LinkTask(BaseTask):
         dst_entity_table: str,
         dst_entity_col: str,
         metrics: List[Callable[[NDArray, NDArray], float]],
+        eval_k: int,
     ):
         super().__init__(
             dataset=dataset,
@@ -42,6 +44,7 @@ class LinkTask(BaseTask):
         self.src_entity_col = src_entity_col
         self.dst_entity_table = dst_entity_table
         self.dst_entity_col = dst_entity_col
+        self.eval_k = eval_k
 
         self._full_test_table = None
         self._cached_table_dict = {}
@@ -69,10 +72,35 @@ class LinkTask(BaseTask):
         self,
         pred: NDArray,
         target_table: Optional[Table] = None,
-        neg_sampling_ratio: Optional[float] = None,
         metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
     ) -> Dict[str, float]:
-        raise NotImplementedError
+        if metrics is None:
+            metrics = self.metrics
+
+        if target_table is None:
+            target_table = self._full_test_table
+
+        expected_pred_shape = (len(target_table), self.eval_k)
+        if pred.shape != expected_pred_shape:
+            raise ValueError(
+                f"The shape of pred must be {expected_pred_shape}, but "
+                f"{pred.shape} given."
+            )
+
+        pred_isin_list = []
+        dst_count_list = []
+        for true_dst_nodes, pred_dst_nodes in zip(
+            target_table.df[self.dst_entity_col],
+            pred,
+        ):
+            pred_isin_list.append(
+                np.isin(np.array(pred_dst_nodes), np.array(true_dst_nodes))
+            )
+            dst_count_list.append(len(true_dst_nodes))
+        pred_isin = np.stack(pred_isin_list)
+        dst_count = np.array(dst_count_list)
+
+        return {fn.__name__: fn(pred_isin, dst_count) for fn in metrics}
 
     @property
     def num_src_nodes(self) -> int:
@@ -100,6 +128,8 @@ class RelBenchLinkTask(LinkTask):
     time_col: str
     timedelta: pd.Timedelta
     task_dir: str = "tasks"
+    metrics: List[Callable[[NDArray, NDArray], float]]
+    eval_k: int
 
     def __init__(self, dataset: str, process: bool = False) -> None:
         super().__init__(
@@ -110,6 +140,7 @@ class RelBenchLinkTask(LinkTask):
             dst_entity_table=self.dst_entity_table,
             dst_entity_col=self.dst_entity_col,
             metrics=self.metrics,
+            eval_k=self.eval_k,
         )
 
         if not process:

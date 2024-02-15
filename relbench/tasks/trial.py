@@ -1,7 +1,5 @@
 import duckdb
-import numpy as np
 import pandas as pd
-from tqdm import tqdm
 
 from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
@@ -9,13 +7,15 @@ from relbench.metrics import (
     accuracy,
     average_precision,
     f1,
+    link_prediction_map,
+    link_prediction_precision,
+    link_prediction_recall,
     mae,
     multilabel_f1_macro,
     multilabel_f1_micro,
     rmse,
     roc_auc,
 )
-from relbench.utils import get_df_in_window
 
 
 class OutcomeTask(RelBenchNodeTask):
@@ -263,7 +263,7 @@ class SiteSuccessTask(RelBenchNodeTask):
             LEFT JOIN TRIAL_INFO tr
             LEFT JOIN facility_study fs ON fs.nct_id = tr.nct_id
             ON tr.date > t.timestamp
-                and tr.date <= t.timestamp + INTERVAL '{dataset.timedelta}'
+                and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, fs.facility_id;
             """
         ).df()
@@ -277,7 +277,7 @@ class SiteSuccessTask(RelBenchNodeTask):
 
 
 class SponsorConditionTask(RelBenchLinkTask):
-    r"""Predict if a sponsor will have a trial on a condition in the next 2 years."""
+    r"""Predict a list of sponsors for a given condition the next 2 years."""
 
     name = "rel-trial-sponsor-condition"
     task_type = TaskType.LINK_PREDICTION
@@ -287,7 +287,8 @@ class SponsorConditionTask(RelBenchLinkTask):
     dst_entity_table = "sponsors"
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=365 * 2)
-    metrics = [mae, rmse]
+    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
+    eval_k = 10
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -304,7 +305,7 @@ class SponsorConditionTask(RelBenchLinkTask):
             LEFT JOIN condition_study cs
             LEFT JOIN sponsors_studies ss ON ss.nct_id = cs.nct_id
             ON cs.date > t.timestamp
-                and cs.date <= t.timestamp + INTERVAL '{dataset.timedelta}'
+                and cs.date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, cs.condition_id, ss.sponsor_id;
             """
         ).df()
