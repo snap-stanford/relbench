@@ -4,7 +4,7 @@ import shutil
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 from numpy.typing import NDArray
