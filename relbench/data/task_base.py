@@ -4,7 +4,7 @@ import shutil
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 from numpy.typing import NDArray
@@ -146,6 +146,7 @@ class BaseTask:
         else:
             full_table = self._cached_table_dict["full_test"]
         self._full_test_table = self.filter_dangling_entities(full_table)
+
         return self._mask_input_cols(self._full_test_table)
 
     def _mask_input_cols(self, table: Table) -> Table:
