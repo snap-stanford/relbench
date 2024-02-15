@@ -14,7 +14,7 @@ from torch_geometric.typing import NodeType
 from torch_geometric.utils import sort_edge_index
 
 from relbench.data import Database, LinkTask, NodeTask, Table
-from relbench.utils import to_unix_time
+from relbench.external.utils import to_unix_time
 
 
 def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:

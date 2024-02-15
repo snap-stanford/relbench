@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 from relbench import _pooch
 from relbench.data.table import Table
 from relbench.data.task_base import BaseTask, _pack_tables
-from relbench.utils import to_unix_time
+from relbench.external.utils import to_unix_time
 
 if TYPE_CHECKING:
     from relbench.data import Dataset
