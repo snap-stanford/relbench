@@ -1,20 +1,13 @@
-import hashlib
 import os
-import shutil
-import tempfile
-from enum import Enum
-from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
-import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
 from relbench import _pooch
-from relbench.data.database import Database
 from relbench.data.table import Table
-from relbench.data.task_base import BaseTask, TaskType, _pack_tables
-from relbench.utils import unzip_processor
+from relbench.data.task_base import BaseTask, _pack_tables
+from relbench.utils import to_unix_time
 
 if TYPE_CHECKING:
     from relbench.data import Dataset
@@ -39,6 +32,12 @@ class LinkTask(BaseTask):
             metrics=metrics,
         )
 
+        if self.dataset.max_eval_time_frames != 1:
+            raise RuntimeError(
+                "Link prediction cannot be defined over tasks with multiple "
+                "eval time frames."
+            )
+
         self.src_entity_table = src_entity_table
         self.src_entity_col = src_entity_col
         self.dst_entity_table = dst_entity_table
@@ -51,16 +50,13 @@ class LinkTask(BaseTask):
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
     def filter_dangling_entities(self, table: Table) -> Table:
-        src_num_entities = len(self.dataset.db.table_dict[self.src_entity_table])
-        dst_num_entities = len(self.dataset.db.table_dict[self.dst_entity_table])
-
         # filter dangling destination entities from a list
         table.df[self.dst_entity_col] = table.df[self.dst_entity_col].apply(
-            lambda x: [i for i in x if i < dst_num_entities]
+            lambda x: [i for i in x if i < self.num_dst_nodes]
         )
 
         # filter dangling source entities and empty list (after above filtering)
-        filter_mask = (table.df[self.src_entity_col] >= src_num_entities) | (
+        filter_mask = (table.df[self.src_entity_col] >= self.num_src_nodes) | (
             ~table.df[self.dst_entity_col].map(bool)
         )
 
@@ -77,6 +73,22 @@ class LinkTask(BaseTask):
         metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
     ) -> Dict[str, float]:
         raise NotImplementedError
+
+    @property
+    def num_src_nodes(self) -> int:
+        return len(self.dataset.db.table_dict[self.src_entity_table])
+
+    @property
+    def num_dst_nodes(self) -> int:
+        return len(self.dataset.db.table_dict[self.dst_entity_table])
+
+    @property
+    def val_seed_time(self) -> int:
+        return to_unix_time(pd.Series([self.dataset.val_timestamp]))[0].item()
+
+    @property
+    def test_seed_time(self) -> int:
+        return to_unix_time(pd.Series([self.dataset.val_timestamp]))[0].item()
 
 
 class RelBenchLinkTask(LinkTask):
