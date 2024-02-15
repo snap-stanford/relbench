@@ -14,16 +14,7 @@ from torch_geometric.typing import NodeType
 from torch_geometric.utils import sort_edge_index
 
 from relbench.data import Database, LinkTask, NodeTask, Table
-
-
-def to_unix_time(ser: pd.Series) -> Tensor:
-    r"""Converts a :class:`pandas.Timestamp` series to UNIX timestamp
-    (in seconds)."""
-    assert ser.dtype in [np.dtype("datetime64[s]"), np.dtype("datetime64[ns]")]
-    unix_time = torch.from_numpy(ser.astype(int).values)
-    if ser.dtype == np.dtype("datetime64[ns]"):
-        unix_time //= 10**9
-    return unix_time
+from relbench.external.utils import to_unix_time
 
 
 def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
@@ -107,7 +98,9 @@ def make_pkey_fkey_graph(
 
         # Add time attribute:
         if table.time_col is not None:
-            data[table_name].time = to_unix_time(table.df[table.time_col])
+            data[table_name].time = torch.from_numpy(
+                to_unix_time(table.df[table.time_col])
+            )
 
         # Add edges:
         for fkey_name, pkey_table_name in table.fkey_col_to_pkey_table.items():
@@ -168,7 +161,7 @@ def get_node_train_table_input(
 
     time: Optional[Tensor] = None
     if table.time_col is not None:
-        time = to_unix_time(table.df[table.time_col])
+        time = torch.from_numpy(to_unix_time(table.df[table.time_col]))
 
     target: Optional[Tensor] = None
     transform: Optional[AttachTargetTransform] = None
@@ -211,8 +204,6 @@ def get_link_train_table_input(
     src_node_idx: Tensor = torch.from_numpy(
         table.df[task.src_entity_col].astype(int).values
     )
-    num_dst_nodes = len(task.dataset.db.table_dict[task.dst_entity_table])
-    num_src_nodes = len(src_node_idx)
     exploded = table.df[[task.src_entity_col, task.dst_entity_col]].explode(
         column=task.dst_entity_col
     )
@@ -220,17 +211,17 @@ def get_link_train_table_input(
     sparse_coo = torch.sparse_coo_tensor(
         coo_indices,
         torch.ones(coo_indices.size(1), dtype=bool),
-        (num_src_nodes, num_dst_nodes),
+        (task.num_src_nodes, task.num_dst_nodes),
     )
     sparse_csr = sparse_coo.to_sparse_csr()
 
     time: Optional[Tensor] = None
     if table.time_col is not None:
-        time = to_unix_time(table.df[table.time_col])
+        time = torch.from_numpy(to_unix_time(table.df[table.time_col]))
 
     return LinkTrainTableInput(
         src_nodes=(task.src_entity_table, src_node_idx),
         src_to_dst_nodes=(task.dst_entity_table, sparse_csr),
-        num_dst_nodes=num_dst_nodes,
+        num_dst_nodes=task.num_dst_nodes,
         src_time=time,
     )

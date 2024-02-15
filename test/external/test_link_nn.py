@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Tuple
 
 import pytest
 import torch
@@ -7,7 +7,7 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
-from torch_geometric.nn import MLP
+from torch_geometric.nn import MIPSKNNIndex
 from torch_geometric.typing import NodeType
 
 from relbench.data import LinkTask
@@ -78,6 +78,31 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
         assert (shared_time == pos_dst_seed_time).all()
         assert (shared_time == neg_dst_seed_time).all()
 
+    eval_loaders_dict: Dict[str, Tuple[NeighborLoader, NeighborLoader]] = {}
+    for split in ["val", "test"]:
+        seed_time = task.val_seed_time if split == "val" else task.test_seed_time
+        src_loader = NeighborLoader(
+            data,
+            num_neighbors=[-1, -1],
+            time_attr="time",
+            input_nodes=(task.src_entity_table, torch.arange(task.num_src_nodes)),
+            input_time=torch.full(
+                size=(task.num_src_nodes,), fill_value=seed_time, dtype=torch.long
+            ),
+            batch_size=32,
+        )
+        dst_loader = NeighborLoader(
+            data,
+            num_neighbors=[-1, -1],
+            time_attr="time",
+            input_nodes=(task.dst_entity_table, torch.arange(task.num_dst_nodes)),
+            input_time=torch.full(
+                size=(task.num_src_nodes,), fill_value=seed_time, dtype=torch.long
+            ),
+            batch_size=32,
+        )
+        eval_loaders_dict[split] = (src_loader, dst_loader)
+
     optimizer = torch.optim.Adam(
         list(encoder.parameters()) + list(gnn.parameters()),
         lr=0.01,
@@ -91,7 +116,8 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
         )
-        return x_dict[node_type]
+        batch_size = batch[node_type].batch_size
+        return x_dict[node_type][:batch_size]
 
     # Training
     encoder.train()
@@ -117,3 +143,27 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
         loss = F.softplus(-diff_score).mean()
         loss.backward()
         optimizer.step()
+
+    # Validation
+    encoder.eval()
+    gnn.eval()
+
+    k = 5
+    for split in ["val", "test"]:
+        dst_embs = []
+        src_loader, dst_loader = eval_loaders_dict[split]
+        for batch in dst_loader:
+            emb = model_forward(batch, task.dst_entity_table)
+            dst_embs.append(emb)
+        dst_emb = torch.cat(dst_embs, dim=0)
+        del dst_embs
+
+        mips = MIPSKNNIndex(dst_emb)
+
+        pred_index_mat_list = []
+        for batch in src_loader:
+            emb = model_forward(batch, task.src_entity_table)
+            _, pred_index_mat = mips.search(emb, k=k)
+            pred_index_mat_list.append(pred_index_mat)
+        pred = torch.cat(pred_index_mat_list, dim=0)
+        assert pred.shape == (task.num_src_nodes, k)
