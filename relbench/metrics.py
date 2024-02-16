@@ -1,4 +1,7 @@
+from typing import Tuple
+
 import numpy as np
+import pandas as pd
 import sklearn.metrics as skm
 from numpy.typing import NDArray
 
@@ -106,3 +109,49 @@ def multilabel_precision_micro(true: NDArray[np.int_], pred: NDArray[np.int_]) -
 
 def multilabel_precision_macro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
     return skm.precision_score(true, pred, average="macro")
+
+
+####### Link prediction metrics
+"""All link prediction metrics take two arguments
+    - pred_isin: Numpy boolean array of size (num_src_nodes, eval_k)
+    - dst_count: Numpy integer array of size (num_src_nodes, ), storing
+        the number of destination nodes attached to each source node.
+"""
+
+
+def _filter(
+    pred_isin: NDArray[np.int_], dst_count: NDArray[np.int_]
+) -> Tuple[NDArray[np.int_], NDArray[np.int_]]:
+    is_pos = dst_count > 0
+    return pred_isin[is_pos], dst_count[is_pos]
+
+
+def link_prediction_recall(
+    pred_isin: NDArray[np.int_],
+    dst_count: NDArray[np.int_],
+) -> float:
+    pred_isin, dst_count = _filter(pred_isin, dst_count)
+    recalls = pred_isin.sum(axis=1) / dst_count
+    return recalls.mean()
+
+
+def link_prediction_precision(
+    pred_isin: NDArray[np.int_],
+    dst_count: NDArray[np.int_],
+) -> float:
+    pred_isin, dst_count = _filter(pred_isin, dst_count)
+    eval_k = pred_isin.shape[1]
+    precisions = pred_isin.sum(axis=-1) / eval_k
+    return precisions.mean()
+
+
+def link_prediction_map(
+    pred_isin: NDArray[np.int_],
+    dst_count: NDArray[np.int_],
+) -> float:
+    pred_isin, dst_count = _filter(pred_isin, dst_count)
+    eval_k = pred_isin.shape[1]
+    clipped_dst_count = dst_count.clip(min=None, max=eval_k)
+    precision_mat = np.cumsum(pred_isin, axis=1) / (np.arange(eval_k) + 1)
+    maps = (precision_mat * pred_isin).sum(axis=1) / clipped_dst_count
+    return maps.mean()

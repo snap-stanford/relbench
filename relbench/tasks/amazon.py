@@ -3,7 +3,17 @@ import pandas as pd
 
 from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
+from relbench.metrics import (
+    accuracy,
+    average_precision,
+    f1,
+    link_prediction_map,
+    link_prediction_precision,
+    link_prediction_recall,
+    mae,
+    rmse,
+    roc_auc,
+)
 
 
 class ChurnTask(RelBenchNodeTask):
@@ -236,13 +246,14 @@ class RecommendationTask(RelBenchLinkTask):
 
     name = "rel-amazon-rec"
     task_type = TaskType.LINK_PREDICTION
-    source_entity_col = "customer_id"
-    source_entity_table = "customer"
-    destination_entity_col = "product_id"
-    destination_entity_table = "product"
+    src_entity_col = "customer_id"
+    src_entity_table = "customer"
+    dst_entity_col = "product_id"
+    dst_entity_table = "product"
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=365 * 2)
-    metrics = None
+    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
+    eval_k = 10
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         # product = db.table_dict["product"].df
@@ -274,8 +285,8 @@ class RecommendationTask(RelBenchLinkTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={
-                self.source_entity_col: self.source_entity_table,
-                self.destination_entity_col: self.destination_entity_table,
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
             },
             pkey_col=None,
             time_col=self.time_col,
