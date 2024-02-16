@@ -4,10 +4,10 @@ model:
   conv: "sage"
   num_layers: 2
 dataset:
-  name: "rel-stackex"
+  name: "rel-amazon"
   cache_dir: "/dfs/scratch0/jiaqihan/projects/relbench/cache"
   root_dir: "/dfs/scratch0/jiaqihan/projects/relbench/data"
-  task: "rel-stackex-engage"
+  task: "rel-amazon-ltv"
   # All tasks:
   # rel-stackex: rel-stackex-engage, rel-stackex-votes
   # rel-amazon: rel-amazon-churn, rel-amazon-ltv, rel-amazon-product-churn, rel-amazon-product-ltv

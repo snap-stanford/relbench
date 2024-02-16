@@ -128,13 +128,28 @@ def set_cfg(cfg):
     # Use self join
     cfg.model.use_self_join = False
 
-    # Self join type list
-    cfg.model.node_type_considered = None
+    # ----------------------------------------------------------------------- #
+    # Self-Join options
+    # ----------------------------------------------------------------------- #
+    cfg.selfjoin = CN()
 
-    # ----------------------------------------------------------------------- #
-    # GNN options
-    # ----------------------------------------------------------------------- #
-    cfg.gnn = CN()
+    # The node type(s) to perform the self join operation
+    cfg.selfjoin.node_type_considered = None
+
+    # The parameter K in topK selection
+    cfg.selfjoin.num_filtered = 20
+
+    # The similarity score computation method, in ['cos', 'L2', 'attention']
+    cfg.selfjoin.sim_score_type = 'cos'
+
+    # The aggregation scheme of self join, in ['gat', 'mpnn']
+    cfg.selfjoin.aggr_scheme = 'mpnn'
+
+    # Whether to normalize the score using softmax
+    cfg.selfjoin.normalize_score = True
+
+    # Aggregation in message passing
+    cfg.selfjoin.aggr = 'sum'
 
     # ----------------------------------------------------------------------- #
     # Optimizer options

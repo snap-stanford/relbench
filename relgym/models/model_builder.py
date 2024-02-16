@@ -51,7 +51,12 @@ def create_model(data, entity_table, to_device=True):
                 hetero_aggr=cfg.model.hetero_aggr,
                 num_layers=cfg.model.num_layers,
                 use_self_join=cfg.model.use_self_join,
-                node_type_considered=cfg.model.node_type_considered,
+                node_type_considered=cfg.selfjoin.node_type_considered,
+                num_filtered=cfg.selfjoin.num_filtered,
+                sim_score_type=cfg.selfjoin.sim_score_type,
+                aggr_scheme=cfg.selfjoin.aggr_scheme,
+                normalize_score=cfg.selfjoin.normalize_score,
+                selfjoin_aggr=cfg.selfjoin.aggr,
             )
             self.head = MLP(
                 cfg.model.channels,

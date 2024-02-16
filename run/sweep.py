@@ -19,17 +19,24 @@ def main() -> None:
                         required=False, default=1)
     args = parser.parse_args()
 
+    fast_sweep = False
+
     # Define the hyperparameters and their values to sweep over
     hyperparameters = {
         'model.channels': [64, 128],
         # 'model.conv': ['sage', 'gat'],
-        'model.num_layers': [2, 3, 4],
-        'model.use_self_join': [True, False],
+        # 'model.num_layers': [2, 3],
+        'model.use_self_join': [True],
         # 'model.aggr': ['sum', 'mean', 'max'],
         # 'model.hetero_aggr': ['sum', 'mean', 'max'],
-        'optim.base_lr': [0.01, 0.005, 0.001],
+        'optim.base_lr': [0.01, 0.001],
         # 'loader.num_neighbors': [16, 32, 64, 128, 256],
         # 'loader.temporal_strategy': ['uniform', 'last']
+        # 'selfjoin.node_type_considered': ['drivers', None],
+        # 'selfjoin.num_filtered': [10, 20, 50],
+        'selfjoin.sim_score_type': [None, 'cos', 'L2', 'attention'],
+        # 'selfjoin.aggr_scheme': ['gat', 'mpnn'],
+        # 'selfjoin.normalize_score': [True, False],
     }
 
     repeats = args.repeats  # number of seeds to run
@@ -62,6 +69,7 @@ def main() -> None:
         def worker() -> None:
             print(f"Started: Exp {exp_id} Config {new_config_file.split('/')[-1]}, GPU {gpu}.")
             command = f'CUDA_VISIBLE_DEVICES={gpu} python run/main.py --cfg {new_config_file} --repeat {repeats} > /dev/null 2>&1'
+            # command = f'CUDA_VISIBLE_DEVICES={gpu} python run/main.py --cfg {new_config_file} --repeat {repeats}'
             # print(command)
             subprocess.run(command, shell=True)
             print(f"Finished: Exp {exp_id} Config {new_config_file.split('/')[-1]}, GPU {gpu}.")
@@ -86,14 +94,14 @@ def main() -> None:
 
     # Run each hyperparameter configuration.
     for exp_id, combo in enumerate(combinations):
-        time.sleep(10)
         new_config_file = config_name(combo, hyperparameters, output_folder, original_config_name)
         gpu = resource_pool.get()  # wait for a GPU to become available
         worker = Process(target=create_worker(new_config_file, gpu, exp_id))
         worker.start()
 
         # Wait for a while to avoid launching jobs too quickly
-        time.sleep(50)
+        sleep_time = 10 if fast_sweep else 30
+        time.sleep(sleep_time)
 
 
 def update_nested_dict(d, key_list, value):

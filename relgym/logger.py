@@ -12,6 +12,16 @@ def setup_printing():
     """
     logging.root.handlers = []
     logging_cfg = {'level': logging.INFO, 'format': '%(message)s'}
+
+    def handle_exception(exc_type, exc_value, exc_traceback):
+        import sys
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+        logging.critical('Exception', exc_info=(exc_type, exc_value, exc_traceback))
+
+    sys.excepthook = handle_exception
+
     os.makedirs(cfg.run_dir, exist_ok=True)
     h_file = logging.FileHandler('{}/logging.log'.format(cfg.run_dir))
     h_stdout = logging.StreamHandler(sys.stdout)

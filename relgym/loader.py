@@ -58,8 +58,8 @@ def get_loader_and_entity(data, task):
         entity_table = table_input.nodes[0]
         loader_dict[split] = NeighborLoader(
             data,
-            # num_neighbors=[cfg.loader.num_neighbors for _ in range(cfg.model.num_layers)],
-            num_neighbors=[int(cfg.loader.num_neighbors / 2**i) for i in range(cfg.model.num_layers)],
+            num_neighbors=[cfg.loader.num_neighbors for _ in range(cfg.model.num_layers)],
+            # num_neighbors=[int(cfg.loader.num_neighbors / 2**i) for i in range(cfg.model.num_layers)],
             time_attr="time",
             temporal_strategy=cfg.loader.temporal_strategy,
             input_nodes=table_input.nodes,
