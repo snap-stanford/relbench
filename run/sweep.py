@@ -17,24 +17,27 @@ def main() -> None:
                         required=False, default="0,1,2,3")
     parser.add_argument("--repeats", type=int,
                         required=False, default=1)
+    parser.add_argument("--sleep-time", type=int, 
+                        required=False, default=30)
     args = parser.parse_args()
 
     fast_sweep = False
 
     # Define the hyperparameters and their values to sweep over
     hyperparameters = {
-        'model.channels': [64, 128],
+        'model.channels': [64, 128, 256],
         # 'model.conv': ['sage', 'gat'],
-        # 'model.num_layers': [2, 3],
-        'model.use_self_join': [True],
+        'model.num_layers': [2],
+        'model.use_self_join': [True, False],
         # 'model.aggr': ['sum', 'mean', 'max'],
+        'model.dropout': [0.0, 0.2, 0.5, 0.8],
         # 'model.hetero_aggr': ['sum', 'mean', 'max'],
         'optim.base_lr': [0.01, 0.001],
         # 'loader.num_neighbors': [16, 32, 64, 128, 256],
         # 'loader.temporal_strategy': ['uniform', 'last']
         # 'selfjoin.node_type_considered': ['drivers', None],
         # 'selfjoin.num_filtered': [10, 20, 50],
-        'selfjoin.sim_score_type': [None, 'cos', 'L2', 'attention'],
+        #'selfjoin.sim_score_type': [None, 'cos', 'L2', 'attention'],
         # 'selfjoin.aggr_scheme': ['gat', 'mpnn'],
         # 'selfjoin.normalize_score': [True, False],
     }
@@ -100,8 +103,7 @@ def main() -> None:
         worker.start()
 
         # Wait for a while to avoid launching jobs too quickly
-        sleep_time = 10 if fast_sweep else 30
-        time.sleep(sleep_time)
+        time.sleep(args.sleep_time)
 
 
 def update_nested_dict(d, key_list, value):

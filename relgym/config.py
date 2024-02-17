@@ -116,6 +116,9 @@ def set_cfg(cfg):
     # The aggregation method of GNN message passing
     cfg.model.aggr = "sum"
 
+    # dropout rate
+    cfg.model.dropout = 0.0
+
     # The aggregation method of the heterogeneous information
     cfg.model.hetero_aggr = "sum"
 

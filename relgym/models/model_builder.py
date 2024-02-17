@@ -48,6 +48,7 @@ def create_model(data, entity_table, to_device=True):
                 edge_types=data.edge_types,
                 channels=cfg.model.channels,
                 aggr=cfg.model.aggr,
+                dropout=cfg.model.dropout,
                 hetero_aggr=cfg.model.hetero_aggr,
                 num_layers=cfg.model.num_layers,
                 use_self_join=cfg.model.use_self_join,
@@ -57,6 +58,7 @@ def create_model(data, entity_table, to_device=True):
                 aggr_scheme=cfg.selfjoin.aggr_scheme,
                 normalize_score=cfg.selfjoin.normalize_score,
                 selfjoin_aggr=cfg.selfjoin.aggr,
+                selfjoin_dropout=cfg.model.dropout, # selfjoin dropout same as gnn dropout
             )
             self.head = MLP(
                 cfg.model.channels,

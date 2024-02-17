@@ -21,7 +21,7 @@ conv_name_to_func = {
 class SelfJoinLayer(torch.nn.Module):
     def __init__(self, node_types, channels,
                  node_type_considered=None, num_filtered=20, sim_score_type='cos',
-                 aggr_scheme='mpnn', normalize_score=True, selfjoin_aggr='sum'):
+                 aggr_scheme='mpnn', normalize_score=True, selfjoin_aggr='sum', selfjoin_dropout=0.0):
         super().__init__()
         # trick
         if sim_score_type is None:
@@ -41,6 +41,7 @@ class SelfJoinLayer(torch.nn.Module):
         self.aggr_scheme = aggr_scheme
         self.normalize_score = normalize_score
         self.selfjoin_aggr = selfjoin_aggr
+        self.selfjoin_dropout = selfjoin_dropout
 
         # Initialize the message fusion module
         if self.aggr_scheme == 'gat':
@@ -52,8 +53,8 @@ class SelfJoinLayer(torch.nn.Module):
             self.msg_dict = torch.nn.ModuleDict()
             self.upd_dict = torch.nn.ModuleDict()
             for node_type in self.node_type_considered:
-                self.msg_dict[node_type] = MLP(channel_list=[channels * 2, channels, channels])
-                self.upd_dict[node_type] = MLP(channel_list=[channels * 2, channels, channels])
+                self.msg_dict[node_type] = MLP(channel_list=[channels * 2, channels, channels], dropout=selfjoin_dropout)
+                self.upd_dict[node_type] = MLP(channel_list=[channels * 2, channels, channels], dropout=selfjoin_dropout)
         else:
             raise NotImplementedError(self.aggr_scheme)
 
@@ -94,6 +95,9 @@ class SelfJoinLayer(torch.nn.Module):
             else:
                 raise NotImplementedError(self.sim_score_type)
 
+            # dropout 
+            sim_score = torch.nn.functional.dropout(sim_score, p=self.selfjoin_dropout, training=self.training)
+
             # Select Top K
             sim_score, index_sampled, = torch.topk(sim_score, k=self.num_filtered, dim=1)  # [N, K], [N, K]
 
@@ -131,6 +135,7 @@ class HeteroGNN(torch.nn.Module):
         edge_types: List[EdgeType],
         channels: int,
         aggr: str = "mean",
+        dropout: float = 0.0,
         hetero_aggr: str = "sum",
         num_layers: int = 2,
         use_self_join: bool = False,
@@ -143,7 +148,7 @@ class HeteroGNN(torch.nn.Module):
         for _ in range(num_layers):
             conv = HeteroConv(
                 {
-                    edge_type: conv_func((channels, channels), channels, aggr=aggr)
+                    edge_type: conv_func((channels, channels), channels, aggr=aggr, dropout=dropout)
                     for edge_type in edge_types
                 },
                 aggr=hetero_aggr,
