@@ -5,7 +5,7 @@ import torch
 from relgym.utils.checkpoint import load_ckpt, save_ckpt
 from relgym.config import cfg
 from relgym.utils.epoch import is_ckpt_epoch, is_eval_epoch
-from relbench.data.task import TaskType
+from relbench.data.task_base import TaskType
 
 
 def train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn, loss_utils):
