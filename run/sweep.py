@@ -84,6 +84,7 @@ def main() -> None:
     for combo in combinations:
         # Create a new config dictionary based on the template
         new_config = template.copy()
+        new_config['out_dir'] = output_folder
 
         for param, value in zip(hyperparameters.keys(), combo):
             param_parts = param.split('.')
