@@ -279,7 +279,7 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
         if self.training:   
             self.update_memory_bank(upd_x_dict, y)
 
-        return upd_x_dict
+        return upd_x_dict, sim_score
 
 
 class HeteroGNN(torch.nn.Module):
@@ -348,6 +348,7 @@ class HeteroGNN(torch.nn.Module):
         num_sampled_edges_dict: Optional[Dict[EdgeType, List[int]]] = None,
         y: Tensor = None,
     ) -> Dict[NodeType, Tensor]:
+        sim_dict = {}
         for i, (conv, norm_dict) in enumerate(zip(self.convs, self.norms)):
             # Trim graph and features to only hold required data per layer:
             if num_sampled_nodes_dict is not None:
@@ -364,10 +365,12 @@ class HeteroGNN(torch.nn.Module):
                 x_dict = self.self_joins[i](x_dict)
 
             elif self.use_self_join_with_retrieval and i==len(self.convs)-1:
-                x_dict = self.self_joins[i](x_dict, y)
+                x_dict, sim_score = self.self_joins[i](x_dict, y)
+                sim_dict[f"sim_{i}"] = sim_score
 
             x_dict = conv(x_dict, edge_index_dict)
             x_dict = {key: norm_dict[key](x) for key, x in x_dict.items()}
             x_dict = {key: x.relu() for key, x in x_dict.items()}
+            
+        return x_dict, sim_dict
 
-        return x_dict
