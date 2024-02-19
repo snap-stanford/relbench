@@ -47,11 +47,13 @@ def create_model(data, entity_table, to_device=True):
                 node_types=data.node_types,
                 edge_types=data.edge_types,
                 channels=cfg.model.channels,
+                batch_size=cfg.loader.batch_size,
                 aggr=cfg.model.aggr,
                 dropout=cfg.model.dropout,
                 hetero_aggr=cfg.model.hetero_aggr,
                 num_layers=cfg.model.num_layers,
                 use_self_join=cfg.model.use_self_join,
+                use_self_join_with_retrieval=cfg.model.use_self_join_with_retrieval,
                 node_type_considered=cfg.selfjoin.node_type_considered,
                 num_filtered=cfg.selfjoin.num_filtered,
                 sim_score_type=cfg.selfjoin.sim_score_type,
@@ -75,6 +77,7 @@ def create_model(data, entity_table, to_device=True):
                 batch_dict: Dict[NodeType, Tensor],
                 num_sampled_nodes_dict: Dict[NodeType, List[int]],
                 num_sampled_edges_dict: Dict[EdgeType, List[int]],
+                y: Tensor,
         ) -> Tensor:
             x_dict = self.encoder(tf_dict)
 
@@ -87,6 +90,7 @@ def create_model(data, entity_table, to_device=True):
                 edge_index_dict,
                 num_sampled_nodes_dict,
                 num_sampled_edges_dict,
+                y,
             )
 
             return self.head(x_dict[entity_table][: seed_time.size(0)])

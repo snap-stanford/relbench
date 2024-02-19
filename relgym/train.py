@@ -24,6 +24,7 @@ def train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn,
             batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
+            batch[entity_table].y,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         loss = loss_fn(pred, batch[entity_table].y)
@@ -52,6 +53,7 @@ def eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, spli
             batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
+            None, # y is not used in eval
         )
 
         if task.task_type == TaskType.BINARY_CLASSIFICATION:
