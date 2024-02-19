@@ -8,7 +8,7 @@ from relgym.utils.epoch import is_ckpt_epoch, is_eval_epoch
 from relbench.data.task_base import TaskType
 
 
-def train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn, loss_utils):
+def train_epoch(loader_dict, model, task, optimizer, scheduler, entity_table, loss_fn, loss_utils):
     model.train()
 
     loss_accum = count_accum = 0
@@ -16,7 +16,7 @@ def train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn,
         batch = batch.to(cfg.device)
 
         optimizer.zero_grad()
-        pred = model(
+        pred, sim_pred = model(
             batch.tf_dict,
             batch.edge_index_dict,
             batch[entity_table].seed_time,
@@ -24,10 +24,21 @@ def train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn,
             batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
-            batch[entity_table].y,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         loss = loss_fn(pred, batch[entity_table].y)
+
+        if len(sim_pred) != 0:
+            y = batch[entity_table].y
+            if task.task_type == TaskType.BINARY_CLASSIFICATION:
+                sim_y = 1 - (y[None , :] - y[:, None]).abs()
+            elif task.task_type == TaskType.REGRESSION:
+                sim_y = 1 / (y[None , :] - y[:, None]).abs()
+            sim_y = sim_y.view(-1)
+            for sim in sim_pred.values():
+                sim_loss = loss_fn(sim.view(-1), sim_y)
+                loss = loss + 0.03 * sim_loss
+
         loss.backward()
         optimizer.step()
 
@@ -45,7 +56,7 @@ def eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, spli
     pred_list = []
     for batch in tqdm(loader_dict[split]):
         batch = batch.to(cfg.device)
-        pred = model(
+        pred, _ = model(
             batch.tf_dict,
             batch.edge_index_dict,
             batch[entity_table].seed_time,
