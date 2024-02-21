@@ -1,10 +1,7 @@
 import os
-import random
-import string
-from pathlib import Path
-from typing import Dict, Union
+import shutil
 
-import numpy as np
+from pathlib import Path
 import pandas as pd
 
 from relbench.data import Database, Dataset, Table
@@ -49,7 +46,8 @@ class HMDataset(Dataset):
                     f"'{self.url}' and move it to '{path}'"
                 )
             else:
-                unzip_processor(zip)
+                print("Unpacking")
+                shutil.unpack_archive(zip, Path(zip).parent)
 
         articles_df = pd.read_csv(articles)
         customers_df = pd.read_csv(customers)
@@ -77,7 +75,3 @@ class HMDataset(Dataset):
                 ),
             }
         )
-
-
-dataset = HMDataset()
-print(dataset)
