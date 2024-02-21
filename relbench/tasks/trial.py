@@ -67,6 +67,7 @@ class OutcomeTask(RelBenchNodeTask):
             ON tr.start_date <= t.timestamp
                 and tr.date > t.timestamp
                 and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
+            where tr.nct_id is not null
             GROUP BY t.timestamp, tr.nct_id;
             """
         ).df()
@@ -109,6 +110,7 @@ class AdverseEventTask(RelBenchNodeTask):
                 LEFT JOIN studies s
                 ON r.nct_id = s.nct_id
                 WHERE r.event_type = 'serious' or r.event_type = 'deaths'
+                and r.subjects_affected is not null
             )
 
             SELECT
@@ -120,6 +122,7 @@ class AdverseEventTask(RelBenchNodeTask):
             ON tr.start_date <= t.timestamp
                 and tr.date > t.timestamp
                 and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
+            where tr.nct_id is not null and tr.subjects_affected is not null
             GROUP BY t.timestamp, tr.nct_id;
             """
         ).df()
@@ -264,6 +267,7 @@ class SiteSuccessTask(RelBenchNodeTask):
             LEFT JOIN facility_study fs ON fs.nct_id = tr.nct_id
             ON tr.date > t.timestamp
                 and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
+            where fs.facility_id is not null
             GROUP BY t.timestamp, fs.facility_id;
             """
         ).df()
