@@ -21,8 +21,8 @@ class HMDataset(Dataset):
         db = self.make_db()
         db.reindex_pkeys_and_fkeys()
         # Set to end date right now.#
-        val_timestamp = pd.Timestamp("2020-09-22")
-        test_timestamp = pd.Timestamp("2020-09-22")
+        val_timestamp = db.max_timestamp
+        test_timestamp = db.max_timestamp
         max_eval_time_frames = 1
         super().__init__(
             db=db,
@@ -49,11 +49,8 @@ class HMDataset(Dataset):
                 unzip_processor(zip)
 
         articles_df = pd.read_csv(articles)
-        print(articles_df)
         customers_df = pd.read_csv(customers)
-        print(customers_df)
         transactions_df = pd.read_csv(transactions)
-        print(transactions_df)
 
         return Database(
             table_dict={
