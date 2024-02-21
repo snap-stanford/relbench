@@ -54,8 +54,6 @@ class Model(torch.nn.Module):
         self,
         batch: HeteroData,
         entity_table: NodeType,
-        clamp_min: Optional[float] = None,
-        clamp_max: Optional[float] = None,
     ) -> Tensor:
         seed_time = batch[entity_table].seed_time
         x_dict = self.encoder(batch.tf_dict)
@@ -73,7 +71,4 @@ class Model(torch.nn.Module):
             batch.num_sampled_edges_dict,
         )
 
-        out = self.head(x_dict[entity_table][: seed_time.size(0)])
-        if (not self.training) and (clamp_min is not None) and (clamp_max is not None):
-            out = torch.clamp(out, clamp_min, clamp_max)
-        return out
+        return self.head(x_dict[entity_table][: seed_time.size(0)])

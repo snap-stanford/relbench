@@ -98,7 +98,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
             data,
             num_neighbors=[-1, -1],
             time_attr="time",
-            input_nodes=(task.dst_entity_table, torch.arange(task.num_dst_nodes)),
+            input_nodes=task.dst_entity_table,
             input_time=torch.full(
                 size=(task.num_dst_nodes,), fill_value=seed_time, dtype=torch.long
             ),

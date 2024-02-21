@@ -62,7 +62,7 @@ data: HeteroData = make_pkey_fkey_graph(
     cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
 
-num_neighbors = [int(args.num_neighbors / 2**i) for i in range(args.num_layers)]
+num_neighbors = [int(args.num_neighbors // 2**i) for i in range(args.num_layers)]
 
 train_table_input = get_link_train_table_input(task.train_table, task)
 train_loader = LinkNeighborLoader(
@@ -99,7 +99,7 @@ for split in ["val", "test"]:
         data,
         num_neighbors=num_neighbors,
         time_attr="time",
-        input_nodes=(task.dst_entity_table, torch.arange(task.num_dst_nodes)),
+        input_nodes=task.dst_entity_table,
         input_time=torch.full(
             size=(task.num_dst_nodes,), fill_value=seed_time, dtype=torch.long
         ),
@@ -149,7 +149,7 @@ def train() -> Dict[str, float]:
         loss.backward()
         optimizer.step()
 
-        loss_accum += loss.detach().item() * x_src.size(0)
+        loss_accum += float(loss) * x_src.size(0)
         count_accum += x_src.size(0)
 
     return loss_accum / count_accum
@@ -187,7 +187,8 @@ for epoch in range(1, args.epochs + 1):
         val_pred = test(*eval_loaders_dict["val"])
         val_metrics = task.evaluate(val_pred, task.val_table)
         print(
-            f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}"
+            f"Epoch: {epoch:02d}, Train loss: {train_loss}, "
+            f"Val metrics: {val_metrics}"
         )
 
         if val_metrics[tune_metric] > best_val_metric:

@@ -137,9 +137,11 @@ def test(loader: NeighborLoader) -> np.ndarray:
         pred = model(
             batch,
             task.entity_table,
-            clamp_min=clamp_min,
-            clamp_max=clamp_max,
         )
+        if task.task_type == TaskType.REGRESSION:
+            assert clamp_min is not None
+            assert clamp_max is not None
+            pred = torch.clamp(pred, clamp_min, clamp_max)
 
         if task.task_type == TaskType.BINARY_CLASSIFICATION:
             pred = torch.sigmoid(pred)
