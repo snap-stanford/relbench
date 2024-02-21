@@ -104,7 +104,7 @@ model = Model(
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
 
-def train() -> Dict[str, float]:
+def train() -> float:
     model.train()
 
     loss_accum = count_accum = 0
@@ -113,14 +113,8 @@ def train() -> Dict[str, float]:
 
         optimizer.zero_grad()
         pred = model(
+            batch,
             task.entity_table,
-            batch.tf_dict,
-            batch.edge_index_dict,
-            batch[entity_table].seed_time,
-            batch.time_dict,
-            batch.batch_dict,
-            batch.num_sampled_nodes_dict,
-            batch.num_sampled_edges_dict,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         loss = loss_fn(pred, batch[entity_table].y)
@@ -141,14 +135,8 @@ def test(loader: NeighborLoader) -> np.ndarray:
     for batch in tqdm(loader):
         batch = batch.to(device)
         pred = model(
+            batch,
             task.entity_table,
-            batch.tf_dict,
-            batch.edge_index_dict,
-            batch[entity_table].seed_time,
-            batch.time_dict,
-            batch.batch_dict,
-            batch.num_sampled_nodes_dict,
-            batch.num_sampled_edges_dict,
             clamp_min=clamp_min,
             clamp_max=clamp_max,
         )

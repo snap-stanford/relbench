@@ -52,28 +52,25 @@ class Model(torch.nn.Module):
 
     def forward(
         self,
+        batch: HeteroData,
         entity_table: NodeType,
-        tf_dict: Dict[NodeType, TensorFrame],
-        edge_index_dict: Dict[EdgeType, Tensor],
-        seed_time: Tensor,
-        time_dict: Dict[NodeType, Tensor],
-        batch_dict: Dict[NodeType, Tensor],
-        num_sampled_nodes_dict: Dict[NodeType, List[int]],
-        num_sampled_edges_dict: Dict[EdgeType, List[int]],
         clamp_min: Optional[float] = None,
         clamp_max: Optional[float] = None,
     ) -> Tensor:
-        x_dict = self.encoder(tf_dict)
+        seed_time = batch[entity_table].seed_time
+        x_dict = self.encoder(batch.tf_dict)
 
-        rel_time_dict = self.temporal_encoder(seed_time, time_dict, batch_dict)
+        rel_time_dict = self.temporal_encoder(
+            seed_time, batch.time_dict, batch.batch_dict
+        )
         for node_type, rel_time in rel_time_dict.items():
             x_dict[node_type] = x_dict[node_type] + rel_time
 
         x_dict = self.gnn(
             x_dict,
-            edge_index_dict,
-            num_sampled_nodes_dict,
-            num_sampled_edges_dict,
+            batch.edge_index_dict,
+            batch.num_sampled_nodes_dict,
+            batch.num_sampled_edges_dict,
         )
 
         out = self.head(x_dict[entity_table][: seed_time.size(0)])
