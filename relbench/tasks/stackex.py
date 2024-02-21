@@ -263,7 +263,9 @@ class UserCommentOnPostTask(RelBenchLinkTask):
                 c.UserId is not null AND
                 p.owneruserid != -1 AND
                 p.owneruserid is not null
-            ;
+            GROUP BY
+                t.timestamp,
+                c.UserId
             """
         ).df()
 
