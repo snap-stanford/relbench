@@ -220,7 +220,8 @@ class BadgesTask(RelBenchNodeTask):
 
 
 class UserCommentOnPostTask(RelBenchLinkTask):
-    r"""Predict if a user will comment on a specific post within 24hrs of the post being made."""
+    r"""Predict a list of existing posts that a user will comment in the next
+    two years."""
 
     name = "rel-stackex-comment-on-post"
     task_type = TaskType.LINK_PREDICTION
