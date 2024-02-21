@@ -142,9 +142,9 @@ def train() -> Dict[str, float]:
         else:
             # [batch_size, ]
             neg_score = torch.sum(x_src * x_neg_dst, dim=1)
-        diff_score = pos_score - neg_score
-        # BPR loss
         optimizer.zero_grad()
+        # BPR loss
+        diff_score = pos_score - neg_score
         loss = F.softplus(-diff_score).mean()
         loss.backward()
         optimizer.step()
