@@ -45,7 +45,7 @@ task: NodeTask = dataset.get_task(args.task, process=True)
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
 
-data: HeteroData = make_pkey_fkey_graph(
+data, col_stats_dict = make_pkey_fkey_graph(
     dataset.db,
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
@@ -95,6 +95,7 @@ elif task.task_type == TaskType.REGRESSION:
 
 model = Model(
     data=data,
+    col_stats_dict=col_stats_dict,
     num_layers=args.num_layers,
     channels=args.channels,
     out_channels=out_channels,

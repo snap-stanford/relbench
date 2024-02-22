@@ -9,7 +9,7 @@ from relbench.external.graph import get_stype_proposal, make_pkey_fkey_graph
 def test_make_pkey_fkey_graph():
     dataset = FakeDataset()
 
-    data = make_pkey_fkey_graph(
+    data, _ = make_pkey_fkey_graph(
         dataset.db,
         get_stype_proposal(dataset.db),
         text_embedder_cfg=TextEmbedderConfig(

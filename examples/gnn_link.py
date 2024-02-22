@@ -54,7 +54,7 @@ assert task.task_type == TaskType.LINK_PREDICTION
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
 
-data: HeteroData = make_pkey_fkey_graph(
+data, col_stats_dict = make_pkey_fkey_graph(
     dataset.db,
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
@@ -114,6 +114,7 @@ for split in ["val", "test"]:
 
 model = Model(
     data=data,
+    col_stats_dict=col_stats_dict,
     num_layers=args.num_layers,
     channels=args.channels,
     out_channels=args.channels,

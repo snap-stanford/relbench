@@ -1,8 +1,9 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import torch
 from torch import Tensor
 from torch_frame.data import TensorFrame
+from torch_frame.data.stats import StatType
 from torch_geometric.data import HeteroData
 from torch_geometric.nn import MLP
 from torch_geometric.typing import EdgeType, NodeType
@@ -14,6 +15,7 @@ class Model(torch.nn.Module):
     def __init__(
         self,
         data: HeteroData,
+        col_stats_dict: Dict[str, dict[str, dict[StatType, Any]]],
         num_layers: int,
         channels: int,
         out_channels: int,
@@ -28,7 +30,7 @@ class Model(torch.nn.Module):
                 node_type: data[node_type].tf.col_names_dict
                 for node_type in data.node_types
             },
-            node_to_col_stats=data.col_stats_dict,
+            node_to_col_stats=col_stats_dict,
         )
         self.temporal_encoder = HeteroTemporalEncoder(
             node_types=[
