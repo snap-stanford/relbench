@@ -181,7 +181,10 @@ class LinkNeighborLoader(DataLoader):
 
         super().__init__(dataset, collate_fn=self.collate_fn, **kwargs)
 
-    def collate_fn(self, index: Tensor) -> Any:
+    def collate_fn(
+        self,
+        index: Tensor,
+    ) -> Tuple[HeteroData, HeteroData, HeteroData]:
         r"""Samples a subgraph from a batch of input nodes."""
         index = torch.stack(index)
         src_indices = index[:, 0].contiguous()
