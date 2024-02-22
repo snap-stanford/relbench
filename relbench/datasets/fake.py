@@ -21,7 +21,10 @@ class FakeDataset(Dataset):
     name = "rel-fake"
 
     def __init__(
-        self, num_products: int = 30, num_customers: int = 100, num_reviews: int = 600
+        self,
+        num_products: int = 30,
+        num_customers: int = 100,
+        num_reviews: int = 600,
     ):
         db = self.make_db(num_products, num_customers, num_reviews)
         db.reindex_pkeys_and_fkeys()
@@ -30,6 +33,7 @@ class FakeDataset(Dataset):
         max_eval_time_frames = 1
         super().__init__(
             db=db,
+            train_start_timestamp=None,
             val_timestamp=val_timestamp,
             test_timestamp=test_timestamp,
             max_eval_time_frames=max_eval_time_frames,

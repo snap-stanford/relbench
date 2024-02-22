@@ -29,7 +29,7 @@ from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
 def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     dataset = FakeDataset()
 
-    data = make_pkey_fkey_graph(
+    data, col_stats_dict = make_pkey_fkey_graph(
         dataset.db,
         get_stype_proposal(dataset.db),
         text_embedder_cfg=TextEmbedderConfig(
@@ -40,7 +40,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     node_to_col_names_dict = {  # TODO Expose as method in `HeteroData`.
         node_type: data[node_type].tf.col_names_dict for node_type in data.node_types
     }
-    encoder = HeteroEncoder(64, node_to_col_names_dict, data.col_stats_dict)
+    encoder = HeteroEncoder(64, node_to_col_names_dict, col_stats_dict)
     gnn = HeteroGraphSAGE(data.node_types, data.edge_types, 64)
 
     # Ensure that neighbor loading works on train/val/test splits ############
@@ -82,16 +82,14 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     for split in ["val", "test"]:
         seed_time = task.val_seed_time if split == "val" else task.test_seed_time
         target_table = task.val_table if split == "val" else task.test_table
+        src_node_indices = torch.from_numpy(target_table.df[task.src_entity_col].values)
         src_loader = NeighborLoader(
             data,
             num_neighbors=[-1, -1],
             time_attr="time",
-            input_nodes=(
-                task.src_entity_table,
-                torch.from_numpy(target_table.df[task.src_entity_col].values),
-            ),
+            input_nodes=(task.src_entity_table, src_node_indices),
             input_time=torch.full(
-                size=(task.num_src_nodes,), fill_value=seed_time, dtype=torch.long
+                size=(len(src_node_indices),), fill_value=seed_time, dtype=torch.long
             ),
             batch_size=32,
             shuffle=False,
@@ -100,9 +98,9 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
             data,
             num_neighbors=[-1, -1],
             time_attr="time",
-            input_nodes=(task.dst_entity_table, torch.arange(task.num_dst_nodes)),
+            input_nodes=task.dst_entity_table,
             input_time=torch.full(
-                size=(task.num_src_nodes,), fill_value=seed_time, dtype=torch.long
+                size=(task.num_dst_nodes,), fill_value=seed_time, dtype=torch.long
             ),
             batch_size=32,
             shuffle=False,
@@ -143,9 +141,9 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
         else:
             # [batch_size, ]
             neg_score = torch.sum(x_src * x_neg_dst, dim=1)
-        diff_score = pos_score - neg_score
-        # BPR loss
         optimizer.zero_grad()
+        # BPR loss
+        diff_score = pos_score - neg_score
         loss = F.softplus(-diff_score).mean()
         loss.backward()
         optimizer.step()

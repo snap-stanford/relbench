@@ -61,8 +61,8 @@ class BaseTask:
         """Returns the train table for a task."""
         if "train" not in self._cached_table_dict:
             timestamps = pd.date_range(
-                self.dataset.val_timestamp - self.timedelta,
-                self.dataset.db.min_timestamp,
+                start=self.dataset.val_timestamp - self.timedelta,
+                end=self.dataset.train_start_timestamp or self.dataset.db.min_timestamp,
                 freq=-self.timedelta,
             )
             if len(timestamps) < 3:

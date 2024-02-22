@@ -8,6 +8,7 @@ from torch import Tensor
 from torch_frame import stype
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.data import Dataset
+from torch_frame.data.stats import StatType
 from torch_frame.utils import infer_df_stype
 from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
@@ -41,7 +42,7 @@ def make_pkey_fkey_graph(
     col_to_stype_dict: Dict[str, Dict[str, stype]],
     text_embedder_cfg: Optional[TextEmbedderConfig] = None,
     cache_dir: Optional[str] = None,
-) -> HeteroData:
+) -> Tuple[HeteroData, Dict[str, dict[str, dict[StatType, Any]]]]:
     r"""Given a :class:`Database` object, construct a heterogeneous graph with
     primary-foreign key relationships, together with the column stats of each
     table.
@@ -60,6 +61,7 @@ def make_pkey_fkey_graph(
             :class:`TensorFrame` feature.
     """
     data = HeteroData()
+    col_stats_dict = dict()
     if cache_dir is not None:
         os.makedirs(cache_dir, exist_ok=True)
 
@@ -75,9 +77,11 @@ def make_pkey_fkey_graph(
         # Remove pkey, fkey columns since they will not be used as input
         # feature.
         if table.pkey_col is not None:
-            col_to_stype.pop(table.pkey_col)
+            if table.pkey_col in col_to_stype:
+                col_to_stype.pop(table.pkey_col)
         for fkey in table.fkey_col_to_pkey_table.keys():
-            col_to_stype.pop(fkey)
+            if fkey in col_to_stype:
+                col_to_stype.pop(fkey)
 
         if len(col_to_stype) == 0:  # Add constant feature in case df is empty:
             col_to_stype = {"__const__": stype.numerical}
@@ -94,7 +98,7 @@ def make_pkey_fkey_graph(
         ).materialize(path=path)
 
         data[table_name].tf = dataset.tensor_frame
-        data[table_name].col_stats = dataset.col_stats
+        col_stats_dict[table_name] = dataset.col_stats
 
         # Add time attribute:
         if table.time_col is not None:
@@ -126,7 +130,7 @@ def make_pkey_fkey_graph(
 
     data.validate()
 
-    return data
+    return data, col_stats_dict
 
 
 class AttachTargetTransform:
