@@ -67,7 +67,7 @@ class OutcomeTask(RelBenchNodeTask):
             ON tr.start_date <= t.timestamp
                 and tr.date > t.timestamp
                 and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
-            where tr.nct_id is not null
+            WHERE tr.nct_id is not null
             GROUP BY t.timestamp, tr.nct_id;
             """
         ).df()
@@ -122,7 +122,7 @@ class AdverseEventTask(RelBenchNodeTask):
             ON tr.start_date <= t.timestamp
                 and tr.date > t.timestamp
                 and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
-            where tr.nct_id is not null and tr.subjects_affected is not null
+            WHERE tr.nct_id is not null and tr.subjects_affected is not null
             GROUP BY t.timestamp, tr.nct_id;
             """
         ).df()
@@ -251,7 +251,7 @@ class SiteSuccessTask(RelBenchNodeTask):
                 FROM outcome_analyses oa
                 LEFT JOIN outcomes o
                 ON oa.outcome_id = o.id
-                where (oa.p_value_modifier is null or oa.p_value_modifier != '>')
+                WHERE (oa.p_value_modifier is null or oa.p_value_modifier != '>')
                 and oa.p_value >=0
                 and oa.p_value <=1
                 and o.outcome_type = 'Primary'
@@ -267,7 +267,7 @@ class SiteSuccessTask(RelBenchNodeTask):
             LEFT JOIN facility_study fs ON fs.nct_id = tr.nct_id
             ON tr.date > t.timestamp
                 and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
-            where fs.facility_id is not null
+            WHERE fs.facility_id is not null
             GROUP BY t.timestamp, fs.facility_id;
             """
         ).df()
