@@ -132,7 +132,6 @@ def train() -> Dict[str, float]:
     total_steps = min(len(train_loader), args.max_steps_per_epoch)
     for batch in tqdm(train_loader, total=total_steps):
         src_batch, batch_pos_dst, batch_neg_dst = batch
-        src_batch = src_batch.to(device)
         src_batch, batch_pos_dst, batch_neg_dst = (
             src_batch.to(device),
             batch_pos_dst.to(device),
