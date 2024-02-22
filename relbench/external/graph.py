@@ -75,9 +75,11 @@ def make_pkey_fkey_graph(
         # Remove pkey, fkey columns since they will not be used as input
         # feature.
         if table.pkey_col is not None:
-            col_to_stype.pop(table.pkey_col)
+            if table.pkey_col in col_to_stype:
+                col_to_stype.pop(table.pkey_col)
         for fkey in table.fkey_col_to_pkey_table.keys():
-            col_to_stype.pop(fkey)
+            if fkey in col_to_stype:
+                col_to_stype.pop(fkey)
 
         if len(col_to_stype) == 0:  # Add constant feature in case df is empty:
             col_to_stype = {"__const__": stype.numerical}
