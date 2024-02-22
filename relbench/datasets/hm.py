@@ -4,32 +4,29 @@ from pathlib import Path
 
 import pandas as pd
 
-from relbench.data import Database, Dataset, Table
-from relbench.tasks.amazon import RecommendationTask
+from relbench.data import Database, RelBenchDataset, Table
+from relbench.tasks.hm import RecommendationTask
 from relbench.utils import unzip_processor
 
 
-class HMDataset(Dataset):
-    name = "hm-recommendation"
+class HMDataset(RelBenchDataset):
+    name = "rel-hm"
     url = (
         "https://www.kaggle.com/competitions/"
         "h-and-m-personalized-fashion-recommendations"
     )
+    val_timestamp = pd.Timestamp("2020-09-07")
+    test_timestamp = pd.Timestamp("2020-09-14")
+    max_eval_time_frames = 1
+    task_cls_list = [RecommendationTask]
 
-    def __init__(self):
-        db = self.make_db()
-        db.reindex_pkeys_and_fkeys()
-        # Set to end date right now.#
-        val_timestamp = db.max_timestamp
-        test_timestamp = db.max_timestamp
-        max_eval_time_frames = 1
-        super().__init__(
-            db=db,
-            val_timestamp=val_timestamp,
-            test_timestamp=test_timestamp,
-            max_eval_time_frames=max_eval_time_frames,
-            task_cls_list=[RecommendationTask],
-        )
+    def __init__(
+        self,
+        *,
+        process: bool = False,
+    ):
+        self.name = f"{self.name}"
+        super().__init__(process=process)
 
     def make_db(self) -> Database:
         path = os.path.join("data", "hm-recommendation")
@@ -37,13 +34,14 @@ class HMDataset(Dataset):
         customers = os.path.join(path, "customers.csv")
         articles = os.path.join(path, "articles.csv")
         transactions = os.path.join(path, "transactions_train.csv")
-        hold_out = os.path.join(path, "sample_submission.csv")
         if not os.path.exists(customers):
             if not os.path.exists(zip):
                 raise RuntimeError(
                     f"Dataset not found. Please download "
                     f"h-and-m-personalized-fashion-recommendations.zip from "
-                    f"'{self.url}' and move it to '{path}'"
+                    f"'{self.url}' and move it to '{path}'. Once you have your"
+                    f"Kaggle API key, you can use the following command: "
+                    f"kaggle competitions download -c h-and-m-personalized-fashion-recommendations"
                 )
             else:
                 print("Unpacking")
@@ -52,6 +50,9 @@ class HMDataset(Dataset):
         articles_df = pd.read_csv(articles)
         customers_df = pd.read_csv(customers)
         transactions_df = pd.read_csv(transactions)
+        transactions_df["t_dat"] = pd.to_datetime(
+            transactions_df["t_dat"], format="%Y-%m-%d"
+        )
 
         return Database(
             table_dict={

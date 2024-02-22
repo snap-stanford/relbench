@@ -3,6 +3,49 @@ from torch_frame import stype
 # TODO (joshrob) move to dataset definition datasets/amazon.py etc.
 
 dataset2inferred_stypes = {
+    "rel-hm": {
+        "article": {
+            "article_id": stype.numerical,
+            "product_code": stype.numerical,
+            "prod_name": stype.text_embedded,
+            "product_type_no": stype.numerical,
+            "product_type_name": stype.categorical,
+            "product_group_name": stype.categorical,
+            "graphical_appearance_no": stype.categorical,
+            "graphical_appearance_name": stype.categorical,
+            "colour_group_code": stype.categorical,
+            "colour_group_name": stype.categorical,
+            "perceived_colour_value_id": stype.categorical,
+            "perceived_colour_value_name": stype.categorical,
+            "perceived_colour_master_id": stype.numerical,
+            "perceived_colour_master_name": stype.categorical,
+            "department_no": stype.numerical,
+            "department_name": stype.categorical,
+            "index_code": stype.categorical,
+            "index_name": stype.categorical,
+            "index_group_no": stype.categorical,
+            "index_group_name": stype.categorical,
+            "section_no": stype.numerical,
+            "section_name": stype.text_embedded,
+            "garment_group_no": stype.categorical,
+            "garment_group_name": stype.categorical,
+            "detail_desc": stype.text_embedded,
+        },
+        "customer": {
+            "customer_id": stype.text_embedded,
+            "FN": stype.categorical,
+            "Active": stype.categorical,
+            "club_member_status": stype.categorical,
+            "fashion_news_frequency": stype.categorical,
+            "age": stype.numerical,
+            "postal_code": stype.categorical,
+        },
+        "transactions": {
+            "t_dat": stype.timestamp,
+            "price": stype.numerical,
+            "sales_channel_id": stype.categorical,
+        },
+    },
     "rel-amazon": {
         "product": {
             "product_id": stype.numerical,
