@@ -50,7 +50,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     assert task.task_type == TaskType.LINK_PREDICTION
 
     train_table_input = get_link_train_table_input(task.train_table, task)
-    # Test train_table_input
+    # Test get_link_train_table_input
     for index, row in task.train_table.df.iterrows():
         assert torch.allclose(
             torch.tensor(row[task.dst_entity_col]),
