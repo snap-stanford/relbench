@@ -67,12 +67,15 @@ class CustomLinkDataset(Dataset):
     def __init__(
         self,
         src_node_indices: Tensor,
-        src_to_dst_node_indices: Tensor,  # CSR sparse matrix
+        dst_node_indices: Tensor,  # CSR sparse matrix
         num_dst_nodes: int,
         src_time: Tensor,
     ):
+        assert len(src_node_indices) == len(dst_node_indices) and len(
+            src_node_indices
+        ) == len(src_time)
         self.src_node_indices = src_node_indices
-        self.src_to_dst_node_indices = src_to_dst_node_indices
+        self.dst_node_indices = dst_node_indices
         self.num_dst_nodes = num_dst_nodes
         self.src_time = src_time
 
@@ -85,11 +88,7 @@ class CustomLinkDataset(Dataset):
         return torch.tensor(
             [
                 self.src_node_indices[index],
-                random.choice(
-                    self.src_to_dst_node_indices[
-                        self.src_node_indices[index]
-                    ].indices()[0]
-                ),
+                random.choice(self.dst_node_indices[index].indices()[0]),
                 self.src_time[index],
             ]
         )
@@ -104,9 +103,9 @@ class LinkNeighborLoader(DataLoader):
 
     Args:
         src_nodes (Tuple[NodetType, Tensor]): A tensor of source node indices.
-        src_to_dst_nodes (Tuple[NodeType, Tensor]): A csr sparse tensor, where
-            src_to_dst_nodes[source_node_idx] is a list of destination node indices
-            for source_node_idx.
+        dst_nodes (Tuple[NodeType, Tensor]): A csr sparse tensor, where
+            dst_nodes[index] is a list of destination node indices
+            for src_nodes[index] at src_time[index].
         num_dst_nodes (int): Total number of destination nodes. Used to
             determine the range of negative samples.
         src_time (torch.Tensor, optional): Optional values to override the
@@ -123,7 +122,7 @@ class LinkNeighborLoader(DataLoader):
         data: Union[Data, HeteroData, Tuple[FeatureStore, GraphStore]],
         num_neighbors: Union[List[int], Dict[EdgeType, List[int]]],
         src_nodes: Tuple[NodeType, Tensor],
-        src_to_dst_nodes: Tuple[NodeType, Tensor],
+        dst_nodes: Tuple[NodeType, Tensor],
         num_dst_nodes: int,
         src_time: OptTensor = None,
         share_same_time: bool = False,
@@ -144,7 +143,7 @@ class LinkNeighborLoader(DataLoader):
 
         self.data = data
         self.src_nodes = src_nodes
-        self.src_to_dst_nodes = src_to_dst_nodes
+        self.dst_nodes = dst_nodes
         self.num_dst_nodes = num_dst_nodes
         self.src_time = src_time
         self.share_same_time = share_same_time
@@ -161,13 +160,13 @@ class LinkNeighborLoader(DataLoader):
 
         dataset = CustomLinkDataset(
             self.src_nodes[1],
-            src_to_dst_nodes[1],
+            dst_nodes[1],
             num_dst_nodes,
             src_time,
         )
 
         self.src_node_type = self.src_nodes[0]
-        self.dst_node_type = self.src_to_dst_nodes[0]
+        self.dst_node_type = self.dst_nodes[0]
         self.src_loader = CustomNodeLoader(
             data,
             node_sampler,
@@ -176,12 +175,15 @@ class LinkNeighborLoader(DataLoader):
         self.dst_loader = CustomNodeLoader(
             data,
             node_sampler,
-            src_to_dst_nodes[0],
+            dst_nodes[0],
         )
 
         super().__init__(dataset, collate_fn=self.collate_fn, **kwargs)
 
-    def collate_fn(self, index: Tensor) -> Any:
+    def collate_fn(
+        self,
+        index: Tensor,
+    ) -> Tuple[HeteroData, HeteroData, HeteroData]:
         r"""Samples a subgraph from a batch of input nodes."""
         index = torch.stack(index)
         src_indices = index[:, 0].contiguous()

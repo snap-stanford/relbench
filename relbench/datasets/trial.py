@@ -121,7 +121,7 @@ class TrialDataset(RelBenchDataset):
                 "is_us_export",
                 "biospec_retention",
                 "biospec_description",
-                "src_class",
+                "source_class",
                 "baseline_type_units_analyzed",
                 "fdaaa801_violation",
                 "plan_to_share_ipd",
