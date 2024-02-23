@@ -71,7 +71,7 @@ train_loader = LinkNeighborLoader(
     num_neighbors=num_neighbors,
     time_attr="time",
     src_nodes=train_table_input.src_nodes,
-    src_to_dst_nodes=train_table_input.src_to_dst_nodes,
+    dst_nodes=train_table_input.dst_nodes,
     num_dst_nodes=train_table_input.num_dst_nodes,
     src_time=train_table_input.src_time,
     share_same_time=args.share_same_time,
@@ -162,6 +162,9 @@ def train() -> Dict[str, float]:
         steps += 1
         if steps > args.max_steps_per_epoch:
             break
+
+        if steps % 100 == 0:
+            print((diff_score > 0).sum() / diff_score.numel())
 
     return loss_accum / count_accum
 

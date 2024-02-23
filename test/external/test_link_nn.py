@@ -54,7 +54,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
         num_neighbors=[-1, -1],
         time_attr="time",
         src_nodes=train_table_input.src_nodes,
-        src_to_dst_nodes=train_table_input.src_to_dst_nodes,
+        dst_nodes=train_table_input.dst_nodes,
         num_dst_nodes=train_table_input.num_dst_nodes,
         src_time=train_table_input.src_time,
         share_same_time=share_same_time,
