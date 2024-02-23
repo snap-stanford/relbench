@@ -1,5 +1,6 @@
 from typing import Dict, Tuple
 
+import pandas as pd
 import pytest
 import torch
 import torch.nn.functional as F
@@ -20,6 +21,7 @@ from relbench.external.graph import (
 )
 from relbench.external.loader import LinkNeighborLoader
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
+from relbench.external.utils import to_unix_time
 
 
 @pytest.mark.parametrize(
@@ -48,6 +50,18 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     assert task.task_type == TaskType.LINK_PREDICTION
 
     train_table_input = get_link_train_table_input(task.train_table, task)
+    # Test train_table_input
+    for index, row in task.train_table.df.iterrows():
+        assert torch.allclose(
+            torch.tensor(row[task.dst_entity_col]),
+            train_table_input.dst_nodes[1][index].indices()[0],
+        )
+        assert row[task.src_entity_col] == train_table_input.src_nodes[1][index]
+        assert (
+            to_unix_time(pd.Series([row[task.time_col]]))[0]
+            == train_table_input.src_time[index]
+        )
+
     batch_size = 16
     train_loader = LinkNeighborLoader(
         data=data,

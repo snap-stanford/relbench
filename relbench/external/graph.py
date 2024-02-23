@@ -217,7 +217,7 @@ def get_link_train_table_input(
         torch.ones(coo_indices.size(1), dtype=bool),
         (len(src_node_idx), task.num_dst_nodes),
     )
-    sparse_csr = sparse_coo.to_sparse_csr()
+    dst_node_indices = sparse_coo.to_sparse_csr()
 
     time: Optional[Tensor] = None
     if table.time_col is not None:
@@ -225,7 +225,7 @@ def get_link_train_table_input(
 
     return LinkTrainTableInput(
         src_nodes=(task.src_entity_table, src_node_idx),
-        dst_nodes=(task.dst_entity_table, sparse_csr),
+        dst_nodes=(task.dst_entity_table, dst_node_indices),
         num_dst_nodes=task.num_dst_nodes,
         src_time=time,
     )
