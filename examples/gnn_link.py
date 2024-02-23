@@ -163,9 +163,6 @@ def train() -> Dict[str, float]:
         if steps > args.max_steps_per_epoch:
             break
 
-        if steps % 100 == 0:
-            print((diff_score > 0).sum() / diff_score.numel())
-
     return loss_accum / count_accum
 
 
