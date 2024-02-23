@@ -71,6 +71,9 @@ class CustomLinkDataset(Dataset):
         num_dst_nodes: int,
         src_time: Tensor,
     ):
+        assert len(src_node_indices) == len(dst_node_indices) and len(
+            src_node_indices
+        ) == len(src_time)
         self.src_node_indices = src_node_indices
         self.dst_node_indices = dst_node_indices
         self.num_dst_nodes = num_dst_nodes
