@@ -151,6 +151,8 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
         if share_same_time:
             # [batch_size, batch_size]
             neg_score = x_src @ x_neg_dst.t()
+            # [batch_size, 1]
+            pos_score = pos_score.view(-1, 1)
         else:
             # [batch_size, ]
             neg_score = torch.sum(x_src * x_neg_dst, dim=1)
