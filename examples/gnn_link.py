@@ -25,8 +25,8 @@ from relbench.external.graph import get_link_train_table_input, make_pkey_fkey_g
 from relbench.external.loader import LinkNeighborLoader
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-stackex")
-parser.add_argument("--task", type=str, default="rel-stackex-comment-on-post")
+parser.add_argument("--dataset", type=str, default="rel-hm")
+parser.add_argument("--task", type=str, default="rel-hm-rec")
 parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--eval_epochs_interval", type=int, default=1)
@@ -34,7 +34,8 @@ parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
-parser.add_argument("--num_neighbors", type=int, default=64)
+parser.add_argument("--num_neighbors", type=int, default=128)
+parser.add_argument("--temporal_strategy", type=str, default="last")
 # Use the same seed time across the mini-batch and share the negatives
 parser.add_argument("--share_same_time", action="store_true")
 parser.add_argument("--num_workers", type=int, default=1)
@@ -76,6 +77,7 @@ train_loader = LinkNeighborLoader(
     src_time=train_table_input.src_time,
     share_same_time=args.share_same_time,
     batch_size=args.batch_size,
+    temporal_strategy=args.temporal_strategy,
     # if share_same_time is True, we use sampler, so shuffle must be set False
     shuffle=not args.share_same_time,
     num_workers=args.num_workers,

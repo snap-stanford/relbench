@@ -31,6 +31,7 @@ parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
+parser.add_argument("--temporal_strategy", type=str, default="last")
 parser.add_argument("--num_workers", type=int, default=1)
 args = parser.parse_args()
 
@@ -72,6 +73,7 @@ for split, table in [
         input_time=table_input.time,
         transform=table_input.transform,
         batch_size=args.batch_size,
+        temporal_strategy=args.temporal_strategy,
         shuffle=split == "train",
         num_workers=args.num_workers,
         persistent_workers=args.num_workers > 0,
