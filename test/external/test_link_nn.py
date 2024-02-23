@@ -53,7 +53,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     # Test get_link_train_table_input
     for index, row in task.train_table.df.iterrows():
         assert set(row[task.dst_entity_col]) == set(
-            train_table_input.dst_nodes[1][index].indices()
+            train_table_input.dst_nodes[1][index].indices()[0].numpy()
         )
         assert row[task.src_entity_col] == train_table_input.src_nodes[1][index]
         assert (
