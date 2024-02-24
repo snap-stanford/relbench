@@ -2,4 +2,3 @@ __pycache__
 .ipynb_checkpoints
 /examples/data
 /data
-examples/hm_results/*
