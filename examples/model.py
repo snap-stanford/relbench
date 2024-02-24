@@ -1,12 +1,12 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import torch
 from torch import Tensor
-from torch_frame.data import TensorFrame
+from torch.nn import Embedding, ModuleDict
 from torch_frame.data.stats import StatType
 from torch_geometric.data import HeteroData
 from torch_geometric.nn import MLP
-from torch_geometric.typing import EdgeType, NodeType
+from torch_geometric.typing import NodeType
 
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
 
@@ -21,6 +21,8 @@ class Model(torch.nn.Module):
         out_channels: int,
         aggr: str,
         norm: str,
+        # List of node types to add shallow embeddings to input
+        shallow_list: List[NodeType] = [],
     ):
         super().__init__()
 
@@ -51,6 +53,12 @@ class Model(torch.nn.Module):
             norm=norm,
             num_layers=1,
         )
+        self.embedding_dict = ModuleDict(
+            {
+                node: Embedding(data.num_nodes_dict[node], channels)
+                for node in shallow_list
+            }
+        )
 
     def forward(
         self,
@@ -65,6 +73,11 @@ class Model(torch.nn.Module):
         )
         for node_type, rel_time in rel_time_dict.items():
             x_dict[node_type] = x_dict[node_type] + rel_time
+            if node_type in self.embedding_dict:
+                x_dict[node_type] = (
+                    x_dict[node_type]
+                    + self.embedding_dict[node_type][batch[node_type].input_id]
+                )
 
         x_dict = self.gnn(
             x_dict,

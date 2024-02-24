@@ -34,10 +34,12 @@ parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
-parser.add_argument("--num_neighbors", type=int, default=128)
-parser.add_argument("--temporal_strategy", type=str, default="last")
+parser.add_argument("--num_neighbors", type=int, default=160)
+parser.add_argument("--temporal_strategy", type=str, default="uniform")
 # Use the same seed time across the mini-batch and share the negatives
 parser.add_argument("--share_same_time", action="store_true")
+# Whether to use shallow embedding on dst nodes or not.
+parser.add_argument("--use_shallow", action="store_true")
 parser.add_argument("--num_workers", type=int, default=1)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 args = parser.parse_args()
@@ -96,7 +98,7 @@ for split in ["val", "test"]:
         input_time=torch.full(
             size=(len(src_node_indices),), fill_value=seed_time, dtype=torch.long
         ),
-        batch_size=2048,
+        batch_size=args.batch_size,
         shuffle=False,
         num_workers=args.num_workers,
     )
@@ -122,6 +124,7 @@ model = Model(
     out_channels=args.channels,
     aggr=args.aggr,
     norm="layer_norm",
+    shallow_list=[task.dst_entity_table] if args.use_shallow else [],
 ).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
