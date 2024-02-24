@@ -59,6 +59,8 @@ class Model(torch.nn.Module):
                 for node in shallow_list
             }
         )
+        for embedding in self.embedding_dict.values():
+            torch.nn.init.normal_(embedding.weight, std=0.1)
 
     def forward(
         self,
@@ -71,13 +73,12 @@ class Model(torch.nn.Module):
         rel_time_dict = self.temporal_encoder(
             seed_time, batch.time_dict, batch.batch_dict
         )
+
         for node_type, rel_time in rel_time_dict.items():
             x_dict[node_type] = x_dict[node_type] + rel_time
-            if node_type in self.embedding_dict:
-                x_dict[node_type] = (
-                    x_dict[node_type]
-                    + self.embedding_dict[node_type][batch[node_type].input_id]
-                )
+
+        for node_type, embedding in self.embedding_dict.items():
+            x_dict[node_type] = x_dict[node_type] + embedding(batch[node_type].n_id)
 
         x_dict = self.gnn(
             x_dict,
