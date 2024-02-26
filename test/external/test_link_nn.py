@@ -8,7 +8,6 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
-from torch_geometric.nn import MIPSKNNIndex
 from torch_geometric.typing import NodeType
 
 from relbench.data import LinkTask
@@ -176,12 +175,10 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
         dst_emb = torch.cat(dst_embs, dim=0)
         del dst_embs
 
-        mips = MIPSKNNIndex(dst_emb)
-
         pred_index_mat_list = []
         for batch in src_loader:
             emb = model_forward(batch, task.src_entity_table)
-            _, pred_index_mat = mips.search(emb, k=task.eval_k)
+            _, pred_index_mat = torch.topk(emb @ dst_emb.t(), k=task.eval_k, dim=1)
             pred_index_mat_list.append(pred_index_mat)
         pred = torch.cat(pred_index_mat_list, dim=0).numpy()
 
