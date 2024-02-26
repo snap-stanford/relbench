@@ -11,10 +11,9 @@ from inferred_stypes import dataset2inferred_stypes
 from model import Model
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
+from torch.utils.tensorboard import SummaryWriter
 from torch_frame.config.text_embedder import TextEmbedderConfig
-from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
-from torch_geometric.nn import MIPSKNNIndex
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
@@ -25,20 +24,24 @@ from relbench.external.graph import get_link_train_table_input, make_pkey_fkey_g
 from relbench.external.loader import LinkNeighborLoader
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-stackex")
-parser.add_argument("--task", type=str, default="rel-stackex-comment-on-post")
+parser.add_argument("--dataset", type=str, default="rel-hm")
+parser.add_argument("--task", type=str, default="rel-hm-rec")
 parser.add_argument("--lr", type=float, default=0.001)
-parser.add_argument("--epochs", type=int, default=10)
+parser.add_argument("--epochs", type=int, default=20)
 parser.add_argument("--eval_epochs_interval", type=int, default=1)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
-parser.add_argument("--num_neighbors", type=int, default=64)
+parser.add_argument("--num_neighbors", type=int, default=160)
+parser.add_argument("--temporal_strategy", type=str, default="uniform")
 # Use the same seed time across the mini-batch and share the negatives
 parser.add_argument("--share_same_time", action="store_true")
+# Whether to use shallow embedding on dst nodes or not.
+parser.add_argument("--use_shallow", action="store_true")
 parser.add_argument("--num_workers", type=int, default=1)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
+parser.add_argument("--log_dir", type=str, default="results")
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -76,6 +79,7 @@ train_loader = LinkNeighborLoader(
     src_time=train_table_input.src_time,
     share_same_time=args.share_same_time,
     batch_size=args.batch_size,
+    temporal_strategy=args.temporal_strategy,
     # if share_same_time is True, we use sampler, so shuffle must be set False
     shuffle=not args.share_same_time,
     num_workers=args.num_workers,
@@ -94,7 +98,7 @@ for split in ["val", "test"]:
         input_time=torch.full(
             size=(len(src_node_indices),), fill_value=seed_time, dtype=torch.long
         ),
-        batch_size=2048,
+        batch_size=args.batch_size,
         shuffle=False,
         num_workers=args.num_workers,
     )
@@ -120,6 +124,7 @@ model = Model(
     out_channels=args.channels,
     aggr=args.aggr,
     norm="layer_norm",
+    shallow_list=[task.dst_entity_table] if args.use_shallow else [],
 ).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
@@ -180,17 +185,17 @@ def test(src_loader: NeighborLoader, dst_loader: NeighborLoader) -> np.ndarray:
     dst_emb = torch.cat(dst_embs, dim=0)
     del dst_embs
 
-    mips = MIPSKNNIndex(dst_emb)
-
     pred_index_mat_list: list[Tensor] = []
     for batch in tqdm(src_loader):
         batch = batch.to(device)
         emb = model(batch, task.src_entity_table)
-        _, pred_index_mat = mips.search(emb, k=task.eval_k)
+        _, pred_index_mat = torch.topk(emb @ dst_emb.t(), k=task.eval_k, dim=1)
         pred_index_mat_list.append(pred_index_mat.cpu())
     pred = torch.cat(pred_index_mat_list, dim=0).numpy()
     return pred
 
+
+writer = SummaryWriter(log_dir=args.log_dir)
 
 state_dict = None
 best_val_metric = 0
@@ -208,6 +213,10 @@ for epoch in range(1, args.epochs + 1):
             best_val_metric = val_metrics[tune_metric]
             state_dict = copy.deepcopy(model.state_dict())
 
+        writer.add_scalar("train/loss", train_loss, epoch)
+        for name, metric in val_metrics.items():
+            writer.add_scalar(f"val/{name}", metric, epoch)
+
 model.load_state_dict(state_dict)
 val_pred = test(*eval_loaders_dict["val"])
 val_metrics = task.evaluate(val_pred, task.val_table)
@@ -216,3 +225,9 @@ print(f"Best Val metrics: {val_metrics}")
 test_pred = test(*eval_loaders_dict["test"])
 test_metrics = task.evaluate(test_pred)
 print(f"Best test metrics: {test_metrics}")
+
+for name, metric in test_metrics.items():
+    writer.add_scalar(f"test/{name}", metric, 0)
+
+writer.flush()
+writer.close()
