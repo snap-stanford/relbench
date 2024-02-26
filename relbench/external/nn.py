@@ -113,13 +113,7 @@ class HeteroTemporalEncoder(torch.nn.Module):
         out_dict: Dict[NodeType, Tensor] = {}
 
         for node_type, time in time_dict.items():
-            if batch_dict[node_type].shape == time.shape:
-                rel_time = seed_time[batch_dict[node_type]] - time
-            else:  # TODO (joshrob) for F1 database the 'time' doesn't match the batch_dict shape.
-                # Issue can be traced back to the data loader, perhaps even further back.
-                rel_time = (
-                    seed_time[batch_dict[node_type]] - time[batch_dict[node_type]]
-                )
+            rel_time = seed_time[batch_dict[node_type]] - time
             rel_time = rel_time / (60 * 60 * 24)  # Convert seconds to days.
 
             x = self.encoder_dict[node_type](rel_time)

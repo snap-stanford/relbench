@@ -7,23 +7,19 @@ from typing import Dict, List
 import numpy as np
 import torch
 from inferred_stypes import dataset2inferred_stypes
+from model import Model
 from text_embedder import GloveTextEmbedding
-from torch import Tensor
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
-from torch_frame.data import TensorFrame
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
-from torch_geometric.nn import MLP
 from torch_geometric.seed import seed_everything
-from torch_geometric.typing import EdgeType, NodeType
 from tqdm import tqdm
 
-from relbench.data import RelBenchDataset
+from relbench.data import NodeTask, RelBenchDataset
 from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_graph
-from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
@@ -35,6 +31,7 @@ parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
+parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--num_workers", type=int, default=1)
 args = parser.parse_args()
 
@@ -45,11 +42,11 @@ root_dir = "./data"
 
 # TODO: remove process=True once correct data/task is uploaded.
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
-task = dataset.get_task(args.task, process=True)
+task: NodeTask = dataset.get_task(args.task, process=True)
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
 
-data: HeteroData = make_pkey_fkey_graph(
+data, col_stats_dict = make_pkey_fkey_graph(
     dataset.db,
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
@@ -76,11 +73,11 @@ for split, table in [
         input_time=table_input.time,
         transform=table_input.transform,
         batch_size=args.batch_size,
+        temporal_strategy=args.temporal_strategy,
         shuffle=split == "train",
         num_workers=args.num_workers,
         persistent_workers=args.num_workers > 0,
     )
-
 
 clamp_min, clamp_max = None, None
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
@@ -98,73 +95,19 @@ elif task.task_type == TaskType.REGRESSION:
         task.train_table.df[task.target_col].to_numpy(), [2, 98]
     )
 
-
-class Model(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-
-        self.encoder = HeteroEncoder(
-            channels=args.channels,
-            node_to_col_names_dict={
-                node_type: data[node_type].tf.col_names_dict
-                for node_type in data.node_types
-            },
-            node_to_col_stats=data.col_stats_dict,
-        )
-        self.temporal_encoder = HeteroTemporalEncoder(
-            node_types=[
-                node_type for node_type in data.node_types if "time" in data[node_type]
-            ],
-            channels=args.channels,
-        )
-        self.gnn = HeteroGraphSAGE(
-            node_types=data.node_types,
-            edge_types=data.edge_types,
-            channels=args.channels,
-            aggr=args.aggr,
-            num_layers=args.num_layers,
-        )
-        self.head = MLP(
-            args.channels,
-            out_channels=out_channels,
-            norm="batch_norm",
-            num_layers=1,
-        )
-
-    def forward(
-        self,
-        tf_dict: Dict[NodeType, TensorFrame],
-        edge_index_dict: Dict[EdgeType, Tensor],
-        seed_time: Tensor,
-        time_dict: Dict[NodeType, Tensor],
-        batch_dict: Dict[NodeType, Tensor],
-        num_sampled_nodes_dict: Dict[NodeType, List[int]],
-        num_sampled_edges_dict: Dict[EdgeType, List[int]],
-    ) -> Tensor:
-        x_dict = self.encoder(tf_dict)
-
-        rel_time_dict = self.temporal_encoder(seed_time, time_dict, batch_dict)
-        for node_type, rel_time in rel_time_dict.items():
-            x_dict[node_type] = x_dict[node_type] + rel_time
-
-        x_dict = self.gnn(
-            x_dict,
-            edge_index_dict,
-            num_sampled_nodes_dict,
-            num_sampled_edges_dict,
-        )
-
-        out = self.head(x_dict[entity_table][: seed_time.size(0)])
-        if not self.training and task.task_type == TaskType.REGRESSION:
-            out = torch.clamp(out, clamp_min, clamp_max)
-        return out
-
-
-model = Model().to(device)
+model = Model(
+    data=data,
+    col_stats_dict=col_stats_dict,
+    num_layers=args.num_layers,
+    channels=args.channels,
+    out_channels=out_channels,
+    aggr=args.aggr,
+    norm="batch_norm",
+).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
 
-def train() -> Dict[str, float]:
+def train() -> float:
     model.train()
 
     loss_accum = count_accum = 0
@@ -173,13 +116,8 @@ def train() -> Dict[str, float]:
 
         optimizer.zero_grad()
         pred = model(
-            batch.tf_dict,
-            batch.edge_index_dict,
-            batch[entity_table].seed_time,
-            batch.time_dict,
-            batch.batch_dict,
-            batch.num_sampled_nodes_dict,
-            batch.num_sampled_edges_dict,
+            batch,
+            task.entity_table,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         loss = loss_fn(pred, batch[entity_table].y)
@@ -200,14 +138,13 @@ def test(loader: NeighborLoader) -> np.ndarray:
     for batch in tqdm(loader):
         batch = batch.to(device)
         pred = model(
-            batch.tf_dict,
-            batch.edge_index_dict,
-            batch[entity_table].seed_time,
-            batch.time_dict,
-            batch.batch_dict,
-            batch.num_sampled_nodes_dict,
-            batch.num_sampled_edges_dict,
+            batch,
+            task.entity_table,
         )
+        if task.task_type == TaskType.REGRESSION:
+            assert clamp_min is not None
+            assert clamp_max is not None
+            pred = torch.clamp(pred, clamp_min, clamp_max)
 
         if task.task_type == TaskType.BINARY_CLASSIFICATION:
             pred = torch.sigmoid(pred)

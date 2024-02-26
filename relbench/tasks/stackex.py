@@ -1,11 +1,19 @@
 import duckdb
-import numpy as np
 import pandas as pd
-from tqdm import tqdm
 
 from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
+from relbench.metrics import (
+    accuracy,
+    average_precision,
+    f1,
+    link_prediction_map,
+    link_prediction_precision,
+    link_prediction_recall,
+    mae,
+    rmse,
+    roc_auc,
+)
 from relbench.utils import get_df_in_window
 
 ######## node prediction tasks ########
@@ -212,7 +220,8 @@ class BadgesTask(RelBenchNodeTask):
 
 
 class UserCommentOnPostTask(RelBenchLinkTask):
-    r"""Predict if a user will comment on a specific post within 24hrs of the post being made."""
+    r"""Predict a list of existing posts that a user will comment in the next
+    two years."""
 
     name = "rel-stackex-comment-on-post"
     task_type = TaskType.LINK_PREDICTION
@@ -222,7 +231,8 @@ class UserCommentOnPostTask(RelBenchLinkTask):
     dst_entity_table = "posts"
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=365 * 2)
-    metrics = None  # TODO: add metrics
+    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
+    eval_k = 10
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserCommentOnPostTask."""
@@ -254,7 +264,9 @@ class UserCommentOnPostTask(RelBenchLinkTask):
                 c.UserId is not null AND
                 p.owneruserid != -1 AND
                 p.owneruserid is not null
-            ;
+            GROUP BY
+                t.timestamp,
+                c.UserId
             """
         ).df()
 
