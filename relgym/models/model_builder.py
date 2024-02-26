@@ -61,6 +61,8 @@ def create_model(data, entity_table, to_device=True):
                 normalize_score=cfg.selfjoin.normalize_score,
                 selfjoin_aggr=cfg.selfjoin.aggr,
                 selfjoin_dropout=cfg.model.dropout, # selfjoin dropout same as gnn dropout
+                memory_bank_size=cfg.selfjoin.memory_bank_size,
+                feature_dropout=cfg.model.feature_dropout,
             )
             self.head = MLP(
                 cfg.model.channels,
@@ -85,15 +87,16 @@ def create_model(data, entity_table, to_device=True):
             for node_type, rel_time in rel_time_dict.items():
                 x_dict[node_type] = x_dict[node_type] + rel_time
 
-            x_dict = self.gnn(
+            x_dict, sim_dict = self.gnn(
                 x_dict,
                 edge_index_dict,
                 num_sampled_nodes_dict,
                 num_sampled_edges_dict,
                 y,
+                seed_time,
             )
 
-            return self.head(x_dict[entity_table][: seed_time.size(0)])
+            return self.head(x_dict[entity_table][: seed_time.size(0)]), sim_dict
 
     model = Model()
     if to_device:

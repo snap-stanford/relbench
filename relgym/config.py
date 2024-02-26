@@ -119,6 +119,9 @@ def set_cfg(cfg):
     # dropout rate
     cfg.model.dropout = 0.0
 
+    # dropout rate for feature
+    cfg.model.feature_dropout = 0.0
+
     # The aggregation method of the heterogeneous information
     cfg.model.hetero_aggr = "sum"
 
@@ -144,6 +147,9 @@ def set_cfg(cfg):
 
     # The parameter K in topK selection
     cfg.selfjoin.num_filtered = 20
+
+    # The memory bank size
+    cfg.selfjoin.memory_bank_size = 4096
 
     # The similarity score computation method, in ['cos', 'L2', 'attention']
     cfg.selfjoin.sim_score_type = 'cos'

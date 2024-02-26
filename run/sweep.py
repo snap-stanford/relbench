@@ -25,12 +25,15 @@ def main() -> None:
 
     # Define the hyperparameters and their values to sweep over
     hyperparameters = {
-        'model.channels': [64, 128, 256],
+        'model.channels': [128, 256],
         # 'model.conv': ['sage', 'gat'],
         'model.num_layers': [2],
         'model.use_self_join_with_retrieval': [True, False],
         # 'model.aggr': ['sum', 'mean', 'max'],
         'model.dropout': [0.0],
+        'model.feature_dropout': [0.0, 0.2],
+        'selfjoin.memory_bank_size': [2048],
+        #'selfjoin.num_filtered': [32, 128, 512],
         # 'model.hetero_aggr': ['sum', 'mean', 'max'],
         'optim.base_lr': [0.01, 0.001],
         # 'loader.num_neighbors': [16, 32, 64, 128, 256],
@@ -117,6 +120,7 @@ def update_nested_dict(d, key_list, value):
         update_nested_dict(d[key_list[0]], key_list[1:], value)
     else:
         raise KeyError(f"Key not found: {key_list[0]}")
+
 
 
 def config_name(combo, hyperparameters, output_folder, original_config_name):

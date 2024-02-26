@@ -16,7 +16,7 @@ def train_epoch(loader_dict, model, task, optimizer, scheduler, entity_table, lo
         batch = batch.to(cfg.device)
 
         optimizer.zero_grad()
-        pred, sim_pred = model(
+        pred, sim_dict = model(
             batch.tf_dict,
             batch.edge_index_dict,
             batch[entity_table].seed_time,
@@ -24,21 +24,25 @@ def train_epoch(loader_dict, model, task, optimizer, scheduler, entity_table, lo
             batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
+            batch[entity_table].y,
         )
+
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         loss = loss_fn(pred, batch[entity_table].y)
 
-        if len(sim_pred) != 0:
-            y = batch[entity_table].y
-            if task.task_type == TaskType.BINARY_CLASSIFICATION:
-                sim_y = 1 - (y[None , :] - y[:, None]).abs()
-            elif task.task_type == TaskType.REGRESSION:
-                sim_y = 1 / (y[None , :] - y[:, None]).abs()
-            sim_y = sim_y.view(-1)
-            for sim in sim_pred.values():
-                sim_loss = loss_fn(sim.view(-1), sim_y)
-                loss = loss + 0.03 * sim_loss
 
+        """
+        if len(sim_dict) != 0:
+            for memory_pred, memory_y in sim_dict.values():
+                memory_y = memory_y.to(pred.device)
+                if task.task_type == TaskType.BINARY_CLASSIFICATION:
+                    memory_y = 1 - (batch[entity_table].y[:, None] - memory_y[None, :]).abs()
+                elif task.task_type == TaskType.REGRESSION:
+                    memory_y = 1 / (batch[entity_table].y[:, None] - memory_y[None, :]).abs()
+                    
+                sim_loss = loss_fn(memory_pred, memory_y)
+                loss = loss + 0.03 * sim_loss
+        """
         loss.backward()
         optimizer.step()
 
@@ -104,7 +108,7 @@ def train(loader_dict, model, optimizer, scheduler, task, entity_table, loss_fn,
 
     best_val_metric = 0 if cfg.higher_is_better else math.inf
     for cur_epoch in range(start_epoch, cfg.optim.max_epoch):
-        train_loss = train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn, loss_utils)
+        train_loss = train_epoch(loader_dict, model, task, optimizer, scheduler, entity_table, loss_fn, loss_utils)
         logging.info(f"Epoch: {cur_epoch:02d}, Train loss: {train_loss}")
         if is_eval_epoch(cur_epoch):
             metrics = eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, split='val')

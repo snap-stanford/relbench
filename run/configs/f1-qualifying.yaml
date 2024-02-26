@@ -6,18 +6,11 @@ model:
   aggr: "sum"
   conv: "sage"
   num_layers: 2
-  use_self_join: true
-selfjoin:
-  node_type_considered: 'drivers'
-  num_filtered: 20
-  sim_score_type: 'L2'  # 'cos', 'L2', 'attention'
-  aggr_scheme: 'mpnn'  # 'gat', 'mpnn'
-  normalize_score: true
-  aggr: 'sum'
+  use_self_join: false
 dataset:
   name: "rel-f1"
-  cache_dir: "/dfs/scratch0/jiaqihan/projects/relbench/cache"
-  root_dir: "/dfs/scratch0/jiaqihan/projects/relbench/data"
+  cache_dir: "/dfs/scratch0/joshrob/projects/relbench/cache"
+  root_dir: "/dfs/scratch0/joshrob/projects/relbench/data"
   task: "rel-f1-qualifying"
   # All tasks:
   # rel-stackex: rel-stackex-engage, rel-stackex-votes, rel-stackex-badges
