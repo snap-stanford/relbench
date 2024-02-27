@@ -5,8 +5,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 import torch.nn.functional as F
-from torch_geometric.nn import HeteroConv, LayerNorm, SAGEConv, GATConv, aggr
-from torch.nn import LayerNorm as LayerNormTorch
+from torch_geometric.nn import HeteroConv, LayerNorm, SAGEConv, GATConv
 from torch_geometric.typing import EdgeType, NodeType
 from torch_geometric.utils import trim_to_layer
 from torch_geometric.nn import MLP
