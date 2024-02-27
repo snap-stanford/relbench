@@ -8,7 +8,7 @@ from relgym.utils.epoch import is_ckpt_epoch, is_eval_epoch
 from relbench.data.task_base import TaskType
 
 
-def train_epoch(loader_dict, model, task, optimizer, scheduler, entity_table, loss_fn, loss_utils):
+def train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn, loss_utils):
     model.train()
 
     loss_accum = count_accum = 0
@@ -95,7 +95,7 @@ def train(loader_dict, model, optimizer, scheduler, task, entity_table, loss_fn,
 
     best_val_metric = 0 if cfg.higher_is_better else math.inf
     for cur_epoch in range(start_epoch, cfg.optim.max_epoch):
-        train_loss = train_epoch(loader_dict, model, task, optimizer, scheduler, entity_table, loss_fn, loss_utils)
+        train_loss = train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn, loss_utils)
         logging.info(f"Epoch: {cur_epoch:02d}, Train loss: {train_loss}")
         if is_eval_epoch(cur_epoch):
             metrics = eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, split='val')
