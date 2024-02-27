@@ -74,7 +74,12 @@ if __name__ == "__main__":
             cfg.device = "cuda"
         # Set machine learning pipeline
         loader_dict, entity_table, task, data = create_loader()
-        model = create_model(data=data, task_type=task.task_type, entity_table=entity_table, to_device=cfg.device)
+        model = create_model(
+            data=data,
+            task_type=task.task_type,
+            entity_table=entity_table,
+            to_device=cfg.device,
+        )
         optimizer = create_optimizer(model.parameters())
         scheduler = create_scheduler(optimizer)
         loss_fn, loss_utils = create_loss_fn(task)

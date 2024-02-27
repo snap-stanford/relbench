@@ -1,6 +1,5 @@
 from functools import partial
 from typing import Dict, List, Optional
-from relbench.data.task_base import TaskType
 
 import torch
 import torch.nn as nn
@@ -11,6 +10,8 @@ from torch_geometric.nn import MLP, GATConv, HeteroConv, LayerNorm, SAGEConv
 from torch_geometric.typing import EdgeType, NodeType
 from torch_geometric.utils import trim_to_layer
 from torch_scatter import scatter
+
+from relbench.data.task_base import TaskType
 
 conv_name_to_func = {
     "sage": SAGEConv,
@@ -248,9 +249,7 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
         self.task_type = task_type
 
         if task_type == TaskType.BINARY_CLASSIFICATION:
-            self.y_emb = torch.nn.Embedding(
-                2, channels
-            )  
+            self.y_emb = torch.nn.Embedding(2, channels)
         elif task_type == TaskType.REGRESSION:
             self.y_emb = torch.nn.Linear(1, channels)
         else:
@@ -328,7 +327,7 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
             if self.task_type == TaskType.BINARY_CLASSIFICATION:
                 memory_y = self.y_emb(memory_y.long())  # [N, K, H]
             elif self.task_type == TaskType.REGRESSION:
-                memory_y = self.y_emb(memory_y.view(-1, 1)) 
+                memory_y = self.y_emb(memory_y.view(-1, 1))
             memory_y = memory_y.view(-1, memory_y.size(-1))  # [NK, H]
 
             if self.aggr_scheme == "gat":

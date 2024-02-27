@@ -64,7 +64,7 @@ def create_model(data, task_type, entity_table, to_device=True):
                 selfjoin_aggr=cfg.selfjoin.aggr,
                 memory_bank_size=cfg.selfjoin.memory_bank_size,
                 feature_dropout=cfg.model.feature_dropout,
-                task_type=task_type
+                task_type=task_type,
             )
             self.head = MLP(
                 cfg.model.channels,
