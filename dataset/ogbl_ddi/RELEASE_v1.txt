@@ -1,6 +1,0 @@
-# Release note for ogbl-ddi
-
-### v1
-
-June 10, 2020: Major release
-
