@@ -217,11 +217,9 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
 
                 # retrieve memory bank
                 memory_feature = self.memory_bank["x"].to(feature.device)  # [N_bank, H]
-                # normalize
                 memory_feature = F.normalize(memory_feature, p=2, dim=-1)
                 k = self.key_dict[node_type](memory_feature)  # [N_bank, H]
                 sim_score = torch.matmul(q, k.transpose(0, 1))  # [N, N_bank]
-
             elif self.sim_score_type == 'L2':
                 feat = F.normalize(feature, p=2, dim=-1)
                 feat = self.key_dict[node_type](feat)  # [N, H]
@@ -232,7 +230,7 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
             else:
                 raise NotImplementedError(self.sim_score_type)
 
-            # Mask nodes whose seed time is greater than the current node to avoid information leakage
+            # Mask nodes whose seed time is greater than the current node to avoid time leakage
             mask = seed_time[:, None] < self.memory_bank["seed_time"][None, :].to(sim_score.device) # [N, bank_size]
             nonzero_indices = (~mask).int().nonzero() # [N, 2]
             edge_index = torch.t(nonzero_indices).contiguous() # [2, |E|]
@@ -240,7 +238,6 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
 
             sim_score = sim_score.masked_fill(mask, -float('inf')) # [N, bank_size]
 
-            # Normalize
             if self.normalize_score:
                 sim_score = torch.softmax(sim_score, dim=-1)  # [N, K]
 
@@ -256,12 +253,7 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
                 memory_y = memory_y[edge_index[1]]
                 score = self.msg_dict[node_type](torch.cat((h_i, h_j, memory_y), dim=-1)) * sim_score[~mask].view(-1, 1)  # [M, H]
                 h_agg = scatter(score, edge_index[0], dim=0, reduce=self.selfjoin_aggr)  # [N, H]
-                #h_agg = self.agg(score, edge_index[0])  # [N, H]
-
-                #feature_out = feature + h_agg  # [N, H]
                 feature_out = feature + self.upd_dict[node_type](torch.cat((feature, h_agg), dim=-1))  # [N, H]
-                #feature_out = self.upd_dict[node_type](torch.cat((feature, h_agg), dim=-1))  # [N, H]
-
             else:
                 raise NotImplementedError(self.aggr_scheme)
 
