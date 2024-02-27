@@ -16,7 +16,7 @@ def train_epoch(loader_dict, model, task, optimizer, scheduler, entity_table, lo
         batch = batch.to(cfg.device)
 
         optimizer.zero_grad()
-        pred, sim_dict = model(
+        pred = model(
             batch.tf_dict,
             batch.edge_index_dict,
             batch[entity_table].seed_time,
@@ -24,25 +24,12 @@ def train_epoch(loader_dict, model, task, optimizer, scheduler, entity_table, lo
             batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
-            batch[entity_table].y,
+            batch[entity_table].y, # used in SelfJoin training
         )
 
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         loss = loss_fn(pred, batch[entity_table].y)
 
-
-        """
-        if len(sim_dict) != 0:
-            for memory_pred, memory_y in sim_dict.values():
-                memory_y = memory_y.to(pred.device)
-                if task.task_type == TaskType.BINARY_CLASSIFICATION:
-                    memory_y = 1 - (batch[entity_table].y[:, None] - memory_y[None, :]).abs()
-                elif task.task_type == TaskType.REGRESSION:
-                    memory_y = 1 / (batch[entity_table].y[:, None] - memory_y[None, :]).abs()
-                    
-                sim_loss = loss_fn(memory_pred, memory_y)
-                loss = loss + 0.03 * sim_loss
-        """
         loss.backward()
         optimizer.step()
 
@@ -60,7 +47,7 @@ def eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, spli
     pred_list = []
     for batch in tqdm(loader_dict[split]):
         batch = batch.to(cfg.device)
-        pred, _ = model(
+        pred = model(
             batch.tf_dict,
             batch.edge_index_dict,
             batch[entity_table].seed_time,
@@ -68,7 +55,7 @@ def eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, spli
             batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
-            None, # y is not used in eval
+            None, # y is not used in eval 
         )
 
         if task.task_type == TaskType.BINARY_CLASSIFICATION:

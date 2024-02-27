@@ -49,18 +49,15 @@ def create_model(data, entity_table, to_device=True):
                 channels=cfg.model.channels,
                 batch_size=cfg.loader.batch_size,
                 aggr=cfg.model.aggr,
-                dropout=cfg.model.dropout,
                 hetero_aggr=cfg.model.hetero_aggr,
                 num_layers=cfg.model.num_layers,
                 use_self_join=cfg.model.use_self_join,
-                use_self_join_with_retrieval=cfg.model.use_self_join_with_retrieval,
                 node_type_considered=cfg.selfjoin.node_type_considered,
                 num_filtered=cfg.selfjoin.num_filtered,
                 sim_score_type=cfg.selfjoin.sim_score_type,
                 aggr_scheme=cfg.selfjoin.aggr_scheme,
                 normalize_score=cfg.selfjoin.normalize_score,
                 selfjoin_aggr=cfg.selfjoin.aggr,
-                selfjoin_dropout=cfg.model.dropout, # selfjoin dropout same as gnn dropout
                 memory_bank_size=cfg.selfjoin.memory_bank_size,
                 feature_dropout=cfg.model.feature_dropout,
             )
@@ -87,16 +84,16 @@ def create_model(data, entity_table, to_device=True):
             for node_type, rel_time in rel_time_dict.items():
                 x_dict[node_type] = x_dict[node_type] + rel_time
 
-            x_dict, sim_dict = self.gnn(
+            x_dict = self.gnn(
                 x_dict,
                 edge_index_dict,
                 num_sampled_nodes_dict,
                 num_sampled_edges_dict,
-                y,
                 seed_time,
+                y,
             )
 
-            return self.head(x_dict[entity_table][: seed_time.size(0)]), sim_dict
+            return self.head(x_dict[entity_table][: seed_time.size(0)])
 
     model = Model()
     if to_device:
