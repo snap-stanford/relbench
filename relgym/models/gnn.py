@@ -1,6 +1,6 @@
 from functools import partial
 from typing import Dict, List, Optional
-from relbench.data import TaskType
+from relbench.data.task_base import TaskType
 
 import torch
 import torch.nn as nn
@@ -378,6 +378,7 @@ class HeteroGNN(torch.nn.Module):
         use_self_join_with_retrieval: bool = False,
         feature_dropout: float = 0.0,
         memory_bank_size: int = 4096,
+        task_type: TaskType = TaskType.BINARY_CLASSIFICATION,
         **kwargs,
     ):
         super().__init__()
@@ -424,6 +425,7 @@ class HeteroGNN(torch.nn.Module):
                         channels,
                         batch_size,
                         memory_bank_size=memory_bank_size,
+                        task_type=task_type,
                         **kwargs,
                     )
                 )
