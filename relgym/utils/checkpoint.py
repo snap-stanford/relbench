@@ -7,9 +7,9 @@ import torch
 
 from relgym.config import cfg
 
-MODEL_STATE = 'model_state'
-OPTIMIZER_STATE = 'optimizer_state'
-SCHEDULER_STATE = 'scheduler_state'
+MODEL_STATE = "model_state"
+OPTIMIZER_STATE = "optimizer_state"
+SCHEDULER_STATE = "scheduler_state"
 
 
 def load_ckpt(
@@ -17,13 +17,13 @@ def load_ckpt(
     optimizer: Optional[torch.optim.Optimizer] = None,
     scheduler: Optional[Any] = None,
     epoch: int = -1,
-    best: bool = False
+    best: bool = False,
 ) -> int:
     r"""Loads the model checkpoint at a given epoch."""
     if not best:
         epoch = get_ckpt_epoch(epoch)
     else:
-        epoch = 'best'
+        epoch = "best"
     path = get_ckpt_path(epoch)
 
     if not osp.exists(path):
@@ -36,7 +36,7 @@ def load_ckpt(
     if scheduler is not None and SCHEDULER_STATE in ckpt:
         scheduler.load_state_dict(ckpt[SCHEDULER_STATE])
 
-    return epoch + 1 if not best else 'best'
+    return epoch + 1 if not best else "best"
 
 
 def save_ckpt(
@@ -44,7 +44,7 @@ def save_ckpt(
     optimizer: Optional[torch.optim.Optimizer] = None,
     scheduler: Optional[Any] = None,
     epoch: int = 0,
-    best: bool = False
+    best: bool = False,
 ):
     r"""Saves the model checkpoint at a given epoch."""
     ckpt: Dict[str, Any] = {}
@@ -58,7 +58,7 @@ def save_ckpt(
     if not best:
         torch.save(ckpt, get_ckpt_path(get_ckpt_epoch(epoch)))
     else:
-        torch.save(ckpt, get_ckpt_path(epoch='best'))
+        torch.save(ckpt, get_ckpt_path(epoch="best"))
 
 
 def remove_ckpt(epoch: int = -1):
@@ -76,16 +76,16 @@ def clean_ckpt():
 
 
 def get_ckpt_dir() -> str:
-    return osp.join(cfg.run_dir, 'ckpt')
+    return osp.join(cfg.run_dir, "ckpt")
 
 
 def get_ckpt_path(epoch: Union[int, str]) -> str:
-    return osp.join(get_ckpt_dir(), f'{epoch}.ckpt')
+    return osp.join(get_ckpt_dir(), f"{epoch}.ckpt")
 
 
 def get_ckpt_epochs() -> List[int]:
-    paths = glob.glob(get_ckpt_path('*'))
-    return sorted([int(osp.basename(path).split('.')[0]) for path in paths])
+    paths = glob.glob(get_ckpt_path("*"))
+    return sorted([int(osp.basename(path).split(".")[0]) for path in paths])
 
 
 def get_ckpt_epoch(epoch: int) -> int:

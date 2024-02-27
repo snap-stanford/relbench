@@ -1,9 +1,10 @@
+from typing import Dict, List
+
 import torch
 from torch import Tensor
-from typing import Dict, List
-from torch_geometric.typing import EdgeType, NodeType
-from torch_geometric.nn import MLP
 from torch_frame import TensorFrame
+from torch_geometric.nn import MLP
+from torch_geometric.typing import EdgeType, NodeType
 
 from relgym.config import cfg
 from relgym.models.feature_encoder import HeteroEncoder, HeteroTemporalEncoder
@@ -34,11 +35,13 @@ def create_model(data, entity_table, to_device=True):
                 torch_frame_model_kwargs={
                     "channels": cfg.torch_frame_model.channels,
                     "num_layers": cfg.torch_frame_model.num_layers,
-                }
+                },
             )
             self.temporal_encoder = HeteroTemporalEncoder(
                 node_types=[
-                    node_type for node_type in data.node_types if "time" in data[node_type]
+                    node_type
+                    for node_type in data.node_types
+                    if "time" in data[node_type]
                 ],
                 channels=cfg.model.channels,
             )
@@ -47,6 +50,7 @@ def create_model(data, entity_table, to_device=True):
                 node_types=data.node_types,
                 edge_types=data.edge_types,
                 channels=cfg.model.channels,
+                batch_size=cfg.loader.batch_size,
                 aggr=cfg.model.aggr,
                 hetero_aggr=cfg.model.hetero_aggr,
                 num_layers=cfg.model.num_layers,
@@ -57,6 +61,8 @@ def create_model(data, entity_table, to_device=True):
                 aggr_scheme=cfg.selfjoin.aggr_scheme,
                 normalize_score=cfg.selfjoin.normalize_score,
                 selfjoin_aggr=cfg.selfjoin.aggr,
+                memory_bank_size=cfg.selfjoin.memory_bank_size,
+                feature_dropout=cfg.model.feature_dropout,
             )
             self.head = MLP(
                 cfg.model.channels,
@@ -65,14 +71,15 @@ def create_model(data, entity_table, to_device=True):
             )
 
         def forward(
-                self,
-                tf_dict: Dict[NodeType, TensorFrame],
-                edge_index_dict: Dict[EdgeType, Tensor],
-                seed_time: Tensor,
-                time_dict: Dict[NodeType, Tensor],
-                batch_dict: Dict[NodeType, Tensor],
-                num_sampled_nodes_dict: Dict[NodeType, List[int]],
-                num_sampled_edges_dict: Dict[EdgeType, List[int]],
+            self,
+            tf_dict: Dict[NodeType, TensorFrame],
+            edge_index_dict: Dict[EdgeType, Tensor],
+            seed_time: Tensor,
+            time_dict: Dict[NodeType, Tensor],
+            batch_dict: Dict[NodeType, Tensor],
+            num_sampled_nodes_dict: Dict[NodeType, List[int]],
+            num_sampled_edges_dict: Dict[EdgeType, List[int]],
+            y: Tensor,
         ) -> Tensor:
             x_dict = self.encoder(tf_dict)
 
@@ -85,6 +92,8 @@ def create_model(data, entity_table, to_device=True):
                 edge_index_dict,
                 num_sampled_nodes_dict,
                 num_sampled_edges_dict,
+                seed_time,
+                y,
             )
 
             return self.head(x_dict[entity_table][: seed_time.size(0)])

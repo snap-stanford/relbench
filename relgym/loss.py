@@ -1,7 +1,8 @@
-from relgym.config import cfg
-from relbench.data.task_base import TaskType
-from torch.nn import BCEWithLogitsLoss, L1Loss
 import numpy as np
+from torch.nn import BCEWithLogitsLoss, L1Loss
+
+from relbench.data.task_base import TaskType
+from relgym.config import cfg
 
 
 def create_loss_fn(task):
@@ -19,8 +20,8 @@ def create_loss_fn(task):
         clamp_min, clamp_max = np.percentile(
             task.train_table.df[task.target_col].to_numpy(), [2, 98]
         )
-        loss_utils['clamp_min'] = clamp_min
-        loss_utils['clamp_max'] = clamp_max
+        loss_utils["clamp_min"] = clamp_min
+        loss_utils["clamp_max"] = clamp_max
     else:
         raise NotImplementedError(task.task_type)
 
@@ -29,4 +30,3 @@ def create_loss_fn(task):
     cfg.higher_is_better = higher_is_better
 
     return loss_fn, loss_utils
-
