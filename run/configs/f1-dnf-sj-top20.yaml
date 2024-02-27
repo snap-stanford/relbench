@@ -1,0 +1,27 @@
+torch_frame_model:
+  channels: 128
+  num_layers: 2
+model:
+  channels: 128
+  aggr: "sum"
+  conv: "sage"
+  num_layers: 2
+  use_self_join: true
+  node_type_considered: ["drivers"]
+dataset:
+  name: "rel-f1"
+  cache_dir: "/dfs/scratch0/joshrob/projects/relbench/cache"
+  root_dir: "/dfs/scratch0/joshrob/projects/relbench/data"
+  task: "rel-f1-dnf"
+  # All tasks:
+  # rel-stackex: rel-stackex-engage, rsel-stackex-votes, rel-stackex-badges
+  # rel-amazon: rel-amazon-churn, rel-amazon-ltv, rel-amazon-product-churn, rel-amazon-product-ltv
+loader:
+  num_neighbors: 128
+  num_workers: 1
+  batch_size: 512
+optim:
+  max_epoch: 20
+  early_stop: 10
+  base_lr: 0.01
+seed: 42

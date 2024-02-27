@@ -1,0 +1,36 @@
+torch_frame_model:
+  channels: 128
+  num_layers: 2
+model:
+  channels: 128
+  aggr: "sum"
+  conv: "sage"
+  num_layers: 2
+  use_self_join_with_retrieval: true
+  dropout: 0.0
+  feature_dropout: 0.0
+selfjoin:
+  node_type_considered: 'users'
+  num_filtered: 32
+  memory_bank_size: 2048
+  sim_score_type: 'attention'  # 'cos', 'L2', 'attention'
+  aggr_scheme: 'mpnn'  # 'gat', 'mpnn'
+  normalize_score: true
+  aggr: 'sum'
+dataset:
+  name: "rel-stackex"
+  cache_dir: "/dfs/scratch0/joshrob/projects/relbench/cache"
+  root_dir: "/dfs/scratch0/joshrob/projects/relbench/data"
+  task: "rel-stackex-engage"
+  # All tasks:
+  # rel-stackex: rel-stackex-engage, rel-stackex-votes, rel-stackex-badges
+  # rel-amazon: rel-amazon-churn, rel-amazon-ltv, rel-amazon-product-churn, rel-amazon-product-ltv
+loader:
+  num_neighbors: 128
+  num_workers: 1
+  batch_size: 512
+optim:
+  max_epoch: 30
+  early_stop: 10
+  base_lr: 0.01
+seed: 42
