@@ -134,6 +134,9 @@ def set_cfg(cfg):
     # Use self join
     cfg.model.use_self_join = False
 
+    # Use self join with retrieval memory bank
+    cfg.model.use_self_join_with_retrieval = False
+
     # ----------------------------------------------------------------------- #
     # Self-Join options
     # ----------------------------------------------------------------------- #
