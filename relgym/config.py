@@ -1,5 +1,6 @@
 import os
 import shutil
+
 from yacs.config import CfgNode as CN
 
 # Global config object
@@ -7,7 +8,7 @@ cfg = CN()
 
 
 def set_cfg(cfg):
-    r'''
+    r"""
     This function sets the default config value.
     1) Note that for an experiment, only part of the arguments will be used
     The remaining unused arguments won't affect anything.
@@ -15,7 +16,7 @@ def set_cfg(cfg):
     2) We support *at most* two levels of configs, e.g., cfg.dataset.name
 
     :return: configuration use by the experiment.
-    '''
+    """
     if cfg is None:
         return cfg
 
@@ -24,16 +25,16 @@ def set_cfg(cfg):
     # ----------------------------------------------------------------------- #
 
     # Set print destination: stdout / file / both
-    cfg.print = 'both'
+    cfg.print = "both"
 
     # Select device: 'cpu', 'cuda:0', 'auto'
-    cfg.device = 'auto'
+    cfg.device = "auto"
 
     # Output directory
-    cfg.out_dir = 'results'
+    cfg.out_dir = "results"
 
     # Config name (in out_dir)
-    cfg.cfg_dest = 'config.yaml'
+    cfg.cfg_dest = "config.yaml"
 
     # Random seed
     cfg.seed = 42
@@ -56,7 +57,7 @@ def set_cfg(cfg):
     cfg.loader.batch_size = None
 
     # Temporal strategy in 'uniform', 'last'
-    cfg.loader.temporal_strategy = 'uniform'
+    cfg.loader.temporal_strategy = "uniform"
 
     # ----------------------------------------------------------------------- #
     # Dataset options
@@ -152,16 +153,16 @@ def set_cfg(cfg):
     cfg.selfjoin.memory_bank_size = 4096
 
     # The similarity score computation method, in ['cos', 'L2', 'attention']
-    cfg.selfjoin.sim_score_type = 'cos'
+    cfg.selfjoin.sim_score_type = "cos"
 
     # The aggregation scheme of self join, in ['gat', 'mpnn']
-    cfg.selfjoin.aggr_scheme = 'mpnn'
+    cfg.selfjoin.aggr_scheme = "mpnn"
 
     # Whether to normalize the score using softmax
     cfg.selfjoin.normalize_score = True
 
     # Aggregation in message passing
-    cfg.selfjoin.aggr = 'sum'
+    cfg.selfjoin.aggr = "sum"
 
     # ----------------------------------------------------------------------- #
     # Optimizer options
@@ -169,7 +170,7 @@ def set_cfg(cfg):
     cfg.optim = CN()
 
     # optimizer: sgd, adam
-    cfg.optim.optimizer = 'adam'
+    cfg.optim.optimizer = "adam"
 
     # Base learning rate
     cfg.optim.base_lr = 0.01
@@ -181,7 +182,7 @@ def set_cfg(cfg):
     cfg.optim.momentum = None
 
     # scheduler: none, steps, cos
-    cfg.optim.scheduler = 'none'
+    cfg.optim.scheduler = "none"
 
     # Steps for 'steps' policy (in epochs)
     cfg.optim.steps = [30, 60, 90]
@@ -207,7 +208,7 @@ def dump_cfg(cfg):
     """
     os.makedirs(cfg.out_dir, exist_ok=True)
     cfg_file = os.path.join(cfg.out_dir, cfg.cfg_dest)
-    with open(cfg_file, 'w') as f:
+    with open(cfg_file, "w") as f:
         cfg.dump(stream=f)
 
 
@@ -238,10 +239,10 @@ def get_fname(fname):
     Args:
         fname (string): Filename for the yaml format configuration file
     """
-    fname = fname.split('/')[-1]
-    if fname.endswith('.yaml'):
+    fname = fname.split("/")[-1]
+    if fname.endswith(".yaml"):
         fname = fname[:-5]
-    elif fname.endswith('.yml'):
+    elif fname.endswith(".yml"):
         fname = fname[:-4]
     return fname
 
@@ -283,5 +284,3 @@ def set_run_dir(out_dir):
 
 # 1. set default cfg values first, some modules in contrib might rely on this
 set_cfg(cfg)
-
-
