@@ -1,14 +1,18 @@
 import logging
 import math
-from tqdm import tqdm
+
 import torch
-from relgym.utils.checkpoint import load_ckpt, save_ckpt
-from relgym.config import cfg
-from relgym.utils.epoch import is_ckpt_epoch, is_eval_epoch
+from tqdm import tqdm
+
 from relbench.data.task_base import TaskType
+from relgym.config import cfg
+from relgym.utils.checkpoint import load_ckpt, save_ckpt
+from relgym.utils.epoch import is_ckpt_epoch, is_eval_epoch
 
 
-def train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn, loss_utils):
+def train_epoch(
+    loader_dict, model, optimizer, scheduler, entity_table, loss_fn, loss_utils
+):
     model.train()
 
     loss_accum = count_accum = 0
@@ -24,9 +28,12 @@ def train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn,
             batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
+            batch[entity_table].y,  # used in SelfJoin training
         )
+
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         loss = loss_fn(pred, batch[entity_table].y)
+
         loss.backward()
         optimizer.step()
 
@@ -38,7 +45,9 @@ def train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn,
 
 
 @torch.no_grad()
-def eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, split='val'):
+def eval_epoch(
+    loader_dict, model, task, entity_table, loss_fn, loss_utils, split="val"
+):
     model.eval()
 
     pred_list = []
@@ -52,27 +61,30 @@ def eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, spli
             batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
+            None,  # y is not used in eval
         )
 
         if task.task_type == TaskType.BINARY_CLASSIFICATION:
             pred = torch.sigmoid(pred)
         elif task.task_type == TaskType.REGRESSION:
-            pred = torch.clamp(pred, loss_utils['clamp_min'], loss_utils['clamp_max'])
+            pred = torch.clamp(pred, loss_utils["clamp_min"], loss_utils["clamp_max"])
 
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         pred_list.append(pred.detach().cpu())
     all_pred = torch.cat(pred_list, dim=0).numpy()
-    if split == 'val':
+    if split == "val":
         metrics = task.evaluate(all_pred, task.val_table)
-    elif split == 'test':
+    elif split == "test":
         metrics = task.evaluate(all_pred)
     else:
-        raise RuntimeError(f'split should be val or test, got {split}')
+        raise RuntimeError(f"split should be val or test, got {split}")
 
     return metrics
 
 
-def train(loader_dict, model, optimizer, scheduler, task, entity_table, loss_fn, loss_utils):
+def train(
+    loader_dict, model, optimizer, scheduler, task, entity_table, loss_fn, loss_utils
+):
     r"""
     The core training pipeline
 
@@ -91,22 +103,32 @@ def train(loader_dict, model, optimizer, scheduler, task, entity_table, loss_fn,
 
     best_val_metric = 0 if cfg.higher_is_better else math.inf
     for cur_epoch in range(start_epoch, cfg.optim.max_epoch):
-        train_loss = train_epoch(loader_dict, model, optimizer, scheduler, entity_table, loss_fn, loss_utils)
+        train_loss = train_epoch(
+            loader_dict, model, optimizer, scheduler, entity_table, loss_fn, loss_utils
+        )
         logging.info(f"Epoch: {cur_epoch:02d}, Train loss: {train_loss}")
         if is_eval_epoch(cur_epoch):
-            metrics = eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, split='val')
+            metrics = eval_epoch(
+                loader_dict, model, task, entity_table, loss_fn, loss_utils, split="val"
+            )
             logging.info(f"Val metrics: {metrics}")
             cur_val_metric = metrics[cfg.tune_metric]
             # Save the best model
             if (cfg.higher_is_better and cur_val_metric > best_val_metric) or (
-                    not cfg.higher_is_better and cur_val_metric < best_val_metric):
+                not cfg.higher_is_better and cur_val_metric < best_val_metric
+            ):
                 save_ckpt(model, optimizer, scheduler, best=True)
                 best_val_metric = cur_val_metric
                 early_stop_counter = 0
             else:
                 early_stop_counter += 1
-            if cfg.optim.early_stop is not None and early_stop_counter >= cfg.optim.early_stop:
-                logging.info(f"Early stopped with counter {early_stop_counter} at epoch {cur_epoch}")
+            if (
+                cfg.optim.early_stop is not None
+                and early_stop_counter >= cfg.optim.early_stop
+            ):
+                logging.info(
+                    f"Early stopped with counter {early_stop_counter} at epoch {cur_epoch}"
+                )
                 break
             else:
                 logging.info(f"Early stop counter {early_stop_counter}")
@@ -117,9 +139,13 @@ def train(loader_dict, model, optimizer, scheduler, task, entity_table, loss_fn,
     # Test, load the best model
     load_ckpt(model, best=True)
     logging.info("Model loaded for evaluation")
-    metrics = eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, split='val')
+    metrics = eval_epoch(
+        loader_dict, model, task, entity_table, loss_fn, loss_utils, split="val"
+    )
     logging.info(f"Val metrics: {metrics}")
-    metrics = eval_epoch(loader_dict, model, task, entity_table, loss_fn, loss_utils, split='test')
+    metrics = eval_epoch(
+        loader_dict, model, task, entity_table, loss_fn, loss_utils, split="test"
+    )
     logging.info(f"Test metrics: {metrics}")
 
-    logging.info('Task done, results saved in {}'.format(cfg.out_dir))
+    logging.info("Task done, results saved in {}".format(cfg.out_dir))
