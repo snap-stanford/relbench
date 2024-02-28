@@ -11,6 +11,8 @@ from torch_geometric.typing import EdgeType, NodeType
 from torch_geometric.utils import trim_to_layer
 from torch_scatter import scatter
 
+from relbench.data.task_base import TaskType
+
 conv_name_to_func = {
     "sage": SAGEConv,
     "gat": partial(GATConv, add_self_loops=False),
@@ -175,6 +177,7 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
         selfjoin_aggr="sum",
         selfjoin_dropout=0.0,
         memory_bank_size=4096,
+        task_type: TaskType = TaskType.BINARY_CLASSIFICATION,
     ):
         super().__init__()
         # trick
@@ -242,9 +245,15 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
             "y": torch.zeros(self.bank_size),
             "seed_time": torch.full((self.bank_size,), float("-inf")),
         }
-        self.y_emb = torch.nn.Embedding(
-            2, channels
-        )  # only works for binary classification for now
+
+        self.task_type = task_type
+
+        if task_type == TaskType.BINARY_CLASSIFICATION:
+            self.y_emb = torch.nn.Embedding(2, channels)
+        elif task_type == TaskType.REGRESSION:
+            self.y_emb = torch.nn.Linear(1, channels)
+        else:
+            raise NotImplementedError(task_type)
         self.pointer = 0  # memory bank pointer
 
     def update_memory_bank(self, x_dict: Dict, y: Tensor, seed_time: Tensor):
@@ -315,7 +324,10 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
 
             # retrieve memory bank labels
             memory_y = self.memory_bank["y"].to(feature.device)  # [N_ban]
-            memory_y = self.y_emb(memory_y.long())  # [N, K, H]
+            if self.task_type == TaskType.BINARY_CLASSIFICATION:
+                memory_y = self.y_emb(memory_y.long())  # [N, K, H]
+            elif self.task_type == TaskType.REGRESSION:
+                memory_y = self.y_emb(memory_y.view(-1, 1))
             memory_y = memory_y.view(-1, memory_y.size(-1))  # [NK, H]
 
             if self.aggr_scheme == "gat":
@@ -365,6 +377,7 @@ class HeteroGNN(torch.nn.Module):
         use_self_join_with_retrieval: bool = False,
         feature_dropout: float = 0.0,
         memory_bank_size: int = 4096,
+        task_type: TaskType = TaskType.BINARY_CLASSIFICATION,
         **kwargs,
     ):
         super().__init__()
@@ -411,6 +424,7 @@ class HeteroGNN(torch.nn.Module):
                         channels,
                         batch_size,
                         memory_bank_size=memory_bank_size,
+                        task_type=task_type,
                         **kwargs,
                     )
                 )
