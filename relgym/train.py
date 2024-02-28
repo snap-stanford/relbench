@@ -19,6 +19,11 @@ def train_epoch(
     for batch in tqdm(loader_dict["train"]):
         batch = batch.to(cfg.device)
 
+        if cfg.model.use_self_join:  # Use the re-sampling method for retrieval bank
+            bank_batch = next(loader_dict['bank']).to(cfg.device)
+        else:
+            bank_batch = None
+
         optimizer.zero_grad()
         pred = model(
             batch.tf_dict,
@@ -28,7 +33,8 @@ def train_epoch(
             batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
-            batch[entity_table].y,  # used in SelfJoin training
+            batch[entity_table].y,  # used in SelfJoin with memory bank
+            bank_batch,  # used in SelfJoin with re-sampling
         )
 
         pred = pred.view(-1) if pred.size(1) == 1 else pred
@@ -53,6 +59,12 @@ def eval_epoch(
     pred_list = []
     for batch in tqdm(loader_dict[split]):
         batch = batch.to(cfg.device)
+
+        if cfg.model.use_self_join:  # Use the re-sampling method for retrieval bank
+            bank_batch = next(loader_dict['bank']).to(cfg.device)
+        else:
+            bank_batch = None
+
         pred = model(
             batch.tf_dict,
             batch.edge_index_dict,
@@ -61,7 +73,8 @@ def eval_epoch(
             batch.batch_dict,
             batch.num_sampled_nodes_dict,
             batch.num_sampled_edges_dict,
-            None,  # y is not used in eval
+            None,  # y is not used in eval for SelfJoin with memory bank
+            bank_batch,  # used in SelfJoin with re-sampling
         )
 
         if task.task_type == TaskType.BINARY_CLASSIFICATION:

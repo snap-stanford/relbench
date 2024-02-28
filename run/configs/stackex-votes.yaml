@@ -7,6 +7,9 @@ model:
   conv: "sage"
   num_layers: 2
   use_self_join: true
+  use_self_join_with_retrieval: false
+  perturb_edges: null
+  feature_dropout: null
 selfjoin:
   node_type_considered: 'users'
   num_filtered: 20

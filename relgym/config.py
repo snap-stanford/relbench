@@ -88,7 +88,7 @@ def set_cfg(cfg):
     cfg.train.eval_period = 1
 
     # The period for checkpoint saving
-    cfg.train.ckpt_period = 10
+    cfg.train.ckpt_period = 30
 
     # ----------------------------------------------------------------------- #
     # Validation options
@@ -117,12 +117,6 @@ def set_cfg(cfg):
     # The aggregation method of GNN message passing
     cfg.model.aggr = "sum"
 
-    # dropout rate
-    cfg.model.dropout = 0.0
-
-    # dropout rate for feature
-    cfg.model.feature_dropout = 0.0
-
     # The aggregation method of the heterogeneous information
     cfg.model.hetero_aggr = "sum"
 
@@ -137,6 +131,12 @@ def set_cfg(cfg):
 
     # Use self join with retrieval memory bank
     cfg.model.use_self_join_with_retrieval = False
+
+    # Perturb input edges, in [None, 'drop_all', 'random_perturb', 'random_perturb_bidirectional']
+    cfg.model.perturb_edges = None
+
+    # Feature dropout
+    cfg.model.feature_dropout = None
 
     # ----------------------------------------------------------------------- #
     # Self-Join options

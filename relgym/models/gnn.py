@@ -64,7 +64,7 @@ class SelfJoinLayer(torch.nn.Module):
             self.upd_dict = torch.nn.ModuleDict()
             for node_type in self.node_type_considered:
                 self.msg_dict[node_type] = MLP(
-                    channel_list=[channels * 2, channels, channels]
+                    channel_list=[channels * 2 + 1, channels, channels]
                 )
                 self.upd_dict[node_type] = MLP(
                     channel_list=[channels * 2, channels, channels]
@@ -89,31 +89,38 @@ class SelfJoinLayer(torch.nn.Module):
         else:
             raise NotImplementedError(self.sim_score_type)
 
-    def forward(self, x_dict: Dict):
+    def forward(self, x_dict: Dict, bank_x_dict: Dict, bank_y: Tensor, seed_time: Tensor, bank_seed_time: Tensor):
         upd_x_dict = {}
         for node_type, feature in x_dict.items():
             if node_type not in self.node_type_considered:
                 upd_x_dict[node_type] = feature
                 continue
 
+            feature_bank = bank_x_dict[node_type][: bank_seed_time.size(0)]  # [N', H]
+
             # Compute similarity score
-            if self.sim_score_type == "cos":
+            if self.sim_score_type == 'cos':
                 sim_score = cosine_similarity(
-                    feature[:, None, :], feature[None, :, :], dim=-1
-                )  # [N, N]
-            elif self.sim_score_type == "L2":
+                    feature[:, None, :], feature_bank[None, :, :], dim=-1
+                )  # [N, N']
+            elif self.sim_score_type == 'L2':
                 feature = self.key_dict[node_type](feature)  # [N, H]
+                feature_bank = self.key_dict[node_type](feature_bank)  # [N', H]
                 sim_score = (
-                    -torch.norm(feature[:, None, :] - feature[None, :, :], p=2, dim=-1)
-                    ** 2
-                )  # [N, N]
-            elif self.sim_score_type == "attention":
-                q = self.query_dict[node_type](feature)  # [N, H]
+                    - torch.norm(feature[:, None, :] - feature_bank[None, :, :], p=2, dim=-1) ** 2  # [N, N']
+                )
+            elif self.sim_score_type == 'attention':
+                q = self.query_dict[node_type](feature_bank)  # [N', H]
                 k = self.key_dict[node_type](feature)  # [N, H]
-                sim_score = torch.matmul(k, q.transpose(0, 1))  # [N, N]
+                sim_score = torch.matmul(k, q.transpose(0, 1))  # [N, N']
             else:
                 raise NotImplementedError(self.sim_score_type)
 
+            # Avoid time leakage
+            valid_mask = (seed_time.unsqueeze(-1) < bank_seed_time.unsqueeze(0))  # [N, N']
+            # print(valid_mask.sum(dim=-1))
+            # exit(0)
+            sim_score[~valid_mask] = -torch.inf
             # Select Top K
             sim_score, index_sampled = torch.topk(
                 sim_score, k=min(self.num_filtered, sim_score.shape[1]), dim=1
@@ -122,6 +129,8 @@ class SelfJoinLayer(torch.nn.Module):
             # Normalize
             if self.normalize_score:
                 sim_score = torch.softmax(sim_score, dim=-1)  # [N, K]
+                # fix the extreme case where there is a row with all -inf, leading to nan sim_score
+                sim_score = torch.nan_to_num(sim_score, nan=0)
 
             # Construct the graph over the retrieved entries
             edge_index_i = (
@@ -142,10 +151,11 @@ class SelfJoinLayer(torch.nn.Module):
             elif self.aggr_scheme == "mpnn":
                 h_i, h_j = (
                     feature[edge_index[0]],
-                    feature[edge_index[1]],
+                    feature_bank[edge_index[1]],
                 )  # [M, H], M = N * K
+                y_j = bank_y[edge_index[1]].unsqueeze(-1).to(h_j)  # [M,]
                 score = self.msg_dict[node_type](
-                    torch.cat((h_i, h_j), dim=-1)
+                    torch.cat((h_i, h_j, y_j), dim=-1)
                 ) * sim_score.view(
                     -1, 1
                 )  # [M, H]
@@ -175,7 +185,6 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
         aggr_scheme="mpnn",
         normalize_score=True,
         selfjoin_aggr="sum",
-        selfjoin_dropout=0.0,
         memory_bank_size=4096,
         task_type: TaskType = TaskType.BINARY_CLASSIFICATION,
     ):
@@ -200,7 +209,6 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
         self.aggr_scheme = aggr_scheme
         self.normalize_score = normalize_score
         self.selfjoin_aggr = selfjoin_aggr
-        self.selfjoin_dropout = selfjoin_dropout
         self.expected_batch_size = batch_size
 
         # Initialize the message fusion module
@@ -216,7 +224,6 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
                 self.msg_dict[node_type] = nn.Linear(channels * 3, channels)
                 self.upd_dict[node_type] = MLP(
                     channel_list=[channels * 2, channels, channels],
-                    dropout=selfjoin_dropout,
                 )
         else:
             raise NotImplementedError(self.aggr_scheme)
@@ -269,13 +276,13 @@ class SelfJoinLayerWithRetrieval(torch.nn.Module):
 
             # update memory bank
             self.memory_bank["x"][
-                self.pointer : self.pointer + feature.size(0)
+                self.pointer: self.pointer + feature.size(0)
             ] = feature.clone().detach()
             self.memory_bank["y"][
-                self.pointer : self.pointer + feature.size(0)
+                self.pointer: self.pointer + feature.size(0)
             ] = y.clone().detach()
             self.memory_bank["seed_time"][
-                self.pointer : self.pointer + feature.size(0)
+                self.pointer: self.pointer + feature.size(0)
             ] = seed_time.clone().detach()
             self.pointer = (self.pointer + feature.size(0)) % self.bank_size
 
@@ -409,10 +416,6 @@ class HeteroGNN(torch.nn.Module):
         self.feature_dropout = feature_dropout
 
         self.self_joins = torch.nn.ModuleList()
-
-        assert not (
-            use_self_join and use_self_join_with_retrieval
-        )  # only one of them can be True
         if use_self_join:
             for _ in range(num_layers):
                 self.self_joins.append(SelfJoinLayer(node_types, channels, **kwargs))
@@ -442,9 +445,13 @@ class HeteroGNN(torch.nn.Module):
         edge_index_dict: Dict[NodeType, Tensor],
         num_sampled_nodes_dict: Optional[Dict[NodeType, List[int]]] = None,
         num_sampled_edges_dict: Optional[Dict[EdgeType, List[int]]] = None,
+        bank_x_dict: Dict[NodeType, Tensor] = None,
+        bank_y: Tensor = None,
         seed_time: Tensor = None,
+        bank_seed_time: Tensor = None,
         y: Tensor = None,
     ) -> Dict[NodeType, Tensor]:
+
         # Apply dropout to the input features
         x_dict = {
             key: nn.functional.dropout(
@@ -465,14 +472,13 @@ class HeteroGNN(torch.nn.Module):
                     edge_index=edge_index_dict,
                 )
 
-            x_dict = conv(x_dict, edge_index_dict)
-
             if self.use_self_join:
-                x_dict = self.self_joins[i](x_dict)
+                x_dict = self.self_joins[i](x_dict, bank_x_dict, bank_y, seed_time, bank_seed_time)
 
             elif self.use_self_join_with_retrieval:
                 x_dict = self.self_joins[i](x_dict, y, seed_time)
 
+            x_dict = conv(x_dict, edge_index_dict)
             x_dict = {key: norm_dict[key](x) for key, x in x_dict.items()}
             x_dict = {key: x.relu() for key, x in x_dict.items()}
 

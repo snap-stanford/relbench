@@ -7,6 +7,9 @@ model:
   conv: "sage"
   num_layers: 2
   use_self_join: true
+  use_self_join_with_retrieval: false
+  perturb_edges: null
+  feature_dropout: null
 selfjoin:
   node_type_considered: 'customer'
   num_filtered: 20
@@ -18,7 +21,7 @@ dataset:
   name: "rel-amazon"
   cache_dir: "/dfs/scratch0/jiaqihan/projects/relbench/cache"
   root_dir: "/dfs/scratch0/jiaqihan/projects/relbench/data"
-  task: "rel-amazon-ltv"
+  task: "rel-amazon-churn"
   # All tasks:
   # rel-stackex: rel-stackex-engage, rel-stackex-votes, rel-stackex-badges
   # rel-amazon: rel-amazon-churn, rel-amazon-ltv, rel-amazon-product-churn, rel-amazon-product-ltv
@@ -26,6 +29,7 @@ loader:
   num_neighbors: 128
   num_workers: 1
   batch_size: 512
+  temporal_strategy: 'uniform'
 optim:
   max_epoch: 30
   early_stop: 10

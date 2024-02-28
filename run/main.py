@@ -73,11 +73,12 @@ if __name__ == "__main__":
         else:
             cfg.device = "cuda"
         # Set machine learning pipeline
-        loader_dict, entity_table, task, data = create_loader()
+        loader_dict, entity_table, task, data, col_stats_dict = create_loader()
         model = create_model(
             data=data,
-            task_type=task.task_type,
+            col_stats_dict=col_stats_dict,
             entity_table=entity_table,
+            task_type=task.task_type,
             to_device=cfg.device,
         )
         optimizer = create_optimizer(model.parameters())

@@ -19,26 +19,25 @@ def main() -> None:
     parser.add_argument("--sleep-time", type=int, required=False, default=30)
     args = parser.parse_args()
 
-    fast_sweep = False
-
     # Define the hyperparameters and their values to sweep over
     hyperparameters = {
         "model.channels": [128, 256],
+        # "model.channels": [64, 128],
         # 'model.conv': ['sage', 'gat'],
-        "model.num_layers": [2],
-        "model.use_self_join_with_retrieval": [True, False],
+        # 'model.num_layers': [2, 3],
+        # 'model.perturb_edges': [None, 'drop_all', 'rand_perm'],
+        "model.use_self_join": [True, False],
+        # "model.use_self_join_with_retrieval: [True, False],
+        "model.feature_dropout": [None, 0.2],
         # 'model.aggr': ['sum', 'mean', 'max'],
-        "model.dropout": [0.0],
-        "model.feature_dropout": [0.0, 0.2],
-        "selfjoin.memory_bank_size": [2048],
-        #'selfjoin.num_filtered': [32, 128, 512],
         # 'model.hetero_aggr': ['sum', 'mean', 'max'],
         "optim.base_lr": [0.01, 0.001],
         # 'loader.num_neighbors': [16, 32, 64, 128, 256],
         # 'loader.temporal_strategy': ['uniform', 'last']
+        # "selfjoin.memory_bank_size": [2048],
         # 'selfjoin.node_type_considered': ['drivers', None],
         # 'selfjoin.num_filtered': [10, 20, 50],
-        #'selfjoin.sim_score_type': [None, 'cos', 'L2', 'attention'],
+        "selfjoin.sim_score_type": ["attention"],
         # 'selfjoin.aggr_scheme': ['gat', 'mpnn'],
         # 'selfjoin.normalize_score': [True, False],
     }

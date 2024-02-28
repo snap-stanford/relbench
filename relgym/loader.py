@@ -1,6 +1,7 @@
 import copy
 import os
 from typing import Dict
+from itertools import cycle
 
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.data import HeteroData
@@ -34,7 +35,7 @@ def transform_dataset_to_graph(dataset: RelBenchDataset):
     device = cfg.device
     col_to_stype_dict = copy.deepcopy(dataset2inferred_stypes[cfg.dataset.name])
 
-    data: HeteroData = make_pkey_fkey_graph(
+    data, col_stats_dict = make_pkey_fkey_graph(
         dataset.db,
         col_to_stype_dict=col_to_stype_dict,
         text_embedder_cfg=TextEmbedderConfig(
@@ -45,7 +46,7 @@ def transform_dataset_to_graph(dataset: RelBenchDataset):
         ),
     )
 
-    return data
+    return data, col_stats_dict
 
 
 def get_loader_and_entity(data, task):
@@ -74,6 +75,25 @@ def get_loader_and_entity(data, task):
             persistent_workers=cfg.loader.num_workers > 0,
         )
 
+        if split == 'train' and cfg.model.use_self_join:
+            bank_loader = NeighborLoader(
+                data,
+                num_neighbors=[cfg.loader.num_neighbors for _ in range(cfg.model.num_layers)],
+                # num_neighbors=[int(cfg.loader.num_neighbors / 2**i) for i in range(cfg.model.num_layers)],
+                time_attr="time",
+                temporal_strategy=cfg.loader.temporal_strategy,
+                input_nodes=table_input.nodes,
+                input_time=table_input.time,
+                transform=table_input.transform,
+                # batch_size=cfg.loader.batch_size,
+                batch_size=128,
+                shuffle=split == "train",
+                num_workers=cfg.loader.num_workers,
+                persistent_workers=cfg.loader.num_workers > 0,
+                drop_last=True,
+            )
+            loader_dict['bank'] = cycle(bank_loader)  # make it loop infinitely
+
     return loader_dict, entity_table
 
 
@@ -85,7 +105,7 @@ def create_loader():
 
     """
     dataset, task = create_dataset_and_task()
-    data = transform_dataset_to_graph(dataset)
+    data, col_stats_dict = transform_dataset_to_graph(dataset)
     loader_dict, entity_table = get_loader_and_entity(data, task)
 
-    return loader_dict, entity_table, task, data
+    return loader_dict, entity_table, task, data, col_stats_dict
