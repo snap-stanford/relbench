@@ -11,7 +11,7 @@ from relgym.models.feature_encoder import HeteroEncoder, HeteroTemporalEncoder
 from relgym.models.gnn import HeteroGNN
 
 
-def create_model(data, entity_table, to_device=True):
+def create_model(data, task_type, entity_table, to_device=True):
     r"""
     Create model for graph machine learning
 
@@ -55,6 +55,7 @@ def create_model(data, entity_table, to_device=True):
                 hetero_aggr=cfg.model.hetero_aggr,
                 num_layers=cfg.model.num_layers,
                 use_self_join=cfg.model.use_self_join,
+                use_self_join_with_retrieval=cfg.model.use_self_join_with_retrieval,
                 node_type_considered=cfg.selfjoin.node_type_considered,
                 num_filtered=cfg.selfjoin.num_filtered,
                 sim_score_type=cfg.selfjoin.sim_score_type,
@@ -63,6 +64,7 @@ def create_model(data, entity_table, to_device=True):
                 selfjoin_aggr=cfg.selfjoin.aggr,
                 memory_bank_size=cfg.selfjoin.memory_bank_size,
                 feature_dropout=cfg.model.feature_dropout,
+                task_type=task_type,
             )
             self.head = MLP(
                 cfg.model.channels,
