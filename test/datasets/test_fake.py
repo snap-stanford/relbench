@@ -10,7 +10,9 @@ def test_fake_reviews_dataset():
     assert dataset.task_names == [
         "rel-amazon-churn",
         "rel-amazon-ltv",
-        "rel-amazon-rec",
+        "rel-amazon-rec-product",
+        "rel-amazon-rec-5-star",
+        "rel-amazon-rec-detailed-review",
     ]
 
     task = dataset.get_task("rel-amazon-churn", process=True)
