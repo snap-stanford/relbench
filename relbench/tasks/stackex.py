@@ -282,7 +282,7 @@ class UserCommentOnPostTask(RelBenchLinkTask):
 
 
 class RelatedPostTask(RelBenchLinkTask):
-    r"""Predict a list of existing posts that a user will vote on in the next
+    r"""Predict a list of existing posts that users will link a given post to in the next
     two years."""
 
     name = "rel-stackex-related-post"
