@@ -8,7 +8,13 @@ import numpy as np
 import pandas as pd
 
 from relbench.data import Database, Dataset, Table
-from relbench.tasks.amazon import ChurnTask, LTVTask, ProductRecommendationTask, ProductFiveStarRecommendationTask, ProductDetailedReviewRecommendationTask
+from relbench.tasks.amazon import (
+    ChurnTask,
+    LTVTask,
+    ProductDetailedReviewRecommendationTask,
+    ProductFiveStarRecommendationTask,
+    ProductRecommendationTask,
+)
 
 
 def _generate_random_string(min_length: int, max_length: int) -> str:
@@ -37,10 +43,13 @@ class FakeDataset(Dataset):
             val_timestamp=val_timestamp,
             test_timestamp=test_timestamp,
             max_eval_time_frames=max_eval_time_frames,
-            task_cls_list=[ChurnTask, LTVTask, 
-                           ProductRecommendationTask, 
-                           ProductFiveStarRecommendationTask, 
-                           ProductDetailedReviewRecommendationTask],
+            task_cls_list=[
+                ChurnTask,
+                LTVTask,
+                ProductRecommendationTask,
+                ProductFiveStarRecommendationTask,
+                ProductDetailedReviewRecommendationTask,
+            ],
         )
 
     def make_db(self, num_products, num_customers, num_reviews) -> Database:
