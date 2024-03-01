@@ -8,7 +8,7 @@ from inferred_stypes import dataset2inferred_stypes
 from text_embedder import GloveTextEmbedding
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
-from torch_frame.gbdt import XGBoost
+from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 from torch_frame.utils import infer_df_stype
 
@@ -78,7 +78,7 @@ if task.task_type == TaskType.BINARY_CLASSIFICATION:
 else:
     tune_metric = Metric.MAE
 
-model = XGBoost(task_type=train_dataset.task_type, metric=tune_metric)
+model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
 
 model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
 
