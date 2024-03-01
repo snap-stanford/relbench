@@ -292,7 +292,6 @@ class ProductRecommendationTask(RelBenchLinkTask):
         )
 
 
-
 class ProductFiveStarRecommendationTask(RelBenchLinkTask):
     r"""Predict the list of distinct items each customer will purchase and give a 5 star review in the
     next two years."""
@@ -329,7 +328,7 @@ class ProductFiveStarRecommendationTask(RelBenchLinkTask):
                 WHERE
                     review.customer_id IS NOT NULL
                     AND review.product_id IS NOT NULL
-                    AND review.rating = 5.0 
+                    AND review.rating = 5.0
                 GROUP BY
                     t.timestamp,
                     review.customer_id
@@ -345,7 +344,6 @@ class ProductFiveStarRecommendationTask(RelBenchLinkTask):
             pkey_col=None,
             time_col=self.time_col,
         )
-
 
 
 class ProductDetailedReviewRecommendationTask(RelBenchLinkTask):
@@ -368,7 +366,9 @@ class ProductDetailedReviewRecommendationTask(RelBenchLinkTask):
         review = db.table_dict["review"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        REVIEW_LENGTH = 600 # minimum length of review to be considered as detailed review
+        REVIEW_LENGTH = (
+            600  # minimum length of review to be considered as detailed review
+        )
 
         df = duckdb.sql(
             f"""

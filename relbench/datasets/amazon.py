@@ -8,7 +8,15 @@ import pyarrow as pa
 import pyarrow.json
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.amazon import ChurnTask, LTVTask, ProductChurnTask, ProductLTVTask, ProductRecommendationTask, ProductFiveStarRecommendationTask, ProductDetailedReviewRecommendationTask
+from relbench.tasks.amazon import (
+    ChurnTask,
+    LTVTask,
+    ProductChurnTask,
+    ProductDetailedReviewRecommendationTask,
+    ProductFiveStarRecommendationTask,
+    ProductLTVTask,
+    ProductRecommendationTask,
+)
 
 
 class AmazonDataset(RelBenchDataset):
@@ -16,10 +24,15 @@ class AmazonDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2014-01-01")
     test_timestamp = pd.Timestamp("2016-01-01")
     max_eval_time_frames = 1
-    task_cls_list = [ChurnTask, LTVTask, ProductChurnTask, ProductLTVTask, 
-                     ProductRecommendationTask, 
-                     ProductFiveStarRecommendationTask, 
-                     ProductDetailedReviewRecommendationTask]
+    task_cls_list = [
+        ChurnTask,
+        LTVTask,
+        ProductChurnTask,
+        ProductLTVTask,
+        ProductRecommendationTask,
+        ProductFiveStarRecommendationTask,
+        ProductDetailedReviewRecommendationTask,
+    ]
 
     category_list = ["books", "fashion"]
 
