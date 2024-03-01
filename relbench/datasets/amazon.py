@@ -26,8 +26,8 @@ class AmazonDataset(RelBenchDataset):
     max_eval_time_frames = 1
     task_cls_list = [
         ChurnTask,
-        LTVTask,
         ProductChurnTask,
+        LTVTask,
         ProductLTVTask,
         ProductRecommendationTask,
         ProductFiveStarRecommendationTask,
