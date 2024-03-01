@@ -8,7 +8,7 @@ from relbench.tasks.stackex import (
     BadgesTask,
     EngageTask,
     UserCommentOnPostTask,
-    UserVoteOnPostTask,
+
     RelatedPostTask,
     VotesTask,
 )
@@ -22,7 +22,7 @@ class StackExDataset(RelBenchDataset):
     test_timestamp = pd.Timestamp("2021-01-01")
     max_eval_time_frames = 1
     task_cls_list = [EngageTask, VotesTask, BadgesTask,
-                     UserCommentOnPostTask, UserVoteOnPostTask, RelatedPostTask]
+                     UserCommentOnPostTask, RelatedPostTask]
 
     def __init__(
         self,

@@ -281,69 +281,6 @@ class UserCommentOnPostTask(RelBenchLinkTask):
         )
 
 
-class UserVoteOnPostTask(RelBenchLinkTask):
-    r"""Predict a list of existing posts that a user will vote on in the next
-    two years."""
-
-    name = "rel-stackex-vote-on-post"
-    task_type = TaskType.LINK_PREDICTION
-    src_entity_col = "UserId"
-    src_entity_table = "users"
-    dst_entity_col = "PostId"
-    dst_entity_table = "posts"
-    time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365 * 2)
-    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
-    eval_k = 10
-
-    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for UserVoteOnPostTask."""
-        timestamp_df = pd.DataFrame({"timestamp": timestamps})
-
-        users = db.table_dict["users"].df
-        posts = db.table_dict["posts"].df
-        comments = db.table_dict["comments"].df
-        votes = db.table_dict["votes"].df
-
-        df = duckdb.sql(
-            f"""
-                SELECT
-                    t.timestamp,
-                    v.UserId as UserId,
-                    LIST(DISTINCT p.id) AS PostId
-                FROM
-                    timestamp_df t
-                LEFT JOIN
-                    posts p
-                ON
-                    p.CreationDate <= t.timestamp
-                LEFT JOIN
-                    votes v
-                ON
-                    p.id = v.PostId AND
-                    v.CreationDate  > t.timestamp AND
-                    v.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
-                WHERE
-                    v.UserId IS NOT NULL AND
-                    p.owneruserid != -1 AND
-                    p.owneruserid IS NOT NULL
-                GROUP BY
-                    t.timestamp,
-                    v.UserId
-            """
-        ).df()
-
-        return Table(
-            df=df,
-            fkey_col_to_pkey_table={
-                self.src_entity_col: self.src_entity_table,
-                self.dst_entity_col: self.dst_entity_table,
-            },
-            pkey_col=None,
-            time_col=self.time_col,
-        )
-
-
 class RelatedPostTask(RelBenchLinkTask):
     r"""Predict a list of existing posts that a user will vote on in the next
     two years."""
@@ -368,7 +305,7 @@ class RelatedPostTask(RelBenchLinkTask):
         postLinks = db.table_dict["postLinks"].df
         comments = db.table_dict["comments"].df
         votes = db.table_dict["votes"].df
-
+        
         df = duckdb.sql(
             f"""
                 SELECT
@@ -381,16 +318,20 @@ class RelatedPostTask(RelBenchLinkTask):
                     postLinks pl
                 ON
                     pl.CreationDate <= t.timestamp AND
-                    pl.LinkTypeId = 1  
+                    pl.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
+                LEFT JOIN
+                    posts p1
+                ON
+                    pl.PostId = p1.Id
+                LEFT JOIN
+                    posts p2
+                ON
+                    pl.RelatedPostId = p2.Id
                 WHERE
                     pl.PostId IS NOT NULL AND
-                    pl.RelatedPostId IS NOT NULL
-                LEFT JOIN
-                    posts
-                ON
-                    p.id = pl.PostId AND
-                    p.CreationDate  > p.timestamp AND
-                    v.CreationDate <= p.timestamp + INTERVAL '{self.timedelta} days'
+                    pl.RelatedPostId IS NOT NULL AND
+                    p1.CreationDate <= t.timestamp AND
+                    p2.CreationDate <= t.timestamp
                 GROUP BY
                     t.timestamp,
                     pl.PostId;
