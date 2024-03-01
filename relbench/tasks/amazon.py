@@ -244,7 +244,7 @@ class ProductRecommendationTask(RelBenchLinkTask):
     r"""Predict the list of distinct items each customer will purchase in the
     next two years."""
 
-    name = "rel-amazon-rec-purcase"
+    name = "rel-amazon-rec-purchase"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "customer_id"
     src_entity_table = "customer"
@@ -368,7 +368,7 @@ class ProductDetailedReviewRecommendationTask(RelBenchLinkTask):
         review = db.table_dict["review"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        REVIEW_LENGTH = 600
+        REVIEW_LENGTH = 600 # minimum length of review to be considered as detailed review
 
         df = duckdb.sql(
             f"""
