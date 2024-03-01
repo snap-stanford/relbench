@@ -12,7 +12,7 @@ def test_fake_reviews_dataset():
         "rel-amazon-product-churn",
         "rel-amazon-ltv",
         "rel-amazon-product-ltv",
-        "rel-amazon-rec-purcahse",
+        "rel-amazon-rec-purchase",
         "rel-amazon-rec-5-star",
         "rel-amazon-rec-detailed-review",
     ]
