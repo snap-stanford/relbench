@@ -8,7 +8,6 @@ from relbench.tasks.stackex import (
     BadgesTask,
     EngageTask,
     UserCommentOnPostTask,
-
     RelatedPostTask,
     VotesTask,
 )

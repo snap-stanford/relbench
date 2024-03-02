@@ -300,11 +300,8 @@ class RelatedPostTask(RelBenchLinkTask):
         r"""Create Task object for UserVoteOnPostTask."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        users = db.table_dict["users"].df
         posts = db.table_dict["posts"].df
         postLinks = db.table_dict["postLinks"].df
-        comments = db.table_dict["comments"].df
-        votes = db.table_dict["votes"].df
         
         df = duckdb.sql(
             f"""
