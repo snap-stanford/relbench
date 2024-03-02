@@ -7,6 +7,7 @@ from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.stackex import (
     BadgesTask,
     EngageTask,
+    RelatedPostTask,
     UserCommentOnPostTask,
     VotesTask,
 )
@@ -19,7 +20,13 @@ class StackExDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2019-01-01")
     test_timestamp = pd.Timestamp("2021-01-01")
     max_eval_time_frames = 1
-    task_cls_list = [EngageTask, VotesTask, BadgesTask, UserCommentOnPostTask]
+    task_cls_list = [
+        EngageTask,
+        VotesTask,
+        BadgesTask,
+        UserCommentOnPostTask,
+        RelatedPostTask,
+    ]
 
     def __init__(
         self,
