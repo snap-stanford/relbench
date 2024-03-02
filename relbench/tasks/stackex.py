@@ -279,3 +279,68 @@ class UserCommentOnPostTask(RelBenchLinkTask):
             pkey_col=None,
             time_col=self.time_col,
         )
+
+
+class RelatedPostTask(RelBenchLinkTask):
+    r"""Predict a list of existing posts that users will link a given post to in the next
+    two years."""
+
+    name = "rel-stackex-related-post"
+    task_type = TaskType.LINK_PREDICTION
+    src_entity_col = "PostId"
+    src_entity_table = "posts"
+    dst_entity_col = "postLinksIdList"
+    dst_entity_table = "posts"
+    time_col = "timestamp"
+    timedelta = pd.Timedelta(days=365 * 2)
+    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
+    eval_k = 10
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        r"""Create Task object for UserVoteOnPostTask."""
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        posts = db.table_dict["posts"].df
+        postLinks = db.table_dict["postLinks"].df
+
+        df = duckdb.sql(
+            f"""
+                SELECT
+                    t.timestamp,
+                    pl.PostId as PostId,
+                    LIST(DISTINCT pl.RelatedPostId) AS postLinksIdList
+                FROM
+                    timestamp_df t
+                LEFT JOIN
+                    postLinks pl
+                ON
+                    pl.CreationDate <= t.timestamp AND
+                    pl.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
+                LEFT JOIN
+                    posts p1
+                ON
+                    pl.PostId = p1.Id
+                LEFT JOIN
+                    posts p2
+                ON
+                    pl.RelatedPostId = p2.Id
+                WHERE
+                    pl.PostId IS NOT NULL AND
+                    pl.RelatedPostId IS NOT NULL AND
+                    p1.CreationDate <= t.timestamp AND
+                    p2.CreationDate <= t.timestamp
+                GROUP BY
+                    t.timestamp,
+                    pl.PostId;
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
+            },
+            pkey_col=None,
+            time_col=self.time_col,
+        )
