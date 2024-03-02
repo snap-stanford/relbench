@@ -302,7 +302,7 @@ class RelatedPostTask(RelBenchLinkTask):
 
         posts = db.table_dict["posts"].df
         postLinks = db.table_dict["postLinks"].df
-        
+
         df = duckdb.sql(
             f"""
                 SELECT
