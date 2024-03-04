@@ -9,8 +9,8 @@ from relbench.tasks.stackex import (
     EngageTask,
     RelatedPostTask,
     UserCommentOnPostTask,
+    UsersInteractTask,
     VotesTask,
-    UsersInteractTask
 )
 from relbench.utils import unzip_processor
 
