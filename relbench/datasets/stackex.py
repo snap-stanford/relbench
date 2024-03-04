@@ -11,7 +11,7 @@ from relbench.tasks.stackex import (
     UserCommentOnPostTask,
     VotesTask,
 )
-from relbench.utils import unzip_processor
+from relbench.utils import unzip_and_convert_csv_to_parquet_processor
 
 
 class StackExDataset(RelBenchDataset):
@@ -43,44 +43,32 @@ class StackExDataset(RelBenchDataset):
             url,
             known_hash="ad3bf96f35146d50ef48fa198921685936c49b95c6b67a8a47de53e90036745f",
             progressbar=True,
-            processor=unzip_processor,
+            processor=unzip_and_convert_csv_to_parquet_processor,
         )
         path = os.path.join(path, "raw")
-        users = pd.read_csv(os.path.join(path, "Users.csv"))
-        comments = pd.read_csv(os.path.join(path, "Comments.csv"))
-        posts = pd.read_csv(os.path.join(path, "Posts.csv"))
-        votes = pd.read_csv(os.path.join(path, "Votes.csv"))
-        postLinks = pd.read_csv(os.path.join(path, "PostLinks.csv"))
-        badges = pd.read_csv(os.path.join(path, "Badges.csv"))
-        postHistory = pd.read_csv(os.path.join(path, "PostHistory.csv"))
+        users_cols = ('Id', 'AccountId', 'DisplayName', 'Location',
+                      'ProfileImageUrl', 'WebsiteUrl', 'AboutMe',
+                      'CreationDate')
+        comments_cols = ('Id', 'PostId', 'UserId', 'ContentLicense',
+                         'UserDisplayName', 'Text', 'CreationDate')
+        posts_cols = ('Id', 'OwnerUserId', 'PostTypeId', 'AcceptedAnswerId',
+                      'ParentId', 'OwnerDisplayName', 'Title', 'Tags',
+                      'ContentLicense', 'Body', 'CreationDate')
+        votes_cols = ('Id', 'UserId', 'PostId', 'VoteTypeId', 'CreationDate')
+        read_parquet = lambda fname, col_names: pd.read_parquet(
+            os.path.join(path, fname), columns=col_names, engine='fastparquet')
 
-        # tags = pd.read_csv(os.path.join(path, "Tags.csv")) we remove tag table here since after removing time leakage columns, all information are kept in the posts tags columns
+        users = read_parquet("Users.parquet", users_cols)
+        comments = read_parquet("Comments.parquet", comments_cols)
+        posts = read_parquet("Posts.parquet", posts_cols)
+        votes = read_parquet("Votes.parquet", votes_cols)
+        postLinks = read_parquet("PostLinks.parquet", None)
+        badges = read_parquet("Badges.parquet", None)
+        postHistory = read_parquet("PostHistory.parquet", None)
 
-        ## remove time leakage columns
-        users.drop(
-            columns=["Reputation", "Views", "UpVotes", "DownVotes", "LastAccessDate"],
-            inplace=True,
-        )
-
-        posts.drop(
-            columns=[
-                "ViewCount",
-                "AnswerCount",
-                "CommentCount",
-                "FavoriteCount",
-                "CommunityOwnedDate",
-                "ClosedDate",
-                "LastEditDate",
-                "LastActivityDate",
-                "Score",
-                "LastEditorDisplayName",
-                "LastEditorUserId",
-            ],
-            inplace=True,
-        )
-
-        comments.drop(columns=["Score"], inplace=True)
-        votes.drop(columns=["BountyAmount"], inplace=True)
+        # we remove tag table here since after removing time leakage columns,
+        # all information are kept in the posts tags columns
+        # tags = read_parquet("Tags.parquet", None)
 
         ## change time column to pd timestamp series
         comments["CreationDate"] = pd.to_datetime(comments["CreationDate"])
@@ -117,7 +105,8 @@ class StackExDataset(RelBenchDataset):
             df=pd.DataFrame(postLinks),
             fkey_col_to_pkey_table={
                 "PostId": "posts",
-                "RelatedPostId": "posts",  ## is this allowed? two foreign keys into the same primary
+                # is this allowed? two foreign keys into the same primary
+                "RelatedPostId": "posts",
             },
             pkey_col="Id",
             time_col="CreationDate",
