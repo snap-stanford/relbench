@@ -25,16 +25,15 @@ def unzip_processor(fname: Union[str, Path], action: str, pooch: pooch.Pooch) ->
     return unzip_path
 
 
-def unzip_and_convert_csv_to_parquet_processor(fname: Union[str,
-                                                            Path], action: str,
-                                               pooch: pooch.Pooch) -> Path:
+def unzip_and_convert_csv_to_parquet_processor(
+    fname: Union[str, Path], action: str, pooch: pooch.Pooch
+) -> Path:
     unzip_path = unzip_processor(fname, action, pooch)
 
     # Convert csv to parquet
-    for csv_file in unzip_path.glob('**/*.csv'):
-        parquet_file = csv_file.with_suffix('.parquet')
-        if not parquet_file.exists(
-        ):  # Only convert if parquet file does not exist
+    for csv_file in unzip_path.glob("**/*.csv"):
+        parquet_file = csv_file.with_suffix(".parquet")
+        if not parquet_file.exists():  # Only convert if parquet file does not exist
             df = pd.read_csv(csv_file)
             df.to_parquet(parquet_file)
 

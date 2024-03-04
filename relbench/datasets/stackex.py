@@ -46,17 +46,42 @@ class StackExDataset(RelBenchDataset):
             processor=unzip_and_convert_csv_to_parquet_processor,
         )
         path = os.path.join(path, "raw")
-        users_cols = ('Id', 'AccountId', 'DisplayName', 'Location',
-                      'ProfileImageUrl', 'WebsiteUrl', 'AboutMe',
-                      'CreationDate')
-        comments_cols = ('Id', 'PostId', 'UserId', 'ContentLicense',
-                         'UserDisplayName', 'Text', 'CreationDate')
-        posts_cols = ('Id', 'OwnerUserId', 'PostTypeId', 'AcceptedAnswerId',
-                      'ParentId', 'OwnerDisplayName', 'Title', 'Tags',
-                      'ContentLicense', 'Body', 'CreationDate')
-        votes_cols = ('Id', 'UserId', 'PostId', 'VoteTypeId', 'CreationDate')
+        users_cols = (
+            "Id",
+            "AccountId",
+            "DisplayName",
+            "Location",
+            "ProfileImageUrl",
+            "WebsiteUrl",
+            "AboutMe",
+            "CreationDate",
+        )
+        comments_cols = (
+            "Id",
+            "PostId",
+            "UserId",
+            "ContentLicense",
+            "UserDisplayName",
+            "Text",
+            "CreationDate",
+        )
+        posts_cols = (
+            "Id",
+            "OwnerUserId",
+            "PostTypeId",
+            "AcceptedAnswerId",
+            "ParentId",
+            "OwnerDisplayName",
+            "Title",
+            "Tags",
+            "ContentLicense",
+            "Body",
+            "CreationDate",
+        )
+        votes_cols = ("Id", "UserId", "PostId", "VoteTypeId", "CreationDate")
         read_parquet = lambda fname, col_names: pd.read_parquet(
-            os.path.join(path, fname), columns=col_names, engine='fastparquet')
+            os.path.join(path, fname), columns=col_names, engine="fastparquet"
+        )
 
         users = read_parquet("Users.parquet", users_cols)
         comments = read_parquet("Comments.parquet", comments_cols)
