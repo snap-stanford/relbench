@@ -10,6 +10,7 @@ from relbench.tasks.stackex import (
     RelatedPostTask,
     UserCommentOnPostTask,
     VotesTask,
+    UsersInteractTask
 )
 from relbench.utils import unzip_processor
 
@@ -26,6 +27,7 @@ class StackExDataset(RelBenchDataset):
         BadgesTask,
         UserCommentOnPostTask,
         RelatedPostTask,
+        UsersInteractTask,
     ]
 
     def __init__(

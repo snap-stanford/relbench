@@ -344,3 +344,74 @@ class RelatedPostTask(RelBenchLinkTask):
             pkey_col=None,
             time_col=self.time_col,
         )
+
+
+class UsersInteractTask(RelBenchLinkTask):
+    r"""Predict a list of users who comment on the same posts as the original user."""
+
+    name = "rel-stackex-users-interact"
+    task_type = TaskType.LINK_PREDICTION
+    src_entity_col = "UserId"
+    src_entity_table = "users"
+    dst_entity_col = "InteractingUserId"
+    dst_entity_table = "users"
+    time_col = "timestamp"
+    timedelta = pd.Timedelta(days=365 * 2)
+
+    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
+    eval_k = 10
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        r"""Create Task object for UsersInteractTask."""
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        users = db.table_dict["users"].df
+        posts = db.table_dict["posts"].df
+        comments = db.table_dict["comments"].df
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                t.timestamp,
+                c.UserId as UserId,
+                LIST(DISTINCT c2.UserId) FILTER (WHERE c2.UserId IS NOT NULL) AS InteractingUserId
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                posts p
+            ON
+                p.CreationDate <= t.timestamp
+            LEFT JOIN
+                comments c
+            ON
+                p.id = c.PostId AND
+                c.CreationDate > t.timestamp AND
+                c.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
+            LEFT JOIN
+                comments c2
+            ON
+                p.id = c2.PostId AND
+                c2.UserId != c.UserId AND
+                c2.UserId is not null
+            WHERE
+                c.UserId is not null AND
+                p.owneruserid != -1 AND
+                p.owneruserid is not null AND
+                NOT (c.UserId IS NULL OR p.owneruserid IS NULL OR c2.UserId IS NULL)
+            GROUP BY
+                t.timestamp,
+                c.UserId
+            HAVING
+                ARRAY_LENGTH(ARRAY_AGG(DISTINCT c2.UserId)) > 0
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
+            },
+            pkey_col=None,
+            time_col=self.time_col,
+        )
