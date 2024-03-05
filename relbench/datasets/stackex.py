@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+from typing import Tuple
 
 import pandas as pd
 import pooch
@@ -32,11 +34,23 @@ class StackExDataset(RelBenchDataset):
         self,
         *,
         process: bool = False,
+        use_db_cache: bool = True,
+        keep_raw_csv: bool = False
     ):
         self.name = f"{self.name}"
+        self.local_db_cache_path = os.path.join(pooch.os_cache(self.name), self.db_dir, 'raw')
+        self.use_db_cache = use_db_cache
+        self.keep_raw_csv = keep_raw_csv  # don't delete imtermediate csv files
+
         super().__init__(process=process)
 
-    def make_db(self) -> Database:
+    def check_db(self) -> bool:
+        r"Check if local database is OK"
+        if os.path.isdir(self.local_db_cache_path):
+            return any(os.scandir(self.local_db_cache_path))  # check if empty
+        return False
+
+    def create_db(self) -> Tuple[Database, str]:
         r"""Process the raw files into a database."""
         url = "https://relbench.stanford.edu/data/relbench-forum-raw.zip"
         path = pooch.retrieve(
@@ -155,4 +169,27 @@ class StackExDataset(RelBenchDataset):
             time_col="CreationDate",
         )
 
-        return Database(tables)
+        return Database(tables), path
+
+    def make_db(self) -> Database:
+        r"""Process the raw files into a database or load cached database."""
+        if self.use_db_cache and self.check_db():
+            print(f"Loading db from {self.local_db_cache_path}")
+            db = Database.load(self.local_db_cache_path)
+        else:
+            db, path = self.create_db()
+            if self.use_db_cache:
+                if not self.keep_raw_csv:
+                    # raw csv files are not needed when db_cache is used
+                    print("Removing raw csv files")
+                    for table_path in Path(path).glob("*.csv"):
+                        os.remove(table_path)
+
+                db.save(self.local_db_cache_path)
+            elif self.check_db():
+                # local cache database files are not needed in this case
+                print("Removing db cache files")
+                for table_path in Path(self.local_db_cache_path).glob("*.parquet"):
+                    os.remove(table_path)
+
+        return db

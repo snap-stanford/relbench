@@ -81,11 +81,9 @@ class Table:
         assert str(path).endswith(".parquet")
 
         # Read the Parquet file using pyarrow
-        table = pa.parquet.read_table(path)
-        df = table.to_pandas()
-
+        df = pd.read_parquet(path, engine='fastparquet')
         # Extract metadata
-        metadata_bytes = table.schema.metadata
+        metadata_bytes = pa.parquet.read_metadata(path).metadata
         metadata = {
             key.decode("utf-8"): json.loads(value.decode("utf-8"))
             for key, value in metadata_bytes.items()

@@ -23,7 +23,8 @@ dependencies=[
 	"requests",
 	"tqdm",
 	"scikit-learn",
-	"typing-extensions"
+	"typing-extensions",
+	"fastparquet"
 ]
 
 [project.optional-dependencies]
