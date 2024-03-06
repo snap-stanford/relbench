@@ -18,11 +18,10 @@ def main() -> None:
 
     gpu_ids = args.gpu_ids.split(",")  # Define the GPU IDs available
 
-
-
     """
     grid1 = {"DATASET": ["rel-f1"],
              "TASK": ["rel-f1-dnf", "rel-f1-qualifying", "rel-f1-position"], 
+
              "MODEL": ["lgbm", "baseline"]}
 
     grid2 = {"DATASET": ["rel-stackex"],
@@ -32,12 +31,16 @@ def main() -> None:
     grid3 = {"DATASET": ["rel-trial"],
              "TASK": ["rel-trial-site"],
              "MODEL": ["lgbm"]}
-    
+
     grids = [grid3]
 
     combinations = []
     for grid in grids:
-        os.makedirs(os.path.join("results", "baselines", grid["DATASET"][0]), exist_ok=True)
+
+        os.makedirs(
+            os.path.join("results", "baselines", grid["DATASET"][0]), exist_ok=True
+        )
+
 
         assert list(grid.keys()) == ["DATASET", "TASK", "MODEL"]
 
@@ -62,12 +65,13 @@ def main() -> None:
         resource_pool.put(gpu)
 
     def create_worker(
-        DATASET: str, TASK: str, MODEL: str, gpu: int, 
+        DATASET: str,
+        TASK: str,
+        MODEL: str,
+        gpu: int,
     ) -> Callable[[], None]:
         def worker() -> None:
-            print(
-                f"Started: Exp {DATASET} {TASK} {MODEL}"
-            )
+            print(f"Started: Exp {DATASET} {TASK} {MODEL}")
             command = f"CUDA_VISIBLE_DEVICES={gpu} {get_launch_command(MODEL)} --dataset {DATASET} --task {TASK} --repeats {args.repeats}"
             log_file = get_log_file(DATASET, TASK, MODEL)
             with open(log_file, "w") as f:
@@ -87,7 +91,7 @@ def main() -> None:
         # Wait for a while to avoid launching jobs too quickly
         time.sleep(args.sleep_time)
 
-        
+
 
 if __name__ == "__main__":
     main()
