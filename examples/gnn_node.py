@@ -25,21 +25,15 @@ from relbench.datasets import get_dataset
 from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_graph
 
 
-def init_pytorch_worker(rank, world_size):
-    os.environ["MASTER_ADDR"] = "localhost"
-    os.environ["MASTER_PORT"] = "12355"
-    dist.init_process_group("nccl", rank=rank, world_size=world_size)
-
-
 def run(rank, data, args, col_stats_dict, task, world_size, root_dir):
     if world_size == 0:
         device = torch.device("cpu")
     else:
         device = torch.device("cuda:" + str(rank))
-    init_pytorch_worker(
-        rank,
-        world_size,
-    )
+    # init pytorch worker
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "12355"
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
     loader_dict: Dict[str, NeighborLoader] = {}
     for split, table in [
         ("train", task.train_table),
