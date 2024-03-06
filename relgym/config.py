@@ -106,6 +106,12 @@ def set_cfg(cfg):
     # The aggregation method
     cfg.torch_frame_model.num_layers = 2
 
+    # The model class
+    cfg.torch_frame_model.torch_frame_model_cls = "ResNet"
+
+    # test embedder
+    cfg.torch_frame_model.text_embedder = "glove"
+
     # ----------------------------------------------------------------------- #
     # Model options
     # ----------------------------------------------------------------------- #
@@ -116,6 +122,12 @@ def set_cfg(cfg):
 
     # The aggregation method of GNN message passing
     cfg.model.aggr = "sum"
+
+    # dropout rate
+    cfg.model.dropout = 0.0
+
+    # dropout rate for feature
+    cfg.model.feature_dropout = 0.0
 
     # The aggregation method of the heterogeneous information
     cfg.model.hetero_aggr = "sum"

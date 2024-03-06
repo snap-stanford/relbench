@@ -4,7 +4,7 @@ import torch
 import torch_frame
 from torch import Tensor
 from torch_frame.data.stats import StatType
-from torch_frame.nn.models import ResNet
+from torch_frame.nn.models import ResNet, TabTransformer
 from torch_geometric.nn import PositionalEncoding
 from torch_geometric.typing import NodeType
 
@@ -36,7 +36,7 @@ class HeteroEncoder(torch.nn.Module):
         channels: int,
         node_to_col_names_dict: Dict[NodeType, Dict[torch_frame.stype, List[str]]],
         node_to_col_stats: Dict[NodeType, Dict[str, Dict[StatType, Any]]],
-        torch_frame_model_cls=ResNet,
+        torch_frame_model_cls: str = "ResNet",
         torch_frame_model_kwargs: Dict[str, Any] = {
             "channels": 128,
             "num_layers": 4,
@@ -63,13 +63,30 @@ class HeteroEncoder(torch.nn.Module):
                 )
                 for stype in node_to_col_names_dict[node_type].keys()
             }
-            torch_frame_model = torch_frame_model_cls(
-                **torch_frame_model_kwargs,
-                out_channels=channels,
-                col_stats=node_to_col_stats[node_type],
-                col_names_dict=node_to_col_names_dict[node_type],
-                stype_encoder_dict=stype_encoder_dict,
-            )
+            if torch_frame_model_cls == "ResNet":
+                torch_frame_model = ResNet(
+                    **torch_frame_model_kwargs,
+                    out_channels=channels,
+                    col_stats=node_to_col_stats[node_type],
+                    col_names_dict=node_to_col_names_dict[node_type],
+                    stype_encoder_dict=stype_encoder_dict,
+                )
+            elif torch_frame_model_cls == "TabTransformer":
+                torch_frame_model = TabTransformer(
+                    **torch_frame_model_kwargs,
+                    out_channels=channels,
+                    col_stats=node_to_col_stats[node_type],
+                    col_names_dict=node_to_col_names_dict[node_type],
+                    num_heads=8,
+                    attn_dropout=0.9,
+                    ffn_dropout=0.9,
+                    encoder_pad_size=32,
+                )
+            else:
+                raise ValueError(
+                    f"Unknown torch_frame_model_cls: {torch_frame_model_cls}"
+                )
+
             self.encoders[node_type] = torch_frame_model
 
     def reset_parameters(self):

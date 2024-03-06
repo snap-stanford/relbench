@@ -20,7 +20,7 @@ def train_epoch(
         batch = batch.to(cfg.device)
 
         if cfg.model.use_self_join:  # Use the re-sampling method for retrieval bank
-            bank_batch = next(loader_dict['bank']).to(cfg.device)
+            bank_batch = next(loader_dict["bank"]).to(cfg.device)
         else:
             bank_batch = None
 
@@ -61,7 +61,7 @@ def eval_epoch(
         batch = batch.to(cfg.device)
 
         if cfg.model.use_self_join:  # Use the re-sampling method for retrieval bank
-            bank_batch = next(loader_dict['bank']).to(cfg.device)
+            bank_batch = next(loader_dict["bank"]).to(cfg.device)
         else:
             bank_batch = None
 
