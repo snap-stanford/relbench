@@ -60,7 +60,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
             == train_table_input.src_time[index]
         )
 
-    batch_size = 16
+    batch_size = 128
     train_loader = LinkNeighborLoader(
         data=data,
         num_neighbors=[-1, -1],
