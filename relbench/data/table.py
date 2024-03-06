@@ -81,7 +81,7 @@ class Table:
         assert str(path).endswith(".parquet")
 
         # Read the Parquet file using pyarrow
-        df = pd.read_parquet(path, engine='fastparquet')
+        df = pd.read_parquet(path, engine="fastparquet")
         # Extract metadata
         metadata_bytes = pa.parquet.read_metadata(path).metadata
         metadata = {

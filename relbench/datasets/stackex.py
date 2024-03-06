@@ -38,10 +38,12 @@ class StackExDataset(RelBenchDataset):
         *,
         process: bool = False,
         use_db_cache: bool = True,
-        keep_raw_csv: bool = False
+        keep_raw_csv: bool = False,
     ):
         self.name = f"{self.name}"
-        self.local_db_cache_path = os.path.join(pooch.os_cache(self.name), self.db_dir, 'raw')
+        self.local_db_cache_path = os.path.join(
+            pooch.os_cache(self.name), self.db_dir, "raw"
+        )
         self.inf_file_path = os.path.join(self.local_db_cache_path, "db.inf")
         self.use_db_cache = use_db_cache
         self.keep_raw_csv = keep_raw_csv  # don't delete imtermediate csv files
@@ -176,13 +178,13 @@ class StackExDataset(RelBenchDataset):
                 return f.readline().strip() == self.inf_file_line
         return False
 
-    def clear_local_db(self, db_path:str):
+    def clear_local_db(self, db_path: str):
         print("Removing db cache files")
         for table_path in Path(db_path).glob("*.parquet"):
             os.remove(str(table_path))
         os.remove(os.path.join(db_path, "db.inf"))
 
-    def clear_csv(self, csv_path:str):
+    def clear_csv(self, csv_path: str):
         print("Removing raw csv files")
         for table_path in Path(csv_path).glob("*.csv"):
             os.remove(str(table_path))
@@ -197,18 +199,17 @@ class StackExDataset(RelBenchDataset):
             db, csv_path = self.create_db()
             if self.use_db_cache:
                 if not self.keep_raw_csv:
-                # raw csv files are not needed when db_cache is used
+                    # raw csv files are not needed when db_cache is used
                     self.clear_csv(csv_path)
 
                 print(f"saving Database object to {db_path}")
                 db.save(db_path)
 
                 # add db.inf file to the db_path with url and known_hash
-                with open(self.inf_file_path, 'w') as f:
+                with open(self.inf_file_path, "w") as f:
                     f.write(f"{self.inf_file_line}\n")
             elif self.check_db():
                 # local cache database files are not needed in this case
                 self.clear_local_db(db_path)
 
         return db
-
