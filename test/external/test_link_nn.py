@@ -60,7 +60,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
             == train_table_input.src_time[index]
         )
 
-    batch_size = 128
+    batch_size = 512
     train_loader = LinkNeighborLoader(
         data=data,
         num_neighbors=[-1, -1],
@@ -103,7 +103,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
             input_time=torch.full(
                 size=(len(src_node_indices),), fill_value=seed_time, dtype=torch.long
             ),
-            batch_size=128,
+            batch_size=512,
             shuffle=False,
         )
         dst_loader = NeighborLoader(
@@ -114,7 +114,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
             input_time=torch.full(
                 size=(task.num_dst_nodes,), fill_value=seed_time, dtype=torch.long
             ),
-            batch_size=128,
+            batch_size=512,
             shuffle=False,
         )
         eval_loaders_dict[split] = (src_loader, dst_loader)
