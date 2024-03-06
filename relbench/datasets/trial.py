@@ -33,8 +33,10 @@ class TrialDataset(RelBenchDataset):
         self,
         *,
         process: bool = False,
+        cache_dir: str = None,
     ):
         self.name = f"{self.name}"
+        self.cache_dir = cache_dir
         super().__init__(process=process)
 
     def make_db(self) -> Database:
@@ -45,6 +47,7 @@ class TrialDataset(RelBenchDataset):
             known_hash="3f7376b7d901177157b3c5b048221884e936b45d05e809c7875403183ca9e13d",
             progressbar=True,
             processor=unzip_processor,
+            path=self.cache_dir,
         )
         path = os.path.join(path, "relbench-trial-raw")
         studies = pd.read_csv(os.path.join(path, "studies.txt"), sep="|")
