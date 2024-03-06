@@ -1,14 +1,14 @@
 import copy
 import os
-from typing import Dict
 from itertools import cycle
+from typing import Dict
 
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 
 from examples.inferred_stypes import dataset2inferred_stypes
-from examples.text_embedder import GloveTextEmbedding  # May not be the best practice
+from examples.text_embedder import get_text_embedder  # May not be the best practice
 from relbench.data import RelBenchDataset
 from relbench.datasets import get_dataset
 from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_graph
@@ -39,10 +39,14 @@ def transform_dataset_to_graph(dataset: RelBenchDataset):
         dataset.db,
         col_to_stype_dict=col_to_stype_dict,
         text_embedder_cfg=TextEmbedderConfig(
-            text_embedder=GloveTextEmbedding(device=device), batch_size=256
+            text_embedder=get_text_embedder(
+                cfg.torch_frame_model.text_embedder, device=device
+            ),
+            batch_size=256,
         ),
         cache_dir=os.path.join(
-            cfg.dataset.root_dir, f"{cfg.dataset.name}_materialized_cache"
+            cfg.dataset.root_dir,
+            f"{cfg.dataset.name}_{cfg.torch_frame_model.text_embedder}_materialized_cache",
         ),
     )
 
@@ -75,10 +79,12 @@ def get_loader_and_entity(data, task):
             persistent_workers=cfg.loader.num_workers > 0,
         )
 
-        if split == 'train' and cfg.model.use_self_join:
+        if split == "train" and cfg.model.use_self_join:
             bank_loader = NeighborLoader(
                 data,
-                num_neighbors=[cfg.loader.num_neighbors for _ in range(cfg.model.num_layers)],
+                num_neighbors=[
+                    cfg.loader.num_neighbors for _ in range(cfg.model.num_layers)
+                ],
                 # num_neighbors=[int(cfg.loader.num_neighbors / 2**i) for i in range(cfg.model.num_layers)],
                 time_attr="time",
                 temporal_strategy=cfg.loader.temporal_strategy,
@@ -92,7 +98,7 @@ def get_loader_and_entity(data, task):
                 persistent_workers=cfg.loader.num_workers > 0,
                 drop_last=True,
             )
-            loader_dict['bank'] = cycle(bank_loader)  # make it loop infinitely
+            loader_dict["bank"] = cycle(bank_loader)  # make it loop infinitely
 
     return loader_dict, entity_table
 

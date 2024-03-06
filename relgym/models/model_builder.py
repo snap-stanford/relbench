@@ -32,6 +32,7 @@ def create_model(data, col_stats_dict, entity_table, task_type, to_device=True):
                     for node_type in data.node_types
                 },
                 node_to_col_stats=col_stats_dict,
+                torch_frame_model_cls=cfg.torch_frame_model.torch_frame_model_cls,
                 torch_frame_model_kwargs={
                     "channels": cfg.torch_frame_model.channels,
                     "num_layers": cfg.torch_frame_model.num_layers,
@@ -73,16 +74,16 @@ def create_model(data, col_stats_dict, entity_table, task_type, to_device=True):
             )
 
         def forward(
-                self,
-                tf_dict: Dict[NodeType, TensorFrame],
-                edge_index_dict: Dict[EdgeType, Tensor],
-                seed_time: Tensor,
-                time_dict: Dict[NodeType, Tensor],
-                batch_dict: Dict[NodeType, Tensor],
-                num_sampled_nodes_dict: Dict[NodeType, List[int]],
-                num_sampled_edges_dict: Dict[EdgeType, List[int]],
-                y: Tensor,
-                bank_batch,
+            self,
+            tf_dict: Dict[NodeType, TensorFrame],
+            edge_index_dict: Dict[EdgeType, Tensor],
+            seed_time: Tensor,
+            time_dict: Dict[NodeType, Tensor],
+            batch_dict: Dict[NodeType, Tensor],
+            num_sampled_nodes_dict: Dict[NodeType, List[int]],
+            num_sampled_edges_dict: Dict[EdgeType, List[int]],
+            y: Tensor,
+            bank_batch,
         ) -> Tensor:
             x_dict = self.encoder(tf_dict)
 
@@ -92,8 +93,11 @@ def create_model(data, col_stats_dict, entity_table, task_type, to_device=True):
 
             if bank_batch is not None:
                 bank_x_dict = self.encoder(bank_batch.tf_dict)
-                bank_rel_time_dict = self.temporal_encoder(bank_batch[entity_table].seed_time,
-                                                           bank_batch.time_dict, bank_batch.batch_dict)
+                bank_rel_time_dict = self.temporal_encoder(
+                    bank_batch[entity_table].seed_time,
+                    bank_batch.time_dict,
+                    bank_batch.batch_dict,
+                )
                 for node_type, rel_time in bank_rel_time_dict.items():
                     bank_x_dict[node_type] = bank_x_dict[node_type] + rel_time
                 bank_y = bank_batch[entity_table].y
@@ -106,16 +110,20 @@ def create_model(data, col_stats_dict, entity_table, task_type, to_device=True):
             # Perturb the edges
             if cfg.model.perturb_edges is None:
                 pass
-            elif cfg.model.perturb_edges == 'drop_all':
+            elif cfg.model.perturb_edges == "drop_all":
                 for key in edge_index_dict:
-                    edge_index_dict[key] = edge_index_dict[key][..., :1]  # only keep the first edge
-                    if 'p2f' in key[1]:
+                    edge_index_dict[key] = edge_index_dict[key][
+                        ..., :1
+                    ]  # only keep the first edge
+                    if "p2f" in key[1]:
                         num_sampled_edges_dict[key][1] = edge_index_dict[key].size(1)
                     else:
                         num_sampled_edges_dict[key][0] = edge_index_dict[key].size(1)
-            elif cfg.model.perturb_edges == 'rand_perm':
+            elif cfg.model.perturb_edges == "rand_perm":
                 for key in edge_index_dict:
-                    rand_perm = torch.randperm(edge_index_dict[key].size(1)).to(edge_index_dict[key].device)
+                    rand_perm = torch.randperm(edge_index_dict[key].size(1)).to(
+                        edge_index_dict[key].device
+                    )
                     edge_index_dict[key][1] = edge_index_dict[key][1][rand_perm]
             else:
                 raise NotImplementedError(cfg.model.perturb_edges)
