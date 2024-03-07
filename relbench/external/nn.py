@@ -167,17 +167,19 @@ class HeteroGraphSAGE(torch.nn.Module):
         num_sampled_edges_dict: Optional[Dict[EdgeType, List[int]]] = None,
     ) -> Dict[NodeType, Tensor]:
         for i, (conv, norm_dict) in enumerate(zip(self.convs, self.norms)):
+            # Removing trimming since it does not pass
+            # test/external/test_node_nn.py:test_node_train_empty_graph
+            # TODO: Re-introduce this.
             # Trim graph and features to only hold required data per layer:
-            if num_sampled_nodes_dict is not None:
-                assert num_sampled_edges_dict is not None
-                x_dict, edge_index_dict, _ = trim_to_layer(
-                    layer=i,
-                    num_sampled_nodes_per_hop=num_sampled_nodes_dict,
-                    num_sampled_edges_per_hop=num_sampled_edges_dict,
-                    x=x_dict,
-                    edge_index=edge_index_dict,
-                )
-
+            # if num_sampled_nodes_dict is not None:
+            #     assert num_sampled_edges_dict is not None
+            #     x_dict, edge_index_dict, _ = trim_to_layer(
+            #         layer=i,
+            #         num_sampled_nodes_per_hop=num_sampled_nodes_dict,
+            #         num_sampled_edges_per_hop=num_sampled_edges_dict,
+            #         x=x_dict,
+            #         edge_index=edge_index_dict,
+            #     )
             x_dict = conv(x_dict, edge_index_dict)
             x_dict = {key: norm_dict[key](x) for key, x in x_dict.items()}
             x_dict = {key: x.relu() for key, x in x_dict.items()}

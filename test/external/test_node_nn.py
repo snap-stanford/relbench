@@ -142,3 +142,44 @@ def test_node_train_fake_product_dataset(tmp_path):
             task.evaluate(pred, task.val_table)
         else:
             task.evaluate(pred)
+
+
+def test_node_train_empty_graph(tmp_path):
+    # Make a very sparse graph
+    num_customers = 50
+    dataset = FakeDataset(num_customers=num_customers, num_reviews=1)
+
+    data, col_stats_dict = make_pkey_fkey_graph(
+        dataset.db,
+        get_stype_proposal(dataset.db),
+        text_embedder_cfg=TextEmbedderConfig(
+            text_embedder=HashTextEmbedder(8), batch_size=None
+        ),
+        cache_dir=tmp_path,
+    )
+    node_to_col_names_dict = {  # TODO Expose as method in `HeteroData`.
+        node_type: data[node_type].tf.col_names_dict for node_type in data.node_types
+    }
+    loader = NeighborLoader(
+        data,
+        num_neighbors=[-1, -1],
+        time_attr="time",
+        input_nodes=("customer", torch.arange(num_customers)),
+        input_time=torch.zeros(num_customers, dtype=torch.long),
+        batch_size=5,
+        # Only shuffle during training.
+        shuffle=True,
+    )
+    encoder = HeteroEncoder(64, node_to_col_names_dict, col_stats_dict)
+    gnn = HeteroGraphSAGE(data.node_types, data.edge_types, 64)
+    head = MLP(64, out_channels=1, num_layers=1)
+
+    for batch in loader:
+        x_dict = encoder(batch.tf_dict)
+        x_dict = gnn(
+            x_dict,
+            batch.edge_index_dict,
+            batch.num_sampled_nodes_dict,
+            batch.num_sampled_edges_dict,
+        )
+        head(x_dict["customer"])
