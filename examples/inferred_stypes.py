@@ -415,3 +415,6 @@ dataset2inferred_stypes = {
         },
     },
 }
+
+
+dataset2inferred_stypes["rel-math-stackex"] = dataset2inferred_stypes["rel-stackex"]
