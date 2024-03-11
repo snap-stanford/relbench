@@ -1,10 +1,12 @@
-import argparse 
-from relbench.datasets import get_dataset
-import duckdb
-import pandas as pd
-import numpy as np
-from collections import Counter
+import argparse
 import random
+from collections import Counter
+
+import duckdb
+import numpy as np
+import pandas as pd
+
+from relbench.datasets import get_dataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
@@ -46,6 +48,7 @@ def count_sort_and_pad_preds(max_len, preds):
         padded_preds.append(p)
 
     return padded_preds
+
 
 # =============================================================================
 # predict the most frequent dst entity for each src entity
@@ -105,6 +108,7 @@ def random_dst_entity(train_table, test_table, val_table, task):
     preds = np.array(padded_preds) 
 
     return preds
+
 
 for run in range(args.repeats):
     if args.method == "most_frequent":
