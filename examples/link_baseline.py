@@ -35,6 +35,7 @@ def count_and_sort(int_list):
     # Return the sorted list of unique ints by frequency
     return sorted_ints
 
+
 def count_sort_and_pad_preds(max_len, preds):
     padded_preds = []
 
@@ -72,16 +73,17 @@ def most_frequent_dst_entity(train_table, test_table, val_table, task):
             src_to_dst[src] = []
         src_to_dst[src] += dst
 
-
     preds = []
     for id in list(task.test_table.df[task.src_entity_col]):
         if id in src_to_dst:
             pred = src_to_dst[id]
         else:
-            pred = [] # If the src entity is not in the train or val set, predict an empty list
+            pred = (
+                []
+            )  # If the src entity is not in the train or val set, predict an empty list
 
         preds.append(pred)
-    
+
     padded_preds = count_sort_and_pad_preds(task.eval_k, preds)
     preds = np.array(padded_preds)
     return preds
@@ -94,9 +96,15 @@ def random_dst_entity(train_table, test_table, val_table, task):
     src_ids = list(task.test_table.df[task.src_entity_col])
     max_len = task.eval_k
 
-    dst_list = [item for sublist in list(train_table.df[task.dst_entity_col]) for item in sublist]
-    dst_list += [item for sublist in list(val_table.df[task.dst_entity_col]) for item in sublist]
-    dst_list = list(set(dst_list)) # get unique ids
+    dst_list = [
+        item
+        for sublist in list(train_table.df[task.dst_entity_col])
+        for item in sublist
+    ]
+    dst_list += [
+        item for sublist in list(val_table.df[task.dst_entity_col]) for item in sublist
+    ]
+    dst_list = list(set(dst_list))  # get unique ids
 
     preds = []
     for id in src_ids:
@@ -105,7 +113,7 @@ def random_dst_entity(train_table, test_table, val_table, task):
         preds.append(pred)
 
     padded_preds = count_sort_and_pad_preds(task.eval_k, preds)
-    preds = np.array(padded_preds) 
+    preds = np.array(padded_preds)
 
     return preds
 
@@ -115,7 +123,7 @@ for run in range(args.repeats):
         preds = most_frequent_dst_entity(train_table, test_table, val_table, task)
     elif args.method == "random":
         preds = random_dst_entity(train_table, test_table, val_table, task)
-        
+
     print(f"Run: {run}")
     print(f"Method: {args.method}")
     print(task.evaluate(preds))
