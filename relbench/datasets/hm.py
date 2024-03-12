@@ -27,7 +27,6 @@ class HMDataset(RelBenchDataset):
         self,
         *,
         process: bool = False,
-        cache_dir: str = None,
     ):
         self.name = f"{self.name}"
         super().__init__(process=process)
