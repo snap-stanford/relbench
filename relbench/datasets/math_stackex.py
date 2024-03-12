@@ -4,7 +4,6 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-
 from relbench.tasks.stackex import (
     BadgesTask,
     EngageTask,
@@ -57,7 +56,6 @@ class MathStackExDataset(RelBenchDataset):
         comments = pd.read_csv(os.path.join(path, "Comments.csv"))
         posts = pd.read_csv(os.path.join(path, "Posts.csv"))
 
-
         votes = pd.read_csv(os.path.join(path, "Votes.csv"))
         postLinks = pd.read_csv(os.path.join(path, "PostLinks.csv"))
         badges = pd.read_csv(os.path.join(path, "Badges.csv"))
@@ -99,7 +97,6 @@ class MathStackExDataset(RelBenchDataset):
         votes = self.clean_datetime(votes, "CreationDate")
         users = self.clean_datetime(users, "CreationDate")
         posts = self.clean_datetime(posts, "CreationDate")
-
 
         tables = {}
 
@@ -165,11 +162,11 @@ class MathStackExDataset(RelBenchDataset):
         )
 
         return Database(tables)
-    
+
     def clean_datetime(self, df, col):
         ## change time column to pd timestamp series
         # Attempt to convert "CreationDate" to datetime format
-        df[col] = pd.to_datetime(df[col], errors='coerce')
+        df[col] = pd.to_datetime(df[col], errors="coerce")
 
         # Count the number of comments before removing invalid dates
         total_before = len(df)
@@ -184,6 +181,8 @@ class MathStackExDataset(RelBenchDataset):
         percentage_removed = ((total_before - total_after) / total_before) * 100
 
         # Print the percentage of comments removed
-        print(f"Percentage of rows removed due to invalid dates: {percentage_removed:.2f}%")
+        print(
+            f"Percentage of rows removed due to invalid dates: {percentage_removed:.2f}%"
+        )
 
         return df
