@@ -42,7 +42,7 @@ def make_pkey_fkey_graph(
     col_to_stype_dict: Dict[str, Dict[str, stype]],
     text_embedder_cfg: Optional[TextEmbedderConfig] = None,
     cache_dir: Optional[str] = None,
-) -> Tuple[HeteroData, Dict[str, dict[str, dict[StatType, Any]]]]:
+) -> Tuple[HeteroData, Dict[str, Dict[str, Dict[StatType, Any]]]]:
     r"""Given a :class:`Database` object, construct a heterogeneous graph with
     primary-foreign key relationships, together with the column stats of each
     table.

@@ -35,19 +35,29 @@ class MathStackExDataset(RelBenchDataset):
         self,
         *,
         process: bool = False,
+        cache_dir: str = None,
     ):
+        self.cache_dir = cache_dir
         self.name = f"{self.name}"
         super().__init__(process=process)
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
-        
-        path = "/dfs/scratch0/joshrob/relbench-data/math-stackex-temp"
-        #path = os.path.join(path, "raw")
+        url = "https://relbench.stanford.edu/data/relbench-stackex-raw.zip"
+        path = pooch.retrieve(
+            url,
+            known_hash="31003ec800eee341bc093549b10bff8e4394fd6bc0429769a71a42b8addd1765",
+            progressbar=True,
+            processor=unzip_processor,
+            path=self.cache_dir,
+        )
+        path = os.path.join(path, "math-stackex-temp")
         print("Loading data from:", path)
         users = pd.read_csv(os.path.join(path, "Users.csv"))
         comments = pd.read_csv(os.path.join(path, "Comments.csv"))
         posts = pd.read_csv(os.path.join(path, "Posts.csv"))
+
+
         votes = pd.read_csv(os.path.join(path, "Votes.csv"))
         postLinks = pd.read_csv(os.path.join(path, "PostLinks.csv"))
         badges = pd.read_csv(os.path.join(path, "Badges.csv"))

@@ -34,7 +34,9 @@ class StackExDataset(RelBenchDataset):
         self,
         *,
         process: bool = False,
+        cache_dir: str = None,
     ):
+        self.cache_dir = cache_dir
         self.name = f"{self.name}"
         super().__init__(process=process)
 
@@ -46,6 +48,7 @@ class StackExDataset(RelBenchDataset):
             known_hash="ad3bf96f35146d50ef48fa198921685936c49b95c6b67a8a47de53e90036745f",
             progressbar=True,
             processor=unzip_processor,
+            path=self.cache_dir,
         )
         path = os.path.join(path, "raw")
         users = pd.read_csv(os.path.join(path, "Users.csv"))

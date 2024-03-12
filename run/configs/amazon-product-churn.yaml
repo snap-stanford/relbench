@@ -1,0 +1,28 @@
+torch_frame_model:
+  channels: 128
+  num_layers: 2
+  torch_frame_model_cls: "ResNet"
+  text_embedder: "glove"
+model:
+  channels: 128
+  aggr: "sum"
+  conv: "sage"
+  num_layers: 2
+  perturb_edges: null
+  mask_features: false
+  feature_dropout: 0.0
+dataset:
+  name: "rel-amazon"
+  cache_dir: "/dfs/scratch0/jiaqihan/projects/relbench/cache"
+  root_dir: "/dfs/scratch0/jiaqihan/projects/relbench/data"
+  task: "rel-amazon-product-churn"
+loader:
+  num_neighbors: 128
+  num_workers: 1
+  batch_size: 512
+  temporal_strategy: 'uniform'
+optim:
+  max_epoch: 30
+  early_stop: 10
+  base_lr: 0.01
+seed: 42

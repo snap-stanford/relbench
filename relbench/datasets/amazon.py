@@ -50,9 +50,11 @@ class AmazonDataset(RelBenchDataset):
         use_5_core: bool = True,
         *,
         process: bool = False,
+        cache_dir: str = None,
     ):
         self.category = category
         self.use_5_core = use_5_core
+        self.cache_dir = cache_dir
 
         self.name = f"{self.name}-{category}{'_5_core' if use_5_core else ''}"
 
@@ -70,6 +72,7 @@ class AmazonDataset(RelBenchDataset):
             known_hash=self.known_hashes.get(url.split("/")[-1], None),
             progressbar=True,
             processor=pooch.Decompress(),
+            path=self.cache_dir,
         )
         print(f"reading product info from {path}...")
         tic = time.time()
@@ -154,6 +157,7 @@ class AmazonDataset(RelBenchDataset):
             known_hash=self.known_hashes.get(url.split("/")[-1], None),
             progressbar=True,
             processor=pooch.Decompress(),
+            path=self.cache_dir,
         )
         print(f"reading review and customer info from {path}...")
         tic = time.time()

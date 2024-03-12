@@ -242,31 +242,32 @@ class UserCommentOnPostTask(RelBenchLinkTask):
         posts = db.table_dict["posts"].df
         comments = db.table_dict["comments"].df
 
+
         df = duckdb.sql(
             f"""
             SELECT
                 t.timestamp,
                 c.UserId as UserId,
-                LIST(DISTINCT p.id) AS PostId
+                LIST(DISTINCT parent.id) AS PostId
             FROM
                 timestamp_df t
             LEFT JOIN
                 posts p
             ON
-                p.CreationDate <= t.timestamp
+                p.CreationDate > t.timestamp AND
+                p.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
             LEFT JOIN
-                comments c
+                posts parent
             ON
-                p.id = c.PostId AND
-                c.CreationDate > t.timestamp AND
-                c.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
+                p.ParentId = parent.id AND
+                parent.CreationDate <= t.timestamp
             WHERE
-                c.UserId is not null AND
+                parent.OwnerUserId is not null AND
                 p.owneruserid != -1 AND
                 p.owneruserid is not null
             GROUP BY
                 t.timestamp,
-                c.UserId
+                parent.id
             """
         ).df()
 

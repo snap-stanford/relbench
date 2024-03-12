@@ -1,0 +1,33 @@
+torch_frame_model:
+  channels: 128
+  num_layers: 2
+  torch_frame_model_cls: "ResNet"
+  text_embedder: "glove"
+model:
+  channels: 128
+  aggr: "sum"
+  conv: "sage"
+  num_layers: 2
+  perturb_edges: null
+  mask_features: false
+  norm: "layer_norm"
+  feature_dropout: 0.0
+  use_shallow: true
+dataset:
+  name: "rel-hm"
+  cache_dir: "/dfs/scratch0/jiaqihan/projects/relbench/cache"
+  root_dir: "/dfs/scratch0/jiaqihan/projects/relbench/data"
+  task: "rel-hm-rec"
+loader:
+  num_neighbors: 160
+  num_workers: 1
+  batch_size: 512
+  temporal_strategy: 'uniform'
+  share_same_time: true
+optim:
+  max_epoch: 30
+  early_stop: 10
+  base_lr: 0.001
+seed: 42
+train:
+  max_steps_per_epoch: 2000

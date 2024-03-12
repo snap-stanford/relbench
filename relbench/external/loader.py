@@ -39,7 +39,7 @@ class TimestampSampler(Sampler[int]):
             [indices.numel() // batch_size for indices in self.time_dict.values()]
         )
 
-    def __iter__(self) -> Iterator[list[int]]:
+    def __iter__(self) -> Iterator[List[int]]:
         all_batches = []
         for indices in self.time_dict.values():
             # Random shuffle values:
