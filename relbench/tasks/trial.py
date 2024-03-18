@@ -214,7 +214,9 @@ class WithdrawalTask(RelBenchNodeTask):
             return multi_hot
 
         df = df[df["withdraw_reasons"].notnull()]
-        df["withdraw_reasons"] = df.withdraw_reasons.apply(lambda x: multi_hot(map_reasons(x)))
+        df["withdraw_reasons"] = df.withdraw_reasons.apply(
+            lambda x: multi_hot(map_reasons(x))
+        )
 
         return Table(
             df=df,
