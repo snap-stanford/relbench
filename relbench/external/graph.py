@@ -16,6 +16,7 @@ from torch_geometric.utils import sort_edge_index
 
 from relbench.data import Database, LinkTask, NodeTask, Table
 from relbench.external.utils import to_unix_time
+from relbench.data.task_base import TaskType
 
 
 def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
@@ -160,7 +161,9 @@ class NodeTrainTableInput(NamedTuple):
 def get_node_train_table_input(
     table: Table,
     task: NodeTask,
+    multilabel = False,
 ) -> NodeTrainTableInput:
+
     nodes = torch.from_numpy(table.df[task.entity_col].astype(int).values)
 
     time: Optional[Tensor] = None
@@ -173,7 +176,10 @@ def get_node_train_table_input(
         target_type = float
         if task.task_type == "multiclass_classification":
             target_type = int
-        target = torch.from_numpy(table.df[task.target_col].values.astype(target_type))
+        if task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
+            target = torch.from_numpy(np.stack(table.df[task.target_col].values))
+        else:
+            target = torch.from_numpy(table.df[task.target_col].values.astype(target_type))
         transform = AttachTargetTransform(task.entity_table, target)
 
     return NodeTrainTableInput(

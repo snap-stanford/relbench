@@ -146,6 +146,7 @@ class WithdrawalTask(RelBenchNodeTask):
     target_col = "withdraw_reasons"
     timedelta = pd.Timedelta(days=365)
     metrics = [multilabel_f1_micro, multilabel_f1_macro]
+    num_labels = 15
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -207,8 +208,13 @@ class WithdrawalTask(RelBenchNodeTask):
         def map_reasons(x):
             return np.unique([self.label2reason[i] for i in x.split(",")]).tolist()
 
+        def multi_hot(x):
+            multi_hot = np.zeros(15, dtype=int)
+            multi_hot[x] = 1
+            return multi_hot
+
         df = df[df["withdraw_reasons"].notnull()]
-        df["withdraw_reasons"] = df.withdraw_reasons.apply(lambda x: map_reasons(x))
+        df["withdraw_reasons"] = df.withdraw_reasons.apply(lambda x: multi_hot(map_reasons(x)))
 
         return Table(
             df=df,
