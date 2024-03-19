@@ -29,15 +29,15 @@ trainval_table = Table(
 )
 
 
-def past_visit_aggr(x, k: int):
+def past_visit_aggr(x):
     lst_cat = []
     for e in list(x):
         lst_cat.extend(e)
     counter = Counter(lst_cat)
     topk = [elem for elem, _ in counter.most_common(k)]
     # padding
-    if len(topk) < k:
-        topk.extend([-1] * (k - len(topk)))
+    if len(topk) < task.eval_k:
+        topk.extend([-1] * (task.eval_k - len(topk)))
     return topk
 
 
@@ -51,7 +51,7 @@ def evaluate(
         """Predict the most frequently-visited dst nodes per each src node."""
         df = (
             train_table.df.groupby(task.src_entity_col)[task.dst_entity_col]
-            .apply(lambda x: past_visit_aggr(x, task.eval_k))
+            .apply(past_visit_aggr)
             .reset_index(name="__pred__")
         )
         pred_ser = pd.merge(pred_table.df, df, how="left", on=task.src_entity_col)[
@@ -69,8 +69,11 @@ def evaluate(
         for lst in train_table.df[task.dst_entity_col]:
             lst_cat.extend(lst)
         counter = Counter(lst_cat)
-        topk = np.array([elem for elem, _ in counter.most_common(task.eval_k)])
-        pred = np.tile(topk, (len(pred_table), 1))
+        topk = [elem for elem, _ in counter.most_common(task.eval_k)]
+        # padding
+        if len(topk) < task.eval_k:
+            topk.extend([-1] * (task.eval_k - len(topk)))
+        pred = np.tile(np.array(topk), (len(pred_table), 1))
     else:
         raise ValueError("Unknown eval name called {name}.")
     return task.evaluate(pred, None if is_test else pred_table)
