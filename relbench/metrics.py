@@ -124,11 +124,15 @@ def multilabel_recall_macro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> f
 
 
 def multilabel_precision_micro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
-    return skm.precision_score(np.stack(true), (pred > 0.5).astype(int), average="micro")
+    return skm.precision_score(
+        np.stack(true), (pred > 0.5).astype(int), average="micro"
+    )
 
 
 def multilabel_precision_macro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
-    return skm.precision_score(np.stack(true), (pred > 0.5).astype(int), average="macro")
+    return skm.precision_score(
+        np.stack(true), (pred > 0.5).astype(int), average="macro"
+    )
 
 
 ####### Link prediction metrics

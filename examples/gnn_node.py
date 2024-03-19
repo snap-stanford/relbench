@@ -86,7 +86,9 @@ for split, table in [
     ("val", task.val_table),
     ("test", task.test_table),
 ]:
-    table_input = get_node_train_table_input(table=table, task=task, multilabel = multilabel)
+    table_input = get_node_train_table_input(
+        table=table, task=task, multilabel=multilabel
+    )
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
         data,
@@ -103,7 +105,6 @@ for split, table in [
         num_workers=args.num_workers,
         persistent_workers=args.num_workers > 0,
     )
-
 
 
 model = Model(
@@ -131,7 +132,7 @@ def train() -> float:
             task.entity_table,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
-        
+
         loss = loss_fn(pred.float(), batch[entity_table].y.float())
         loss.backward()
         optimizer.step()
@@ -163,7 +164,7 @@ def test(loader: NeighborLoader) -> np.ndarray:
 
         if task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
             pred = torch.sigmoid(pred)
-        
+
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         pred_list.append(pred.detach().cpu())
     return torch.cat(pred_list, dim=0).numpy()
