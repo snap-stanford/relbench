@@ -75,7 +75,7 @@ elif task.task_type == TaskType.REGRESSION:
 elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     out_channels = task.num_labels
     loss_fn = BCEWithLogitsLoss()
-    tune_metric = "multilabel_f1_micro"
+    tune_metric = "multilabel_auprc_macro"
     higher_is_better = True
     multilabel = True
 
