@@ -34,7 +34,7 @@ def past_visit_aggr(x):
     for e in list(x):
         lst_cat.extend(e)
     counter = Counter(lst_cat)
-    topk = [elem for elem, _ in counter.most_common(k)]
+    topk = [elem for elem, _ in counter.most_common(task.eval_k)]
     # padding
     if len(topk) < task.eval_k:
         topk.extend([-1] * (task.eval_k - len(topk)))
