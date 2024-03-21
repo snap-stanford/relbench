@@ -232,7 +232,7 @@ class UserCommentOnPostTask(RelBenchLinkTask):
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=365 * 2)
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
-    eval_k = 10
+    eval_k = 100
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserCommentOnPostTask."""
@@ -294,7 +294,7 @@ class RelatedPostTask(RelBenchLinkTask):
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=365 * 2)
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
-    eval_k = 10
+    eval_k = 100
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserVoteOnPostTask."""
@@ -314,7 +314,7 @@ class RelatedPostTask(RelBenchLinkTask):
                 LEFT JOIN
                     postLinks pl
                 ON
-                    pl.CreationDate <= t.timestamp AND
+                    pl.CreationDate > t.timestamp AND
                     pl.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
                 LEFT JOIN
                     posts p1
@@ -359,7 +359,7 @@ class UsersInteractTask(RelBenchLinkTask):
     timedelta = pd.Timedelta(days=365 * 2)
 
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
-    eval_k = 10
+    eval_k = 100
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UsersInteractTask."""
