@@ -87,28 +87,56 @@ def r2(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 
 ####### Multilabel metrics
 ## TODO: revisit Multi-label metrics
+def multilabel_auprc_micro(true: NDArray[np.int_], pred: NDArray[np.float_]) -> float:
+    # Flatten true and prediction arrays for micro-average computation
+    true_flat = np.ravel(np.stack(true))
+    pred_flat = np.ravel(pred)
+    return skm.average_precision_score(true_flat, pred_flat, average="micro")
+
+
+def multilabel_auprc_macro(true: NDArray[np.int_], pred: NDArray[np.float_]) -> float:
+    true = np.stack(true)
+    return skm.average_precision_score(true, pred, average="macro")
+
+
+def multilabel_auroc_micro(true: NDArray[np.int_], pred: NDArray[np.float_]) -> float:
+    # Flatten true and prediction arrays for micro-average computation
+    true_flat = np.ravel(np.stack(true))
+    pred_flat = np.ravel(pred)
+    return skm.roc_auc_score(true_flat, pred_flat, average="micro")
+
+
+def multilabel_auroc_macro(true: NDArray[np.int_], pred: NDArray[np.float_]) -> float:
+    true = np.stack(true)
+    return skm.roc_auc_score(true, pred, average="macro")
+
+
 def multilabel_f1_micro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
-    return skm.f1_score(true, pred, average="micro")
+    return skm.f1_score(np.stack(true), (pred > 0.5).astype(int), average="micro")
 
 
 def multilabel_f1_macro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
-    return skm.f1_score(true, pred, average="macro")
+    return skm.f1_score(np.stack(true), (pred > 0.5).astype(int), average="macro")
 
 
 def multilabel_recall_micro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
-    return skm.recall_score(true, pred, average="micro")
+    return skm.recall_score(np.stack(true), (pred > 0.5).astype(int), average="micro")
 
 
 def multilabel_recall_macro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
-    return skm.recall_score(true, pred, average="macro")
+    return skm.recall_score(np.stack(true), (pred > 0.5).astype(int), average="macro")
 
 
 def multilabel_precision_micro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
-    return skm.precision_score(true, pred, average="micro")
+    return skm.precision_score(
+        np.stack(true), (pred > 0.5).astype(int), average="micro"
+    )
 
 
 def multilabel_precision_macro(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
-    return skm.precision_score(true, pred, average="macro")
+    return skm.precision_score(
+        np.stack(true), (pred > 0.5).astype(int), average="macro"
+    )
 
 
 ####### Link prediction metrics
