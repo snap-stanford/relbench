@@ -32,7 +32,7 @@ train_table = task.train_table
 val_table = task.val_table
 test_table = task.test_table
 
-# Add AR label
+### Adding AR labels into train/val/test_table
 whole_df = pd.concat([train_table.df, val_table.df, test_table.df], axis=0)
 num_ar_labels = min(train_table.df[train_table.time_col].nunique() - 1, 3)
 
@@ -44,9 +44,11 @@ time_df = pd.DataFrame(
         "time_idx": np.arange(len(sorted_unique_times)),
     }
 )
+
 whole_df = whole_df.merge(time_df, how="left", on=task.time_col)
 whole_df.drop(task.time_col, axis=1, inplace=True)
 ar_label_cols = []
+# Shift timestamp of whole_df iteratively and join it with train/val/test_table
 for i in range(1, num_ar_labels + 1):
     whole_df_shifted = whole_df.copy(deep=True)
     # Shift time index by i
