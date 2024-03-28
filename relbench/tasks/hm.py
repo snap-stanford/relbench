@@ -168,3 +168,52 @@ class ItemSalesTask(RelBenchNodeTask):
             pkey_col=None,
             time_col="timestamp",
         )
+
+class CustomersPredictionTask(RelBenchLinkTask):
+    r"""Predict the list of customers for each artcle in the next
+    seven days"""
+
+    name = "rel-hm-customers"
+    task_type = TaskType.LINK_PREDICTION
+    src_entity_col = "article_id"
+    src_entity_table = "article"
+    dst_entity_col = "customer_id"
+    dst_entity_table = "customer"
+    time_col = "timestamp"
+    timedelta = pd.Timedelta(days=7)
+    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
+    eval_k = 12
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        customer = db.table_dict["customer"].df
+        transactions = db.table_dict["transactions"].df
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                t.timestamp,
+                transactions.article_id,
+                LIST(DISTINCT transactions.customer_id) AS customer_id
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                transactions
+            ON
+                transactions.t_dat > t.timestamp AND
+                transactions.t_dat <= t.timestamp + INTERVAL '{self.timedelta} days'
+            GROUP BY
+                t.timestamp,
+                transactions.article_id
+            """
+        ).df()
+            
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
+            },
+            pkey_col=None,
+            time_col=self.time_col,
+        )

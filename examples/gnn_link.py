@@ -14,6 +14,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
+from torch_geometric.nn import MIPSKNNIndex, ApproxMIPSKNNIndex
+
 from tqdm import tqdm
 
 from relbench.data import LinkTask, RelBenchDataset
@@ -41,6 +43,7 @@ parser.add_argument("--use_shallow", action="store_true")
 parser.add_argument("--num_workers", type=int, default=1)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--log_dir", type=str, default="results")
+parser.add_argument("--knn_method", type=str, default="topk", choices=["topk", "knn", "approx_knn"])
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -186,11 +189,25 @@ def test(src_loader: NeighborLoader, dst_loader: NeighborLoader) -> np.ndarray:
     dst_emb = torch.cat(dst_embs, dim=0)
     del dst_embs
 
+    if args.knn_method == "topk":
+        mips = None
+    elif args.knn_method == "knn":
+        mips = MIPSKNNIndex(dst_emb)
+    else:
+        mips = ApproxMIPSKNNIndex(
+        num_cells=10,
+        num_cells_to_visit=10,
+        bits_per_vector=8,
+        emb=dst_emb)
+
     pred_index_mat_list: list[Tensor] = []
-    for batch in tqdm(src_loader):
+    for batch in tqdm(src_loader):  
         batch = batch.to(device)
         emb = model(batch, task.src_entity_table)
-        _, pred_index_mat = torch.topk(emb @ dst_emb.t(), k=task.eval_k, dim=1)
+        if mips:
+            _, pred_index_mat = mips.search(emb, k=task.eval_k)
+        else:
+            _, pred_index_mat = torch.topk(emb @ dst_emb.t(), k=task.eval_k, dim=1)
         pred_index_mat_list.append(pred_index_mat.cpu())
     pred = torch.cat(pred_index_mat_list, dim=0).numpy()
     return pred
