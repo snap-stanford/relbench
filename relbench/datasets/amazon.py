@@ -110,9 +110,11 @@ class AmazonDataset(RelBenchDataset):
         # price is like "$x,xxx.xx", "$xx.xx", or "$xx.xx - $xx.xx", or garbage html
         # if it's a range, we take the first value
         pdf.loc[:, "price"] = pdf["price"].apply(
-            lambda x: None
-            if x is None or x == "" or x[0] != "$"
-            else float(x.split(" ")[0][1:].replace(",", ""))
+            lambda x: (
+                None
+                if x is None or x == "" or x[0] != "$"
+                else float(x.split(" ")[0][1:].replace(",", ""))
+            )
         )
 
         # remove products with missing price
