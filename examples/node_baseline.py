@@ -4,6 +4,7 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 import torch
+from scipy.stats import mode
 
 from relbench.data import RelBenchDataset, Table
 from relbench.data.task_base import TaskType
@@ -19,7 +20,7 @@ args = parser.parse_args()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # TODO: remove process=True once correct data/task is uploaded.
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
 task = dataset.get_task(args.task, process=True)
 
 train_table = task.train_table
@@ -55,6 +56,13 @@ def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, floa
         past_target = train_table.df[task.target_col].astype(int)
         majority_label = int(past_target.mode().iloc[0])
         pred = torch.full((len(pred_table),), fill_value=majority_label)
+    elif name == "majority_multilabel":
+        past_target = train_table.df[task.target_col]
+        majority = mode(np.stack(past_target.values), axis = 0).mode[0]
+        pred = np.stack([majority] * len(pred_table.df))
+    elif name == "random_multilabel":
+        num_labels = train_table.df[task.target_col].values[0].shape[0]
+        pred = np.random.rand(len(pred_table), num_labels)
     else:
         raise ValueError("Unknown eval name called {name}.")
     return task.evaluate(pred, None if is_test else pred_table)
@@ -88,6 +96,17 @@ if task.task_type == TaskType.REGRESSION:
 
 elif task.task_type == TaskType.BINARY_CLASSIFICATION:
     eval_name_list = ["random", "majority"]
+    for name in eval_name_list:
+        train_metrics = evaluate(train_table, train_table, name=name)
+        val_metrics = evaluate(train_table, val_table, name=name)
+        test_metrics = evaluate(trainval_table, test_table, name=name)
+        print(f"{name}:")
+        print(f"Train: {train_metrics}")
+        print(f"Val: {val_metrics}")
+        print(f"Test: {test_metrics}")
+        
+elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
+    eval_name_list = ["random_multilabel", "majority_multilabel"]
     for name in eval_name_list:
         train_metrics = evaluate(train_table, train_table, name=name)
         val_metrics = evaluate(train_table, val_table, name=name)
