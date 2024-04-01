@@ -195,6 +195,7 @@ class LinkTrainTableInput(NamedTuple):
         (used to perform negative sampling).
     - src_time is a Tensor of time for src_nodes
     """
+
     src_nodes: Tuple[NodeType, Tensor]
     dst_nodes: Tuple[NodeType, Tensor]
     num_dst_nodes: int
