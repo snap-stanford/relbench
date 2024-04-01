@@ -159,7 +159,10 @@ def test(loader: NeighborLoader) -> np.ndarray:
             assert clamp_max is not None
             pred = torch.clamp(pred, clamp_min, clamp_max)
 
-        if task.task_type in [TaskType.BINARY_CLASSIFICATION, TaskType.MULTILABEL_CLASSIFICATION]:
+        if task.task_type in [
+            TaskType.BINARY_CLASSIFICATION,
+            TaskType.MULTILABEL_CLASSIFICATION,
+        ]:
             pred = torch.sigmoid(pred)
 
         pred = pred.view(-1) if pred.size(1) == 1 else pred

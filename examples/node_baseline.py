@@ -58,7 +58,7 @@ def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, floa
         pred = torch.full((len(pred_table),), fill_value=majority_label)
     elif name == "majority_multilabel":
         past_target = train_table.df[task.target_col]
-        majority = mode(np.stack(past_target.values), axis = 0).mode[0]
+        majority = mode(np.stack(past_target.values), axis=0).mode[0]
         pred = np.stack([majority] * len(pred_table.df))
     elif name == "random_multilabel":
         num_labels = train_table.df[task.target_col].values[0].shape[0]
@@ -104,7 +104,7 @@ elif task.task_type == TaskType.BINARY_CLASSIFICATION:
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
         print(f"Test: {test_metrics}")
-        
+
 elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     eval_name_list = ["random_multilabel", "majority_multilabel"]
     for name in eval_name_list:
