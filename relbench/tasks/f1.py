@@ -11,6 +11,7 @@ from relbench.utils import get_df_in_window
 
 class PositionTask(RelBenchNodeTask):
     r"""Predict the average finishing position of each driver all races in the next 2 months."""
+
     name = "rel-f1-position"
     task_type = TaskType.REGRESSION
     entity_col = "driverId"
@@ -67,6 +68,7 @@ class PositionTask(RelBenchNodeTask):
 
 class DidNotFinishTask(RelBenchNodeTask):
     r"""Predict the if each driver will DNF (not finish) a race in the next 1 month."""
+
     name = "rel-f1-dnf"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "driverId"
@@ -126,6 +128,7 @@ class DidNotFinishTask(RelBenchNodeTask):
 
 class QualifyingTask(RelBenchNodeTask):
     r"""Predict if each driver will qualify in the top-3 for a race within the next 1 month."""
+
     name = "rel-f1-qualifying"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "driverId"

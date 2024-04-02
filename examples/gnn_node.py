@@ -41,7 +41,7 @@ seed_everything(42)
 root_dir = "./data"
 
 # TODO: remove process=True once correct data/task is uploaded.
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
 task: NodeTask = dataset.get_task(args.task, process=True)
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
@@ -55,19 +55,44 @@ data, col_stats_dict = make_pkey_fkey_graph(
     cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
 
+clamp_min, clamp_max = None, None
+if task.task_type == TaskType.BINARY_CLASSIFICATION:
+    out_channels = 1
+    loss_fn = BCEWithLogitsLoss()
+    tune_metric = "roc_auc"
+    higher_is_better = True
+    multilabel = False
+elif task.task_type == TaskType.REGRESSION:
+    out_channels = 1
+    loss_fn = L1Loss()
+    tune_metric = "mae"
+    higher_is_better = False
+    # Get the clamp value at inference time
+    clamp_min, clamp_max = np.percentile(
+        task.train_table.df[task.target_col].to_numpy(), [2, 98]
+    )
+    multilabel = False
+elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
+    out_channels = task.num_labels
+    loss_fn = BCEWithLogitsLoss()
+    tune_metric = "multilabel_auprc_macro"
+    higher_is_better = True
+    multilabel = True
+
+
 loader_dict: Dict[str, NeighborLoader] = {}
 for split, table in [
     ("train", task.train_table),
     ("val", task.val_table),
     ("test", task.test_table),
 ]:
-    table_input = get_node_train_table_input(table=table, task=task)
+    table_input = get_node_train_table_input(
+        table=table, task=task, multilabel=multilabel
+    )
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
         data,
-        num_neighbors=[
-            int(args.num_neighbors / 2**i) for i in range(args.num_layers)
-        ],
+        num_neighbors=[int(args.num_neighbors / 2**i) for i in range(args.num_layers)],
         time_attr="time",
         input_nodes=table_input.nodes,
         input_time=table_input.time,
@@ -79,21 +104,6 @@ for split, table in [
         persistent_workers=args.num_workers > 0,
     )
 
-clamp_min, clamp_max = None, None
-if task.task_type == TaskType.BINARY_CLASSIFICATION:
-    out_channels = 1
-    loss_fn = BCEWithLogitsLoss()
-    tune_metric = "roc_auc"
-    higher_is_better = True
-elif task.task_type == TaskType.REGRESSION:
-    out_channels = 1
-    loss_fn = L1Loss()
-    tune_metric = "mae"
-    higher_is_better = False
-    # Get the clamp value at inference time
-    clamp_min, clamp_max = np.percentile(
-        task.train_table.df[task.target_col].to_numpy(), [2, 98]
-    )
 
 model = Model(
     data=data,
@@ -120,7 +130,8 @@ def train() -> float:
             task.entity_table,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
-        loss = loss_fn(pred, batch[entity_table].y)
+
+        loss = loss_fn(pred.float(), batch[entity_table].y.float())
         loss.backward()
         optimizer.step()
 
@@ -146,7 +157,10 @@ def test(loader: NeighborLoader) -> np.ndarray:
             assert clamp_max is not None
             pred = torch.clamp(pred, clamp_min, clamp_max)
 
-        if task.task_type == TaskType.BINARY_CLASSIFICATION:
+        if task.task_type in [
+            TaskType.BINARY_CLASSIFICATION,
+            TaskType.MULTILABEL_CLASSIFICATION,
+        ]:
             pred = torch.sigmoid(pred)
 
         pred = pred.view(-1) if pred.size(1) == 1 else pred
