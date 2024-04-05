@@ -165,7 +165,7 @@ elif TaskType.MULTILABEL_CLASSIFICATION:
         )
         tf_train.y = y_train[:, i]
         tf_val.y = y_val[:, i]
-        model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=1)
+        model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
         pred_train_list.append(model.predict(tf_test=tf_train).numpy())
         pred_val_list.append(model.predict(tf_test=tf_val).numpy())
         pred_test_list.append(model.predict(tf_test=tf_test).numpy())
