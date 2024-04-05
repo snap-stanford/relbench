@@ -12,6 +12,7 @@ from torch_frame.data import Dataset
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 from torch_frame.utils import infer_df_stype
+from tqdm import tqdm
 
 from relbench.data import RelBenchDataset, RelBenchNodeTask
 from relbench.data.task_base import TaskType
@@ -41,7 +42,13 @@ if args.use_ar_label:
     whole_df = pd.concat([train_table.df, val_table.df, test_table.df], axis=0)
     num_ar_labels = min(train_table.df[train_table.time_col].nunique() - 1, 3)
 
-    sorted_unique_times = sorted(whole_df[train_table.time_col].unique())
+    sorted_unique_times = np.sort(whole_df[train_table.time_col].unique())
+    timedelta = sorted_unique_times[1:] - sorted_unique_times[:-1]
+    if (timedelta / timedelta[0] - 1).max() > 0.1:
+        raise RuntimeError(
+            "Timestamps are not equally spaced, making it inappropriate for "
+            "AR labels to be used."
+        )
     TIME_IDX_COL = "time_idx"
     time_df = pd.DataFrame(
         {
@@ -88,16 +95,24 @@ elif task.task_type == TaskType.REGRESSION:
     col_to_stype[task.target_col] = torch_frame.numerical
     for ar_label in ar_label_cols:
         col_to_stype[ar_label] = torch_frame.numerical
+elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
+    col_to_stype[task.target_col] = torch_frame.embedding
+    for ar_label in ar_label_cols:
+        col_to_stype[ar_label] = torch_frame.embedding
+else:
+    raise ValueError(f"Unsupported task type called {task.task_type}")
 
 for split, table in [
     ("train", train_table),
     ("val", val_table),
     ("test", test_table),
 ]:
+    left_entity = list(table.fkey_col_to_pkey_table.keys())[0]
+    entity_df = entity_df.astype({entity_table.pkey_col: table.df[left_entity].dtype})
     dfs[split] = table.df.merge(
         entity_df,
         how="left",
-        left_on=list(table.fkey_col_to_pkey_table.keys())[0],
+        left_on=left_entity,
         right_on=entity_table.pkey_col,
     )
 
@@ -115,20 +130,49 @@ tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
 tf_test = train_dataset.convert_to_tensor_frame(dfs["test"])
 
-if task.task_type == TaskType.BINARY_CLASSIFICATION:
+if task.task_type in [
+    TaskType.BINARY_CLASSIFICATION,
+    TaskType.MULTILABEL_CLASSIFICATION,
+]:
     tune_metric = Metric.ROCAUC
-else:
+elif task.task_type == TaskType.REGRESSION:
     tune_metric = Metric.MAE
 
-model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
+if task.task_type in [TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION]:
+    import pdb
 
-model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
+    pdb.set_trace()
+    model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
+    model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
 
-pred = model.predict(tf_test=tf_train).numpy()
-print(f"Train: {task.evaluate(pred, train_table)}")
+    pred = model.predict(tf_test=tf_train).numpy()
+    print(f"Train: {task.evaluate(pred, train_table)}")
 
-pred = model.predict(tf_test=tf_val).numpy()
-print(f"Val: {task.evaluate(pred, val_table)}")
+    pred = model.predict(tf_test=tf_val).numpy()
+    print(f"Val: {task.evaluate(pred, val_table)}")
 
-pred = model.predict(tf_test=tf_test).numpy()
-print(f"Test: {task.evaluate(pred)}")
+    pred = model.predict(tf_test=tf_test).numpy()
+    print(f"Test: {task.evaluate(pred)}")
+elif TaskType.MULTILABEL_CLASSIFICATION:
+    y_train = tf_train.y.values.to(torch.long)
+    y_val = tf_val.y.values.to(torch.long)
+    pred_train_list = []
+    pred_val_list = []
+    pred_test_list = []
+    # Per-label evaluation
+    for i in tqdm(range(task.num_labels)):
+        model = LightGBM(
+            task_type=torch_frame.TaskType.BINARY_CLASSIFICATION, metric=tune_metric
+        )
+        tf_train.y = y_train[:, i]
+        tf_val.y = y_val[:, i]
+        model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
+        pred_train_list.append(model.predict(tf_test=tf_train).numpy())
+        pred_val_list.append(model.predict(tf_test=tf_val).numpy())
+        pred_test_list.append(model.predict(tf_test=tf_test).numpy())
+    pred_train = np.stack(pred_train_list).transpose()
+    print(f"Train: {task.evaluate(pred_train, train_table)}")
+    pred_val = np.stack(pred_val_list).transpose()
+    print(f"Val: {task.evaluate(pred_val, val_table)}")
+    pred_test = np.stack(pred_test_list).transpose()
+    print(f"Test: {task.evaluate(pred_test)}")
