@@ -46,7 +46,8 @@ if args.use_ar_label:
     timedelta = sorted_unique_times[1:] - sorted_unique_times[:-1]
     if (timedelta / timedelta[0] - 1).max() > 0.1:
         raise RuntimeError(
-            "Timestamps are not equally spaced, making it inappropriate to "
+            "Timestamps are not equally spaced, making it inappropriate for "
+            "AR labels to be used."
         )
     TIME_IDX_COL = "time_idx"
     time_df = pd.DataFrame(
