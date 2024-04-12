@@ -239,7 +239,7 @@ class WithdrawalTask(RelBenchNodeTask):
 
 
 class SiteSuccessTask(RelBenchNodeTask):
-    r"""Predict the success rate of a trial site in the next 2 years."""
+    r"""Predict the success rate of a trial site in the next 1 year."""
 
     name = "rel-trial-site"
     task_type = TaskType.REGRESSION
@@ -247,7 +247,7 @@ class SiteSuccessTask(RelBenchNodeTask):
     entity_table = "facilities"
     time_col = "timestamp"
     target_col = "success_rate"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365)
     metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -298,7 +298,7 @@ class SiteSuccessTask(RelBenchNodeTask):
 
 
 class SponsorConditionTask(RelBenchLinkTask):
-    r"""Predict a list of sponsors for a given condition the next 2 years."""
+    r"""Predict a list of sponsors for a given condition the next 1 year."""
 
     name = "rel-trial-sponsor-condition"
     task_type = TaskType.LINK_PREDICTION
@@ -307,7 +307,7 @@ class SponsorConditionTask(RelBenchLinkTask):
     dst_entity_col = "sponsor_id"
     dst_entity_table = "sponsors"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365)
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
     eval_k = 10
 
