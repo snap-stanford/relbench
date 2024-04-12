@@ -58,7 +58,6 @@ def run(rank, data, args, col_stats_dict, task, world_size, root_dir):
         higher_is_better = True
         multilabel = True
 
-
     loader_dict: Dict[str, NeighborLoader] = {}
     for split, table in [
         ("train", task.train_table),
