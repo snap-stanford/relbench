@@ -139,9 +139,6 @@ elif task.task_type == TaskType.REGRESSION:
     tune_metric = Metric.MAE
 
 if task.task_type in [TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION]:
-    import pdb
-
-    pdb.set_trace()
     model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
     model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
 
