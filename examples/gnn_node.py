@@ -113,7 +113,6 @@ model = Model(
     aggr=args.aggr,
     norm="batch_norm",
 ).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
 
 def train() -> float:
@@ -172,6 +171,7 @@ state_dicts = []
 for ensemble_idx in range(args.num_ensembles):
     print(f"===Training for {ensemble_idx}-th ensemble index.")
     model.reset_parameters()
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     state_dict = None
     best_val_metric = 0 if higher_is_better else math.inf
     for epoch in range(1, args.epochs + 1):
