@@ -128,10 +128,6 @@ model = Model(
 ).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
-import pdb
-
-pdb.set_trace()
-
 
 def train() -> Dict[str, float]:
     model.train()
