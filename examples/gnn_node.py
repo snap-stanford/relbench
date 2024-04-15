@@ -198,10 +198,12 @@ for ensemble_idx in range(args.num_ensembles):
     model.load_state_dict(state_dict)
     val_pred = test(loader_dict["val"])
     val_pred_accum += val_pred
-    val_metrics = task.evaluate(val_pred_accum / (ensemble_idx + 1), task.val_table)
+    val_pred_ensemble = val_pred_accum / (ensemble_idx + 1)
+    val_metrics = task.evaluate(val_pred_ensemble, task.val_table)
     print(f"Best Val metrics: {val_metrics}")
 
     test_pred = test(loader_dict["test"])
     test_pred_accum += test_pred
-    test_metrics = task.evaluate(test_pred_accum / (ensemble_idx + 1))
+    test_pred_ensemble = test_pred_accum / (ensemble_idx + 1)
+    test_metrics = task.evaluate(test_pred_ensemble)
     print(f"Best test metrics: {test_metrics}")
