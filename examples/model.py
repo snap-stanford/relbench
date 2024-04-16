@@ -12,6 +12,7 @@ from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalE
 
 
 class Model(torch.nn.Module):
+
     def __init__(
         self,
         data: HeteroData,
@@ -59,6 +60,13 @@ class Model(torch.nn.Module):
                 for node in shallow_list
             }
         )
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        self.encoder.reset_parameters()
+        self.temporal_encoder.reset_parameters()
+        self.gnn.reset_parameters()
+        self.head.reset_parameters()
         for embedding in self.embedding_dict.values():
             torch.nn.init.normal_(embedding.weight, std=0.1)
 
