@@ -104,16 +104,6 @@ for split, table in [
         persistent_workers=args.num_workers > 0,
     )
 
-model = Model(
-    data=data,
-    col_stats_dict=col_stats_dict,
-    num_layers=args.num_layers,
-    channels=args.channels,
-    out_channels=out_channels,
-    aggr=args.aggr,
-    norm="batch_norm",
-).to(device)
-
 
 def train() -> float:
     model.train()
@@ -144,7 +134,7 @@ def test(loader: NeighborLoader) -> np.ndarray:
     model.eval()
 
     pred_list = []
-    for batch in tqdm(loader):
+    for batch in loader:
         batch = batch.to(device)
         pred = model(
             batch,
@@ -170,7 +160,15 @@ state_dicts = []
 
 for ensemble_idx in range(args.num_ensembles):
     print(f"===Training for {ensemble_idx}-th ensemble index.")
-    model.reset_parameters()
+    model = Model(
+        data=data,
+        col_stats_dict=col_stats_dict,
+        num_layers=args.num_layers,
+        channels=args.channels,
+        out_channels=out_channels,
+        aggr=args.aggr,
+        norm="batch_norm",
+    ).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     state_dict = None
     best_val_metric = 0 if higher_is_better else math.inf
