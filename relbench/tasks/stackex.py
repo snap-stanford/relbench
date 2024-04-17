@@ -109,6 +109,7 @@ class EngageTask(RelBenchNodeTask):
 class VotesTask(RelBenchNodeTask):
     r"""Predict the number of upvotes that an existing question will receive in
     the next 2 years."""
+
     name = "rel-stackex-votes"
     task_type = TaskType.REGRESSION
     entity_col = "PostId"
@@ -163,6 +164,7 @@ class VotesTask(RelBenchNodeTask):
 
 class BadgesTask(RelBenchNodeTask):
     r"""Predict if each user will receive in a new badge the next 2 years."""
+
     name = "rel-stackex-badges"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "UserId"
