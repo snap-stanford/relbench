@@ -21,7 +21,7 @@ from relbench.tasks.amazon import (
 
 class AmazonDataset(RelBenchDataset):
     name = "rel-amazon"
-    val_timestamp = pd.Timestamp("2015-06-01")
+    val_timestamp = pd.Timestamp("2015-09-01")
     test_timestamp = pd.Timestamp("2016-01-01")
     train_start_timestamp = pd.Timestamp("2008-01-01")
 
