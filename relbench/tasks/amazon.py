@@ -251,7 +251,7 @@ class ProductRecommendationTask(RelBenchLinkTask):
     dst_entity_col = "product_id"
     dst_entity_table = "product"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365 // 4)
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
     eval_k = 10
 
@@ -303,7 +303,7 @@ class ProductFiveStarRecommendationTask(RelBenchLinkTask):
     dst_entity_col = "product_id"
     dst_entity_table = "product"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365 // 4)
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
     eval_k = 10
 
@@ -357,7 +357,7 @@ class ProductDetailedReviewRecommendationTask(RelBenchLinkTask):
     dst_entity_col = "product_id"
     dst_entity_table = "product"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365 // 4)
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
     eval_k = 10
 
@@ -367,7 +367,7 @@ class ProductDetailedReviewRecommendationTask(RelBenchLinkTask):
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         REVIEW_LENGTH = (
-            600  # minimum length of review to be considered as detailed review
+            300  # minimum length of review to be considered as detailed review
         )
 
         df = duckdb.sql(
