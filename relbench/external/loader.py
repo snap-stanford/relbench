@@ -1,3 +1,4 @@
+import math
 import random
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 
@@ -12,6 +13,7 @@ from torch_geometric.typing import EdgeType, NodeType, OptTensor
 
 
 class CustomNodeLoader(NodeLoader):
+
     def get_neighbors(
         self,
         input_data: NodeSamplerInput,
@@ -36,7 +38,10 @@ class TimestampSampler(Sampler[int]):
             for time in timestamp.unique()
         }
         self.num_batches = sum(
-            [indices.numel() // batch_size for indices in self.time_dict.values()]
+            [
+                math.ceil(indices.numel() / batch_size)
+                for indices in self.time_dict.values()
+            ]
         )
 
     def __iter__(self) -> Iterator[list[int]]:
@@ -46,10 +51,7 @@ class TimestampSampler(Sampler[int]):
             indices = indices[torch.randperm(indices.numel())]
             batches = torch.split(indices, self.batch_size)
             for batch in batches:
-                if len(batch) < self.batch_size:
-                    continue
-                else:
-                    all_batches.append(batch.tolist())
+                all_batches.append(batch.tolist())
 
         random.shuffle(all_batches)
 
