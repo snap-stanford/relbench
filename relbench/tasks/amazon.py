@@ -26,7 +26,7 @@ class ChurnTask(RelBenchNodeTask):
     entity_table = "customer"
     time_col = "timestamp"
     target_col = "churn"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365 // 4)
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -83,7 +83,7 @@ class LTVTask(RelBenchNodeTask):
     entity_table = "customer"
     time_col = "timestamp"
     target_col = "count_"  # "ltv"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365 // 4)
     metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -145,7 +145,7 @@ class ProductChurnTask(RelBenchNodeTask):
     entity_table = "product"
     time_col = "timestamp"
     target_col = "churn"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365 // 4)
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -202,7 +202,7 @@ class ProductLTVTask(RelBenchNodeTask):
     entity_table = "product"
     time_col = "timestamp"
     target_col = "count_"  # "ltv"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365 // 4 )
     metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
