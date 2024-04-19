@@ -24,7 +24,7 @@ from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_g
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
 parser.add_argument("--task", type=str, default="rel-stackex-engage")
-parser.add_argument("--lr", type=float, default=0.01)
+parser.add_argument("--lr", type=float, default=0.005)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
