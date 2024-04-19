@@ -202,7 +202,7 @@ class ProductLTVTask(RelBenchNodeTask):
     entity_table = "product"
     time_col = "timestamp"
     target_col = "count_"  # "ltv"
-    timedelta = pd.Timedelta(days=365 // 4 )
+    timedelta = pd.Timedelta(days=365 // 4)
     metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
