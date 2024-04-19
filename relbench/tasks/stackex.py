@@ -348,7 +348,6 @@ class RelatedPostTask(RelBenchLinkTask):
         )
 
 
-
 class UsersInteractTask(RelBenchLinkTask):
     r"""Predict a list of users who comment on the same posts as the original user."""
 
