@@ -11,6 +11,7 @@ from relbench.tasks.trial import (
     SiteSuccessTask,
     SponsorConditionTask,
     WithdrawalTask,
+    SponsorFacilityTask
 )
 from relbench.utils import unzip_processor
 
@@ -27,6 +28,7 @@ class TrialDataset(RelBenchDataset):
         WithdrawalTask,
         SiteSuccessTask,
         SponsorConditionTask,
+        SponsorFacilityTask
     ]
 
     def __init__(
