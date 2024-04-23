@@ -11,6 +11,10 @@ from relbench.metrics import (
     link_prediction_precision,
     link_prediction_recall,
     mae,
+    multilabel_auprc_macro,
+    multilabel_auprc_micro,
+    multilabel_auroc_macro,
+    multilabel_auroc_micro,
     multilabel_f1_macro,
     multilabel_f1_micro,
     rmse,
@@ -145,7 +149,13 @@ class WithdrawalTask(RelBenchNodeTask):
     time_col = "timestamp"
     target_col = "withdraw_reasons"
     timedelta = pd.Timedelta(days=365)
-    metrics = [multilabel_f1_micro, multilabel_f1_macro]
+    metrics = [
+        multilabel_auprc_micro,
+        multilabel_auprc_macro,
+        multilabel_auroc_micro,
+        multilabel_auroc_macro,
+    ]
+    num_labels = 15
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -207,8 +217,15 @@ class WithdrawalTask(RelBenchNodeTask):
         def map_reasons(x):
             return np.unique([self.label2reason[i] for i in x.split(",")]).tolist()
 
+        def multi_hot(x):
+            multi_hot = np.zeros(15, dtype=int)
+            multi_hot[x] = 1
+            return multi_hot
+
         df = df[df["withdraw_reasons"].notnull()]
-        df["withdraw_reasons"] = df.withdraw_reasons.apply(lambda x: map_reasons(x))
+        df["withdraw_reasons"] = df.withdraw_reasons.apply(
+            lambda x: multi_hot(map_reasons(x))
+        )
 
         return Table(
             df=df,
@@ -222,7 +239,7 @@ class WithdrawalTask(RelBenchNodeTask):
 
 
 class SiteSuccessTask(RelBenchNodeTask):
-    r"""Predict the success rate of a trial site in the next 2 years."""
+    r"""Predict the success rate of a trial site in the next 1 year."""
 
     name = "rel-trial-site"
     task_type = TaskType.REGRESSION
@@ -230,7 +247,7 @@ class SiteSuccessTask(RelBenchNodeTask):
     entity_table = "facilities"
     time_col = "timestamp"
     target_col = "success_rate"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365)
     metrics = [mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -281,7 +298,7 @@ class SiteSuccessTask(RelBenchNodeTask):
 
 
 class SponsorConditionTask(RelBenchLinkTask):
-    r"""Predict a list of sponsors for a given condition the next 2 years."""
+    r"""Predict a list of sponsors for a given condition the next 1 year."""
 
     name = "rel-trial-sponsor-condition"
     task_type = TaskType.LINK_PREDICTION
@@ -290,7 +307,7 @@ class SponsorConditionTask(RelBenchLinkTask):
     dst_entity_col = "sponsor_id"
     dst_entity_table = "sponsors"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365)
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
     eval_k = 10
 
