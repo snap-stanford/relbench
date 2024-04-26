@@ -298,7 +298,7 @@ class SiteSuccessTask(RelBenchNodeTask):
 
 
 class SponsorConditionTask(RelBenchLinkTask):
-    r"""Predict a list of sponsors for a given condition the next 1 year."""
+    r"""Predict whether or not if this condition will have which sponsors."""
 
     name = "rel-trial-sponsor-condition"
     task_type = TaskType.LINK_PREDICTION
@@ -321,13 +321,58 @@ class SponsorConditionTask(RelBenchLinkTask):
             SELECT
                 t.timestamp,
                 cs.condition_id,
-                ss.sponsor_id
+                LIST(DISTINCT ss.sponsor_id) AS sponsor_id
             FROM timestamp_df t
             LEFT JOIN condition_study cs
             LEFT JOIN sponsors_studies ss ON ss.nct_id = cs.nct_id
             ON cs.date > t.timestamp
                 and cs.date <= t.timestamp + INTERVAL '{self.timedelta}'
-            GROUP BY t.timestamp, cs.condition_id, ss.sponsor_id;
+            GROUP BY t.timestamp, cs.condition_id;
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
+            },
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+class SponsorFacilityTask(RelBenchLinkTask):
+    r"""Predict whether or not if this sponsor will have a trial in a facility."""
+
+    name = "rel-trial-sponsor-facility"
+    task_type = TaskType.LINK_PREDICTION
+    src_entity_col = "facility_id"
+    src_entity_table = "facilities"
+    dst_entity_col = "sponsor_id"
+    dst_entity_table = "sponsors"
+    time_col = "timestamp"
+    timedelta = pd.Timedelta(days=365)
+    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
+    eval_k = 10
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        sponsors_studies = db.table_dict["sponsors_studies"].df
+        facility_study = db.table_dict["facilities_studies"].df
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                t.timestamp,
+                fs.facility_id,
+                LIST(DISTINCT ss.sponsor_id) AS sponsor_id
+            FROM timestamp_df t
+            LEFT JOIN facility_study fs
+            LEFT JOIN sponsors_studies ss ON ss.nct_id = fs.nct_id
+            ON fs.date > t.timestamp
+                and fs.date <= t.timestamp + INTERVAL '{self.timedelta}'
+            GROUP BY t.timestamp, fs.facility_id;
             """
         ).df()
 
