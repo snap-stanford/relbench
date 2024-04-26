@@ -24,7 +24,7 @@ from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_g
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
 parser.add_argument("--task", type=str, default="rel-stackex-engage")
-parser.add_argument("--lr", type=float, default=0.01)
+parser.add_argument("--lr", type=float, default=0.005)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
@@ -156,7 +156,7 @@ def test(loader: NeighborLoader) -> np.ndarray:
     return torch.cat(pred_list, dim=0).numpy()
 
 
-state_dicts = []
+state_dict_perf_list = []
 
 for ensemble_idx in range(args.num_ensembles):
     print(f"===Training for {ensemble_idx}-th ensemble index.")
@@ -185,14 +185,16 @@ for ensemble_idx in range(args.num_ensembles):
         ):
             best_val_metric = val_metrics[tune_metric]
             state_dict = copy.deepcopy(model.state_dict())
-    state_dicts.append(state_dict)
+    state_dict_perf_list.append((state_dict, best_val_metric))
 
+# Sort according to the validation performance
+state_dict_perf_list.sort(key=lambda x: x[1], reverse=higher_is_better)
 val_pred_accum = 0
 test_pred_accum = 0
 
 for ensemble_idx in range(args.num_ensembles):
     print(f"Testing for ensemble indices from 0 to {ensemble_idx}")
-    state_dict = state_dicts[ensemble_idx]
+    state_dict = state_dict_perf_list[ensemble_idx][0]
     model.load_state_dict(state_dict)
     val_pred = test(loader_dict["val"])
     val_pred_accum += val_pred
