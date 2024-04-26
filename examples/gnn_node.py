@@ -185,14 +185,10 @@ for ensemble_idx in range(args.num_ensembles):
         ):
             best_val_metric = val_metrics[tune_metric]
             state_dict = copy.deepcopy(model.state_dict())
-    if higher_is_better:
-        perf = -best_val_metric
-    else:
-        perf = best_val_metric
-    state_dict_perf_list.append((state_dict, perf))
+    state_dict_perf_list.append((state_dict, best_val_metric))
 
 # Sort according to the validation performance
-state_dict_perf_list.sort(key=lambda x: x[1])
+state_dict_perf_list.sort(key=lambda x: x[1], reverse=higher_is_better)
 val_pred_accum = 0
 test_pred_accum = 0
 
