@@ -77,7 +77,7 @@ class TrialDataset(RelBenchDataset):
         )
         facilities = pd.read_csv(os.path.join(path, "facilities.txt"), sep="|")
         outcome_analyses = pd.read_csv(
-            os.path.join(path, "outcome_analyses.txt"), sep="|"
+            os.path.join(path, "outcome_analyses.txt"), sep="|", low_memory=False
         )
         detailed_descriptions = pd.read_csv(
             os.path.join(path, "detailed_descriptions.txt"), sep="|"
