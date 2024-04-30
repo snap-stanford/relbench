@@ -52,6 +52,33 @@ class LinkTask(BaseTask):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
+    @property
+    def train_table(self) -> Table:
+        table = super().train_table
+        table.df = table.df.sort_values(
+            [table.time_col, self.src_entity_col, self.dst_entity_col]
+        )
+        table.df = table.df.reset_index(drop=True)
+        return table
+
+    @property
+    def val_table(self) -> Table:
+        table = super().val_table
+        table.df = table.df.sort_values(
+            [table.time_col, self.src_entity_col, self.dst_entity_col]
+        )
+        table.df = table.df.reset_index(drop=True)
+        return table
+
+    @property
+    def test_table(self) -> Table:
+        table = super().test_table
+        table.df = table.df.sort_values(
+            [table.time_col, self.src_entity_col, self.dst_entity_col]
+        )
+        table.df = table.df.reset_index(drop=True)
+        return table
+
     def filter_dangling_entities(self, table: Table) -> Table:
         # filter dangling destination entities from a list
         table.df[self.dst_entity_col] = table.df[self.dst_entity_col].apply(

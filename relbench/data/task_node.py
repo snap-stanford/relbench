@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 class NodeTask(BaseTask):
-    r"""A link prediction task on a dataset."""
+    r"""A node prediction task on a dataset."""
 
     def __init__(
         self,
@@ -45,6 +45,27 @@ class NodeTask(BaseTask):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
+
+    @property
+    def train_table(self) -> Table:
+        table = super().train_table
+        table.df = table.df.sort_values([table.time_col, self.entity_col])
+        table.df = table.df.reset_index(drop=True)
+        return table
+
+    @property
+    def val_table(self) -> Table:
+        table = super().val_table
+        table.df = table.df.sort_values([table.time_col, self.entity_col])
+        table.df = table.df.reset_index(drop=True)
+        return table
+
+    @property
+    def test_table(self) -> Table:
+        table = super().test_table
+        table.df = table.df.sort_values([table.time_col, self.entity_col])
+        table.df = table.df.reset_index(drop=True)
+        return table
 
     def filter_dangling_entities(self, table: Table) -> Table:
         num_entities = len(self.dataset.db.table_dict[self.entity_table])
