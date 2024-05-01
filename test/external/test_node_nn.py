@@ -138,6 +138,7 @@ def test_node_train_fake_product_dataset(tmp_path):
                 ),
             )
         pred = torch.cat(pred_list, dim=0).numpy()
+
         if split == "val":
             task.evaluate(pred, task.val_table)
         else:
