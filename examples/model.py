@@ -16,7 +16,7 @@ class Model(torch.nn.Module):
     def __init__(
         self,
         data: HeteroData,
-        col_stats_dict: Dict[str, dict[str, dict[StatType, Any]]],
+        col_stats_dict: Dict[str, Dict[str, Dict[StatType, Any]]],
         num_layers: int,
         channels: int,
         out_channels: int,
