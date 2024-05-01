@@ -234,7 +234,7 @@ class UserCommentOnPostTask(RelBenchLinkTask):
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=365 * 2)
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
-    eval_k = 10
+    eval_k = 100
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserCommentOnPostTask."""
@@ -296,7 +296,7 @@ class RelatedPostTask(RelBenchLinkTask):
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=365 * 2)
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
-    eval_k = 10
+    eval_k = 100
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UserVoteOnPostTask."""
@@ -316,7 +316,7 @@ class RelatedPostTask(RelBenchLinkTask):
                 LEFT JOIN
                     postLinks pl
                 ON
-                    pl.CreationDate <= t.timestamp AND
+                    pl.CreationDate > t.timestamp AND
                     pl.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
                 LEFT JOIN
                     posts p1
@@ -358,7 +358,7 @@ class UsersInteractTask(RelBenchLinkTask):
     dst_entity_col = "InteractingUserId"
     dst_entity_table = "users"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365 // 4)
 
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
     eval_k = 10
@@ -373,38 +373,31 @@ class UsersInteractTask(RelBenchLinkTask):
 
         df = duckdb.sql(
             f"""
-            SELECT
-                t.timestamp,
-                c.UserId as UserId,
-                LIST(DISTINCT c2.UserId) FILTER (WHERE c2.UserId IS NOT NULL) AS InteractingUserId
-            FROM
-                timestamp_df t
-            LEFT JOIN
-                posts p
-            ON
-                p.CreationDate <= t.timestamp
-            LEFT JOIN
-                comments c
-            ON
-                p.id = c.PostId AND
-                c.CreationDate > t.timestamp AND
-                c.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
-            LEFT JOIN
-                comments c2
-            ON
-                p.id = c2.PostId AND
-                c2.UserId != c.UserId AND
-                c2.UserId is not null
-            WHERE
-                c.UserId is not null AND
-                p.owneruserid != -1 AND
-                p.owneruserid is not null AND
-                NOT (c.UserId IS NULL OR p.owneruserid IS NULL OR c2.UserId IS NULL)
-            GROUP BY
-                t.timestamp,
-                c.UserId
-            HAVING
-                ARRAY_LENGTH(ARRAY_AGG(DISTINCT c2.UserId)) > 0
+        SELECT
+            t.timestamp,
+            c.UserId AS UserId,
+            LIST(DISTINCT c2.UserId) FILTER (WHERE c2.UserId IS NOT NULL) AS InteractingUserId
+        FROM
+            timestamp_df t
+        CROSS JOIN
+            comments c
+        JOIN
+            users u_c ON c.UserId = u_c.Id AND u_c.CreationDate < t.timestamp
+        LEFT JOIN
+            comments c2 ON c.postid = c2.postid
+        JOIN
+            users u_c2 ON c2.UserId = u_c2.Id AND u_c2.CreationDate < t.timestamp
+                AND c2.UserId != c.UserId AND c2.UserId IS NOT NULL
+                AND c2.CreationDate > t.timestamp
+                AND c2.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
+        WHERE
+            c.UserId IS NOT NULL
+            AND NOT (c.UserId IS NULL OR c2.UserId IS NULL)
+        GROUP BY
+            t.timestamp,
+            c.UserId
+        HAVING
+            ARRAY_LENGTH(ARRAY_AGG(DISTINCT c2.UserId)) > 0;
             """
         ).df()
 
