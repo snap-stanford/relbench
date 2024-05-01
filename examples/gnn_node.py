@@ -34,11 +34,9 @@ parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--num_workers", type=int, default=1)
 parser.add_argument("--num_ensembles", type=int, default=1)
-parser.add_argument("--seed", type=int, default=42)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-seed_everything(args.seed)
 
 root_dir = "./data"
 

@@ -81,9 +81,9 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     src_seed_time = src_batch[task.src_entity_table].seed_time
     pos_dst_seed_time = batch_pos_dst[task.dst_entity_table].seed_time
     neg_dst_seed_time = batch_neg_dst[task.dst_entity_table].seed_time
-    assert src_batch[task.src_entity_table].batch_size <= batch_size
-    assert batch_pos_dst[task.dst_entity_table].batch_size <= batch_size
-    assert batch_neg_dst[task.dst_entity_table].batch_size <= batch_size
+    assert len(src_seed_time) == batch_size
+    assert len(pos_dst_seed_time) == batch_size
+    assert len(neg_dst_seed_time) == batch_size
     if share_same_time:
         shared_time = src_seed_time[0]
         assert (shared_time == src_seed_time).all()

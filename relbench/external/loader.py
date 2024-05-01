@@ -38,10 +38,7 @@ class TimestampSampler(Sampler[int]):
             for time in timestamp.unique()
         }
         self.num_batches = sum(
-            [
-                math.ceil(indices.numel() / batch_size)
-                for indices in self.time_dict.values()
-            ]
+            [indices.numel() // batch_size for indices in self.time_dict.values()]
         )
 
     def __iter__(self) -> Iterator[list[int]]:
@@ -51,7 +48,10 @@ class TimestampSampler(Sampler[int]):
             indices = indices[torch.randperm(indices.numel())]
             batches = torch.split(indices, self.batch_size)
             for batch in batches:
-                all_batches.append(batch.tolist())
+                if len(batch) < self.batch_size:
+                    continue
+                else:
+                    all_batches.append(batch.tolist())
 
         random.shuffle(all_batches)
 
