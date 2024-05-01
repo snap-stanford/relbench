@@ -1,4 +1,3 @@
-import math
 import random
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 
@@ -13,7 +12,6 @@ from torch_geometric.typing import EdgeType, NodeType, OptTensor
 
 
 class CustomNodeLoader(NodeLoader):
-
     def get_neighbors(
         self,
         input_data: NodeSamplerInput,
