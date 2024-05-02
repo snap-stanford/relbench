@@ -23,6 +23,12 @@ parser.add_argument("--dataset", type=str, default="rel-stackex")
 parser.add_argument("--task", type=str, default="rel-stackex-engage")
 # Use auto-regressive label as hand-crafted feature as input to LightGBM
 parser.add_argument("--use_ar_label", action="store_true")
+parser.add_argument(
+    "--sample_size",
+    type=int,
+    default=25000,
+    help="Subsample the specified number of training data to train lightgbm model.",
+)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -127,6 +133,12 @@ train_dataset = Dataset(
 ).materialize()
 
 tf_train = train_dataset.tensor_frame
+# randomly subsample in case training data size is too large.
+if args.sample_size > 0 and args.sample_size < len(tf_train):
+    sampled_idx = torch.randperm(len(tf_train))[: args.sample_size]
+    tf_train = tf_train[sampled_idx]
+    train_table.df = train_table.df.iloc[sampled_idx]
+
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
 tf_test = train_dataset.convert_to_tensor_frame(dfs["test"])
 
