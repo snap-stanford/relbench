@@ -33,6 +33,7 @@ parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--num_workers", type=int, default=1)
+parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_ensembles", type=int, default=1)
 args = parser.parse_args()
 
@@ -109,7 +110,9 @@ def train() -> float:
     model.train()
 
     loss_accum = count_accum = 0
-    for batch in tqdm(loader_dict["train"]):
+    steps = 0
+    total_steps = min(len(loader_dict["train"]), args.max_steps_per_epoch)
+    for batch in tqdm(loader_dict["train"], total=total_steps):
         batch = batch.to(device)
 
         optimizer.zero_grad()
@@ -125,6 +128,10 @@ def train() -> float:
 
         loss_accum += loss.detach().item() * pred.size(0)
         count_accum += pred.size(0)
+
+        steps += 1
+        if steps > args.max_steps_per_epoch:
+            break
 
     return loss_accum / count_accum
 
