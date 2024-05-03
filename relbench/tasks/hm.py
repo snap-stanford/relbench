@@ -122,7 +122,7 @@ class ChurnTask(RelBenchNodeTask):
 
 
 class ArticleSalesTask(RelBenchNodeTask):
-    r"""Predict the Total sales for an article (the sum of prices of the
+    r"""Predict the total sales for an article (the sum of prices of the
     associated transactions) in the next week."""
 
     name = "rel-hm-sales"
