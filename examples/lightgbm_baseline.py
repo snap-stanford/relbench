@@ -26,7 +26,7 @@ parser.add_argument("--use_ar_label", action="store_true")
 parser.add_argument(
     "--sample_size",
     type=int,
-    default=25000,
+    default=50000,
     help="Subsample the specified number of training data to train lightgbm model.",
 )
 args = parser.parse_args()
@@ -46,7 +46,7 @@ ar_label_cols = []
 if args.use_ar_label:
     ### Adding AR labels into train/val/test_table
     whole_df = pd.concat([train_table.df, val_table.df, test_table.df], axis=0)
-    num_ar_labels = min(train_table.df[train_table.time_col].nunique() - 1, 3)
+    num_ar_labels = max(train_table.df[train_table.time_col].nunique() - 2, 1)
 
     sorted_unique_times = np.sort(whole_df[train_table.time_col].unique())
     timedelta = sorted_unique_times[1:] - sorted_unique_times[:-1]
@@ -108,6 +108,11 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
 else:
     raise ValueError(f"Unsupported task type called {task.task_type}")
 
+# randomly subsample in case training data size is too large.
+if args.sample_size > 0 and args.sample_size < len(train_table):
+    sampled_idx = np.random.permutation(len(train_table))[: args.sample_size]
+    train_table.df = train_table.df.iloc[sampled_idx]
+
 for split, table in [
     ("train", train_table),
     ("val", val_table),
@@ -133,12 +138,6 @@ train_dataset = Dataset(
 ).materialize()
 
 tf_train = train_dataset.tensor_frame
-# randomly subsample in case training data size is too large.
-if args.sample_size > 0 and args.sample_size < len(tf_train):
-    sampled_idx = torch.randperm(len(tf_train))[: args.sample_size]
-    tf_train = tf_train[sampled_idx]
-    train_table.df = train_table.df.iloc[sampled_idx]
-
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
 tf_test = train_dataset.convert_to_tensor_frame(dfs["test"])
 
