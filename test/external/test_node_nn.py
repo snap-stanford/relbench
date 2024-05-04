@@ -118,14 +118,16 @@ def test_node_train_fake_product_dataset(tmp_path):
         pred_list = []
         target_list = []
         for batch in loader_dict[split]:
-            x_dict = encoder(batch.tf_dict)
-            x_dict = gnn(
-                x_dict,
-                batch.edge_index_dict,
-                batch.num_sampled_nodes_dict,
-                batch.num_sampled_edges_dict,
-            )
-            pred = head(x_dict[entity_table]).squeeze(-1).sigmoid()
+            with torch.no_grad():
+                x_dict = encoder(batch.tf_dict)
+                x_dict = gnn(
+                    x_dict,
+                    batch.edge_index_dict,
+                    batch.num_sampled_nodes_dict,
+                    batch.num_sampled_edges_dict,
+                )
+                pred = head(x_dict[entity_table]).squeeze(-1).sigmoid()
+
             pred_list.append(pred.detach().cpu())
             if split == "val":
                 target_list.append(batch[entity_table].y.cpu())
