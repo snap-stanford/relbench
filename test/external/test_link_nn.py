@@ -183,7 +183,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
                 pred_index_mat_list.append(pred_index_mat)
             pred = torch.cat(pred_index_mat_list, dim=0).numpy()
 
-            if split == "val":
-                task.evaluate(pred, task.val_table)
-            else:
-                task.evaluate(pred)
+        if split == "val":
+            task.evaluate(pred, task.val_table)
+        else:
+            task.evaluate(pred)
