@@ -1,13 +1,10 @@
 from typing import Dict, Tuple
 
-import pandas as pd
-import pytest
 import torch
 import torch.nn.functional as F
 from torch import Tensor
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
-from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
 from torch_geometric.typing import NodeType
@@ -22,7 +19,6 @@ from relbench.external.graph import (
 )
 from relbench.external.loader import SparseTensor
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
-from relbench.external.utils import to_unix_time
 
 
 def test_link_train_fake_product_dataset(tmp_path):
