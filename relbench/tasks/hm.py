@@ -1,12 +1,18 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchLinkTask, Table
+from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
 from relbench.metrics import (
+    accuracy,
+    average_precision,
+    f1,
     link_prediction_map,
     link_prediction_precision,
     link_prediction_recall,
+    mae,
+    rmse,
+    roc_auc,
 )
 
 
@@ -26,7 +32,6 @@ class RecommendationTask(RelBenchLinkTask):
     eval_k = 12
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        # product = db.table_dict["product"].df
         customer = db.table_dict["customer"].df
         transactions = db.table_dict["transactions"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -58,4 +63,107 @@ class RecommendationTask(RelBenchLinkTask):
             },
             pkey_col=None,
             time_col=self.time_col,
+        )
+
+
+class ChurnTask(RelBenchNodeTask):
+    r"""Predict the churn for a customer (no transactions) in the next week."""
+
+    name = "rel-hm-churn"
+    task_type = TaskType.BINARY_CLASSIFICATION
+    entity_col = "customer_id"
+    entity_table = "customer"
+    time_col = "timestamp"
+    target_col = "churn"
+    timedelta = pd.Timedelta(days=7)
+    metrics = [average_precision, accuracy, f1, roc_auc]
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        customer = db.table_dict["customer"].df
+        transactions = db.table_dict["transactions"].df
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                timestamp,
+                customer_id,
+                CAST(
+                    NOT EXISTS (
+                        SELECT 1
+                        FROM transactions
+                        WHERE
+                            transactions.customer_id = customer.customer_id AND
+                            t_dat > timestamp AND
+                            t_dat <= timestamp + INTERVAL '{self.timedelta}'
+                    ) AS INTEGER
+                ) AS churn
+            FROM
+                timestamp_df,
+                customer,
+            WHERE
+                EXISTS (
+                    SELECT 1
+                    FROM transactions
+                    WHERE
+                        transactions.customer_id = customer.customer_id AND
+                        t_dat > timestamp - INTERVAL '{self.timedelta}' AND
+                        t_dat <= timestamp
+                )
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+class ArticleSalesTask(RelBenchNodeTask):
+    r"""Predict the total sales for an article (the sum of prices of the
+    associated transactions) in the next week."""
+
+    name = "rel-hm-sales"
+    task_type = TaskType.REGRESSION
+    entity_col = "article_id"
+    entity_table = "article"
+    time_col = "timestamp"
+    target_col = "sales"
+    timedelta = pd.Timedelta(days=7)
+    metrics = [mae, rmse]
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        transactions = db.table_dict["transactions"].df
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        article = db.table_dict["article"].df
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                timestamp,
+                article_id,
+                sales
+            FROM
+                timestamp_df,
+                article,
+                (
+                    SELECT
+                        COALESCE(SUM(price), 0) as sales
+                    FROM
+                        transactions,
+                    WHERE
+                        transactions.article_id = article.article_id AND
+                        t_dat > timestamp AND
+                        t_dat <= timestamp + INTERVAL '{self.timedelta}'
+                )
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={"article_id": "article"},
+            pkey_col=None,
+            time_col="timestamp",
         )

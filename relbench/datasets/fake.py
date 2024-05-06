@@ -83,7 +83,7 @@ class FakeDataset(Dataset):
                     f"product_id_{random.randint(0, num_products-1)}"
                     for _ in range(num_reviews)
                 ],
-                "review_time": pd.to_datetime(15 * np.arange(num_reviews), unit="D"),
+                "review_time": pd.to_datetime(2 * np.arange(num_reviews), unit="D"),
                 "rating": np.random.randint(1, 6, size=(num_reviews,)),
             }
         )

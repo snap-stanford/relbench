@@ -23,6 +23,12 @@ parser.add_argument("--dataset", type=str, default="rel-stackex")
 parser.add_argument("--task", type=str, default="rel-stackex-engage")
 # Use auto-regressive label as hand-crafted feature as input to LightGBM
 parser.add_argument("--use_ar_label", action="store_true")
+parser.add_argument(
+    "--sample_size",
+    type=int,
+    default=50000,
+    help="Subsample the specified number of training data to train lightgbm model.",
+)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -40,7 +46,7 @@ ar_label_cols = []
 if args.use_ar_label:
     ### Adding AR labels into train/val/test_table
     whole_df = pd.concat([train_table.df, val_table.df, test_table.df], axis=0)
-    num_ar_labels = min(train_table.df[train_table.time_col].nunique() - 1, 3)
+    num_ar_labels = max(train_table.df[train_table.time_col].nunique() - 2, 1)
 
     sorted_unique_times = np.sort(whole_df[train_table.time_col].unique())
     timedelta = sorted_unique_times[1:] - sorted_unique_times[:-1]
@@ -101,6 +107,11 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
         col_to_stype[ar_label] = torch_frame.embedding
 else:
     raise ValueError(f"Unsupported task type called {task.task_type}")
+
+# randomly subsample in case training data size is too large.
+if args.sample_size > 0 and args.sample_size < len(train_table):
+    sampled_idx = np.random.permutation(len(train_table))[: args.sample_size]
+    train_table.df = train_table.df.iloc[sampled_idx]
 
 for split, table in [
     ("train", train_table),
