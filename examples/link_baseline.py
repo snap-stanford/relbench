@@ -13,7 +13,7 @@ parser.add_argument("--dataset", type=str, default="rel-stackex")
 parser.add_argument("--task", type=str, default="rel-stackex-comment-on-post")
 args = parser.parse_args()
 
-dataset = get_dataset(name=args.dataset, process=True)
+dataset = get_dataset(name=args.dataset, process=False)
 task: LinkTask = dataset.get_task(args.task, process=True)
 
 train_table = task.train_table
