@@ -167,20 +167,21 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     gnn.eval()
 
     for split in ["val", "test"]:
-        dst_embs = []
-        src_loader, dst_loader = eval_loaders_dict[split]
-        for batch in dst_loader:
-            emb = model_forward(batch, task.dst_entity_table)
-            dst_embs.append(emb)
-        dst_emb = torch.cat(dst_embs, dim=0)
-        del dst_embs
+        with torch.no_grad():
+            dst_embs = []
+            src_loader, dst_loader = eval_loaders_dict[split]
+            for batch in dst_loader:
+                emb = model_forward(batch, task.dst_entity_table)
+                dst_embs.append(emb)
+            dst_emb = torch.cat(dst_embs, dim=0)
+            del dst_embs
 
-        pred_index_mat_list = []
-        for batch in src_loader:
-            emb = model_forward(batch, task.src_entity_table)
-            _, pred_index_mat = torch.topk(emb @ dst_emb.t(), k=task.eval_k, dim=1)
-            pred_index_mat_list.append(pred_index_mat)
-        pred = torch.cat(pred_index_mat_list, dim=0).numpy()
+            pred_index_mat_list = []
+            for batch in src_loader:
+                emb = model_forward(batch, task.src_entity_table)
+                _, pred_index_mat = torch.topk(emb @ dst_emb.t(), k=task.eval_k, dim=1)
+                pred_index_mat_list.append(pred_index_mat)
+            pred = torch.cat(pred_index_mat_list, dim=0).numpy()
 
         if split == "val":
             task.evaluate(pred, task.val_table)
