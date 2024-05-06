@@ -134,8 +134,6 @@ class Model(torch.nn.Module):
         x_dict = self.gnn(
             x_dict,
             batch.edge_index_dict,
-            batch.num_sampled_nodes_dict,
-            batch.num_sampled_edges_dict,
         )
 
         return self.head(x_dict[dst_table])

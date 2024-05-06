@@ -79,6 +79,7 @@ for split, table in [
         time_attr="time",
         input_nodes=table_input.src_nodes,
         input_time=table_input.src_time,
+        subgraph_type="bidirectional",
         batch_size=args.batch_size,
         temporal_strategy=args.temporal_strategy,
         shuffle=split == "train",
@@ -111,9 +112,7 @@ def train() -> Dict[str, float]:
         batch = batch.to(device)
         out = model.forward_id_awareness(
             batch, task.src_entity_table, task.dst_entity_table
-        ).view(
-            -1,
-        )
+        ).flatten()
 
         batch_size = batch[task.src_entity_table].batch_size
 
@@ -157,9 +156,7 @@ def test(loader: NeighborLoader) -> np.ndarray:
                 batch, task.src_entity_table, task.dst_entity_table
             )
             .detach()
-            .view(
-                -1,
-            )
+            .flatten()
         )
         batch_size = batch[task.src_entity_table].batch_size
         scores = torch.zeros(batch_size, task.num_dst_nodes, device=out.device)

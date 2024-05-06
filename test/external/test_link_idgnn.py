@@ -60,6 +60,7 @@ def test_link_train_fake_product_dataset(tmp_path):
             time_attr="time",
             input_nodes=table_input.src_nodes,
             input_time=table_input.src_time,
+            subgraph_type="bidirectional",
             batch_size=16,
             temporal_strategy="uniform",
             shuffle=split == "train",
@@ -91,12 +92,8 @@ def test_link_train_fake_product_dataset(tmp_path):
         x_dict = gnn(
             x_dict,
             batch.edge_index_dict,
-            batch.num_sampled_nodes_dict,
-            batch.num_sampled_edges_dict,
         )
-        out = head(x_dict[dst_table]).view(
-            -1,
-        )
+        out = head(x_dict[dst_table]).flatten()
 
         # Get ground-truth
         input_id = batch[entity_table].input_id
@@ -131,12 +128,8 @@ def test_link_train_fake_product_dataset(tmp_path):
                 x_dict = gnn(
                     x_dict,
                     batch.edge_index_dict,
-                    batch.num_sampled_nodes_dict,
-                    batch.num_sampled_edges_dict,
                 )
-                out = head(x_dict[dst_table]).view(
-                    -1,
-                )
+                out = head(x_dict[dst_table]).flatten()
                 batch_size = batch[entity_table].batch_size
                 scores = torch.zeros(batch_size, task.num_dst_nodes, device=out.device)
                 scores[batch[dst_table].batch, batch[dst_table].n_id] = torch.sigmoid(
