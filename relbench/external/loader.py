@@ -41,11 +41,13 @@ def batched_arange(count: Tensor) -> Tuple[Tensor, Tensor]:
 class SparseTensor:
     r"""Sparse CSR tensor object that allows fast row tensor indexing."""
 
-    def __init__(self, sparse_tensor: Tensor):
+    def __init__(
+        self, sparse_tensor: Tensor, device: torch.device = torch.device("cpu")
+    ):
         assert sparse_tensor.layout == torch.sparse_csr
         self._size = sparse_tensor.size()
-        self._crow_indices = sparse_tensor.crow_indices()
-        self._col_indices = sparse_tensor.col_indices()
+        self._crow_indices = sparse_tensor.crow_indices().to(device)
+        self._col_indices = sparse_tensor.col_indices().to(device)
 
     def __getitem__(self, indices: Tensor) -> Tuple[Tensor, Tensor]:
         r"""Given a tensor of row indices, return a tuple of tensors

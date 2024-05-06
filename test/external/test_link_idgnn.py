@@ -1,13 +1,10 @@
 from typing import Dict, Tuple
 
-import pandas as pd
-import pytest
 import torch
 import torch.nn.functional as F
 from torch import Tensor
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
-from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
 from torch_geometric.typing import NodeType
@@ -22,7 +19,6 @@ from relbench.external.graph import (
 )
 from relbench.external.loader import SparseTensor
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
-from relbench.external.utils import to_unix_time
 
 
 def test_link_train_fake_product_dataset(tmp_path):
@@ -64,6 +60,7 @@ def test_link_train_fake_product_dataset(tmp_path):
             time_attr="time",
             input_nodes=table_input.src_nodes,
             input_time=table_input.src_time,
+            subgraph_type="bidirectional",
             batch_size=16,
             temporal_strategy="uniform",
             shuffle=split == "train",
@@ -95,12 +92,8 @@ def test_link_train_fake_product_dataset(tmp_path):
         x_dict = gnn(
             x_dict,
             batch.edge_index_dict,
-            batch.num_sampled_nodes_dict,
-            batch.num_sampled_edges_dict,
         )
-        out = head(x_dict[dst_table]).view(
-            -1,
-        )
+        out = head(x_dict[dst_table]).flatten()
 
         # Get ground-truth
         input_id = batch[entity_table].input_id
@@ -135,12 +128,8 @@ def test_link_train_fake_product_dataset(tmp_path):
                 x_dict = gnn(
                     x_dict,
                     batch.edge_index_dict,
-                    batch.num_sampled_nodes_dict,
-                    batch.num_sampled_edges_dict,
                 )
-                out = head(x_dict[dst_table]).view(
-                    -1,
-                )
+                out = head(x_dict[dst_table]).flatten()
                 batch_size = batch[entity_table].batch_size
                 scores = torch.zeros(batch_size, task.num_dst_nodes, device=out.device)
                 scores[batch[dst_table].batch, batch[dst_table].n_id] = torch.sigmoid(

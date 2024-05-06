@@ -24,6 +24,8 @@ class Model(torch.nn.Module):
         norm: str,
         # List of node types to add shallow embeddings to input
         shallow_list: List[NodeType] = [],
+        # ID awareness
+        id_awareness: bool = False,
     ):
         super().__init__()
 
@@ -60,6 +62,10 @@ class Model(torch.nn.Module):
                 for node in shallow_list
             }
         )
+
+        self.id_awareness_emb = None
+        if id_awareness:
+            self.id_awareness_emb = torch.nn.Embedding(1, channels)
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -69,12 +75,15 @@ class Model(torch.nn.Module):
         self.head.reset_parameters()
         for embedding in self.embedding_dict.values():
             torch.nn.init.normal_(embedding.weight, std=0.1)
+        self.id_awareness_emb.reset_parameters()
 
     def forward(
         self,
         batch: HeteroData,
         entity_table: NodeType,
     ) -> Tensor:
+        if self.id_awareness_emb is None:
+            raise RuntimeError("id_awareness must be set False to use forward")
         seed_time = batch[entity_table].seed_time
         x_dict = self.encoder(batch.tf_dict)
 
@@ -96,3 +105,35 @@ class Model(torch.nn.Module):
         )
 
         return self.head(x_dict[entity_table][: seed_time.size(0)])
+
+    def forward_id_awareness(
+        self,
+        batch: HeteroData,
+        entity_table: NodeType,
+        dst_table: NodeType,
+    ) -> Tensor:
+        if self.id_awareness_emb is None:
+            raise RuntimeError(
+                "id_awareness must be set True to use forward_id_awareness"
+            )
+        seed_time = batch[entity_table].seed_time
+        x_dict = self.encoder(batch.tf_dict)
+        # Add ID-awareness to the root node
+        x_dict[entity_table][: seed_time.size(0)] += self.id_awareness_emb.weight
+
+        rel_time_dict = self.temporal_encoder(
+            seed_time, batch.time_dict, batch.batch_dict
+        )
+
+        for node_type, rel_time in rel_time_dict.items():
+            x_dict[node_type] = x_dict[node_type] + rel_time
+
+        for node_type, embedding in self.embedding_dict.items():
+            x_dict[node_type] = x_dict[node_type] + embedding(batch[node_type].n_id)
+
+        x_dict = self.gnn(
+            x_dict,
+            batch.edge_index_dict,
+        )
+
+        return self.head(x_dict[dst_table])
