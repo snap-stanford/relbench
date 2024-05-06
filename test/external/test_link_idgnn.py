@@ -39,9 +39,11 @@ def test_link_train_fake_product_dataset(tmp_path):
     node_to_col_names_dict = {  # TODO Expose as method in `HeteroData`.
         node_type: data[node_type].tf.col_names_dict for node_type in data.node_types
     }
-    encoder = HeteroEncoder(64, node_to_col_names_dict, col_stats_dict)
-    gnn = HeteroGraphSAGE(data.node_types, data.edge_types, 64)
-    head = MLP(64, out_channels=1, num_layers=1)
+    channels = 64
+    encoder = HeteroEncoder(channels, node_to_col_names_dict, col_stats_dict)
+    gnn = HeteroGraphSAGE(data.node_types, data.edge_types, channels)
+    head = MLP(channels, out_channels=1, num_layers=1)
+    id_awareness = torch.nn.Embedding(1, channels)
 
     # Ensure that neighbor loading works on train/val/test splits ############
     task: LinkTask = dataset.get_task("rel-amazon-rec-purchase", process=True)
@@ -70,7 +72,10 @@ def test_link_train_fake_product_dataset(tmp_path):
         )
 
     optimizer = torch.optim.Adam(
-        list(encoder.parameters()) + list(gnn.parameters()) + list(head.parameters()),
+        list(encoder.parameters())
+        + list(gnn.parameters())
+        + list(head.parameters())
+        + list(id_awareness.parameters()),
         lr=0.01,
     )
     entity_table = table_input.src_nodes[0]
@@ -80,9 +85,13 @@ def test_link_train_fake_product_dataset(tmp_path):
     encoder.train()
     gnn.train()
     head.train()
+    id_awareness.train()
     train_sparse_tensor = SparseTensor(dst_nodes_dict["train"][1])
     for batch in loader_dict["train"]:
+        batch_size = batch[entity_table].batch_size
         x_dict = encoder(batch.tf_dict)
+        # Add ID-awareness to the root node
+        x_dict[entity_table][:batch_size] += id_awareness.weight
         x_dict = gnn(
             x_dict,
             batch.edge_index_dict,
@@ -98,7 +107,6 @@ def test_link_train_fake_product_dataset(tmp_path):
         src_batch, dst_index = train_sparse_tensor[input_id]
 
         # Get target label
-        batch_size = batch[entity_table].batch_size
         target = torch.isin(
             batch[dst_table].batch + batch_size * batch[dst_table].n_id,
             src_batch + batch_size * dst_index,
@@ -115,11 +123,15 @@ def test_link_train_fake_product_dataset(tmp_path):
     encoder.eval()
     gnn.eval()
     head.eval()
+    id_awareness.eval()
     for split in ["val", "test"]:
         pred_list = []
         for batch in loader_dict[split]:
             with torch.no_grad():
                 x_dict = encoder(batch.tf_dict)
+                # Add ID-awareness to the root node
+                batch_size = batch[entity_table].batch_size
+                x_dict[entity_table][:batch_size] += id_awareness.weight
                 x_dict = gnn(
                     x_dict,
                     batch.edge_index_dict,
