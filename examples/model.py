@@ -75,15 +75,14 @@ class Model(torch.nn.Module):
         self.head.reset_parameters()
         for embedding in self.embedding_dict.values():
             torch.nn.init.normal_(embedding.weight, std=0.1)
-        self.id_awareness_emb.reset_parameters()
+        if self.id_awareness_emb is not None:
+            self.id_awareness_emb.reset_parameters()
 
     def forward(
         self,
         batch: HeteroData,
         entity_table: NodeType,
     ) -> Tensor:
-        if self.id_awareness_emb is None:
-            raise RuntimeError("id_awareness must be set False to use forward")
         seed_time = batch[entity_table].seed_time
         x_dict = self.encoder(batch.tf_dict)
 
