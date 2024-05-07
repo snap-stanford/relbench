@@ -42,7 +42,9 @@ class SparseTensor:
     r"""Sparse CSR tensor object that allows fast row tensor indexing."""
 
     def __init__(
-        self, sparse_tensor: Tensor, device: torch.device = torch.device("cpu")
+        self,
+        sparse_tensor: Tensor,
+        device: torch.device | None = None,
     ):
         assert sparse_tensor.layout == torch.sparse_csr
         self._size = sparse_tensor.size()

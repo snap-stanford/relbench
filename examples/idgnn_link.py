@@ -110,7 +110,7 @@ def train() -> Dict[str, float]:
     total_steps = min(len(loader_dict["train"]), args.max_steps_per_epoch)
     for batch in tqdm(loader_dict["train"], total=total_steps):
         batch = batch.to(device)
-        out = model.forward_id_awareness(
+        out = model.forward_rhs_readout(
             batch, task.src_entity_table, task.dst_entity_table
         ).flatten()
 
@@ -152,7 +152,7 @@ def test(loader: NeighborLoader) -> np.ndarray:
     for batch in tqdm(loader):
         batch = batch.to(device)
         out = (
-            model.forward_id_awareness(
+            model.forward_rhs_readout(
                 batch, task.src_entity_table, task.dst_entity_table
             )
             .detach()

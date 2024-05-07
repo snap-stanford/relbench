@@ -105,7 +105,7 @@ class Model(torch.nn.Module):
 
         return self.head(x_dict[entity_table][: seed_time.size(0)])
 
-    def forward_id_awareness(
+    def forward_rhs_readout(
         self,
         batch: HeteroData,
         entity_table: NodeType,
@@ -113,7 +113,7 @@ class Model(torch.nn.Module):
     ) -> Tensor:
         if self.id_awareness_emb is None:
             raise RuntimeError(
-                "id_awareness must be set True to use forward_id_awareness"
+                "id_awareness must be set True to use forward_rhs_readout"
             )
         seed_time = batch[entity_table].seed_time
         x_dict = self.encoder(batch.tf_dict)
