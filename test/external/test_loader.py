@@ -3,7 +3,7 @@ import random
 import torch
 from torch import Tensor
 
-from relbench.external.loader import CustomLinkDataset
+from relbench.external.loader import CustomLinkDataset, SparseTensor
 
 
 def get_lp_setup(
@@ -31,6 +31,20 @@ def get_lp_setup(
     dst_node_indices = sparse_coo.to_sparse_csr()
 
     return src_node_indices, dst_node_indices, src_time
+
+
+def test_sparse_tensor():
+    num_src_nodes = 100
+    num_dst_nodes = 50
+    num_timestamps = 3
+    _, dst_node_indices, _ = get_lp_setup(num_src_nodes, num_dst_nodes, num_timestamps)
+    dst_node_sparse_tensor = SparseTensor(dst_node_indices)
+    indices = torch.randperm(num_src_nodes)[:10]
+    src_index, dst_index = dst_node_sparse_tensor[indices]
+    for i, idx in enumerate(indices):
+        col_idx1 = dst_node_indices[idx].indices()
+        col_idx2 = dst_index[src_index == i]
+        assert torch.allclose(col_idx1, col_idx2)
 
 
 def test_custom_link_dataset():

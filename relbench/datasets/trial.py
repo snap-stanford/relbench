@@ -10,6 +10,7 @@ from relbench.tasks.trial import (
     OutcomeTask,
     SiteSuccessTask,
     SponsorConditionTask,
+    SponsorFacilityTask,
     WithdrawalTask,
 )
 from relbench.utils import unzip_processor
@@ -27,6 +28,7 @@ class TrialDataset(RelBenchDataset):
         WithdrawalTask,
         SiteSuccessTask,
         SponsorConditionTask,
+        SponsorFacilityTask,
     ]
 
     def __init__(
@@ -47,7 +49,9 @@ class TrialDataset(RelBenchDataset):
             processor=unzip_processor,
         )
         path = os.path.join(path, "relbench-trial-raw")
-        studies = pd.read_csv(os.path.join(path, "studies.txt"), sep="|")
+        studies = pd.read_csv(
+            os.path.join(path, "studies.txt"), sep="|", low_memory=False
+        )
         outcomes = pd.read_csv(os.path.join(path, "outcomes.txt"), sep="|")
         drop_withdrawals = pd.read_csv(
             os.path.join(path, "drop_withdrawals.txt"), sep="|"
@@ -68,10 +72,12 @@ class TrialDataset(RelBenchDataset):
         reported_event_totals = pd.read_csv(
             os.path.join(path, "reported_event_totals.txt"), sep="|"
         )
-        sponsors = pd.read_csv(os.path.join(path, "sponsors.txt"), sep="|")
+        sponsors = pd.read_csv(
+            os.path.join(path, "sponsors.txt"), sep="|", low_memory=False
+        )
         facilities = pd.read_csv(os.path.join(path, "facilities.txt"), sep="|")
         outcome_analyses = pd.read_csv(
-            os.path.join(path, "outcome_analyses.txt"), sep="|"
+            os.path.join(path, "outcome_analyses.txt"), sep="|", low_memory=False
         )
         detailed_descriptions = pd.read_csv(
             os.path.join(path, "detailed_descriptions.txt"), sep="|"

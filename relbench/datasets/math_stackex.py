@@ -53,13 +53,15 @@ class MathStackExDataset(RelBenchDataset):
         path = os.path.join(path, "math-stackex-temp")
         print("Loading data from:", path)
         users = pd.read_csv(os.path.join(path, "Users.csv"))
-        comments = pd.read_csv(os.path.join(path, "Comments.csv"))
+        comments = pd.read_csv(os.path.join(path, "Comments.csv"), low_memory=False)
         posts = pd.read_csv(os.path.join(path, "Posts.csv"))
 
         votes = pd.read_csv(os.path.join(path, "Votes.csv"))
         postLinks = pd.read_csv(os.path.join(path, "PostLinks.csv"))
         badges = pd.read_csv(os.path.join(path, "Badges.csv"))
-        postHistory = pd.read_csv(os.path.join(path, "PostHistory.csv"))
+        postHistory = pd.read_csv(
+            os.path.join(path, "PostHistory.csv"), low_memory=False
+        )
         print("Data loaded")
 
         # tags = pd.read_csv(os.path.join(path, "Tags.csv")) we remove tag table here since after removing time leakage columns, all information are kept in the posts tags columns

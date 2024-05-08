@@ -11,7 +11,69 @@ from torch_geometric.sampler.base import SubgraphType
 from torch_geometric.typing import EdgeType, NodeType, OptTensor
 
 
+def batched_arange(count: Tensor) -> Tuple[Tensor, Tensor]:
+    r"""Fast implementation of bached version of torch.arange.
+    It essentially does the following
+    >>> batch = torch.cat([torch.full((c,), i) for i, c in enumerate(count)])
+    >>> arange = torch.cat([torch.arange(c) for c in count])
+
+    Args:
+        counts (Tensor): The count vectors.
+
+    Returns:
+        batch (Tensor): batch[i] indicates the batch index of
+            batched_arange[i]
+        arange (Tensor): batched version of arange
+    """
+    ptr = count.new_zeros(count.numel() + 1)
+    torch.cumsum(count, dim=0, out=ptr[1:])
+
+    batch = torch.arange(count.numel(), device=count.device).repeat_interleave(
+        count, output_size=ptr[-1]
+    )  # type: ignore
+
+    arange = torch.arange(batch.numel(), device=count.device)
+    arange -= ptr[batch]
+
+    return batch, arange
+
+
+class SparseTensor:
+    r"""Sparse CSR tensor object that allows fast row tensor indexing."""
+
+    def __init__(
+        self,
+        sparse_tensor: Tensor,
+        device: torch.device | None = None,
+    ):
+        assert sparse_tensor.layout == torch.sparse_csr
+        self._size = sparse_tensor.size()
+        self._crow_indices = sparse_tensor.crow_indices().to(device)
+        self._col_indices = sparse_tensor.col_indices().to(device)
+
+    def __getitem__(self, indices: Tensor) -> Tuple[Tensor, Tensor]:
+        r"""Given a tensor of row indices, return a tuple of tensors
+        - :obj:`row_batch` (Tensor): Batch offset for column indices.
+        - :obj:`col_index` (Tensor): Column indices.
+        Specifically, :obj:`sparse_tensor[indices[i]]` can be obtained by
+        :obj:`col_index[row_batch == i]`.
+        """
+        if not (indices < self.size()[0]).all():
+            raise IndexError(
+                f"The index {indices.max()} is out-of-range. Needs to be smaller "
+                f"than {{self.size()[0]}}."
+            )
+        count = self._crow_indices[indices + 1] - self._crow_indices[indices]
+        row_batch, arange = batched_arange(count)
+        col_index = self._col_indices[arange + self._crow_indices[indices][row_batch]]
+        return row_batch, col_index
+
+    def size(self) -> torch.Size:
+        return self._size
+
+
 class CustomNodeLoader(NodeLoader):
+
     def get_neighbors(
         self,
         input_data: NodeSamplerInput,

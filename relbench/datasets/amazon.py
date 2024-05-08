@@ -21,8 +21,10 @@ from relbench.tasks.amazon import (
 
 class AmazonDataset(RelBenchDataset):
     name = "rel-amazon"
-    val_timestamp = pd.Timestamp("2014-01-01")
+    val_timestamp = pd.Timestamp("2015-10-01")
     test_timestamp = pd.Timestamp("2016-01-01")
+    train_start_timestamp = pd.Timestamp("2008-01-01")
+
     max_eval_time_frames = 1
     task_cls_list = [
         ChurnTask,

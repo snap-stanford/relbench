@@ -14,8 +14,12 @@ tmpdir = tempfile.mkdtemp()
 print(f"{tmpdir = }")
 
 for dataset_name, task_names in [
-    ("rel-stackex", ["rel-stackex-engage", "rel-stackex-votes"]),
-    ("rel-amazon", ["rel-amazon-churn", "rel-amazon-ltv"]),
+    # ("rel-amazon", ["rel-amazon-churn", "rel-amazon-ltv"]),
+    # ("rel-stackex", ["rel-stackex-engage", "rel-stackex-votes"]),
+    ("rel-math-stackex", []),
+    ("rel-f1", []),
+    # ("rel-trial", []),
+    ("rel-hm", []),
 ]:
     print(f"{dataset_name = }")
 
@@ -47,9 +51,11 @@ for dataset_name, task_names in [
         toc = time.time()
         print(f"took {toc - tic:.2f} s.")
 
-print(f"delta = {json.dumps(delta, indent=2)}")
+    print(f"===")
+    print(f"delta = {json.dumps(delta, indent=2)}")
 
-registry.update(delta)
-print(f"new registry = {json.dumps(registry, indent=2)}")
+    registry.update(delta)
+    print(f"new registry = {json.dumps(registry, indent=2)}")
 
-print(f"scp -r {tmpdir}/* relbench.stanford.edu:/lfs/0/staging/staging_data")
+    print(f"scp -r {tmpdir}/* relbench.stanford.edu:/lfs/0/relbench/staging_data")
+    print(f"===")

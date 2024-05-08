@@ -32,6 +32,8 @@ example=[
 	"pytorch_frame>=0.2.2",
 	"torch_geometric",
 	"faiss-cpu",
+	"sentence-transformers",
+	"tensorboard",
 ]
 test=[
 	"pytest",
