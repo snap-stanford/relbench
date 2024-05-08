@@ -124,9 +124,10 @@ def make_pkey_fkey_graph(
             edge_type = (table_name, f"f2p_{fkey_name}", pkey_table_name)
             data[edge_type].edge_index = sort_edge_index(edge_index)
 
-            # pkey -> fkey edges
+            # pkey -> fkey edges.
+            # "rev_" is added so that PyG loader recognizes the reverse edges
             edge_index = torch.stack([pkey_index, fkey_index], dim=0)
-            edge_type = (pkey_table_name, f"p2f_{fkey_name}", table_name)
+            edge_type = (pkey_table_name, f"rev_f2p_{fkey_name}", table_name)
             data[edge_type].edge_index = sort_edge_index(edge_index)
 
     data.validate()
