@@ -65,6 +65,7 @@ class LinkTask(BaseTask):
 
         if filter_mask.any():
             table.df = table.df[~filter_mask]
+            table.df = table.df.reset_index(drop=True)
 
         return table
 
