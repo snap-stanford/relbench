@@ -27,7 +27,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-hm")
 parser.add_argument("--task", type=str, default="rel-hm-rec")
 parser.add_argument("--lr", type=float, default=0.001)
-parser.add_argument("--epochs", type=int, default=5)
+parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--eval_epochs_interval", type=int, default=1)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
@@ -110,7 +110,7 @@ def train() -> Dict[str, float]:
     total_steps = min(len(loader_dict["train"]), args.max_steps_per_epoch)
     for batch in tqdm(loader_dict["train"], total=total_steps):
         batch = batch.to(device)
-        out = model.forward_rhs_readout(
+        out = model.forward_dst_readout(
             batch, task.src_entity_table, task.dst_entity_table
         ).flatten()
 
@@ -152,7 +152,7 @@ def test(loader: NeighborLoader) -> np.ndarray:
     for batch in tqdm(loader):
         batch = batch.to(device)
         out = (
-            model.forward_rhs_readout(
+            model.forward_dst_readout(
                 batch, task.src_entity_table, task.dst_entity_table
             )
             .detach()
