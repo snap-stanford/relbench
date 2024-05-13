@@ -82,7 +82,7 @@ class LTVTask(RelBenchNodeTask):
     entity_col = "customer_id"
     entity_table = "customer"
     time_col = "timestamp"
-    target_col = "count_"  # "ltv"
+    target_col = "ltv"
     timedelta = pd.Timedelta(days=365 // 4)
     metrics = [mae, rmse]
 
@@ -201,7 +201,7 @@ class ProductLTVTask(RelBenchNodeTask):
     entity_col = "product_id"
     entity_table = "product"
     time_col = "timestamp"
-    target_col = "count_"  # "ltv"
+    target_col = "ltv"
     timedelta = pd.Timedelta(days=365 // 4)
     metrics = [mae, rmse]
 
