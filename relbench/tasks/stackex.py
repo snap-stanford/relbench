@@ -28,7 +28,7 @@ class EngageTask(RelBenchNodeTask):
     entity_table = "users"
     time_col = "timestamp"
     target_col = "contribution"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365 // 4)
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -171,7 +171,7 @@ class BadgesTask(RelBenchNodeTask):
     entity_table = "users"
     time_col = "timestamp"
     target_col = "WillGetBadge"
-    timedelta = pd.Timedelta(days=365 * 2)
+    timedelta = pd.Timedelta(days=365 // 4)
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -361,7 +361,7 @@ class UsersInteractTask(RelBenchLinkTask):
     timedelta = pd.Timedelta(days=365 // 4)
 
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
-    eval_k = 100
+    eval_k = 10
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UsersInteractTask."""
