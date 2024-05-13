@@ -19,6 +19,7 @@ class MathStackExDataset(RelBenchDataset):
     name = "rel-math-stackex"
     # 2 years gap
     val_timestamp = pd.Timestamp("2019-01-01")
+    #val_timestamp = pd.Timestamp("2020-10-01")
     test_timestamp = pd.Timestamp("2021-01-01")
     max_eval_time_frames = 1
     task_cls_list = [
@@ -53,7 +54,7 @@ class MathStackExDataset(RelBenchDataset):
         path = os.path.join(path, "math-stackex-temp")
         print("Loading data from:", path)
         users = pd.read_csv(os.path.join(path, "Users.csv"))
-        comments = pd.read_csv(os.path.join(path, "Comments.csv"), low_memory=False)
+        comments = pd.read_csv(os.path.join(path, "Comments.csv"))
         posts = pd.read_csv(os.path.join(path, "Posts.csv"))
 
         votes = pd.read_csv(os.path.join(path, "Votes.csv"))

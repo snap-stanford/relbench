@@ -44,7 +44,7 @@ class SparseTensor:
     def __init__(
         self,
         sparse_tensor: Tensor,
-        device: torch.device | None = None,
+        device: Union[torch.device, None] = None,
     ):
         assert sparse_tensor.layout == torch.sparse_csr
         self._size = sparse_tensor.size()
