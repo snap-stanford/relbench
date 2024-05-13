@@ -372,7 +372,7 @@ class UsersInteractTask(RelBenchLinkTask):
         comments = db.table_dict["comments"].df
 
         df = duckdb.sql(
-                f"""
+            f"""
             SELECT
                 t.timestamp,
                 c.UserId AS UserId,
@@ -382,7 +382,7 @@ class UsersInteractTask(RelBenchLinkTask):
             CROSS JOIN
                 comments c
             JOIN
-                users u_c ON c.UserId = u_c.Id 
+                users u_c ON c.UserId = u_c.Id
                 AND u_c.CreationDate < t.timestamp
             LEFT JOIN
                 comments c2 ON c.postid = c2.postid
@@ -400,7 +400,7 @@ class UsersInteractTask(RelBenchLinkTask):
             HAVING
                 ARRAY_LENGTH(ARRAY_AGG(DISTINCT c2.UserId)) > 0;
                 """
-            ).df()
+        ).df()
 
         return Table(
             df=df,
