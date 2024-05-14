@@ -62,7 +62,7 @@ class MathStackExDataset(RelBenchDataset):
         postLinks = pd.read_csv(os.path.join(path, "PostLinks.csv"))
         badges = pd.read_csv(os.path.join(path, "Badges.csv"))
         postHistory = pd.read_csv(
-            os.path.join(path, "PostHistory.csv"), low_memory=False
+            os.path.join(path, "PostHistory.csv"), low_memory=False, lineterminator="\n"
         )
         print("Data loaded")
 
