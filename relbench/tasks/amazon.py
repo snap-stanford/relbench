@@ -82,7 +82,7 @@ class LTVTask(RelBenchNodeTask):
     entity_col = "customer_id"
     entity_table = "customer"
     time_col = "timestamp"
-    target_col = "count_"  # "ltv"
+    target_col = "ltv"
     timedelta = pd.Timedelta(days=365 // 4)
     metrics = [mae, rmse]
 
@@ -105,7 +105,6 @@ class LTVTask(RelBenchNodeTask):
                 (
                     SELECT
                         COALESCE(SUM(price), 0) as ltv,
-                        COALESCE(COUNT(price), 0) as count_
                     FROM
                         review,
                         product
@@ -201,7 +200,7 @@ class ProductLTVTask(RelBenchNodeTask):
     entity_col = "product_id"
     entity_table = "product"
     time_col = "timestamp"
-    target_col = "count_"  # "ltv"
+    target_col = "ltv"
     timedelta = pd.Timedelta(days=365 // 4)
     metrics = [mae, rmse]
 
@@ -217,7 +216,6 @@ class ProductLTVTask(RelBenchNodeTask):
                 timestamp,
                 product.product_id,
                 COALESCE(SUM(price), 0) AS ltv,
-                COALESCE(COUNT(price), 0) AS count_
             FROM
                 timestamp_df,
                 product,
