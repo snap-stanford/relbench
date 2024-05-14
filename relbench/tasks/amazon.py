@@ -105,7 +105,6 @@ class LTVTask(RelBenchNodeTask):
                 (
                     SELECT
                         COALESCE(SUM(price), 0) as ltv,
-                        COALESCE(COUNT(price), 0) as count_
                     FROM
                         review,
                         product
@@ -217,7 +216,6 @@ class ProductLTVTask(RelBenchNodeTask):
                 timestamp,
                 product.product_id,
                 COALESCE(SUM(price), 0) AS ltv,
-                COALESCE(COUNT(price), 0) AS count_
             FROM
                 timestamp_df,
                 product,
