@@ -98,7 +98,6 @@ class LTVTask(RelBenchNodeTask):
                 timestamp,
                 customer_id,
                 ltv,
-                count_
             FROM
                 timestamp_df,
                 customer,
