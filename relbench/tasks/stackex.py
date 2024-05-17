@@ -361,7 +361,7 @@ class UsersInteractTask(RelBenchLinkTask):
     timedelta = pd.Timedelta(days=365 // 4)
 
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
-    eval_k = 100
+    eval_k = 10
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for UsersInteractTask."""
