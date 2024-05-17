@@ -53,14 +53,16 @@ class MathStackExDataset(RelBenchDataset):
         path = os.path.join(path, "math-stackex-temp")
         print("Loading data from:", path)
         users = pd.read_csv(os.path.join(path, "Users.csv"))
-        comments = pd.read_csv(os.path.join(path, "Comments.csv"), low_memory=False)
+        comments = pd.read_csv(
+            os.path.join(path, "Comments.csv"), low_memory=False, lineterminator="\n"
+        )
         posts = pd.read_csv(os.path.join(path, "Posts.csv"))
 
         votes = pd.read_csv(os.path.join(path, "Votes.csv"))
         postLinks = pd.read_csv(os.path.join(path, "PostLinks.csv"))
         badges = pd.read_csv(os.path.join(path, "Badges.csv"))
         postHistory = pd.read_csv(
-            os.path.join(path, "PostHistory.csv"), low_memory=False
+            os.path.join(path, "PostHistory.csv"), low_memory=False, lineterminator="\n"
         )
         print("Data loaded")
 
