@@ -44,7 +44,7 @@ class SparseTensor:
     def __init__(
         self,
         sparse_tensor: Tensor,
-        device: torch.device | None = None,
+        device: Optional[Union[str, torch.device]] = None,
     ):
         assert sparse_tensor.layout == torch.sparse_csr
         self._size = sparse_tensor.size()
@@ -101,7 +101,7 @@ class TimestampSampler(Sampler[int]):
             [indices.numel() // batch_size for indices in self.time_dict.values()]
         )
 
-    def __iter__(self) -> Iterator[list[int]]:
+    def __iter__(self) -> Iterator[List[int]]:
         all_batches = []
         for indices in self.time_dict.values():
             # Random shuffle values:
