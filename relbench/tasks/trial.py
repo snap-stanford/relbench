@@ -10,7 +10,6 @@ from relbench.metrics import (
     link_prediction_map,
     link_prediction_precision,
     link_prediction_recall,
-    r2,
     mae,
     multilabel_auprc_macro,
     multilabel_auprc_micro,
@@ -18,6 +17,7 @@ from relbench.metrics import (
     multilabel_auroc_micro,
     multilabel_f1_macro,
     multilabel_f1_micro,
+    r2,
     rmse,
     roc_auc,
 )

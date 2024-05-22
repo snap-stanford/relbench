@@ -10,8 +10,8 @@ from relbench.metrics import (
     link_prediction_map,
     link_prediction_precision,
     link_prediction_recall,
-    r2,
     mae,
+    r2,
     rmse,
     roc_auc,
 )
