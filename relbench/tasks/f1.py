@@ -19,7 +19,7 @@ class PositionTask(RelBenchNodeTask):
     time_col = "date"
     target_col = "position"
     timedelta = pd.Timedelta(days=60)
-    metrics = [mae, rmse]
+    metrics = [r2, mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for rel-f1-position."""

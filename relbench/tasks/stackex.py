@@ -117,7 +117,7 @@ class VotesTask(RelBenchNodeTask):
     time_col = "timestamp"
     target_col = "popularity"
     timedelta = pd.Timedelta(days=365 // 4)
-    metrics = [mae, rmse]
+    metrics = [r2, mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
