@@ -11,6 +11,7 @@ from relbench.metrics import (
     link_prediction_precision,
     link_prediction_recall,
     mae,
+    r2,
     rmse,
     roc_auc,
 )
@@ -132,7 +133,7 @@ class ArticleSalesTask(RelBenchNodeTask):
     time_col = "timestamp"
     target_col = "sales"
     timedelta = pd.Timedelta(days=7)
-    metrics = [mae, rmse]
+    metrics = [r2, mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         transactions = db.table_dict["transactions"].df
