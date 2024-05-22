@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from relbench.data import Database, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
+from relbench.metrics import accuracy, average_precision, f1, r2, mae, rmse, roc_auc
 from relbench.utils import get_df_in_window
 
 
