@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from relbench.data import Database, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import accuracy, average_precision, f1, mae, rmse, roc_auc
+from relbench.metrics import accuracy, average_precision, f1, mae, r2, rmse, roc_auc
 from relbench.utils import get_df_in_window
 
 
@@ -19,7 +19,7 @@ class PositionTask(RelBenchNodeTask):
     time_col = "date"
     target_col = "position"
     timedelta = pd.Timedelta(days=60)
-    metrics = [mae, rmse]
+    metrics = [r2, mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for rel-f1-position."""

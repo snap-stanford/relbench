@@ -17,6 +17,7 @@ from relbench.metrics import (
     multilabel_auroc_micro,
     multilabel_f1_macro,
     multilabel_f1_micro,
+    r2,
     rmse,
     roc_auc,
 )
@@ -94,7 +95,7 @@ class AdverseEventTask(RelBenchNodeTask):
     time_col = "timestamp"
     target_col = "num_of_adverse_events"
     timedelta = pd.Timedelta(days=365)
-    metrics = [mae, rmse]
+    metrics = [r2, mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -248,7 +249,7 @@ class SiteSuccessTask(RelBenchNodeTask):
     time_col = "timestamp"
     target_col = "success_rate"
     timedelta = pd.Timedelta(days=365)
-    metrics = [mae, rmse]
+    metrics = [r2, mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})

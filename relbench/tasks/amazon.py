@@ -11,6 +11,7 @@ from relbench.metrics import (
     link_prediction_precision,
     link_prediction_recall,
     mae,
+    r2,
     rmse,
     roc_auc,
 )
@@ -84,7 +85,7 @@ class LTVTask(RelBenchNodeTask):
     time_col = "timestamp"
     target_col = "ltv"
     timedelta = pd.Timedelta(days=365 // 4)
-    metrics = [mae, rmse]
+    metrics = [r2, mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         product = db.table_dict["product"].df
@@ -201,7 +202,7 @@ class ProductLTVTask(RelBenchNodeTask):
     time_col = "timestamp"
     target_col = "ltv"
     timedelta = pd.Timedelta(days=365 // 4)
-    metrics = [mae, rmse]
+    metrics = [r2, mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         product = db.table_dict["product"].df
