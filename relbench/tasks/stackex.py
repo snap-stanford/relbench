@@ -347,4 +347,3 @@ class RelatedPostTask(RelBenchLinkTask):
             pkey_col=None,
             time_col=self.time_col,
         )
-
