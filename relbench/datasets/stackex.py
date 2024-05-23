@@ -26,7 +26,6 @@ class StackExDataset(RelBenchDataset):
         BadgesTask,
         UserCommentOnPostTask,
         RelatedPostTask,
-        UsersInteractTask,
     ]
 
     def __init__(
