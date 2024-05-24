@@ -17,11 +17,11 @@ from relbench.metrics import (
 )
 
 
-class RecommendationTask(RelBenchLinkTask):
+class UserItemPurchaseTask(RelBenchLinkTask):
     r"""Predict the list of articles each customer will purchase in the next
     seven days"""
 
-    name = "rel-hm-rec"
+    name = "user-item-purchase"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "customer_id"
     src_entity_table = "customer"
@@ -67,10 +67,10 @@ class RecommendationTask(RelBenchLinkTask):
         )
 
 
-class ChurnTask(RelBenchNodeTask):
+class UserChurnTask(RelBenchNodeTask):
     r"""Predict the churn for a customer (no transactions) in the next week."""
 
-    name = "rel-hm-churn"
+    name = "user-churn"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "customer_id"
     entity_table = "customer"
@@ -122,11 +122,11 @@ class ChurnTask(RelBenchNodeTask):
         )
 
 
-class ArticleSalesTask(RelBenchNodeTask):
+class ItemSalesTask(RelBenchNodeTask):
     r"""Predict the total sales for an article (the sum of prices of the
     associated transactions) in the next week."""
 
-    name = "rel-hm-sales"
+    name = "item-sales"
     task_type = TaskType.REGRESSION
     entity_col = "article_id"
     entity_table = "article"
