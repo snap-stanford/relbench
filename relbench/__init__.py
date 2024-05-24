@@ -28,3 +28,44 @@ _pooch = pooch.create(
         "rel-hm/db.zip": "6ff6537f2fed885c5c8a94525364678dea206c57006de0edb4d76ca71c9c114e",
     },
 )
+
+# TODO: remove
+new_name = {
+    # datasets
+    "rel-amazon": "rel-amazon",
+    "rel-f1": "rel-f1",
+    "rel-hm": "rel-hm",
+    "rel-stackex": "rel-stack",
+    "rel-trial": "rel-trial",
+    # tasks
+    ## rel-amazon
+    "rel-amazon-churn": "user-churn",
+    "rel-amazon-ltv": "user-ltv",
+    "rel-amazon-product-churn": "item-churn",
+    "rel-amazon-product-ltv": "item-ltv",
+    "rel-amazon-rec-purchase": "user-item-purchase",
+    "rel-amazon-rec-5-star": "user-item-rate",
+    "rel-amazon-rec-detailed-review": "user-item-review",
+    ## rel-f1
+    "rel-f1-position": "driver-position",
+    "rel-f1-dnf": "driver-dnf",
+    "rel-f1-qualifying": "driver-top3",
+    ## rel-hm
+    "rel-hm-rec": "user-item-purchase",
+    "rel-hm-churn": "user-churn",
+    "rel-hm-sales": "item-sales",
+    ## rel-stack
+    "rel-stackex-engage": "user-engage",
+    "rel-stackex-votes": "post-votes",
+    "rel-stackex-badges": "user-badge"
+    "rel-stackex-comment-on-post": "user-post-comment",
+    "rel-stackex-related-post": "post-post-related",
+    ## rel-trial
+    "rel-trial-outcome": "study-outcome",
+    "rel-trial-adverse": "study-adverse",
+    "rel-trial-withdrawal": "study-withdrawal",
+    "rel-trial-site": "site-success",
+    "rel-trial-sponsor-condition": "condition-sponsor-rec",
+    "rel-trial-sponsor-facility": "site-sponsor-rec",
+}
+
