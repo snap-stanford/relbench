@@ -92,7 +92,7 @@ class TimestampSampler(Sampler[int]):
         timestamp: Tensor,
         batch_size: int,
     ):
-        super(TimestampSampler, self).__init__()
+        super().__init__()
         self.batch_size = batch_size
         self.time_dict = {
             int(time): (timestamp == time).nonzero().view(-1)
