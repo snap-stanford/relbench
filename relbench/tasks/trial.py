@@ -299,7 +299,7 @@ class SiteSuccessTask(RelBenchNodeTask):
 
 
 class SponsorConditionTask(RelBenchLinkTask):
-    r"""Predict whether or not if this condition will have which sponsors."""
+    r"""Predict whether this condition will have which sponsors."""
 
     name = "rel-trial-sponsor-condition"
     task_type = TaskType.LINK_PREDICTION
@@ -344,7 +344,7 @@ class SponsorConditionTask(RelBenchLinkTask):
 
 
 class SponsorFacilityTask(RelBenchLinkTask):
-    r"""Predict whether or not if this sponsor will have a trial in a facility."""
+    r"""Predict whether this sponsor will have a trial in a facility."""
 
     name = "rel-trial-sponsor-facility"
     task_type = TaskType.LINK_PREDICTION

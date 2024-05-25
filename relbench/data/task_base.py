@@ -4,7 +4,7 @@ import shutil
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Callable, List, Tuple, Union
 
 import pandas as pd
 from numpy.typing import NDArray
@@ -169,9 +169,7 @@ class BaseTask:
         r"""Evaluate a prediction table."""
         raise NotImplementedError
 
-    def set_cached_table_dict(
-        self, task_name: str, task_dir: str, dataset_name: str
-    ) -> Dict[str, Table]:
+    def set_cached_table_dict(self, task_name: str, task_dir: str, dataset_name: str):
         task_path = _pooch.fetch(
             f"{dataset_name}/{task_dir}/{task_name}.zip",
             processor=unzip_processor,

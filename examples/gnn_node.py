@@ -2,7 +2,7 @@ import argparse
 import copy
 import math
 import os
-from typing import Dict, List
+from typing import Dict
 
 import numpy as np
 import torch
@@ -11,7 +11,6 @@ from model import Model
 from text_embedder import GloveTextEmbedding
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
-from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
@@ -82,6 +81,8 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     tune_metric = "multilabel_auprc_macro"
     higher_is_better = True
     multilabel = True
+else:
+    raise ValueError(f"Task type {task.task_type} is unsupported")
 
 loader_dict: Dict[str, NeighborLoader] = {}
 for split, table in [

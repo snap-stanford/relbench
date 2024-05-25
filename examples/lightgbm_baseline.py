@@ -11,7 +11,6 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
-from torch_frame.utils import infer_df_stype
 from tqdm import tqdm
 
 from relbench.data import RelBenchDataset, RelBenchNodeTask
@@ -148,6 +147,8 @@ if task.task_type in [
     tune_metric = Metric.ROCAUC
 elif task.task_type == TaskType.REGRESSION:
     tune_metric = Metric.MAE
+else:
+    raise ValueError(f"Task task type is unsupported {task.task_type}")
 
 if task.task_type in [TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION]:
     model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
