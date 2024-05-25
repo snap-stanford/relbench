@@ -344,7 +344,7 @@ class SponsorConditionTask(RelBenchLinkTask):
 
 
 class SponsorFacilityTask(RelBenchLinkTask):
-    r"""Predict whether if this sponsor will have a trial in a facility."""
+    r"""Predict whether this sponsor will have a trial in a facility."""
 
     name = "rel-trial-sponsor-facility"
     task_type = TaskType.LINK_PREDICTION
