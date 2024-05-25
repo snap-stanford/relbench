@@ -166,7 +166,7 @@ class MathStackExDataset(RelBenchDataset):
         return Database(tables)
 
     def clean_datetime(self, df, col):
-        ## change time column to pd timestamp series
+        # Change time column to pd timestamp series
         # Attempt to convert "CreationDate" to datetime format
         df[col] = pd.to_datetime(df[col], errors="coerce")
 

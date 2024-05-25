@@ -1,6 +1,5 @@
 import argparse
 import copy
-import math
 import os
 from typing import Dict
 
@@ -131,7 +130,7 @@ model = Model(
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
 
-def train() -> Dict[str, float]:
+def train() -> float:
     model.train()
 
     loss_accum = count_accum = 0

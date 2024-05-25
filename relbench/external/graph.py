@@ -52,10 +52,11 @@ def make_pkey_fkey_graph(
         db (Database): A database object containing a set of tables.
         col_to_stype_dict (Dict[str, Dict[str, stype]]): Column to stype for
             each table.
+        text_embedder_cfg (TextEmbedderConfig): Text embedder config.
         cache_dir (str, optional): A directory for storing materialized tensor
             frames. If specified, we will either cache the file or use the
             cached file. If not specified, we will not use cached file and
-            re-process everything from scrach without saving the cache.
+            re-process everything from scratch without saving the cache.
 
     Returns:
         HeteroData: The heterogeneous :class:`PyG` object with

@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from relbench import _pooch
 from relbench.data.table import Table
 from relbench.data.task_base import BaseTask, _pack_tables
 from relbench.external.utils import to_unix_time
