@@ -145,8 +145,6 @@ class QualifyingTask(RelBenchNodeTask):
         qualifying = db.table_dict["qualifying"].df
         drivers = db.table_dict["drivers"].df
 
-        breakpoint()
-
         df = duckdb.sql(
             f"""
                 SELECT

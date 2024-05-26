@@ -84,7 +84,8 @@ class F1Dataset(RelBenchDataset):
         )
 
         # Drop the Wikipedia URL, driver number, driverRef, code,
-        # forename and surname
+        # forename and surname. The ref, code and name have too many
+        # unique values
         drivers.drop(
             columns=["number", "driverRef", "url", "code", "forename", "surname"],
             inplace=True,
