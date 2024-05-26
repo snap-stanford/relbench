@@ -166,10 +166,6 @@ dataset2inferred_stypes = {
         },
         "drivers": {
             "driverId": stype.numerical,
-            "driverRef": stype.text_embedded,
-            "code": stype.text_embedded,
-            "forename": stype.text_embedded,
-            "surname": stype.text_embedded,
             "dob": stype.timestamp,
             "nationality": stype.categorical,
         },
@@ -204,7 +200,6 @@ dataset2inferred_stypes = {
         },
         "constructors": {
             "constructorId": stype.numerical,
-            "constructorRef": stype.text_embedded,
             "name": stype.text_embedded,
             "nationality": stype.categorical,
         },
@@ -213,7 +208,6 @@ dataset2inferred_stypes = {
             "raceId": stype.numerical,
             "constructorId": stype.numerical,
             "points": stype.numerical,
-            "status": stype.text_embedded,
             "date": stype.timestamp,
         },
         "constructor_standings": {

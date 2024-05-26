@@ -47,6 +47,9 @@ root_dir = "./data"
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
 task: NodeTask = dataset.get_task(args.task, process=True)
 
+# Visualize the db
+dataset.db.visualize(f"{args.dataset}.png")
+
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
 
 data, col_stats_dict = make_pkey_fkey_graph(

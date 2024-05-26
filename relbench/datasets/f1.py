@@ -44,8 +44,6 @@ class F1Dataset(RelBenchDataset):
 
         path = os.path.join(path, "raw")
 
-        print("Current working directory:", os.getcwd())
-
         circuits = pd.read_csv(os.path.join(path, "circuits.csv"))
         drivers = pd.read_csv(os.path.join(path, "drivers.csv"))
         results = pd.read_csv(os.path.join(path, "results.csv"))
@@ -58,7 +56,10 @@ class F1Dataset(RelBenchDataset):
         )
         qualifying = pd.read_csv(os.path.join(path, "qualifying.csv"))
 
-        ## remove columns that are irrelevant, leak time, or have too many missing values
+        # Remove columns that are irrelevant, leak time,
+        # or have too many missing values
+
+        # Drop the Wikipedia URL and some time columns with many missing values
         races.drop(
             columns=[
                 "url",
@@ -76,16 +77,20 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
+        # Drop the Wikipedia URL
         circuits.drop(
-            columns=["url", "alt"],
+            columns=["url"],
             inplace=True,
         )
 
+        # Drop the Wikipedia URL, driver number, driverRef, code,
+        # forename and surname
         drivers.drop(
-            columns=["number", "url"],
+            columns=["number", "driverRef", "url", "code", "forename", "surname"],
             inplace=True,
         )
 
+        # Drop the positionText, time, fastestLapTime and fastestLapSpeed
         results.drop(
             columns=[
                 "positionText",
@@ -96,21 +101,31 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
+        # Drop the positionText
         standings.drop(
             columns=["positionText"],
             inplace=True,
         )
 
+        # Drop the Wikipedia URL and constructorRef
         constructors.drop(
-            columns=["url"],
+            columns=["url", "constructorRef"],
             inplace=True,
         )
 
+        # Drop the positionText
         constructor_standings.drop(
             columns=["positionText"],
             inplace=True,
         )
 
+        # Drop the status as it only contains a single value
+        constructor_results.drop(
+            columns=["status"],
+            inplace=True,
+        )
+
+        # Drop the time in qualifying 1, 2, and 3
         qualifying.drop(
             columns=["q1", "q2", "q3"],
             inplace=True,
@@ -136,11 +151,11 @@ class F1Dataset(RelBenchDataset):
             races[["raceId", "date"]], on="raceId", how="left"
         )
 
-        # subtract a day from the date to account for the fact
+        # Subtract a day from the date to account for the fact
         # that the qualifying time is the day before the main race
         qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
 
-        # replace "\N" with NaN in all tables
+        # Replace "\N" with NaN in all tables
         results = results.replace(r"^\\N$", np.nan, regex=True)
 
         # Convert non-numeric values to NaN in the specified column
@@ -154,6 +169,9 @@ class F1Dataset(RelBenchDataset):
             results["milliseconds"], errors="coerce"
         )
         results["fastestLap"] = pd.to_numeric(results["fastestLap"], errors="coerce")
+
+        # Convert drivers date of birth to datetime
+        drivers["dob"] = pd.to_datetime(drivers["dob"])
 
         tables = {}
 
