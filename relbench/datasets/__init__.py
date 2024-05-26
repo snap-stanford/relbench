@@ -27,16 +27,18 @@ def get_dataset(name: str, *args, **kwargs) -> RelBenchDataset:
     return dataset_cls_dict[name](*args, **kwargs)
 
 
-def decompress_gz_file(input_path : str, output_path : str):
+def decompress_gz_file(input_path: str, output_path: str):
     import gzip
     import shutil
+
     # Open the gz file in binary read mode
-    with gzip.open(input_path, 'rb') as f_in:
+    with gzip.open(input_path, "rb") as f_in:
         # Open the output file in binary write mode
-        with open(output_path, 'wb') as f_out:
+        with open(output_path, "wb") as f_out:
             # Copy the decompressed data from the gz file to the output file
             shutil.copyfileobj(f_in, f_out)
             print(f"Decompressed file saved as: {output_path}")
+
 
 __all__ = [
     "AmazonDataset",
