@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="relbench",
@@ -13,7 +13,7 @@ setup(
         "requests",
         "tqdm",
         "scikit-learn",
-        "typing-extensions"
+        "typing-extensions",
     ],
     extras_require={
         "example": [
@@ -25,7 +25,6 @@ setup(
             "tensorboard",
         ],
         "test": ["pytest"],
-        "dev": ["pre-commit"]
+        "dev": ["pre-commit"],
     },
 )
-

@@ -33,10 +33,10 @@ pip install relbench
 
 If you wish to develop new features for RelBench:
 ```
-python3 -m venv venv 
+python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
-pip install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-${TORCH}+${CUDA}.html           
+pip install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-${TORCH}+${CUDA}.html
 pip install pyg-lib -f https://data.pyg.org/whl/torch-${TORCH}+${CUDA}.html
 pip install -e .
 ```
