@@ -1,12 +1,10 @@
 import duckdb
-import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
 from relbench.data import Database, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, r2, rmse, roc_auc
-from relbench.utils import get_df_in_window
 
 
 class PositionTask(RelBenchNodeTask):

@@ -15,7 +15,6 @@ from relbench.metrics import (
     rmse,
     roc_auc,
 )
-from relbench.utils import get_df_in_window
 
 ######## node prediction tasks ########
 
