@@ -156,8 +156,11 @@ class F1Dataset(RelBenchDataset):
         # that the qualifying time is the day before the main race
         qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
 
-        # Replace "\N" with NaN in all tables
+        # Replace "\N" with NaN in results tables
         results = results.replace(r"^\\N$", np.nan, regex=True)
+
+        # Replace "\N" with NaN in circuits tables
+        circuits = circuits.replace(r"^\\N$", np.nan, regex=True)
 
         # Convert non-numeric values to NaN in the specified column
         results["rank"] = pd.to_numeric(results["rank"], errors="coerce")
