@@ -31,7 +31,7 @@ pip install relbench
 
 # Development
 
-If you wish to contribute to RelBench, follow the instructions below
+If you wish to develop new features for RelBench:
 ```
 python3 -m venv venv 
 source venv/bin/activate
