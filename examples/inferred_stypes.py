@@ -3,6 +3,67 @@ from torch_frame import stype
 # TODO (joshrob) move to dataset definition datasets/amazon.py etc.
 
 dataset2inferred_stypes = {
+    "rel-avito": {
+        "AdsInfo": {
+            "AdID": stype.numerical,
+            "LocationID": stype.numerical,
+            "CategoryID": stype.numerical,
+            "Price": stype.numerical,
+            "Title": stype.text_embedded,
+            "IsContext": stype.categorical,
+        },
+        "Category": {
+            "CategoryID": stype.numerical,
+            "Level": stype.categorical,
+            "ParentCategoryID": stype.numerical,
+            "SubcategoryID": stype.numerical,
+            "__index_level_0__": stype.numerical,
+        },
+        "Location": {
+            "LocationID": stype.numerical,
+            "Level": stype.categorical,
+            "RegionID": stype.numerical,
+            "CityID": stype.numerical,
+        },
+        "PhoneRequestsStream": {
+            "UserID": stype.numerical,
+            "IPID": stype.numerical,
+            "AdID": stype.numerical,
+            "PhoneRequestDate": stype.timestamp,
+        },
+        "SearchInfo": {
+            "UserID": stype.numerical,
+            "SearchID": stype.numerical,
+            "SearchDate": stype.timestamp,
+            "IPID": stype.numerical,
+            "IsUserLoggedOn": stype.categorical,
+            "SearchQuery": stype.text_embedded,
+            "LocationID": stype.numerical,
+            "CategoryID": stype.numerical,
+        },
+        "SearchStream": {
+            "SearchID": stype.numerical,
+            "AdID": stype.numerical,
+            "Position": stype.categorical,
+            "ObjectType": stype.categorical,
+            "HistCTR": stype.numerical,
+            "IsClick": stype.categorical,
+            "SearchDate": stype.timestamp,
+        },
+        "UserInfo": {
+            "UserID": stype.numerical,
+            "UserAgentID": stype.numerical,
+            "UserAgentOSID": stype.numerical,
+            "UserDeviceID": stype.numerical,
+            "UserAgentFamilyID": stype.numerical,
+        },
+        "VisitStream": {
+            "UserID": stype.numerical,
+            "IPID": stype.numerical,
+            "AdID": stype.numerical,
+            "ViewDate": stype.timestamp,
+        },
+    },
     "rel-hm": {
         "article": {
             "article_id": stype.numerical,
