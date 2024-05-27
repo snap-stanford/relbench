@@ -28,7 +28,7 @@ class RecommendationTask(RelBenchLinkTask):
     dst_entity_col = "event"
     dst_entity_table = "events"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=15)
+    timedelta = pd.Timedelta(days=10)
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
     eval_k = 5
 
@@ -39,13 +39,12 @@ class RecommendationTask(RelBenchLinkTask):
         events = db.table_dict["events"].df
         event_attendees = db.table_dict["event_attendees"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
-
         df = duckdb.sql(
             f"""
             SELECT
                 t.timestamp,
-                event_attendees.user,
-                LIST(DISTINCT event_attendees.event) AS event_id
+                event_attendees.user_id AS user,
+                LIST(DISTINCT event_attendees.event) AS event
             FROM
                 timestamp_df t
             LEFT JOIN
@@ -55,9 +54,11 @@ class RecommendationTask(RelBenchLinkTask):
                 event_attendees.start_time <= t.timestamp + INTERVAL '{self.timedelta} days'
             GROUP BY
                 t.timestamp,
-                event_attendees.user
+                event_attendees.user_id
             """
         ).df()
+        df = df.dropna(subset=["user"])
+        df["user"] = df["user"].astype(int)
 
         return Table(
             df=df,

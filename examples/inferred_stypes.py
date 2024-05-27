@@ -2,7 +2,50 @@ from torch_frame import stype
 
 # TODO (joshrob) move to dataset definition datasets/amazon.py etc.
 
+common_word_stem_columns = {f"c_{i}": stype.categorical for i in range(1, 101)}
 dataset2inferred_stypes = {
+    "rel-event": {
+        "users": {
+            "user_id": stype.numerical,
+            "locale": stype.categorical,
+            "birthyear": stype.numerical,
+            "gender": stype.categorical,
+            "joinedAt": stype.timestamp,
+            "location": stype.categorical,
+            "timezone": stype.categorical,
+        },
+        "events": {
+            "event_id": stype.numerical,
+            "user_id": stype.numerical,
+            "start_time": stype.timestamp,
+            "city": stype.categorical,
+            "state": stype.categorical,
+            "zip": stype.categorical,
+            "country": stype.categorical,
+            "lat": stype.numerical,
+            "lng": stype.numerical,
+            "c_other": stype.categorical,
+            **common_word_stem_columns,
+        },
+        "event_attendees": {
+            "event": stype.numerical,
+            "status": stype.categorical,
+            "user_id": stype.numerical,
+        },
+        "user_friends": {
+            "user": stype.numerical,
+            "friend": stype.numerical,
+        },
+        "friends": {
+            "user_id": stype.numerical,
+            "locale": stype.categorical,
+            "birthyear": stype.numerical,
+            "gender": stype.categorical,
+            "joinedAt": stype.timestamp,
+            "location": stype.categorical,
+            "timezone": stype.categorical,
+        },
+    },
     "rel-hm": {
         "article": {
             "article_id": stype.numerical,

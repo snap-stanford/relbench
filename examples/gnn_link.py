@@ -23,8 +23,8 @@ from relbench.external.graph import get_link_train_table_input, make_pkey_fkey_g
 from relbench.external.loader import LinkNeighborLoader
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-hm")
-parser.add_argument("--task", type=str, default="rel-hm-rec")
+parser.add_argument("--dataset", type=str, default="rel-event")
+parser.add_argument("--task", type=str, default="rel-event-rec")
 parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--epochs", type=int, default=20)
 parser.add_argument("--eval_epochs_interval", type=int, default=1)

@@ -23,9 +23,9 @@ class EventRecommendationDataset(RelBenchDataset):
         "kaggle competitions download -c event-recommendation-engine-challenge"
     )
 
-    train_start_timestamp = pd.Timestamp("2012-04-27 21:41:02.227000+00:00")
-    val_timestamp = pd.Timestamp("2012-11-01")
-    test_timestamp = pd.Timestamp("2012-11-11")
+    train_start_timestamp = pd.Timestamp("2012-04-27 21:41:02.227000+00:00", tz="UTC")
+    val_timestamp = pd.Timestamp("2012-10-25", tz="UTC")
+    test_timestamp = pd.Timestamp("2012-11-09", tz="UTC")
     max_eval_time_frames = 1
     task_cls_list = [RecommendationTask]
 
@@ -72,9 +72,13 @@ class EventRecommendationDataset(RelBenchDataset):
             event_attendees, os.path.join(path, "event_attendees_flattened.csv")
         )
         users_df = pd.read_csv(users, dtype={"user_id": int}, parse_dates=["joinedAt"])
+        users_df["birthyear"] = pd.to_numeric(users_df["birthyear"], errors="coerce")
         users_df["joinedAt"] = pd.to_datetime(users_df["joinedAt"], errors="coerce")
         friends_df = pd.read_csv(
             users, dtype={"user_id": int}, parse_dates=["joinedAt"]
+        )
+        friends_df["birthyear"] = pd.to_numeric(
+            friends_df["birthyear"], errors="coerce"
         )
         friends_df["joinedAt"] = pd.to_datetime(friends_df["joinedAt"], errors="coerce")
         events_df = pd.read_csv(events)
@@ -132,7 +136,7 @@ class EventRecommendationDataset(RelBenchDataset):
                 how="left",
             )
             exploded_df = exploded_df.drop("event_id", axis=1)
-            event_attendees_flattened_df = exploded_df
+            event_attendees_flattened_df = exploded_df.dropna(subset=["user_id"])
             event_attendees_flattened_df.to_csv(
                 os.path.join(path, "event_attendees_flattened.csv")
             )
@@ -143,10 +147,9 @@ class EventRecommendationDataset(RelBenchDataset):
             event_attendees_flattened_df["start_time"] = pd.to_datetime(
                 event_attendees_flattened_df["start_time"], errors="coerce"
             )
-
-        import pdb
-
-        pdb.set_trace()
+            event_attendees_flattened_df = event_attendees_flattened_df.dropna(
+                subset=["user_id"]
+            )
         return Database(
             table_dict={
                 "users": Table(
@@ -181,11 +184,6 @@ class EventRecommendationDataset(RelBenchDataset):
                         "user": "users",
                         "friend": "friends",
                     },
-                ),
-                "train": Table(
-                    df=train_df,
-                    fkey_col_to_pkey_table={"user": "users", "event": "events"},
-                    time_col="timestamp",
                 ),
             }
         )
