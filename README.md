@@ -29,6 +29,18 @@ You can install RelBench using `pip`:
 pip install relbench
 ```
 
+# Development
+
+If you wish to contribute to RelBench, follow the instructions below
+```
+python3 -m venv venv 
+source venv/bin/activate
+pip install --upgrade pip
+pip install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-${TORCH}+${CUDA}.html           
+pip install pyg-lib -f https://data.pyg.org/whl/torch-${TORCH}+${CUDA}.html
+pip install -e .
+```
+
 # Package Usage
 
 Here we describe key functions of RelBench. RelBench provides a collection of APIs for easy access to machine-learning-ready relational databases.
