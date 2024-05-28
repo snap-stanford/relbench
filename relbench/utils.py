@@ -50,6 +50,8 @@ def clean_datetime(df: pd.DataFrame, col: str) -> pd.DataFrame:
     percentage_removed = ((total_before - total_after) / total_before) * 100
 
     # Print the percentage of comments removed
-    print(f"Percentage of rows removed due to invalid dates: "
-          f"{percentage_removed:.2f}%")
+    print(
+        f"Percentage of rows removed due to invalid dates: "
+        f"{percentage_removed:.2f}%"
+    )
     return df
