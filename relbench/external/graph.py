@@ -87,10 +87,9 @@ def make_pkey_fkey_graph(
 
         if len(col_to_stype) == 0:  # Add constant feature in case df is empty:
             col_to_stype = {"__const__": stype.numerical}
-            pkey_fkey_dict = {key: df[key] for key in table.fkey_col_to_pkey_table}
-            if table.pkey_col:
-                pkey_fkey_dict[table.pkey_col] = df[table.pkey_col]
-            df = pd.DataFrame({"__const__": np.ones(len(table.df)), **pkey_fkey_dict})
+            # We need to add edges later, so we need to also keep the fkeys
+            fkey_dict = {key: df[key] for key in table.fkey_col_to_pkey_table}
+            df = pd.DataFrame({"__const__": np.ones(len(table.df)), **fkey_dict})
 
         path = (
             None if cache_dir is None else os.path.join(cache_dir, f"{table_name}.pt")
