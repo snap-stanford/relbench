@@ -19,7 +19,9 @@ def test_table_timezone():
         fkey_col_to_pkey_table={},
     )
 
-    table.upto(pd.Timestamp("2022-01-01"))
+    tb = table.upto(pd.Timestamp("2022-01-01"))
+    assert tb.df.timestamp.max() < pd.Timestamp("2022-01-01", tzinfo=pytz.utc)
+    assert tb.df.timestamp.dt.tz is not None
 
     table = Table(
         df=pd.DataFrame(
@@ -28,7 +30,9 @@ def test_table_timezone():
         fkey_col_to_pkey_table={},
     )
 
-    table.upto(pd.Timestamp("2022-01-01", tzinfo=pytz.utc))
+    tb = table.upto(pd.Timestamp("2022-01-01", tzinfo=pytz.utc))
+    assert tb.df.timestamp.dt.tz is None
+
 
     table = Table(
         df=pd.DataFrame(
@@ -36,4 +40,7 @@ def test_table_timezone():
         ),
         fkey_col_to_pkey_table={},
     )
-    table.upto(pd.Timestamp("2022-01-01", tzinfo=pytz.timezone("America/Los_Angeles")))
+    tb = table.upto(pd.Timestamp("2021-01-01", tzinfo=pytz.timezone("America/Los_Angeles")))
+    assert str(tb.df.timestamp.dt.tz) == 'UTC'
+    # UTC timezone is earlier so everything should be included
+    assert len(tb.df) == 5
