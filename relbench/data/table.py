@@ -104,6 +104,15 @@ class Table:
         if self.time_col is None:
             return self
 
+        is_naive_timestamp = time_stamp.tz is None
+        is_naive_time_col = self.df[self.time_col].dt.tz is None
+        if not is_naive_timestamp == is_naive_time_col:
+            if is_naive_timestamp:
+                time_stamp = time_stamp.tz_localize(str(self.df[self.time_col].dt.tz))
+            else:
+                self.df[self.time_col] = self.df["your_datetime_column"].dt.tz_localize(
+                    str(time_stamp.tz)
+                )
         return Table(
             df=self.df.query(f"{self.time_col} <= @time_stamp"),
             fkey_col_to_pkey_table=self.fkey_col_to_pkey_table,
