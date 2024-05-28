@@ -61,7 +61,6 @@ class LinkTask(BaseTask):
         filter_mask = (table.df[self.src_entity_col] >= self.num_src_nodes) | (
             ~table.df[self.dst_entity_col].map(bool)
         )
-
         if filter_mask.any():
             table.df = table.df[~filter_mask]
             table.df = table.df.reset_index(drop=True)

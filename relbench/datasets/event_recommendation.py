@@ -23,9 +23,9 @@ class EventRecommendationDataset(RelBenchDataset):
         "kaggle competitions download -c event-recommendation-engine-challenge"
     )
 
-    train_start_timestamp = pd.Timestamp("2012-04-27 21:41:02.227000+00:00", tz="UTC")
-    val_timestamp = pd.Timestamp("2012-10-25", tz="UTC")
-    test_timestamp = pd.Timestamp("2012-11-09", tz="UTC")
+    train_start_timestamp = pd.Timestamp("2012-04-27 21:41:02.227000")
+    val_timestamp = pd.Timestamp("2012-10-25")
+    test_timestamp = pd.Timestamp("2012-11-09")
     max_eval_time_frames = 1
     task_cls_list = [RecommendationTask]
 
@@ -55,7 +55,6 @@ class EventRecommendationDataset(RelBenchDataset):
         user_friends = os.path.join(path, "user_friends.csv")
         events = os.path.join(path, "events.csv")
         event_attendees = os.path.join(path, "event_attendees.csv")
-        train = os.path.join(path, "train.csv")
         if not (os.path.exists(users)):
             if not os.path.exists(zip):
                 raise RuntimeError(
@@ -74,6 +73,8 @@ class EventRecommendationDataset(RelBenchDataset):
         users_df = pd.read_csv(users, dtype={"user_id": int}, parse_dates=["joinedAt"])
         users_df["birthyear"] = pd.to_numeric(users_df["birthyear"], errors="coerce")
         users_df["joinedAt"] = pd.to_datetime(users_df["joinedAt"], errors="coerce")
+        users_df["joinedAt"] = users_df["joinedAt"].dt.tz_localize(None)
+
         friends_df = pd.read_csv(
             users, dtype={"user_id": int}, parse_dates=["joinedAt"]
         )
@@ -81,12 +82,12 @@ class EventRecommendationDataset(RelBenchDataset):
             friends_df["birthyear"], errors="coerce"
         )
         friends_df["joinedAt"] = pd.to_datetime(friends_df["joinedAt"], errors="coerce")
+        friends_df["joinedAt"] = friends_df["joinedAt"].dt.tz_localize(None)
         events_df = pd.read_csv(events)
         events_df["start_time"] = pd.to_datetime(
             events_df["start_time"], errors="coerce"
         )
-        train_df = pd.read_csv(train)
-        train_df["timestamp"] = pd.to_datetime(train_df["timestamp"], errors="coerce")
+        events_df["start_time"] = events_df["start_time"].dt.tz_localize(None)
 
         if not os.path.exists(os.path.join(path, "user_friends_flattened.csv")):
             user_friends_df = pd.read_csv(user_friends)
@@ -146,6 +147,11 @@ class EventRecommendationDataset(RelBenchDataset):
             )
             event_attendees_flattened_df["start_time"] = pd.to_datetime(
                 event_attendees_flattened_df["start_time"], errors="coerce"
+            )
+            event_attendees_flattened_df["start_time"] = (
+                event_attendees_flattened_df["start_time"]
+                .dt.tz_localize(None)
+                .apply(pd.Timestamp)
             )
             event_attendees_flattened_df = event_attendees_flattened_df.dropna(
                 subset=["user_id"]
