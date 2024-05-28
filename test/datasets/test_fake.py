@@ -38,7 +38,7 @@ def test_fake_reviews_dataset():
 
 def test_reindex():
     dataset = FakeDataset()
-    db = dataset.make_db(30, 100, 500)
+    db = dataset.make_db(30, 100, 500, 20)
     db_indexed = copy.deepcopy(db)
     db_indexed.reindex_pkeys_and_fkeys()
     for table_name in db.table_dict.keys():
