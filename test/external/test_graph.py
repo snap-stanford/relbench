@@ -2,15 +2,11 @@ from datetime import timedelta
 
 import numpy as np
 import pandas as pd
+import torch
 from torch_frame import TensorFrame
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
-import pandas as pd
-import numpy as np
-import torch
-from relbench.datasets import FakeDataset
-from relbench.external.graph import get_link_train_table_input, get_stype_proposal, make_pkey_fkey_graph
-from datetime import timedelta
+
 from relbench.data import LinkTask
 from relbench.datasets import FakeDataset
 from relbench.external.graph import (
@@ -74,7 +70,7 @@ def test_get_link_train_table_input():
         eval_k=3,
     )
     link_train_table_input = get_link_train_table_input(table, task)
-    assert link_train_table_input.src_nodes[0] == 'customer'
+    assert link_train_table_input.src_nodes[0] == "customer"
     assert link_train_table_input.src_nodes[1].max() < 100
-    assert link_train_table_input.dst_nodes[0] == 'product'
+    assert link_train_table_input.dst_nodes[0] == "product"
     assert link_train_table_input.dst_nodes[1].layout == torch.sparse_csr
