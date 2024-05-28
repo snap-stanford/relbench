@@ -36,7 +36,7 @@ class FakeDataset(Dataset):
         num_relations: int = 20,
     ):
         db = self.make_db(
-            num_products, num_customers, num_reviews, num_relations=num_relations
+            num_products, num_customers, num_reviews, num_relations
         )
         db.reindex_pkeys_and_fkeys()
         val_timestamp = db.min_timestamp + 0.8 * (db.max_timestamp - db.min_timestamp)
