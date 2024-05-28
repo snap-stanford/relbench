@@ -34,9 +34,6 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
     for table_name, table in db.table_dict.items():
         inferred_col_to_stype = infer_df_stype(table.df)
         inferred_col_to_stype_dict[table_name] = inferred_col_to_stype
-    import pdb
-
-    pdb.set_trace()
     return inferred_col_to_stype_dict
 
 
@@ -232,9 +229,7 @@ def get_link_train_table_input(
         torch.ones(coo_indices.size(1), dtype=bool),
         (len(src_node_idx), task.num_dst_nodes),
     )
-    import pdb
 
-    pdb.set_trace()
     dst_node_indices = sparse_coo.to_sparse_csr()
 
     time: Optional[Tensor] = None
