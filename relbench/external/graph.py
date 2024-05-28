@@ -217,7 +217,6 @@ def get_link_train_table_input(
     table: Table,
     task: LinkTask,
 ) -> LinkTrainTableInput:
-    table.df = table.df.reset_index()
     src_node_idx: Tensor = torch.from_numpy(
         table.df[task.src_entity_col].astype(int).values
     )

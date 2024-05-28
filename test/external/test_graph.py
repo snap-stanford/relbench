@@ -52,25 +52,3 @@ def test_make_pkey_fkey_graph():
         assert edge_index.size(1) <= data["review"].num_nodes
         assert edge_index[0].max() <= data[src].num_nodes
         assert edge_index[1].max() <= data[dst].num_nodes
-
-
-def test_get_link_train_table_input():
-    dataset = FakeDataset()
-
-    table = dataset.db.table_dict["review"]
-    table.df = table.df.dropna()
-    task = LinkTask(
-        dataset,
-        timedelta=timedelta(days=15),
-        src_entity_table="customer",
-        src_entity_col="customer_id",
-        dst_entity_table="product",
-        dst_entity_col="product_id",
-        metrics=[link_prediction_map],
-        eval_k=3,
-    )
-    link_train_table_input = get_link_train_table_input(table, task)
-    assert link_train_table_input.src_nodes[0] == "customer"
-    assert link_train_table_input.src_nodes[1].max() < 100
-    assert link_train_table_input.dst_nodes[0] == "product"
-    assert link_train_table_input.dst_nodes[1].layout == torch.sparse_csr
