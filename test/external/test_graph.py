@@ -1,3 +1,7 @@
+from datetime import timedelta
+
+import numpy as np
+import pandas as pd
 from torch_frame import TensorFrame
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
@@ -7,8 +11,15 @@ import torch
 from relbench.datasets import FakeDataset
 from relbench.external.graph import get_link_train_table_input, get_stype_proposal, make_pkey_fkey_graph
 from datetime import timedelta
-from relbench.data import LinkTask, Table
+from relbench.data import LinkTask
+from relbench.datasets import FakeDataset
+from relbench.external.graph import (
+    get_link_train_table_input,
+    get_stype_proposal,
+    make_pkey_fkey_graph,
+)
 from relbench.metrics import link_prediction_map
+
 
 def test_make_pkey_fkey_graph():
     dataset = FakeDataset()
@@ -46,18 +57,21 @@ def test_make_pkey_fkey_graph():
         assert edge_index[0].max() <= data[src].num_nodes
         assert edge_index[1].max() <= data[dst].num_nodes
 
-def test_get_link_train_table_input():
-    dataset=FakeDataset()
 
-    table = dataset.db.table_dict['review']
+def test_get_link_train_table_input():
+    dataset = FakeDataset()
+
+    table = dataset.db.table_dict["review"]
     table.df = table.df.dropna()
-    task = LinkTask(dataset, timedelta=timedelta(days=15),
-                        src_entity_table='customer',
-    src_entity_col='customer_id',
-    dst_entity_table='product',
-    dst_entity_col='product_id',
-    metrics=[link_prediction_map],
-    eval_k=3
+    task = LinkTask(
+        dataset,
+        timedelta=timedelta(days=15),
+        src_entity_table="customer",
+        src_entity_col="customer_id",
+        dst_entity_table="product",
+        dst_entity_col="product_id",
+        metrics=[link_prediction_map],
+        eval_k=3,
     )
     link_train_table_input = get_link_train_table_input(table, task)
     assert link_train_table_input.src_nodes[0] == 'customer'
