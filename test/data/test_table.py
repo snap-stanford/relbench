@@ -33,14 +33,15 @@ def test_table_timezone():
     tb = table.upto(pd.Timestamp("2022-01-01", tzinfo=pytz.utc))
     assert tb.df.timestamp.dt.tz is None
 
-
     table = Table(
         df=pd.DataFrame(
             {"timestamp": [datetime(2021, 1, 1, tzinfo=pytz.utc) for _ in range(5)]}
         ),
         fkey_col_to_pkey_table={},
     )
-    tb = table.upto(pd.Timestamp("2021-01-01", tzinfo=pytz.timezone("America/Los_Angeles")))
-    assert str(tb.df.timestamp.dt.tz) == 'UTC'
+    tb = table.upto(
+        pd.Timestamp("2021-01-01", tzinfo=pytz.timezone("America/Los_Angeles"))
+    )
+    assert str(tb.df.timestamp.dt.tz) == "UTC"
     # UTC timezone is earlier so everything should be included
     assert len(tb.df) == 5
