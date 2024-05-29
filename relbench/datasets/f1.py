@@ -84,9 +84,9 @@ class F1Dataset(RelBenchDataset):
         )
 
         # Drop the Wikipedia URL (unique), number (803 / 857 are nulls)
-        # driverRef (unique), code (757 / 857 nulls),
+        # code (757 / 857 nulls),
         drivers.drop(
-            columns=["number", "driverRef", "url", "code"],
+            columns=["number", "url", "code"],
             inplace=True,
         )
 

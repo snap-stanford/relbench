@@ -166,10 +166,11 @@ dataset2inferred_stypes = {
         },
         "drivers": {
             "driverId": stype.numerical,
+            "driverRef": stype.text_embedded,
             "dob": stype.timestamp,
             "nationality": stype.categorical,
-            "forename": stype.categorical,  # text may be meaningless
-            "surname": stype.categorical,  # text may be meaningless
+            "forename": stype.text_embedded,
+            "surname": stype.text_embedded,
         },
         "results": {
             "resultId": stype.numerical,
