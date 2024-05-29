@@ -75,10 +75,10 @@ class DidNotFinishTask(RelBenchNodeTask):
     time_col = "date"
     target_col = "did_not_finish"
     timedelta = pd.Timedelta(days=30)
-    metrics = [average_precision, accuracy, f1, roc_auc]  # [mae, rmse]
+    metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for results_position_next_race."""
+        r"""Create Task object for rel-f1-dnf."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         results = db.table_dict["results"].df

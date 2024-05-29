@@ -77,17 +77,16 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
-        # Drop the Wikipedia URL
+        # Drop the Wikipedia URL as it is unique for each row
         circuits.drop(
             columns=["url"],
             inplace=True,
         )
 
-        # Drop the Wikipedia URL, driver number, driverRef, code,
-        # forename and surname. The ref, code and name have too many
-        # unique values
+        # Drop the Wikipedia URL (unique), number (803 / 857 are nulls)
+        # driverRef (unique), code (757 / 857 nulls),
         drivers.drop(
-            columns=["number", "driverRef", "url", "code", "forename", "surname"],
+            columns=["number", "driverRef", "url", "code"],
             inplace=True,
         )
 
@@ -108,7 +107,8 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
-        # Drop the Wikipedia URL and constructorRef
+        # Drop the Wikipedia URL and constructorRef, both
+        # of them are unique for each row
         constructors.drop(
             columns=["url", "constructorRef"],
             inplace=True,
@@ -120,7 +120,8 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
-        # Drop the status as it only contains a single value
+        # Drop the status as it only contains two categories, and
+        # only 17 rows have value 'D' (0.138%)
         constructor_results.drop(
             columns=["status"],
             inplace=True,
@@ -135,7 +136,10 @@ class F1Dataset(RelBenchDataset):
         # replase missing data and combine date and time columns
         races["time"] = races["time"].replace(r"^\\N$", "00:00:00", regex=True)
         races["date"] = races["date"] + " " + races["time"]
-        # change time column to unix time
+        # Change time column to integer, for example
+        # "06:00:00" will be changed to integer 6
+        races["time"] = pd.to_datetime(races["time"]).dt.hour
+        # Change date column to pd.Timestamp
         races["date"] = pd.to_datetime(races["date"])
 
         # add time column to other tables
@@ -159,8 +163,11 @@ class F1Dataset(RelBenchDataset):
         # Replace "\N" with NaN in results tables
         results = results.replace(r"^\\N$", np.nan, regex=True)
 
-        # Replace "\N" with NaN in circuits tables
+        # Replace "\N" with NaN in circuits tables, especially
+        # for the column `alt` which has 3 rows of "\N"
         circuits = circuits.replace(r"^\\N$", np.nan, regex=True)
+        # Convert alt from string to float
+        circuits["alt"] = circuits["alt"].astype(float)
 
         # Convert non-numeric values to NaN in the specified column
         results["rank"] = pd.to_numeric(results["rank"], errors="coerce")
