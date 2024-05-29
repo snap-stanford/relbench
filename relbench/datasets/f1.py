@@ -83,10 +83,9 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
-        # Drop the Wikipedia URL (unique), number (803 / 857 are nulls)
-        # code (757 / 857 nulls),
+        # Drop the Wikipedia URL (unique) and number (803 / 857 are nulls)
         drivers.drop(
-            columns=["number", "url", "code"],
+            columns=["number", "url"],
             inplace=True,
         )
 
@@ -135,9 +134,6 @@ class F1Dataset(RelBenchDataset):
         # replase missing data and combine date and time columns
         races["time"] = races["time"].replace(r"^\\N$", "00:00:00", regex=True)
         races["date"] = races["date"] + " " + races["time"]
-        # Change time column to integer, for example
-        # "06:00:00" will be changed to integer 6
-        races["time"] = pd.to_datetime(races["time"]).dt.hour
         # Change date column to pd.Timestamp
         races["date"] = pd.to_datetime(races["date"])
 

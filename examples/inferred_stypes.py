@@ -167,10 +167,11 @@ dataset2inferred_stypes = {
         "drivers": {
             "driverId": stype.numerical,
             "driverRef": stype.text_embedded,
-            "dob": stype.timestamp,
-            "nationality": stype.categorical,
+            "code": stype.text_embedded,
             "forename": stype.text_embedded,
             "surname": stype.text_embedded,
+            "dob": stype.timestamp,
+            "nationality": stype.categorical,
         },
         "results": {
             "resultId": stype.numerical,
@@ -227,14 +228,6 @@ dataset2inferred_stypes = {
             "constructorId": stype.numerical,
             "number": stype.numerical,
             "position": stype.numerical,
-        },
-        "lap_times": {
-            "lapId": stype.numerical,
-            "raceId": stype.numerical,
-            "driverId": stype.numerical,
-            "lap": stype.numerical,
-            "position": stype.numerical,
-            "milliseconds": stype.numerical,
         },
     },
     "rel-trial": {
