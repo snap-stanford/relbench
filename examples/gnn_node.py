@@ -19,6 +19,7 @@ from relbench.data import NodeTask, RelBenchDataset
 from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_graph
+from relbench.utils import visualize_database_schema
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")

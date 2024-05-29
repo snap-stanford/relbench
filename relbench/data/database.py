@@ -3,8 +3,6 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Union
 
-import matplotlib.pyplot as plt
-import networkx as nx
 import pandas as pd
 from typing_extensions import Self
 
@@ -124,14 +122,3 @@ class Database:
                     right_index=True,
                 )
                 table.df[fkey_col] = out["index"]
-
-    def visualize(self, path: str):
-        G = nx.Graph()
-        for table_name in self.table_dict:
-            G.add_node(table_name, name=table_name)
-        for table_name, table in self.table_dict.items():
-            pkey_table_dict = table.fkey_col_to_pkey_table
-            for _, pkey_table_name in pkey_table_dict.items():
-                G.add_edge(table_name, pkey_table_name)
-        nx.draw(G, labels=nx.get_node_attributes(G, "name"))
-        plt.savefig(path)
