@@ -77,6 +77,33 @@ class BaseTask:
             self._cached_table_dict["train"] = table
         else:
             table = self._cached_table_dict["train"]
+
+        timestamps = []
+        total_lhs = []
+        total_rhs = []
+        avg_degree = []
+        for timestamp in table.df["timestamp"].unique():
+            temp_df = table.df[table.df["timestamp"] == timestamp].reset_index(
+                drop=True
+            )
+            num_lhs = len(temp_df[self.src_entity_col].unique())
+            num_rhs = 0
+            for item in temp_df[self.dst_entity_col]:
+                num_rhs += len(item)
+            total_lhs.append(num_lhs)
+            total_rhs.append(num_rhs)
+            avg_degree.append(round(num_rhs / num_lhs, 4))
+            timestamps.append(timestamp.strftime("%Y-%m-%d"))
+        df = pd.DataFrame(
+            {
+                "timestamps": timestamps,
+                "total_lhs": total_lhs,
+                "total_rhs": total_rhs,
+                "avg_degree": avg_degree,
+            }
+        )
+        df.to_csv("train.csv", index=False)
+
         return self.filter_dangling_entities(table)
 
     @property
@@ -111,6 +138,33 @@ class BaseTask:
             self._cached_table_dict["val"] = table
         else:
             table = self._cached_table_dict["val"]
+
+        timestamps = []
+        total_lhs = []
+        total_rhs = []
+        avg_degree = []
+        for timestamp in table.df["timestamp"].unique():
+            temp_df = table.df[table.df["timestamp"] == timestamp].reset_index(
+                drop=True
+            )
+            num_lhs = len(temp_df[self.src_entity_col].unique())
+            num_rhs = 0
+            for item in temp_df[self.dst_entity_col]:
+                num_rhs += len(item)
+            total_lhs.append(num_lhs)
+            total_rhs.append(num_rhs)
+            avg_degree.append(round(num_rhs / num_lhs, 4))
+            timestamps.append(timestamp.strftime("%Y-%m-%d"))
+        df = pd.DataFrame(
+            {
+                "timestamps": timestamps,
+                "total_lhs": total_lhs,
+                "total_rhs": total_rhs,
+                "avg_degree": avg_degree,
+            }
+        )
+        df.to_csv("val.csv", index=False)
+
         return self.filter_dangling_entities(table)
 
     @property
@@ -146,6 +200,32 @@ class BaseTask:
         else:
             full_table = self._cached_table_dict["full_test"]
         self._full_test_table = self.filter_dangling_entities(full_table)
+
+        timestamps = []
+        total_lhs = []
+        total_rhs = []
+        avg_degree = []
+        for timestamp in full_table.df["timestamp"].unique():
+            temp_df = full_table.df[
+                full_table.df["timestamp"] == timestamp
+            ].reset_index(drop=True)
+            num_lhs = len(temp_df[self.src_entity_col].unique())
+            num_rhs = 0
+            for item in temp_df[self.dst_entity_col]:
+                num_rhs += len(item)
+            total_lhs.append(num_lhs)
+            total_rhs.append(num_rhs)
+            avg_degree.append(round(num_rhs / num_lhs, 4))
+            timestamps.append(timestamp.strftime("%Y-%m-%d"))
+        df = pd.DataFrame(
+            {
+                "timestamps": timestamps,
+                "total_lhs": total_lhs,
+                "total_rhs": total_rhs,
+                "avg_degree": avg_degree,
+            }
+        )
+        df.to_csv("test.csv", index=False)
 
         return self._mask_input_cols(self._full_test_table)
 

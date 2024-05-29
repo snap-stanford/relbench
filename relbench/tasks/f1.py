@@ -1,9 +1,20 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchNodeTask, Table
+from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import accuracy, average_precision, f1, mae, r2, rmse, roc_auc
+from relbench.metrics import (
+    accuracy,
+    average_precision,
+    f1,
+    link_prediction_map,
+    link_prediction_precision,
+    link_prediction_recall,
+    mae,
+    r2,
+    rmse,
+    roc_auc,
+)
 
 
 class PositionTask(RelBenchNodeTask):
@@ -181,6 +192,128 @@ class QualifyingTask(RelBenchNodeTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+class DriverConstructorTask(RelBenchLinkTask):
+    r"""Predict a list of existing constructors that a driver will
+    play in the next three years according to the results table."""
+
+    name = "rel-f1-driver-constructor"
+    task_type = TaskType.LINK_PREDICTION
+    src_entity_col = "driverId"
+    src_entity_table = "drivers"
+    dst_entity_col = "constructorId"
+    dst_entity_table = "constructors"
+    time_col = "timestamp"
+    timedelta = pd.Timedelta(days=365 * 3)
+    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
+    eval_k = 5
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        r"""Create Task object for DriverConstructorTask."""
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        constructors = db.table_dict["constructors"].df
+        drivers = db.table_dict["drivers"].df
+        results = db.table_dict["results"].df
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                t.timestamp,
+                d.driverId as driverId,
+                LIST(DISTINCT r.constructorId) AS constructorId
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                results r
+            ON
+                r.date > t.timestamp AND
+                r.date <= t.timestamp + INTERVAL '{self.timedelta} days'
+            LEFT JOIN
+                constructors c
+            ON
+                r.constructorId = c.constructorId
+            LEFT JOIN
+                drivers d
+            ON
+                d.driverId = r.driverId
+            GROUP BY
+                t.timestamp,
+                d.driverId
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
+            },
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+class DriverRaceTask(RelBenchLinkTask):
+    r"""Predict a list of existing races for a driver according to
+    standings in the next year."""
+
+    name = "rel-f1-driver-race"
+    task_type = TaskType.LINK_PREDICTION
+    src_entity_col = "driverId"
+    src_entity_table = "drivers"
+    dst_entity_col = "raceId"
+    dst_entity_table = "races"
+    time_col = "timestamp"
+    timedelta = pd.Timedelta(days=365 * 2)
+    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
+    eval_k = 10
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        r"""Create Task object for DriverRaceTask."""
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        races = db.table_dict["races"].df
+        drivers = db.table_dict["drivers"].df
+        standings = db.table_dict["standings"].df
+
+        df = duckdb.sql(
+            f"""
+            SELECT
+                t.timestamp,
+                d.driverId as driverId,
+                LIST(DISTINCT r.raceId) AS raceId
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                standings s
+            ON
+                s.date > t.timestamp AND
+                s.date <= t.timestamp + INTERVAL '{self.timedelta} days'
+            LEFT JOIN
+                races r
+            ON
+                r.raceId = s.raceId
+            LEFT JOIN
+                drivers d
+            ON
+                d.driverId = s.driverId
+            GROUP BY
+                t.timestamp,
+                d.driverId
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
+            },
             pkey_col=None,
             time_col=self.time_col,
         )

@@ -34,10 +34,16 @@ class LinkTask(BaseTask):
         )
 
         if self.dataset.max_eval_time_frames != 1:
-            raise RuntimeError(
-                "Link prediction cannot be defined over tasks with multiple "
-                "eval time frames."
-            )
+            # For some tasks, max_eval_time_frames are different between
+            # node prediction and link prediction tasks. So set the
+            # max_eval_time_frames to 1 for the link prediction task
+            if self.name in {"rel-f1-driver-constructor", "rel-f1-driver-race"}:
+                self.dataset.max_eval_time_frames = 1
+            else:
+                raise RuntimeError(
+                    "Link prediction cannot be defined over tasks with multiple "
+                    "eval time frames."
+                )
 
         self.src_entity_table = src_entity_table
         self.src_entity_col = src_entity_col
@@ -116,7 +122,7 @@ class LinkTask(BaseTask):
 
     @property
     def test_seed_time(self) -> int:
-        return to_unix_time(pd.Series([self.dataset.val_timestamp]))[0]
+        return to_unix_time(pd.Series([self.dataset.test_timestamp]))[0]
 
 
 class RelBenchLinkTask(LinkTask):

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 import numpy as np
@@ -5,7 +7,13 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.f1 import DidNotFinishTask, PositionTask, QualifyingTask
+from relbench.tasks.f1 import (
+    DidNotFinishTask,
+    DriverConstructorTask,
+    DriverRaceTask,
+    PositionTask,
+    QualifyingTask,
+)
 from relbench.utils import unzip_processor
 
 
@@ -18,6 +26,8 @@ class F1Dataset(RelBenchDataset):
         PositionTask,
         DidNotFinishTask,
         QualifyingTask,
+        DriverConstructorTask,
+        DriverRaceTask,
     ]
 
     def __init__(
@@ -30,8 +40,7 @@ class F1Dataset(RelBenchDataset):
         self.name = f"{self.name}"
         super().__init__(process=process)
 
-    def make_db(self) -> Database:
-        r"""Process the raw files into a database."""
+    def get_dfs(self) -> tuple[pd.DataFrame, ...]:
         url = "https://relbench.stanford.edu/data/relbench-f1-raw.zip"
 
         path = pooch.retrieve(
@@ -137,6 +146,7 @@ class F1Dataset(RelBenchDataset):
         races["date"] = races["date"] + " " + races["time"]
         # change time column to unix time
         races["date"] = pd.to_datetime(races["date"])
+        races["time"] = pd.to_datetime(races["time"]).dt.hour
 
         # add time column to other tables
         results = results.merge(races[["raceId", "date"]], on="raceId", how="left")
@@ -161,6 +171,8 @@ class F1Dataset(RelBenchDataset):
 
         # Replace "\N" with NaN in circuits tables
         circuits = circuits.replace(r"^\\N$", np.nan, regex=True)
+        # Convert alt from string to float
+        circuits["alt"] = circuits["alt"].astype(float)
 
         # Convert non-numeric values to NaN in the specified column
         results["rank"] = pd.to_numeric(results["rank"], errors="coerce")
@@ -177,6 +189,31 @@ class F1Dataset(RelBenchDataset):
         # Convert drivers date of birth to datetime
         drivers["dob"] = pd.to_datetime(drivers["dob"])
 
+        return (
+            races,
+            circuits,
+            drivers,
+            results,
+            standings,
+            constructors,
+            constructor_results,
+            constructor_standings,
+            qualifying,
+        )
+
+    def make_db(self) -> Database:
+        r"""Process the raw files into a database."""
+        (
+            races,
+            circuits,
+            drivers,
+            results,
+            standings,
+            constructors,
+            constructor_results,
+            constructor_standings,
+            qualifying,
+        ) = self.get_dfs()
         tables = {}
 
         tables["races"] = Table(
@@ -185,7 +222,120 @@ class F1Dataset(RelBenchDataset):
                 "circuitId": "circuits",
             },
             pkey_col="raceId",
+            time_col=None,
+        )
+
+        tables["circuits"] = Table(
+            df=pd.DataFrame(circuits),
+            fkey_col_to_pkey_table={},
+            pkey_col="circuitId",
+            time_col=None,
+        )
+
+        tables["drivers"] = Table(
+            df=pd.DataFrame(drivers),
+            fkey_col_to_pkey_table={},
+            pkey_col="driverId",
+            time_col=None,
+        )
+
+        tables["results"] = Table(
+            df=pd.DataFrame(results),
+            fkey_col_to_pkey_table={
+                "raceId": "races",
+                "driverId": "drivers",
+                "constructorId": "constructors",
+            },
+            pkey_col="resultId",
             time_col="date",
+        )
+
+        tables["standings"] = Table(
+            df=pd.DataFrame(standings),
+            fkey_col_to_pkey_table={"raceId": "races", "driverId": "drivers"},
+            pkey_col="driverStandingsId",
+            time_col="date",
+        )
+
+        tables["constructors"] = Table(
+            df=pd.DataFrame(constructors),
+            fkey_col_to_pkey_table={},
+            pkey_col="constructorId",
+            time_col=None,
+        )
+
+        tables["constructor_results"] = Table(
+            df=pd.DataFrame(constructor_results),
+            fkey_col_to_pkey_table={"raceId": "races", "constructorId": "constructors"},
+            pkey_col="constructorResultsId",
+            time_col="date",
+        )
+
+        tables["constructor_standings"] = Table(
+            df=pd.DataFrame(constructor_standings),
+            fkey_col_to_pkey_table={"raceId": "races", "constructorId": "constructors"},
+            pkey_col="constructorStandingsId",
+            time_col="date",
+        )
+
+        tables["qualifying"] = Table(
+            df=pd.DataFrame(qualifying),
+            fkey_col_to_pkey_table={
+                "raceId": "races",
+                "driverId": "drivers",
+                "constructorId": "constructors",
+            },
+            pkey_col="qualifyId",
+            time_col="date",
+        )
+
+        return Database(tables)
+
+
+class F1LinkPredDataset(F1Dataset):
+    name = "rel-f1-link"
+    val_timestamp = pd.Timestamp("2010-01-01")
+    test_timestamp = pd.Timestamp("2020-01-01")
+    max_eval_time_frames = 1
+    task_cls_list = [
+        DriverConstructorTask,
+        DriverRaceTask,
+    ]
+
+    def __init__(
+        self,
+        *,
+        process: bool = False,
+        cache_dir: str = None,
+    ):
+        self.cache_dir = cache_dir
+        self.name = f"{self.name}"
+        super().__init__(process=process)
+
+    def make_db(self) -> Database:
+        r"""Process the raw files into a database."""
+        (
+            races,
+            circuits,
+            drivers,
+            results,
+            standings,
+            constructors,
+            constructor_results,
+            constructor_standings,
+            qualifying,
+        ) = self.get_dfs()
+
+        races = races.drop(columns=["date"])
+        tables = {}
+
+        tables["races"] = Table(
+            df=pd.DataFrame(races),
+            fkey_col_to_pkey_table={
+                "circuitId": "circuits",
+            },
+            pkey_col="raceId",
+            time_col=None,
         )
 
         tables["circuits"] = Table(
