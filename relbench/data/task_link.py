@@ -115,7 +115,7 @@ class LinkTask(BaseTask):
     @property
     def num_src_nodes(self) -> int:
         return len(self.dataset.db.table_dict[self.src_entity_table])
-    
+
     @property
     def num_src_nodes_full_db(self) -> int:
         return len(self.dataset._full_db.table_dict[self.src_entity_table])
