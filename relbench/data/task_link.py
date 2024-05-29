@@ -52,6 +52,9 @@ class LinkTask(BaseTask):
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
     def filter_dangling_entities(self, table: Table, is_test: bool = False) -> Table:
+        # We filter out test data in self.db to avoid information leakage.
+        # Here when we filter dangling entities for test set, we need to
+        # read the num_src_nodes and num_dst_nodes from unfiltered db.
         if not is_test:
             num_src_nodes = self.num_src_nodes
             num_dst_nodes = self.num_dst_nodes
