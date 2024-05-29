@@ -51,14 +51,21 @@ class LinkTask(BaseTask):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
-    def filter_dangling_entities(self, table: Table) -> Table:
+    def filter_dangling_entities(self, table: Table, is_test: bool = False) -> Table:
+        if not is_test:
+            num_src_nodes = self.num_src_nodes
+            num_dst_nodes = self.num_dst_nodes
+        else:
+            num_src_nodes = self.num_src_nodes_full_db
+            num_dst_nodes = self.num_dst_nodes_full_db
+
         # filter dangling destination entities from a list
         table.df[self.dst_entity_col] = table.df[self.dst_entity_col].apply(
-            lambda x: [i for i in x if i < self.num_dst_nodes]
+            lambda x: [i for i in x if i < num_dst_nodes]
         )
 
         # filter dangling source entities and empty list (after above filtering)
-        filter_mask = (table.df[self.src_entity_col] >= self.num_src_nodes) | (
+        filter_mask = (table.df[self.src_entity_col] >= num_src_nodes) | (
             ~table.df[self.dst_entity_col].map(bool)
         )
 
@@ -104,10 +111,18 @@ class LinkTask(BaseTask):
 
     @property
     def num_src_nodes(self) -> int:
+        return len(self.dataset.db.table_dict[self.src_entity_table])
+    
+    @property
+    def num_src_nodes_full_db(self) -> int:
         return len(self.dataset._full_db.table_dict[self.src_entity_table])
 
     @property
     def num_dst_nodes(self) -> int:
+        return len(self.dataset.db.table_dict[self.dst_entity_table])
+
+    @property
+    def num_dst_nodes_full_db(self) -> int:
         return len(self.dataset._full_db.table_dict[self.dst_entity_table])
 
     @property

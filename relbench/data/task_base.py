@@ -145,7 +145,7 @@ class BaseTask:
             self._cached_table_dict["full_test"] = full_table
         else:
             full_table = self._cached_table_dict["full_test"]
-        self._full_test_table = self.filter_dangling_entities(full_table)
+        self._full_test_table = self.filter_dangling_entities(full_table, is_test=True)
 
         return self._mask_input_cols(self._full_test_table)
 
