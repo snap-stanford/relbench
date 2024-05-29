@@ -107,10 +107,9 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
-        # Drop the Wikipedia URL and constructorRef, both
-        # of them are unique for each row
+        # Drop the Wikipedia URL
         constructors.drop(
-            columns=["url", "constructorRef"],
+            columns=["url"],
             inplace=True,
         )
 

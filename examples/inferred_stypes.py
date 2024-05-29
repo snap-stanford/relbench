@@ -200,6 +200,7 @@ dataset2inferred_stypes = {
         },
         "constructors": {
             "constructorId": stype.numerical,
+            "constructorRef": stype.text_embedded,
             "name": stype.text_embedded,
             "nationality": stype.categorical,
         },
