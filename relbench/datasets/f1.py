@@ -134,7 +134,7 @@ class F1Dataset(RelBenchDataset):
         # replase missing data and combine date and time columns
         races["time"] = races["time"].replace(r"^\\N$", "00:00:00", regex=True)
         races["date"] = races["date"] + " " + races["time"]
-        # Change date column to pd.Timestamp
+        # Convert date column to pd.Timestamp
         races["date"] = pd.to_datetime(races["date"])
 
         # add time column to other tables
