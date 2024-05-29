@@ -210,7 +210,7 @@ for epoch in range(1, args.epochs + 1):
             f"Val metrics: {val_metrics}"
         )
 
-        if val_metrics[tune_metric] > best_val_metric:
+        if val_metrics[tune_metric] >= best_val_metric:
             best_val_metric = val_metrics[tune_metric]
             state_dict = copy.deepcopy(model.state_dict())
 
