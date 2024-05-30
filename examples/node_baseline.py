@@ -11,8 +11,8 @@ from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-stackex")
-parser.add_argument("--task", type=str, default="rel-stackex-engage")
+parser.add_argument("--dataset", type=str, default="rel-event")
+parser.add_argument("--task", type=str, default="rel-event-attendence")
 # Classification task: rel-stackex-engage
 # Regression task: rel-stackex-votes
 args = parser.parse_args()

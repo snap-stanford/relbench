@@ -34,6 +34,7 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
     for table_name, table in db.table_dict.items():
         inferred_col_to_stype = infer_df_stype(table.df)
         inferred_col_to_stype_dict[table_name] = inferred_col_to_stype
+
     return inferred_col_to_stype_dict
 
 
@@ -86,14 +87,12 @@ def make_pkey_fkey_graph(
 
         if len(col_to_stype) == 0:  # Add constant feature in case df is empty:
             col_to_stype = {"__const__": stype.numerical}
-            pkey_fkey_dict = {key: df[key] for key in table.fkey_col_to_pkey_table}
-            if table.pkey_col:
-                pkey_fkey_dict[table.pkey_col] = df[table.pkey_col]
-            df = pd.DataFrame({"__const__": np.ones(len(table.df)), **pkey_fkey_dict})
+            df = pd.DataFrame({"__const__": np.ones(len(table.df))})
 
         path = (
             None if cache_dir is None else os.path.join(cache_dir, f"{table_name}.pt")
         )
+
         dataset = Dataset(
             df=df,
             col_to_stype=col_to_stype,
@@ -216,7 +215,6 @@ def get_link_train_table_input(
     table: Table,
     task: LinkTask,
 ) -> LinkTrainTableInput:
-    table.df = table.df.reset_index()
     src_node_idx: Tensor = torch.from_numpy(
         table.df[task.src_entity_col].astype(int).values
     )
@@ -229,7 +227,6 @@ def get_link_train_table_input(
         torch.ones(coo_indices.size(1), dtype=bool),
         (len(src_node_idx), task.num_dst_nodes),
     )
-
     dst_node_indices = sparse_coo.to_sparse_csr()
 
     time: Optional[Tensor] = None
