@@ -89,6 +89,12 @@ class EventRecommendationDataset(RelBenchDataset):
         )
         events_df["start_time"] = events_df["start_time"].dt.tz_localize(None)
 
+        train = os.path.join(path, "train.csv")
+        event_interest_df = pd.read_csv(train)
+        event_interest_df["timestamp"] = pd.to_datetime(
+            event_interest_df["timestamp"]
+        ).dt.tz_localize(None)
+
         if not os.path.exists(os.path.join(path, "user_friends_flattened.csv")):
             user_friends_df = pd.read_csv(user_friends)
             user_friends_df = (
@@ -157,11 +163,6 @@ class EventRecommendationDataset(RelBenchDataset):
                 subset=["user_id"]
             )
 
-        train = os.path.join(path, "train.csv")
-        event_interest_df = pd.read_csv(train)
-        event_interest_df["timestamp"] = pd.to_datetime(
-            event_interest_df["timestamp"]
-        ).dt.tz_localize(None)
         return Database(
             table_dict={
                 "users": Table(
