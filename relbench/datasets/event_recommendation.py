@@ -61,7 +61,6 @@ class EventRecommendationDataset(RelBenchDataset):
                     self.err_msg.format(data="Dataset", url=self.url, path=zip)
                 )
             else:
-                print("Unpacking")
                 shutil.unpack_archive(zip, Path(zip).parent)
         self.check_table_and_decompress_if_exists(
             user_friends, os.path.join(path, "user_friends_flattened.csv")
