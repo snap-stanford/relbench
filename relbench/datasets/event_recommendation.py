@@ -37,11 +37,9 @@ class EventRecommendationDataset(RelBenchDataset):
         self.name = f"{self.name}"
         super().__init__(process=process)
 
-    def check_table_and_decompress_if_exists(
-        self, table_path: str, alt_path: str | None = None
-    ):
+    def check_table_and_decompress_if_exists(self, table_path: str, alt_path: str = ""):
         if not os.path.exists(table_path) or (
-            alt_path is not None and not os.path.exists(alt_path)
+            alt_path != "" and not os.path.exists(alt_path)
         ):
             if os.path.exists(table_path + ".gz"):
                 decompress_gz_file(table_path + ".gz", table_path)
