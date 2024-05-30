@@ -7,7 +7,7 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.event_recommendation import EventAttendenceTask, RecommendationTask
+from relbench.tasks.event_recommendation import EventAttendenceTask
 from relbench.tasks.f1 import DidNotFinishTask, PositionTask, QualifyingTask
 from relbench.utils import decompress_gz_file
 
@@ -27,7 +27,7 @@ class EventRecommendationDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2012-11-14")
     test_timestamp = pd.Timestamp("2012-11-28 00:00:01")
     max_eval_time_frames = 2
-    task_cls_list = [RecommendationTask, EventAttendenceTask]
+    task_cls_list = [EventAttendenceTask]
 
     def __init__(
         self,
