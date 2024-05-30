@@ -51,14 +51,22 @@ class LinkTask(BaseTask):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
-    def filter_dangling_entities(self, table: Table) -> Table:
+    def filter_dangling_entities(self, table: Table, is_full: bool = False) -> Table:
+
+        if is_full:
+            num_dst_nodes = self.num_dst_nodes_full_db
+            num_src_nodes = self.num_src_nodes_full_db
+        else:
+            num_dst_nodes = self.num_dst_nodes
+            num_src_nodes = self.num_src_nodes
+
         # filter dangling destination entities from a list
         table.df[self.dst_entity_col] = table.df[self.dst_entity_col].apply(
-            lambda x: [i for i in x if i < self.num_dst_nodes]
+            lambda x: [i for i in x if i < num_dst_nodes]
         )
 
         # filter dangling source entities and empty list (after above filtering)
-        filter_mask = (table.df[self.src_entity_col] >= self.num_src_nodes) | (
+        filter_mask = (table.df[self.src_entity_col] >= num_src_nodes) | (
             ~table.df[self.dst_entity_col].map(bool)
         )
         if filter_mask.any():
@@ -110,6 +118,14 @@ class LinkTask(BaseTask):
         return len(self.dataset.db.table_dict[self.dst_entity_table])
 
     @property
+    def num_src_nodes_full_db(self) -> int:
+        return len(self.dataset._full_db.table_dict[self.src_entity_table])
+
+    @property
+    def num_dst_nodes_full_db(self) -> int:
+        return len(self.dataset._full_db.table_dict[self.dst_entity_table])
+
+    @property
     def val_seed_time(self) -> int:
         return to_unix_time(pd.Series([self.dataset.val_timestamp]))[0]
 
@@ -141,7 +157,6 @@ class RelBenchLinkTask(LinkTask):
             metrics=self.metrics,
             eval_k=self.eval_k,
         )
-
         if not process:
             self.set_cached_table_dict(self.name, self.task_dir, self.dataset.name)
 

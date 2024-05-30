@@ -99,7 +99,6 @@ class BaseTask:
                 + self.timedelta * (self.dataset.max_eval_time_frames - 1),
                 self.dataset.test_timestamp - self.timedelta,
             )
-
             table = self.make_table(
                 self.dataset.db,
                 pd.date_range(
@@ -133,7 +132,6 @@ class BaseTask:
                 + self.timedelta * (self.dataset.max_eval_time_frames - 1),
                 self.dataset._full_db.max_timestamp - self.timedelta,
             )
-
             full_table = self.make_table(
                 self.dataset._full_db,
                 pd.date_range(
@@ -145,7 +143,7 @@ class BaseTask:
             self._cached_table_dict["full_test"] = full_table
         else:
             full_table = self._cached_table_dict["full_test"]
-        self._full_test_table = self.filter_dangling_entities(full_table)
+        self._full_test_table = self.filter_dangling_entities(full_table, is_full=True)
 
         return self._mask_input_cols(self._full_test_table)
 

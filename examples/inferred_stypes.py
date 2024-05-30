@@ -31,6 +31,16 @@ dataset2inferred_stypes = {
             "event": stype.numerical,
             "status": stype.categorical,
             "user_id": stype.numerical,
+            "status": stype.categorical,
+            "start_time": stype.timestamp,
+        },
+        "event_interest": {
+            "user": stype.numerical,
+            "event": stype.numerical,
+            "invited": stype.categorical,
+            "timestamp": stype.timestamp,
+            "interested": stype.categorical,
+            "not_interested": stype.categorical,
         },
         "user_friends": {
             "user": stype.numerical,

@@ -7,7 +7,7 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.event_recommendation import RecommendationTask
+from relbench.tasks.event_recommendation import EventAttendenceTask, RecommendationTask
 from relbench.tasks.f1 import DidNotFinishTask, PositionTask, QualifyingTask
 from relbench.utils import decompress_gz_file
 
@@ -24,10 +24,10 @@ class EventRecommendationDataset(RelBenchDataset):
     )
 
     train_start_timestamp = pd.Timestamp("2012-04-27 21:41:02.227000")
-    val_timestamp = pd.Timestamp("2012-10-25")
-    test_timestamp = pd.Timestamp("2012-11-09")
-    max_eval_time_frames = 1
-    task_cls_list = [RecommendationTask]
+    val_timestamp = pd.Timestamp("2012-11-14")
+    test_timestamp = pd.Timestamp("2012-11-28 00:00:01")
+    max_eval_time_frames = 2
+    task_cls_list = [RecommendationTask, EventAttendenceTask]
 
     def __init__(
         self,
@@ -156,6 +156,12 @@ class EventRecommendationDataset(RelBenchDataset):
             event_attendees_flattened_df = event_attendees_flattened_df.dropna(
                 subset=["user_id"]
             )
+
+        train = os.path.join(path, "train.csv")
+        event_interest_df = pd.read_csv(train)
+        event_interest_df["timestamp"] = pd.to_datetime(
+            event_interest_df["timestamp"]
+        ).dt.tz_localize(None)
         return Database(
             table_dict={
                 "users": Table(
@@ -183,6 +189,14 @@ class EventRecommendationDataset(RelBenchDataset):
                         "user_id": "users",
                     },
                     time_col="start_time",
+                ),
+                "event_interest": Table(
+                    df=event_interest_df,
+                    fkey_col_to_pkey_table={
+                        "event": "events",
+                        "user": "users",
+                    },
+                    time_col="timestamp",
                 ),
                 "user_friends": Table(
                     df=user_friends_flattened_df,
