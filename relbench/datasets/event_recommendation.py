@@ -23,9 +23,9 @@ class EventRecommendationDataset(RelBenchDataset):
         "kaggle competitions download -c event-recommendation-engine-challenge"
     )
 
-    train_start_timestamp = pd.Timestamp("2012-04-27 21:41:02.227000")
+    train_start_timestamp = pd.Timestamp("2012-06-20")
     val_timestamp = pd.Timestamp("2012-11-14")
-    test_timestamp = pd.Timestamp("2012-11-28 00:00:01")
+    test_timestamp = pd.Timestamp("2012-11-28")
     max_eval_time_frames = 2
     task_cls_list = [EventAttendenceTask]
 
@@ -69,8 +69,8 @@ class EventRecommendationDataset(RelBenchDataset):
         )
         users_df = pd.read_csv(users, dtype={"user_id": int}, parse_dates=["joinedAt"])
         users_df["birthyear"] = pd.to_numeric(users_df["birthyear"], errors="coerce")
-        users_df["joinedAt"] = pd.to_datetime(users_df["joinedAt"], errors="coerce")
-        users_df["joinedAt"] = users_df["joinedAt"].dt.tz_localize(None)
+        users_df["joinedAt"] = pd.to_datetime(users_df["joinedAt"],
+                                              errors="coerce").dt.tz_localize(None)
 
         friends_df = pd.read_csv(
             users, dtype={"user_id": int}, parse_dates=["joinedAt"]
@@ -78,13 +78,12 @@ class EventRecommendationDataset(RelBenchDataset):
         friends_df["birthyear"] = pd.to_numeric(
             friends_df["birthyear"], errors="coerce"
         )
-        friends_df["joinedAt"] = pd.to_datetime(friends_df["joinedAt"], errors="coerce")
-        friends_df["joinedAt"] = friends_df["joinedAt"].dt.tz_localize(None)
+        friends_df["joinedAt"] = pd.to_datetime(friends_df["joinedAt"],
+                                                errors="coerce").dt.tz_localize(None)
         events_df = pd.read_csv(events)
         events_df["start_time"] = pd.to_datetime(
             events_df["start_time"], errors="coerce"
-        )
-        events_df["start_time"] = events_df["start_time"].dt.tz_localize(None)
+        ).dt.tz_localize(None)
 
         train = os.path.join(path, "train.csv")
         event_interest_df = pd.read_csv(train)
@@ -101,13 +100,14 @@ class EventRecommendationDataset(RelBenchDataset):
                 .reset_index()
             )
             user_friends_df.columns = ["user", "index", "friend"]
-            user_friends_flattened_df = user_friends_df.drop("index", axis=1)
-            user_friends_flattened_df["user"] = user_friends_flattened_df[
-                "user"
-            ].astype(int)
-            user_friends_flattened_df["friend"] = user_friends_flattened_df[
-                "friend"
-            ].astype(int)
+            user_friends_flattened_df = (
+                user_friends_df
+                .drop("index", axis=1)
+                .assign(
+                    user=lambda df: df["user"].astype(int),
+                    friend=lambda df: df["friend"].astype(int)
+                )
+            )
             user_friends_flattened_df.to_csv(
                 os.path.join(path, "user_friends_flattened.csv")
             )
