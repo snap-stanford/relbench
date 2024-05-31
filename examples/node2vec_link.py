@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-trial")
 parser.add_argument("--task", type=str, default="rel-trial-sponsor-condition")
 parser.add_argument("--lr", type=float, default=0.001)
-parser.add_argument("--epochs", type=int, default=2000)
+parser.add_argument("--epochs", type=int, default=3)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--embedding_dim", type=int, default=128)
 parser.add_argument("--walk_length", type=int, default=10)
@@ -115,7 +115,7 @@ writer = SummaryWriter(log_dir=args.log_dir)
 state_dict = None
 best_val_metric = 0
 
-for epoch in range(1, args.batch_size):
+for epoch in range(1, args.epochs + 1):
     train_loss = train()
     val_pred = test(task.val_table, task.eval_k)
     val_metrics = task.evaluate(val_pred, task.val_table)
