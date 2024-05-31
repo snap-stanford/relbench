@@ -162,7 +162,7 @@ dataset2inferred_stypes = {
             "country": stype.categorical,
             "lat": stype.numerical,
             "lng": stype.numerical,
-            # "alt": stype.numerical,
+            "alt": stype.numerical,
         },
         "drivers": {
             "driverId": stype.numerical,
@@ -185,12 +185,9 @@ dataset2inferred_stypes = {
             "positionOrder": stype.numerical,
             "points": stype.numerical,
             "laps": stype.numerical,
-            # "time": stype.timestamp,
             "milliseconds": stype.numerical,
             "fastestLap": stype.numerical,
             "rank": stype.numerical,
-            # "fastestLapTime": stype.timestamp,
-            # "fastestLapSpeed": stype.numerical,
             "date": stype.timestamp,
         },
         "standings": {
@@ -213,7 +210,6 @@ dataset2inferred_stypes = {
             "raceId": stype.numerical,
             "constructorId": stype.numerical,
             "points": stype.numerical,
-            "status": stype.text_embedded,
             "date": stype.timestamp,
         },
         "constructor_standings": {
@@ -232,18 +228,6 @@ dataset2inferred_stypes = {
             "constructorId": stype.numerical,
             "number": stype.numerical,
             "position": stype.numerical,
-            # "q1": stype.timestamp,
-            # "q2": stype.timestamp,
-            # "q3": stype.timestamp,
-        },
-        "lap_times": {
-            "lapId": stype.numerical,
-            "raceId": stype.numerical,
-            "driverId": stype.numerical,
-            "lap": stype.numerical,
-            "position": stype.numerical,
-            # "time": stype.timestamp,
-            "milliseconds": stype.numerical,
         },
     },
     "rel-trial": {
