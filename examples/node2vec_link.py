@@ -105,7 +105,7 @@ def test(table: Table, k):
     lhs = z[table.df[task.src_entity_col].values]
     rhs = z[get_valid_test_dst_entities()]
     _, indices = torch.topk(lhs @ rhs.T, k)
-    dst_ids = df["sponsor_id"].astype(int).values
+    dst_ids = df[task.dst_entity_col].astype(int).values
     mapped_tensor = torch.take(torch.from_numpy(dst_ids), indices)
     return mapped_tensor
 
