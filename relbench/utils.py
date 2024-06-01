@@ -4,8 +4,25 @@ from pathlib import Path
 from typing import Union
 from zipfile import ZipFile
 
+import matplotlib.pyplot as plt
+import networkx as nx
 import pandas as pd
 import pooch
+
+from relbench.data import Database
+
+
+def decompress_gz_file(input_path: str, output_path: str):
+    import gzip
+    import shutil
+
+    # Open the gz file in binary read mode
+    with gzip.open(input_path, "rb") as f_in:
+        # Open the output file in binary write mode
+        with open(output_path, "wb") as f_out:
+            # Copy the decompressed data from the gz file to the output file
+            shutil.copyfileobj(f_in, f_out)
+            print(f"Decompressed file saved as: {output_path}")
 
 
 def unzip_processor(fname: Union[str, Path], action: str, pooch: pooch.Pooch) -> Path:
@@ -55,3 +72,17 @@ def clean_datetime(df: pd.DataFrame, col: str) -> pd.DataFrame:
         f"{percentage_removed:.2f}%"
     )
     return df
+
+
+def visualize_database_schema(db: Database, path: str):
+    r"""Visualize a database schema and save the figure to path."""
+    G = nx.Graph()
+    for table_name in db.table_dict:
+        G.add_node(table_name, name=table_name)
+    breakpoint()
+    for table_name, table in db.table_dict.items():
+        pkey_table_dict = table.fkey_col_to_pkey_table
+        for _, pkey_table_name in pkey_table_dict.items():
+            G.add_edge(table_name, pkey_table_name)
+    nx.draw(G, labels=nx.get_node_attributes(G, "name"))
+    plt.savefig(path)
