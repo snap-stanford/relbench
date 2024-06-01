@@ -2,3 +2,6 @@ __pycache__
 .ipynb_checkpoints
 /examples/data
 /data
+.idea/
+venv/
+results/

@@ -63,11 +63,11 @@ class TrialDataset(RelBenchDataset):
         )
         interventions = interventions[
             interventions.mesh_type == "mesh-list"
-        ]  ### just looking at root identity
+        ]  # just looking at root identity
         conditions = pd.read_csv(os.path.join(path, "browse_conditions.txt"), sep="|")
         conditions = conditions[
             conditions.mesh_type == "mesh-list"
-        ]  ### just looking at root identity
+        ]  # just looking at root identity
 
         reported_event_totals = pd.read_csv(
             os.path.join(path, "reported_event_totals.txt"), sep="|"

@@ -11,7 +11,7 @@ from relbench.tasks.stackex import (
     UserCommentOnPostTask,
     VotesTask,
 )
-from relbench.utils import unzip_processor
+from relbench.utils import clean_datetime, unzip_processor
 
 
 class StackDataset(RelBenchDataset):
@@ -82,15 +82,13 @@ class StackDataset(RelBenchDataset):
         comments.drop(columns=["Score"], inplace=True)
         votes.drop(columns=["BountyAmount"], inplace=True)
 
-        ## change time column to pd timestamp series
-        comments["CreationDate"] = pd.to_datetime(comments["CreationDate"])
-        badges["Date"] = pd.to_datetime(badges["Date"])
-        postLinks["CreationDate"] = pd.to_datetime(postLinks["CreationDate"])
-
-        postHistory["CreationDate"] = pd.to_datetime(postHistory["CreationDate"])
-        votes["CreationDate"] = pd.to_datetime(votes["CreationDate"])
-        posts["CreationDate"] = pd.to_datetime(posts["CreationDate"])
-        users["CreationDate"] = pd.to_datetime(users["CreationDate"])
+        comments = clean_datetime(comments, "CreationDate")
+        badges = clean_datetime(badges, "Date")
+        postLinks = clean_datetime(postLinks, "CreationDate")
+        postHistory = clean_datetime(postHistory, "CreationDate")
+        votes = clean_datetime(votes, "CreationDate")
+        users = clean_datetime(users, "CreationDate")
+        posts = clean_datetime(posts, "CreationDate")
 
         tables = {}
 

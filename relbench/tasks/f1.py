@@ -1,16 +1,14 @@
 import duckdb
-import numpy as np
 import pandas as pd
-from tqdm import tqdm
 
 from relbench.data import Database, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, r2, rmse, roc_auc
-from relbench.utils import get_df_in_window
 
 
 class DriverPositionTask(RelBenchNodeTask):
-    r"""Predict the average finishing position of each driver all races in the next 2 months."""
+    r"""Predict the average finishing position of each driver
+    all races in the next 2 months."""
 
     name = "driver-position"
     task_type = TaskType.REGRESSION
@@ -76,10 +74,10 @@ class DriverDNFTask(RelBenchNodeTask):
     time_col = "date"
     target_col = "did_not_finish"
     timedelta = pd.Timedelta(days=30)
-    metrics = [average_precision, accuracy, f1, roc_auc]  # [mae, rmse]
+    metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for results_position_next_race."""
+        r"""Create Task object for rel-f1-dnf."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         results = db.table_dict["results"].df
@@ -139,7 +137,7 @@ class DriverTop3(RelBenchNodeTask):
     metrics = [average_precision, accuracy, f1, roc_auc]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for results_position_next_race."""
+        r"""Create Task object for rel-f1-qualifying."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         qualifying = db.table_dict["qualifying"].df
@@ -160,7 +158,7 @@ class DriverTop3(RelBenchNodeTask):
                     qualifying qu
                 ON
                     qu.date <= t.timestamp + INTERVAL '{self.timedelta}'
-                    and qu.date  > t.timestamp
+                    and qu.date > t.timestamp
                 LEFT JOIN
                     drivers dri
                 ON

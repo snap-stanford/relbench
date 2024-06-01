@@ -23,7 +23,9 @@ dependencies=[
 	"requests",
 	"tqdm",
 	"scikit-learn",
-	"typing-extensions"
+	"typing-extensions",
+	"matplotlib",
+	"networkx"
 ]
 
 [project.optional-dependencies]
