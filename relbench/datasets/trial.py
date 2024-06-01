@@ -23,12 +23,12 @@ class TrialDataset(RelBenchDataset):
     test_timestamp = pd.Timestamp("2021-01-01")
     max_eval_time_frames = 1
     task_cls_list = [
-        OutcomeTask,
-        AdverseEventTask,
-        WithdrawalTask,
+        StudyOutcomeTask,
+        StudyAdverseTask,
+        StudyWithdrawalTask,
         SiteSuccessTask,
-        SponsorConditionTask,
-        SponsorFacilityTask,
+        ConditionSponsorRecTask,
+        SiteSponsorRecTask,
     ]
 
     def __init__(

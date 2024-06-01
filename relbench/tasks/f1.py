@@ -124,7 +124,7 @@ class DriverDNFTask(RelBenchNodeTask):
         )
 
 
-class DriverTop3(RelBenchNodeTask):
+class DriverTop3Task(RelBenchNodeTask):
     r"""Predict if each driver will qualify in the top-3 for a race within the next 1 month."""
 
     name = "driver-top3"

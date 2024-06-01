@@ -9,13 +9,13 @@ import pandas as pd
 
 from relbench.data import Database, Dataset, Table
 from relbench.tasks.amazon import (
-    ChurnTask,
-    LTVTask,
-    ProductChurnTask,
-    ProductDetailedReviewRecommendationTask,
-    ProductFiveStarRecommendationTask,
-    ProductLTVTask,
-    ProductRecommendationTask,
+    UserChurnTask,
+    UserLTVTask,
+    ItemChurnTask,
+    ItemLTVTask,
+    UserItemPurchaseTask,
+    UserItemRateTask,
+    UserItemReviewTask,
 )
 
 
@@ -47,13 +47,13 @@ class FakeDataset(Dataset):
             test_timestamp=test_timestamp,
             max_eval_time_frames=max_eval_time_frames,
             task_cls_list=[
-                ChurnTask,
-                ProductChurnTask,
-                LTVTask,
-                ProductLTVTask,
-                ProductRecommendationTask,
-                ProductFiveStarRecommendationTask,
-                ProductDetailedReviewRecommendationTask,
+                UserChurnTask,
+                UserLTVTask,
+                ItemChurnTask,
+                ItemLTVTask,
+                UserItemPurchaseTask,
+                UserItemRateTask,
+                UserItemReviewTask,
             ],
         )
 

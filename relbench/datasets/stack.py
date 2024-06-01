@@ -5,11 +5,11 @@ import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.stackex import (
-    BadgesTask,
-    EngageTask,
-    RelatedPostTask,
-    UserCommentOnPostTask,
-    VotesTask,
+    UserEngageTask,
+    PostVotesTask,
+    UserBadgeTask,
+    UserPostCommentTask,
+    PostPostRelatedTask,
 )
 from relbench.utils import clean_datetime, unzip_processor
 
@@ -21,11 +21,11 @@ class StackDataset(RelBenchDataset):
     test_timestamp = pd.Timestamp("2021-01-01")
     max_eval_time_frames = 1
     task_cls_list = [
-        EngageTask,
-        VotesTask,
-        BadgesTask,
-        UserCommentOnPostTask,
-        RelatedPostTask,
+        UserEngageTask,
+        PostVotesTask,
+        UserBadgeTask,
+        UserPostCommentTask,
+        PostPostRelatedTask,
     ]
 
     def __init__(
