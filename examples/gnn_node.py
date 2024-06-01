@@ -37,8 +37,7 @@ parser.add_argument("--num_ensembles", type=int, default=1)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if torch.cuda.is_available():
-    torch.set_num_threads(1)
+
 seed_everything(42)
 
 root_dir = "./data"

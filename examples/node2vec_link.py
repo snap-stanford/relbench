@@ -9,6 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.nn import Node2Vec
 from torch_geometric.seed import seed_everything
+from torch_geometric.utils import to_undirected
 
 from relbench.data import LinkTask, RelBenchDataset
 from relbench.data.table import Table
@@ -30,8 +31,7 @@ parser.add_argument("--log_dir", type=str, default="results")
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if torch.cuda.is_available():
-    torch.set_num_threads(1)
+
 seed_everything(42)
 
 root_dir = "./data"
@@ -47,24 +47,23 @@ col_to_stype_dict = dataset2inferred_stypes[args.dataset]
 data, col_stats_dict = make_pkey_fkey_graph(
     dataset.db,
     col_to_stype_dict=col_to_stype_dict,
-    text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device), batch_size=256
-    ),
     cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
 
 
 num_src_nodes = task.num_src_nodes
 df = task.train_table.df.explode(task.dst_entity_col)
-edge = torch.stack(
+# edge from src to dst
+edge_index = torch.stack(
     [
         torch.from_numpy(df[task.src_entity_col].astype(int).values),
         (torch.from_numpy(df[task.dst_entity_col].astype(int).values + num_src_nodes)),
     ]
 )
 
+
 model = Node2Vec(
-    edge_index=edge,
+    edge_index=to_undirected(edge_index),
     embedding_dim=args.embedding_dim,
     walk_length=args.walk_length,
     context_size=args.context_size,
