@@ -33,6 +33,7 @@ _pooch = pooch.create(
 new_name = {
     # datasets
     "rel-amazon": "rel-amazon",
+    "rel-event": "rel-event",
     "rel-f1": "rel-f1",
     "rel-hm": "rel-hm",
     "rel-stackex": "rel-stack",
@@ -46,6 +47,8 @@ new_name = {
     "rel-amazon-rec-purchase": "user-item-purchase",
     "rel-amazon-rec-5-star": "user-item-rate",
     "rel-amazon-rec-detailed-review": "user-item-review",
+    ## rel-event
+    "rel-event-attendence": "user-attendance",
     ## rel-f1
     "rel-f1-position": "driver-position",
     "rel-f1-dnf": "driver-dnf",
@@ -57,7 +60,7 @@ new_name = {
     ## rel-stack
     "rel-stackex-engage": "user-engage",
     "rel-stackex-votes": "post-votes",
-    "rel-stackex-badges": "user-badge"
+    "rel-stackex-badges": "user-badge",
     "rel-stackex-comment-on-post": "user-post-comment",
     "rel-stackex-related-post": "post-post-related",
     ## rel-trial
@@ -68,4 +71,3 @@ new_name = {
     "rel-trial-sponsor-condition": "condition-sponsor-rec",
     "rel-trial-sponsor-facility": "site-sponsor-rec",
 }
-

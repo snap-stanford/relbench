@@ -4,7 +4,7 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.stackex import (
+from relbench.tasks.stack import (
     UserEngageTask,
     PostVotesTask,
     UserBadgeTask,
