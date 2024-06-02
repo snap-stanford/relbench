@@ -7,12 +7,11 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.event_recommendation import EventAttendenceTask
-from relbench.tasks.f1 import DidNotFinishTask, PositionTask, QualifyingTask
+from relbench.tasks.event import UserAttendanceTask
 from relbench.utils import decompress_gz_file
 
 
-class EventRecommendationDataset(RelBenchDataset):
+class EventDataset(RelBenchDataset):
     name = "rel-event"
     url = "https://www.kaggle.com/competitions/event-recommendation-engine-challenge"  # noqa
     err_msg = (
@@ -27,7 +26,7 @@ class EventRecommendationDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2012-11-14")
     test_timestamp = pd.Timestamp("2012-11-28")
     max_eval_time_frames = 2
-    task_cls_list = [EventAttendenceTask]
+    task_cls_list = [UserAttendanceTask]
 
     def __init__(
         self,

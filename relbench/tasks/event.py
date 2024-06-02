@@ -17,11 +17,11 @@ from relbench.metrics import (
 )
 
 
-class EventAttendenceTask(RelBenchNodeTask):
+class UserAttendanceTask(RelBenchNodeTask):
     r"""Predict the number of events a user will go to in the next seven days
     7 days."""
 
-    name = "rel-event-attendence"
+    name = "user-attendance"
     task_type = TaskType.REGRESSION
     entity_col = "user"
     entity_table = "users"

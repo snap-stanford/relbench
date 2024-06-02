@@ -9,8 +9,8 @@ from relbench.data import LinkTask, Table
 from relbench.datasets import get_dataset
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-stackex")
-parser.add_argument("--task", type=str, default="rel-stackex-comment-on-post")
+parser.add_argument("--dataset", type=str, default="rel-stack")
+parser.add_argument("--task", type=str, default="user-post-comment")
 args = parser.parse_args()
 
 dataset = get_dataset(name=args.dataset, process=True)

@@ -42,7 +42,7 @@ def test_link_train_fake_product_dataset(tmp_path):
     id_awareness = torch.nn.Embedding(1, channels)
 
     # Ensure that neighbor loading works on train/val/test splits ############
-    task: LinkTask = dataset.get_task("rel-amazon-rec-purchase", process=True)
+    task: LinkTask = dataset.get_task("user-item-purchase", process=True)
     assert task.task_type == TaskType.LINK_PREDICTION
 
     loader_dict: Dict[str, NeighborLoader] = {}

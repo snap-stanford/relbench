@@ -25,7 +25,7 @@ from relbench.external.loader import SparseTensor
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-hm")
-parser.add_argument("--task", type=str, default="rel-hm-rec")
+parser.add_argument("--task", type=str, default="user-item-purchase")
 parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--eval_epochs_interval", type=int, default=1)
