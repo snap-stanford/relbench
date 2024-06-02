@@ -36,8 +36,15 @@ parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--num_workers", type=int, default=1)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_ensembles", type=int, default=1)
-parser.add_argument("--attempt_load_state_dict", action="store_true") # If true, try to load pretrained state dict
-parser.add_argument("--sample_size", type=int, default=None, help="Subsample the specified number of training data to train lightgbm model.",)
+parser.add_argument(
+    "--attempt_load_state_dict", action="store_true"
+)  # If true, try to load pretrained state dict
+parser.add_argument(
+    "--sample_size",
+    type=int,
+    default=None,
+    help="Subsample the specified number of training data to train lightgbm model.",
+)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -286,16 +293,17 @@ emb_test, _ = embed(model, loader_dict["test"], no_label=True)
 train_data = (emb_train, y_train)
 val_data = (emb_val, y_val)
 
+from torch_frame import TaskType as TaskTypeTorchFrame
+
 # rename tune_metric to  torch-frame Metric format
 from torch_frame.typing import Metric
-from torch_frame import TaskType as TaskTypeTorchFrame
 
 if tune_metric == "roc_auc":
     tune_metric = Metric.ROCAUC
 elif tune_metric == "mae":
     tune_metric = Metric.MAE
 
-    
+
 relbench2torch_frame = {
     TaskType.MULTILABEL_CLASSIFICATION: TaskTypeTorchFrame.MULTILABEL_CLASSIFICATION,
     TaskType.BINARY_CLASSIFICATION: TaskTypeTorchFrame.BINARY_CLASSIFICATION,
