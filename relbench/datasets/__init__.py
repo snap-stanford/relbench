@@ -1,5 +1,6 @@
 from relbench.data import RelBenchDataset
 from relbench.datasets.amazon import AmazonDataset
+from relbench.datasets.avito import AvitoDataset
 from relbench.datasets.event_recommendation import EventRecommendationDataset
 from relbench.datasets.f1 import F1Dataset
 from relbench.datasets.fake import FakeDataset
@@ -10,6 +11,7 @@ from relbench.datasets.trial import TrialDataset
 
 dataset_cls_list = [
     AmazonDataset,
+    AvitoDataset,
     StackExDataset,
     MathStackExDataset,
     F1Dataset,
