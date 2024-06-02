@@ -14,12 +14,12 @@ from relbench.metrics import (
 )
 
 
-class AdsClickTask(RelBenchNodeTask):
+class UserClicksTask(RelBenchNodeTask):
     r"""Predict the total number of ads each customer will click in the
     next 4 days
     """
 
-    name = "rel-avito-click"
+    name = "user-clicks"
     task_type = TaskType.REGRESSION
     entity_table = "UserInfo"
     entity_col = "UserID"
@@ -66,10 +66,10 @@ class AdsClickTask(RelBenchNodeTask):
         )
 
 
-class RecommendationTask(RelBenchLinkTask):
+class UserAdRecTask(RelBenchLinkTask):
     r"""Predict the list of ads user will click in the next 4 days"""
 
-    name = "rel-avito-rec"
+    name = "user-ad-rec"
     task_type = TaskType.LINK_PREDICTION
     src_entity_table = "UserInfo"
     src_entity_col = "UserID"
