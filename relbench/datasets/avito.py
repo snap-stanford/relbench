@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.avito import UserClicksTask, UserAdRecTask
+from relbench.tasks.avito import UserAdRecTask, UserClicksTask
 from relbench.utils import clean_datetime
 
 
