@@ -8,6 +8,7 @@ from typing import List, Optional, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
+import pooch
 
 from relbench import _pooch
 from relbench.data.database import Database
@@ -108,6 +109,14 @@ class RelBenchDataset(Dataset):
             db.reindex_pkeys_and_fkeys()
             toc = time.time()
             print(f"done in {toc - tic:.2f} seconds.")
+
+            db_path = pooch.os_cache("relbench") / self.name / self.db_dir
+            print(f"caching Database object to {db_path}...")
+            tic = time.time()
+            db.save(db_path)
+            toc = time.time()
+            print(f"done in {toc - tic:.2f} seconds.")
+            print(f"use process=False to load from cache.")
 
         else:
             db_path = _pooch.fetch(
