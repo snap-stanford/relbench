@@ -15,7 +15,9 @@ from relbench.metrics import (
 
 
 class AdsClickTask(RelBenchNodeTask):
-    r"""Predict the total number of ads each customer will click in the next 5 days"""
+    r"""Predict the total number of ads each customer will click in the
+    next 4 days
+    """
 
     name = "rel-avito-click"
     task_type = TaskType.REGRESSION
@@ -65,7 +67,7 @@ class AdsClickTask(RelBenchNodeTask):
 
 
 class RecommendationTask(RelBenchLinkTask):
-    r"""Predict the list of ads user will click in the next 5 days"""
+    r"""Predict the list of ads user will click in the next 4 days"""
 
     name = "rel-avito-rec"
     task_type = TaskType.LINK_PREDICTION
