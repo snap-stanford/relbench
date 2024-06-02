@@ -14,8 +14,9 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
-from torch_lightgbm import LightGBM  # hacked version of torch-frame lightgbm
+from torch_frame.gbdt import LightGBM
 from tqdm import tqdm
+import torch_frame
 
 from relbench.data import NodeTask, RelBenchDataset
 from relbench.data.task_base import TaskType
@@ -200,10 +201,10 @@ def embed(
         if stop_at is not None and idx >= stop_at:
             break
 
-    emb = torch.cat(embed_list, dim=0).numpy()
+    emb = torch.cat(embed_list, dim=0)
 
     if not no_label:
-        y = torch.cat(y_list, dim=0).numpy()
+        y = torch.cat(y_list, dim=0)
     else:
         y = None
 
@@ -282,9 +283,25 @@ emb_train, y_train = embed(
 emb_val, y_val = embed(model, loader_dict["val"])
 emb_test, _ = embed(model, loader_dict["test"], no_label=True)
 
+# hack to convert to torch_frame
+def tensor_to_tf(data, y=None):
+    tf = torch_frame.TensorFrame(
+            feat_dict = {
+                torch_frame.numerical: data
+            },
+            col_names_dict = {
+                torch_frame.numerical: [f"feat_{i}" for i in range(data.shape[1])],
+            },
+        )
+    if y is not None:
+        tf.y = y
 
-train_data = (emb_train, y_train)
-val_data = (emb_val, y_val)
+    return tf
+
+tf_train = tensor_to_tf(emb_train, y_train)
+tf_val = tensor_to_tf(emb_val, y_val)
+tf_test = tensor_to_tf(emb_test)
+
 
 # rename tune_metric to  torch-frame Metric format
 from torch_frame.typing import Metric
@@ -303,11 +320,11 @@ relbench2torch_frame = {
 }
 task_type = relbench2torch_frame[task.task_type]
 model = LightGBM(task_type=task_type, metric=tune_metric)
-model.tune(train_data, val_data, num_trials=10)
+model.tune(tf_train, tf_val, num_trials=10)
 
 
-pred = model.predict(emb_val).numpy()
+pred = model.predict(tf_val).numpy()
 print(f"Val: {task.evaluate(pred, task.val_table)}")
 
-pred = model.predict(emb_test).numpy()
+pred = model.predict(tf_test).numpy()
 print(f"Test: {task.evaluate(pred)}")
