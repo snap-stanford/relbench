@@ -6,17 +6,17 @@ from typing import Dict, List
 
 import numpy as np
 import torch
+import torch_frame
 from inferred_stypes import dataset2inferred_stypes
 from model import Model
 from text_embedder import GloveTextEmbedding
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
+from torch_frame.gbdt import LightGBM
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
-from torch_frame.gbdt import LightGBM
 from tqdm import tqdm
-import torch_frame
 
 from relbench.data import NodeTask, RelBenchDataset
 from relbench.data.task_base import TaskType
@@ -290,20 +290,20 @@ emb_train, y_train = embed(
 emb_val, y_val = embed(model, loader_dict["val"])
 emb_test, _ = embed(model, loader_dict["test"], no_label=True)
 
+
 # hack to convert to torch_frame
 def tensor_to_tf(data, y=None):
     tf = torch_frame.TensorFrame(
-            feat_dict = {
-                torch_frame.numerical: data
-            },
-            col_names_dict = {
-                torch_frame.numerical: [f"feat_{i}" for i in range(data.shape[1])],
-            },
-        )
+        feat_dict={torch_frame.numerical: data},
+        col_names_dict={
+            torch_frame.numerical: [f"feat_{i}" for i in range(data.shape[1])],
+        },
+    )
     if y is not None:
         tf.y = y
 
     return tf
+
 
 tf_train = tensor_to_tf(emb_train, y_train)
 tf_val = tensor_to_tf(emb_val, y_val)
