@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.avito import AdsClickTask, RecommendationTask
+from relbench.tasks.avito import UserAdClickTask, UserClicksTask
 from relbench.utils import clean_datetime
 
 
@@ -18,7 +18,7 @@ class AvitoDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2015-05-09")
     test_timestamp = pd.Timestamp("2015-05-14")
     max_eval_time_frames = 1
-    task_cls_list = [RecommendationTask, AdsClickTask]
+    task_cls_list = [UserClicksTask, UserAdClickTask]
 
     def __init__(
         self,
