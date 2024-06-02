@@ -9,10 +9,9 @@ from relbench.tasks.stackex import (
     EngageTask,
     RelatedPostTask,
     UserCommentOnPostTask,
-    UsersInteractTask,
     VotesTask,
 )
-from relbench.utils import unzip_processor
+from relbench.utils import clean_datetime, unzip_processor
 
 
 class MathStackExDataset(RelBenchDataset):
@@ -27,7 +26,6 @@ class MathStackExDataset(RelBenchDataset):
         BadgesTask,
         UserCommentOnPostTask,
         RelatedPostTask,
-        UsersInteractTask,
     ]
 
     def __init__(
@@ -94,13 +92,13 @@ class MathStackExDataset(RelBenchDataset):
         comments.drop(columns=["Score"], inplace=True)
         votes.drop(columns=["BountyAmount"], inplace=True)
 
-        comments = self.clean_datetime(comments, "CreationDate")
-        badges = self.clean_datetime(badges, "Date")
-        postLinks = self.clean_datetime(postLinks, "CreationDate")
-        postHistory = self.clean_datetime(postHistory, "CreationDate")
-        votes = self.clean_datetime(votes, "CreationDate")
-        users = self.clean_datetime(users, "CreationDate")
-        posts = self.clean_datetime(posts, "CreationDate")
+        comments = clean_datetime(comments, "CreationDate")
+        badges = clean_datetime(badges, "Date")
+        postLinks = clean_datetime(postLinks, "CreationDate")
+        postHistory = clean_datetime(postHistory, "CreationDate")
+        votes = clean_datetime(votes, "CreationDate")
+        users = clean_datetime(users, "CreationDate")
+        posts = clean_datetime(posts, "CreationDate")
 
         tables = {}
 
@@ -166,27 +164,3 @@ class MathStackExDataset(RelBenchDataset):
         )
 
         return Database(tables)
-
-    def clean_datetime(self, df, col):
-        ## change time column to pd timestamp series
-        # Attempt to convert "CreationDate" to datetime format
-        df[col] = pd.to_datetime(df[col], errors="coerce")
-
-        # Count the number of comments before removing invalid dates
-        total_before = len(df)
-
-        # Remove rows where "CreationDate" is NaT (indicating parsing failure)
-        df = df.dropna(subset=[col])
-
-        # Count the number of comments after removing invalid dates
-        total_after = len(df)
-
-        # Calculate the percentage of comments removed
-        percentage_removed = ((total_before - total_after) / total_before) * 100
-
-        # Print the percentage of comments removed
-        print(
-            f"Percentage of rows removed due to invalid dates: {percentage_removed:.2f}%"
-        )
-
-        return df

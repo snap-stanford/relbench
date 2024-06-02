@@ -1,5 +1,5 @@
 import random
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -18,7 +18,7 @@ def batched_arange(count: Tensor) -> Tuple[Tensor, Tensor]:
     >>> arange = torch.cat([torch.arange(c) for c in count])
 
     Args:
-        counts (Tensor): The count vectors.
+        count (Tensor): The count vectors.
 
     Returns:
         batch (Tensor): batch[i] indicates the batch index of
@@ -92,6 +92,7 @@ class TimestampSampler(Sampler[int]):
         timestamp: Tensor,
         batch_size: int,
     ):
+        super().__init__()
         self.batch_size = batch_size
         self.time_dict = {
             int(time): (timestamp == time).nonzero().view(-1)
@@ -164,7 +165,7 @@ class LinkNeighborLoader(DataLoader):
     Based on https://pytorch-geometric.readthedocs.io/en/latest/_modules/torch_geometric/loader/neighbor_loader.html
 
     Args:
-        src_nodes (Tuple[NodetType, Tensor]): A tensor of source node indices.
+        src_nodes (Tuple[NodeType, Tensor]): A tensor of source node indices.
         dst_nodes (Tuple[NodeType, Tensor]): A csr sparse tensor, where
             dst_nodes[index] is a list of destination node indices
             for src_nodes[index] at src_time[index].

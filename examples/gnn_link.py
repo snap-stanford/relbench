@@ -1,6 +1,5 @@
 import argparse
 import copy
-import math
 import os
 from typing import Dict
 
@@ -131,7 +130,7 @@ model = Model(
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
 
-def train() -> Dict[str, float]:
+def train() -> float:
     model.train()
 
     loss_accum = count_accum = 0
@@ -211,7 +210,7 @@ for epoch in range(1, args.epochs + 1):
             f"Val metrics: {val_metrics}"
         )
 
-        if val_metrics[tune_metric] > best_val_metric:
+        if val_metrics[tune_metric] >= best_val_metric:
             best_val_metric = val_metrics[tune_metric]
             state_dict = copy.deepcopy(model.state_dict())
 
