@@ -1,6 +1,7 @@
 from relbench.data import RelBenchDataset
 from relbench.datasets.amazon import AmazonDataset
 from relbench.datasets.event import EventDataset
+from relbench.datasets.avito import AvitoDataset
 from relbench.datasets.f1 import F1Dataset
 from relbench.datasets.fake import FakeDataset
 from relbench.datasets.hm import HMDataset
@@ -10,6 +11,7 @@ from relbench.datasets.trial import TrialDataset
 dataset_cls_list = [
     AmazonDataset,
     EventDataset,
+    AvitoDataset,
     F1Dataset,
     FakeDataset,
     StackDataset,
@@ -29,11 +31,13 @@ def get_dataset(name: str, *args, **kwargs) -> RelBenchDataset:
 
 __all__ = [
     "AmazonDataset",
-    "F1Dataset",
-    "TrialDataset",
-    "FakeDataset",
     "EventDataset",
+    "AvitoDataset",
+    "F1Dataset",
+    "FakeDataset",
     "StackDataset",
+    "TrialDataset",
+    "HMDataset",
     "dataset_cls_dict",
     "dataset_names",
     "get_dataset",

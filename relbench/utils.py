@@ -44,7 +44,6 @@ def unzip_processor(fname: Union[str, Path], action: str, pooch: pooch.Pooch) ->
 
 def clean_datetime(df: pd.DataFrame, col: str) -> pd.DataFrame:
     r"""Clean the time column of a pandas dataframe.
-
     Args:
         df (pd.DataFrame): The pandas dataframe to clean the timecolumn for.
         col (str): The time column name.
