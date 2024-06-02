@@ -11,18 +11,18 @@ from relbench.metrics import (
     link_prediction_precision,
     link_prediction_recall,
     mae,
+    r2,
     rmse,
     roc_auc,
 )
-from relbench.utils import get_df_in_window
 
 ######## node prediction tasks ########
 
 
-class EngageTask(RelBenchNodeTask):
+class UserEngagementTask(RelBenchNodeTask):
     r"""Predict if a user will make any votes/posts/comments in the next 2 years."""
 
-    name = "rel-stackex-engage"
+    name = "user-engagement"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "OwnerUserId"
     entity_table = "users"
@@ -106,18 +106,18 @@ class EngageTask(RelBenchNodeTask):
         )
 
 
-class VotesTask(RelBenchNodeTask):
+class PostVotesTask(RelBenchNodeTask):
     r"""Predict the number of upvotes that an existing question will receive in
     the next 2 years."""
 
-    name = "rel-stackex-votes"
+    name = "post-votes"
     task_type = TaskType.REGRESSION
     entity_col = "PostId"
     entity_table = "posts"
     time_col = "timestamp"
     target_col = "popularity"
     timedelta = pd.Timedelta(days=365 // 4)
-    metrics = [mae, rmse]
+    metrics = [r2, mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -162,10 +162,10 @@ class VotesTask(RelBenchNodeTask):
         )
 
 
-class BadgesTask(RelBenchNodeTask):
+class UserBadgeTask(RelBenchNodeTask):
     r"""Predict if each user will receive in a new badge the next 2 years."""
 
-    name = "rel-stackex-badges"
+    name = "user-badge"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "UserId"
     entity_table = "users"
@@ -221,11 +221,11 @@ class BadgesTask(RelBenchNodeTask):
 ######## link prediction tasks ########
 
 
-class UserCommentOnPostTask(RelBenchLinkTask):
+class UserPostCommentTask(RelBenchLinkTask):
     r"""Predict a list of existing posts that a user will comment in the next
     two years."""
 
-    name = "rel-stackex-comment-on-post"
+    name = "user-post-comment"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "UserId"
     src_entity_table = "users"
@@ -283,11 +283,11 @@ class UserCommentOnPostTask(RelBenchLinkTask):
         )
 
 
-class RelatedPostTask(RelBenchLinkTask):
+class PostPostRelatedTask(RelBenchLinkTask):
     r"""Predict a list of existing posts that users will link a given post to in the next
     two years."""
 
-    name = "rel-stackex-related-post"
+    name = "post-post-related"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "PostId"
     src_entity_table = "posts"
@@ -335,71 +335,6 @@ class RelatedPostTask(RelBenchLinkTask):
                     t.timestamp,
                     pl.PostId;
             """
-        ).df()
-
-        return Table(
-            df=df,
-            fkey_col_to_pkey_table={
-                self.src_entity_col: self.src_entity_table,
-                self.dst_entity_col: self.dst_entity_table,
-            },
-            pkey_col=None,
-            time_col=self.time_col,
-        )
-
-
-class UsersInteractTask(RelBenchLinkTask):
-    r"""Predict a list of users who comment on the same posts as the original user."""
-
-    name = "rel-stackex-users-interact"
-    task_type = TaskType.LINK_PREDICTION
-    src_entity_col = "UserId"
-    src_entity_table = "users"
-    dst_entity_col = "InteractingUserId"
-    dst_entity_table = "users"
-    time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365 // 4)
-
-    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
-    eval_k = 10
-
-    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for UsersInteractTask."""
-        timestamp_df = pd.DataFrame({"timestamp": timestamps})
-
-        users = db.table_dict["users"].df
-        posts = db.table_dict["posts"].df
-        comments = db.table_dict["comments"].df
-
-        df = duckdb.sql(
-            f"""
-            SELECT
-                t.timestamp,
-                c.UserId AS UserId,
-                LIST(DISTINCT c2.UserId) FILTER (WHERE c2.UserId IS NOT NULL) AS InteractingUserId
-            FROM
-                timestamp_df t
-            CROSS JOIN
-                comments c
-            JOIN
-                users u_c ON c.UserId = u_c.Id
-                AND u_c.CreationDate < t.timestamp
-            LEFT JOIN
-                comments c2 ON c.postid = c2.postid
-            JOIN
-                users u_c2 ON c2.UserId = u_c2.Id AND u_c2.CreationDate < t.timestamp
-                    AND c2.UserId != c.UserId AND c2.UserId IS NOT NULL
-                    AND c2.CreationDate > t.timestamp
-                    AND c2.CreationDate <= t.timestamp + INTERVAL '{self.timedelta} days'
-            WHERE
-                c.UserId IS NOT NULL
-                AND NOT (c.UserId IS NULL OR c2.UserId IS NULL)
-            GROUP BY
-                t.timestamp,
-                c.UserId
-            HAVING
-                ARRAY_LENGTH(ARRAY_AGG(DISTINCT c2.UserId)) > 0;
-                """
         ).df()
 
         return Table(

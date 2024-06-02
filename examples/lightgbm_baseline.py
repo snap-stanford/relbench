@@ -11,7 +11,6 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
-from torch_frame.utils import infer_df_stype
 from tqdm import tqdm
 
 from relbench.data import RelBenchDataset, RelBenchNodeTask
@@ -19,8 +18,8 @@ from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-stackex")
-parser.add_argument("--task", type=str, default="rel-stackex-engage")
+parser.add_argument("--dataset", type=str, default="rel-stack")
+parser.add_argument("--task", type=str, default="user-engage")
 # Use auto-regressive label as hand-crafted feature as input to LightGBM
 parser.add_argument("--use_ar_label", action="store_true")
 parser.add_argument(
@@ -148,6 +147,8 @@ if task.task_type in [
     tune_metric = Metric.ROCAUC
 elif task.task_type == TaskType.REGRESSION:
     tune_metric = Metric.MAE
+else:
+    raise ValueError(f"Task task type is unsupported {task.task_type}")
 
 if task.task_type in [TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION]:
     model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)

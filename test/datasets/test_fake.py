@@ -8,17 +8,17 @@ def test_fake_reviews_dataset():
     assert dataset.db.max_timestamp < dataset.test_timestamp
     assert str(dataset) == "FakeDataset()"
     assert dataset.task_names == [
-        "rel-amazon-churn",
-        "rel-amazon-product-churn",
-        "rel-amazon-ltv",
-        "rel-amazon-product-ltv",
-        "rel-amazon-rec-purchase",
-        "rel-amazon-rec-5-star",
-        "rel-amazon-rec-detailed-review",
+        "user-churn",
+        "user-ltv",
+        "item-churn",
+        "item-ltv",
+        "user-item-purchase",
+        "user-item-rate",
+        "user-item-review",
     ]
 
-    task = dataset.get_task("rel-amazon-churn", process=True)
-    assert str(task) == "ChurnTask(dataset=FakeDataset())"
+    task = dataset.get_task("user-churn", process=True)
+    assert str(task) == "UserChurnTask(dataset=FakeDataset())"
 
     train_table = task.train_table
     val_table = task.val_table
@@ -38,7 +38,7 @@ def test_fake_reviews_dataset():
 
 def test_reindex():
     dataset = FakeDataset()
-    db = dataset.make_db(30, 100, 500)
+    db = dataset.make_db(30, 100, 500, 20)
     db_indexed = copy.deepcopy(db)
     db_indexed.reindex_pkeys_and_fkeys()
     for table_name in db.table_dict.keys():

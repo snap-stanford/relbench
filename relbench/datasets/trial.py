@@ -6,12 +6,12 @@ import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.trial import (
-    AdverseEventTask,
-    OutcomeTask,
+    ConditionSponsorRecTask,
+    SiteSponsorRecTask,
     SiteSuccessTask,
-    SponsorConditionTask,
-    SponsorFacilityTask,
-    WithdrawalTask,
+    StudyAdverseTask,
+    StudyOutcomeTask,
+    StudyWithdrawalTask,
 )
 from relbench.utils import unzip_processor
 
@@ -23,12 +23,12 @@ class TrialDataset(RelBenchDataset):
     test_timestamp = pd.Timestamp("2021-01-01")
     max_eval_time_frames = 1
     task_cls_list = [
-        OutcomeTask,
-        AdverseEventTask,
-        WithdrawalTask,
+        StudyOutcomeTask,
+        StudyAdverseTask,
+        StudyWithdrawalTask,
         SiteSuccessTask,
-        SponsorConditionTask,
-        SponsorFacilityTask,
+        ConditionSponsorRecTask,
+        SiteSponsorRecTask,
     ]
 
     def __init__(
@@ -63,11 +63,11 @@ class TrialDataset(RelBenchDataset):
         )
         interventions = interventions[
             interventions.mesh_type == "mesh-list"
-        ]  ### just looking at root identity
+        ]  # just looking at root identity
         conditions = pd.read_csv(os.path.join(path, "browse_conditions.txt"), sep="|")
         conditions = conditions[
             conditions.mesh_type == "mesh-list"
-        ]  ### just looking at root identity
+        ]  # just looking at root identity
 
         reported_event_totals = pd.read_csv(
             os.path.join(path, "reported_event_totals.txt"), sep="|"

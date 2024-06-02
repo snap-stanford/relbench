@@ -17,15 +17,16 @@ from relbench.metrics import (
     multilabel_auroc_micro,
     multilabel_f1_macro,
     multilabel_f1_micro,
+    r2,
     rmse,
     roc_auc,
 )
 
 
-class OutcomeTask(RelBenchNodeTask):
+class StudyOutcomeTask(RelBenchNodeTask):
     r"""Predict if the trials in the next 1 year will achieve its primary outcome."""
 
-    name = "rel-trial-outcome"
+    name = "study-outcome"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "nct_id"
     entity_table = "studies"
@@ -84,17 +85,17 @@ class OutcomeTask(RelBenchNodeTask):
         )
 
 
-class AdverseEventTask(RelBenchNodeTask):
+class StudyAdverseTask(RelBenchNodeTask):
     r"""Predict the number of affected patients with severe advsere events/death for the trial in the next 1 year."""
 
-    name = "rel-trial-adverse"
+    name = "study-adverse"
     task_type = TaskType.REGRESSION
     entity_col = "nct_id"
     entity_table = "studies"
     time_col = "timestamp"
     target_col = "num_of_adverse_events"
     timedelta = pd.Timedelta(days=365)
-    metrics = [mae, rmse]
+    metrics = [r2, mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -139,10 +140,10 @@ class AdverseEventTask(RelBenchNodeTask):
         )
 
 
-class WithdrawalTask(RelBenchNodeTask):
+class StudyWithdrawalTask(RelBenchNodeTask):
     r"""Predict the the set of reasons of withdrawals for each trial in the next 1 year"""
 
-    name = "rel-trial-withdrawal"
+    name = "study-withdrawal"
     task_type = TaskType.MULTILABEL_CLASSIFICATION
     entity_col = "nct_id"
     entity_table = "studies"
@@ -241,14 +242,14 @@ class WithdrawalTask(RelBenchNodeTask):
 class SiteSuccessTask(RelBenchNodeTask):
     r"""Predict the success rate of a trial site in the next 1 year."""
 
-    name = "rel-trial-site"
+    name = "site-success"
     task_type = TaskType.REGRESSION
     entity_col = "facility_id"
     entity_table = "facilities"
     time_col = "timestamp"
     target_col = "success_rate"
     timedelta = pd.Timedelta(days=365)
-    metrics = [mae, rmse]
+    metrics = [r2, mae, rmse]
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -297,10 +298,10 @@ class SiteSuccessTask(RelBenchNodeTask):
         )
 
 
-class SponsorConditionTask(RelBenchLinkTask):
-    r"""Predict whether or not if this condition will have which sponsors."""
+class ConditionSponsorRecTask(RelBenchLinkTask):
+    r"""Predict whether this condition will have which sponsors."""
 
-    name = "rel-trial-sponsor-condition"
+    name = "condition-sponsor-rec"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "condition_id"
     src_entity_table = "conditions"
@@ -342,10 +343,10 @@ class SponsorConditionTask(RelBenchLinkTask):
         )
 
 
-class SponsorFacilityTask(RelBenchLinkTask):
-    r"""Predict whether or not if this sponsor will have a trial in a facility."""
+class SiteSponsorRecTask(RelBenchLinkTask):
+    r"""Predict whether this sponsor will have a trial in a facility."""
 
-    name = "rel-trial-sponsor-facility"
+    name = "site-sponsor-rec"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "facility_id"
     src_entity_table = "facilities"

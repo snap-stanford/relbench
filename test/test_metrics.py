@@ -15,6 +15,6 @@ def test_link_prediction_metrics():
     recall = link_prediction_recall(pred_isin, dst_count)
     precision = link_prediction_precision(pred_isin, dst_count)
     map = link_prediction_map(pred_isin, dst_count)
-    assert 0 <= recall and recall <= 1
-    assert 0 <= precision and precision <= 1
-    assert 0 <= map and map <= 1
+    assert 0 <= recall <= 1
+    assert 0 <= precision <= 1
+    assert 0 <= map <= 1

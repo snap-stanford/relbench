@@ -4,67 +4,55 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.stackex import (
-    BadgesTask,
-    EngageTask,
-    RelatedPostTask,
-    UserCommentOnPostTask,
-    UsersInteractTask,
-    VotesTask,
+from relbench.tasks.stack import (
+    PostPostRelatedTask,
+    PostVotesTask,
+    UserBadgeTask,
+    UserEngagementTask,
+    UserPostCommentTask,
 )
-from relbench.utils import unzip_processor
+from relbench.utils import clean_datetime, unzip_processor
 
 
-class MathStackExDataset(RelBenchDataset):
-    name = "rel-math-stackex"
-    # 2 years gap
-    val_timestamp = pd.Timestamp("2019-01-01")
+class StackDataset(RelBenchDataset):
+    name = "rel-stack"
+    # 3 months gap
+    val_timestamp = pd.Timestamp("2020-10-01")
     test_timestamp = pd.Timestamp("2021-01-01")
     max_eval_time_frames = 1
     task_cls_list = [
-        EngageTask,
-        VotesTask,
-        BadgesTask,
-        UserCommentOnPostTask,
-        RelatedPostTask,
-        UsersInteractTask,
+        UserEngagementTask,
+        PostVotesTask,
+        UserBadgeTask,
+        UserPostCommentTask,
+        PostPostRelatedTask,
     ]
 
     def __init__(
         self,
         *,
         process: bool = False,
-        cache_dir: str = None,
     ):
-        self.cache_dir = cache_dir
         self.name = f"{self.name}"
         super().__init__(process=process)
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
-        url = "https://relbench.stanford.edu/data/relbench-stackex-raw.zip"
+        url = "https://relbench.stanford.edu/data/relbench-forum-raw.zip"
         path = pooch.retrieve(
             url,
-            known_hash="31003ec800eee341bc093549b10bff8e4394fd6bc0429769a71a42b8addd1765",
+            known_hash="ad3bf96f35146d50ef48fa198921685936c49b95c6b67a8a47de53e90036745f",
             progressbar=True,
             processor=unzip_processor,
-            path=self.cache_dir,
         )
-        path = os.path.join(path, "math-stackex-temp")
-        print("Loading data from:", path)
+        path = os.path.join(path, "raw")
         users = pd.read_csv(os.path.join(path, "Users.csv"))
-        comments = pd.read_csv(
-            os.path.join(path, "Comments.csv"), low_memory=False, lineterminator="\n"
-        )
+        comments = pd.read_csv(os.path.join(path, "Comments.csv"))
         posts = pd.read_csv(os.path.join(path, "Posts.csv"))
-
         votes = pd.read_csv(os.path.join(path, "Votes.csv"))
         postLinks = pd.read_csv(os.path.join(path, "PostLinks.csv"))
         badges = pd.read_csv(os.path.join(path, "Badges.csv"))
-        postHistory = pd.read_csv(
-            os.path.join(path, "PostHistory.csv"), low_memory=False, lineterminator="\n"
-        )
-        print("Data loaded")
+        postHistory = pd.read_csv(os.path.join(path, "PostHistory.csv"))
 
         # tags = pd.read_csv(os.path.join(path, "Tags.csv")) we remove tag table here since after removing time leakage columns, all information are kept in the posts tags columns
 
@@ -94,13 +82,13 @@ class MathStackExDataset(RelBenchDataset):
         comments.drop(columns=["Score"], inplace=True)
         votes.drop(columns=["BountyAmount"], inplace=True)
 
-        comments = self.clean_datetime(comments, "CreationDate")
-        badges = self.clean_datetime(badges, "Date")
-        postLinks = self.clean_datetime(postLinks, "CreationDate")
-        postHistory = self.clean_datetime(postHistory, "CreationDate")
-        votes = self.clean_datetime(votes, "CreationDate")
-        users = self.clean_datetime(users, "CreationDate")
-        posts = self.clean_datetime(posts, "CreationDate")
+        comments = clean_datetime(comments, "CreationDate")
+        badges = clean_datetime(badges, "Date")
+        postLinks = clean_datetime(postLinks, "CreationDate")
+        postHistory = clean_datetime(postHistory, "CreationDate")
+        votes = clean_datetime(votes, "CreationDate")
+        users = clean_datetime(users, "CreationDate")
+        posts = clean_datetime(posts, "CreationDate")
 
         tables = {}
 
@@ -166,27 +154,3 @@ class MathStackExDataset(RelBenchDataset):
         )
 
         return Database(tables)
-
-    def clean_datetime(self, df, col):
-        ## change time column to pd timestamp series
-        # Attempt to convert "CreationDate" to datetime format
-        df[col] = pd.to_datetime(df[col], errors="coerce")
-
-        # Count the number of comments before removing invalid dates
-        total_before = len(df)
-
-        # Remove rows where "CreationDate" is NaT (indicating parsing failure)
-        df = df.dropna(subset=[col])
-
-        # Count the number of comments after removing invalid dates
-        total_after = len(df)
-
-        # Calculate the percentage of comments removed
-        percentage_removed = ((total_before - total_after) / total_before) * 100
-
-        # Print the percentage of comments removed
-        print(
-            f"Percentage of rows removed due to invalid dates: {percentage_removed:.2f}%"
-        )
-
-        return df

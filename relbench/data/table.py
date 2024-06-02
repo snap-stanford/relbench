@@ -15,7 +15,7 @@ class Table:
     r"""A table in a database.
 
     Args:
-        df (pandas.DataFrame): The underyling data frame of the table.
+        df (pandas.DataFrame): The underlying data frame of the table.
         fkey_col_to_pkey_table (Dict[str, str]): A dictionary mapping
             foreign key names to table names that contain the foreign keys as
             primary keys.
@@ -117,7 +117,7 @@ class Table:
         r"""Returns the earliest time in the table."""
 
         if self.time_col is None:
-            return ValueError("Table has no time column.")
+            raise ValueError("Table has no time column.")
 
         return self.df[self.time_col].min()
 
@@ -127,6 +127,6 @@ class Table:
         r"""Returns the latest time in the table."""
 
         if self.time_col is None:
-            return ValueError("Table has no time column.")
+            raise ValueError("Table has no time column.")
 
         return self.df[self.time_col].max()
