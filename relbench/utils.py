@@ -52,6 +52,7 @@ def clean_datetime(df: pd.DataFrame, col: str) -> pd.DataFrame:
 
     # Print the percentage of comments removed
     print(
-        f"Percentage of rows removed due to invalid dates: " "{percentage_removed:.2f}%"
+        f"Percentage of rows removed due to invalid dates: "
+        f"{percentage_removed:.2f}%"
     )
     return df

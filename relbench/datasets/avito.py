@@ -5,18 +5,20 @@ from pathlib import Path
 import pandas as pd
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.avito import RecommendationTask
+from relbench.tasks.avito import AdsClickTask, RecommendationTask
 from relbench.utils import clean_datetime
 
 
 class AvitoDataset(RelBenchDataset):
     name = "rel-avito"
     url = "https://www.kaggle.com/competitions/avito-context-ad-clicks"
+
+    # search stream ranges from 2015-04-25 to 2015-05-20
     train_start_timestamp = pd.Timestamp("2015-04-25")
     val_timestamp = pd.Timestamp("2015-05-09")
     test_timestamp = pd.Timestamp("2015-05-14")
     max_eval_time_frames = 1
-    task_cls_list = [RecommendationTask]
+    task_cls_list = [RecommendationTask, AdsClickTask]
 
     def __init__(
         self,
