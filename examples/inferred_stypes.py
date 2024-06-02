@@ -63,6 +63,8 @@ dataset2inferred_stypes = {
             "IPID": stype.numerical,
             "AdID": stype.numerical,
             "ViewDate": stype.timestamp,
+        },
+    },
     "rel-event": {
         "users": {
             "user_id": stype.numerical,
@@ -90,7 +92,6 @@ dataset2inferred_stypes = {
             "event": stype.numerical,
             "status": stype.categorical,
             "user_id": stype.numerical,
-            "status": stype.categorical,
             "start_time": stype.timestamp,
         },
         "event_interest": {
