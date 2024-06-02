@@ -14,17 +14,17 @@ from relbench.metrics import (
 )
 
 
-class RecommendationTask(RelBenchLinkTask):
+class EventAttendenceTask(RelBenchLinkTask):
     r"""Predict the list of users that will be interested in an event."""
 
     name = "event-attendence"
     task_type = TaskType.LINK_PREDICTION
-    src_entity_col = "event"
-    src_entity_table = "events"
-    dst_entity_col = "user"
-    dst_entity_table = "users"
+    src_entity_col = "user"
+    src_entity_table = "users"
+    dst_entity_col = "event"
+    dst_entity_table = "events"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=15)
+    timedelta = pd.Timedelta(days=7)
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
     eval_k = 10
 
@@ -36,14 +36,13 @@ class RecommendationTask(RelBenchLinkTask):
         event_attendees = db.table_dict["event_attendees"].df
         event_interest = db.table_dict["event_interest"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        import pdb
-        pdb.set_trace()
+
         df = duckdb.sql(
             f"""
             SELECT
                 t.timestamp,
-                event_attendees.event AS event,
-                LIST(DISTINCT event_attendees.user_id) AS user
+                event_attendees.user_id AS user,
+                LIST(DISTINCT event_attendees.event) AS event
             FROM
                 timestamp_df t
             LEFT JOIN
@@ -55,7 +54,7 @@ class RecommendationTask(RelBenchLinkTask):
                 event_attendees.status IN ('yes', 'maybe', 'no')
             GROUP BY
                 t.timestamp,
-                event_attendees.event
+                event_attendees.user_id
             """
         ).df()
         df = df.dropna(subset=["user"])
@@ -71,6 +70,7 @@ class RecommendationTask(RelBenchLinkTask):
             pkey_col=None,
             time_col=self.time_col,
         )
+
 
 class UserAttendanceTask(RelBenchNodeTask):
     r"""Predict the number of events a user will go to in the next seven days
