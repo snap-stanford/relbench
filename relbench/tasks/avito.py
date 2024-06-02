@@ -66,10 +66,10 @@ class UserClicksTask(RelBenchNodeTask):
         )
 
 
-class UserAdRecTask(RelBenchLinkTask):
+class UserAdClickTask(RelBenchLinkTask):
     r"""Predict the list of ads user will click in the next 4 days"""
 
-    name = "user-ad-rec"
+    name = "user-ad-click"
     task_type = TaskType.LINK_PREDICTION
     src_entity_table = "UserInfo"
     src_entity_col = "UserID"

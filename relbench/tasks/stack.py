@@ -19,10 +19,10 @@ from relbench.metrics import (
 ######## node prediction tasks ########
 
 
-class UserEngageTask(RelBenchNodeTask):
+class UserEngagementTask(RelBenchNodeTask):
     r"""Predict if a user will make any votes/posts/comments in the next 2 years."""
 
-    name = "user-engage"
+    name = "user-engagement"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "OwnerUserId"
     entity_table = "users"

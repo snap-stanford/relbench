@@ -8,7 +8,7 @@ from relbench.tasks.stack import (
     PostPostRelatedTask,
     PostVotesTask,
     UserBadgeTask,
-    UserEngageTask,
+    UserEngagementTask,
     UserPostCommentTask,
 )
 from relbench.utils import clean_datetime, unzip_processor
@@ -21,7 +21,7 @@ class StackDataset(RelBenchDataset):
     test_timestamp = pd.Timestamp("2021-01-01")
     max_eval_time_frames = 1
     task_cls_list = [
-        UserEngageTask,
+        UserEngagementTask,
         PostVotesTask,
         UserBadgeTask,
         UserPostCommentTask,

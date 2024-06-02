@@ -50,7 +50,7 @@ new_name = {
     "rel-amazon-rec-detailed-review": "user-item-review",
     ## rel-avito
     "rel-avito-click": "user-clicks",
-    "rel-avito-rec": "user-ad-rec",
+    "rel-avito-rec": "user-ad-click",
     ## rel-event
     "rel-event-attendence": "user-attendance",
     ## rel-f1
@@ -62,7 +62,7 @@ new_name = {
     "rel-hm-churn": "user-churn",
     "rel-hm-sales": "item-sales",
     ## rel-stack
-    "rel-stackex-engage": "user-engage",
+    "rel-stackex-engage": "user-engagement",
     "rel-stackex-votes": "post-votes",
     "rel-stackex-badges": "user-badge",
     "rel-stackex-comment-on-post": "user-post-comment",
