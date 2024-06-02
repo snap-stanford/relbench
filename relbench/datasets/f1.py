@@ -5,7 +5,7 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.f1 import DriverPositionTask, DriverDNFTask, DriverTop3Task
+from relbench.tasks.f1 import DriverDNFTask, DriverPositionTask, DriverTop3Task
 from relbench.utils import unzip_processor
 
 

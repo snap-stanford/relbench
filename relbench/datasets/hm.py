@@ -5,11 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.hm import (
-    UserItemPurchaseTask,
-    UserChurnTask,
-    ItemSalesTask,
-)
+from relbench.tasks.hm import ItemSalesTask, UserChurnTask, UserItemPurchaseTask
 
 
 class HMDataset(RelBenchDataset):

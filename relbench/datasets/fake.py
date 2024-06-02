@@ -9,13 +9,13 @@ import pandas as pd
 
 from relbench.data import Database, Dataset, Table
 from relbench.tasks.amazon import (
-    UserChurnTask,
-    UserLTVTask,
     ItemChurnTask,
     ItemLTVTask,
+    UserChurnTask,
     UserItemPurchaseTask,
     UserItemRateTask,
     UserItemReviewTask,
+    UserLTVTask,
 )
 
 

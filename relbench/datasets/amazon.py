@@ -9,13 +9,13 @@ import pyarrow.json
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.amazon import (
-    UserChurnTask,
-    UserLTVTask,
     ItemChurnTask,
     ItemLTVTask,
+    UserChurnTask,
     UserItemPurchaseTask,
     UserItemRateTask,
     UserItemReviewTask,
+    UserLTVTask,
 )
 
 

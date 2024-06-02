@@ -6,12 +6,12 @@ import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.trial import (
-    StudyOutcomeTask,
-    StudyAdverseTask,
-    StudyWithdrawalTask,
-    SiteSuccessTask,
     ConditionSponsorRecTask,
     SiteSponsorRecTask,
+    SiteSuccessTask,
+    StudyAdverseTask,
+    StudyOutcomeTask,
+    StudyWithdrawalTask,
 )
 from relbench.utils import unzip_processor
 

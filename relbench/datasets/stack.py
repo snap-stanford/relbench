@@ -5,11 +5,11 @@ import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.stack import (
-    UserEngageTask,
+    PostPostRelatedTask,
     PostVotesTask,
     UserBadgeTask,
+    UserEngageTask,
     UserPostCommentTask,
-    PostPostRelatedTask,
 )
 from relbench.utils import clean_datetime, unzip_processor
 
