@@ -33,6 +33,7 @@ _pooch = pooch.create(
 new_name = {
     # datasets
     "rel-amazon": "rel-amazon",
+    "rel-avito": "rel-avito",
     "rel-event": "rel-event",
     "rel-f1": "rel-f1",
     "rel-hm": "rel-hm",
@@ -47,6 +48,9 @@ new_name = {
     "rel-amazon-rec-purchase": "user-item-purchase",
     "rel-amazon-rec-5-star": "user-item-rate",
     "rel-amazon-rec-detailed-review": "user-item-review",
+    ## rel-avito
+    "rel-avito-click": "user-clicks",
+    "rel-avito-rec": "user-ad-rec",
     ## rel-event
     "rel-event-attendence": "user-attendance",
     ## rel-f1
