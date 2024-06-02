@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+from abc import abstractmethod
+
 # =====================
 # LightGBM code - hacked to work with torch tensor inputs
 # =====================
@@ -9,11 +12,6 @@ import numpy as np
 import pandas as pd
 import torch
 from torch import Tensor
-
-
-import os
-from abc import abstractmethod
-
 from torch_frame import Metric, TaskType, TensorFrame
 
 DEFAULT_METRIC = {
@@ -38,6 +36,7 @@ class GBDT:
             classification, and :obj:`Metric.ACCURACY` for multi-
             class classification. (default: :obj:`None`).
     """
+
     def __init__(
         self,
         task_type: TaskType,
@@ -56,11 +55,18 @@ class GBDT:
             else:
                 raise ValueError(
                     f"{task_type} does not support {metric}. Please choose "
-                    f"from {task_type.supported_metrics}.")
+                    f"from {task_type.supported_metrics}."
+                )
 
     @abstractmethod
-    def _tune(self, tf_train: TensorFrame, tf_val: TensorFrame,
-              num_trials: int, *args, **kwargs) -> None:
+    def _tune(
+        self,
+        tf_train: TensorFrame,
+        tf_val: TensorFrame,
+        num_trials: int,
+        *args,
+        **kwargs,
+    ) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -76,8 +82,7 @@ class GBDT:
         r"""Whether the GBDT is already fitted."""
         return self._is_fitted
 
-    def tune(self, data_train: Any, data_val: Any, num_trials: int,
-             *args, **kwargs):
+    def tune(self, data_train: Any, data_val: Any, num_trials: int, *args, **kwargs):
         r"""Fit the model by performing hyperparameter tuning using Optuna. The
         number of trials is specified by num_trials.
 
@@ -108,7 +113,8 @@ class GBDT:
         if not self.is_fitted:
             raise RuntimeError(
                 f"{self.__class__.__name__}' is not yet fitted. Please run "
-                f"`tune()` first before attempting to predict.")
+                f"`tune()` first before attempting to predict."
+            )
         pred = self._predict(tf_test)
         if self.task_type == TaskType.MULTILABEL_CLASSIFICATION:
             assert pred.ndim == 2
@@ -126,7 +132,8 @@ class GBDT:
         if not self.is_fitted:
             raise RuntimeError(
                 f"{self.__class__.__name__} is not yet fitted. Please run "
-                f"`tune()` first before attempting to save.")
+                f"`tune()` first before attempting to save."
+            )
 
         os.makedirs(os.path.dirname(path), exist_ok=True)
         self.model.save_model(path)
@@ -159,6 +166,7 @@ class GBDT:
             score = (pred - target).abs().mean().item()
         elif self.metric == Metric.ROCAUC:
             from sklearn.metrics import roc_auc_score
+
             score = roc_auc_score(target.cpu(), pred.cpu())
         elif self.metric == Metric.ACCURACY:
             if self.task_type == TaskType.BINARY_CLASSIFICATION:
@@ -167,9 +175,9 @@ class GBDT:
             test_size = len(target)
             score = total_correct / test_size
         else:
-            raise ValueError(f'{self.metric} is not supported.')
+            raise ValueError(f"{self.metric} is not supported.")
         return score
-    
+
 
 class LightGBM(GBDT):
     r"""LightGBM implementation with hyper-parameter tuning using Optuna.
@@ -222,26 +230,16 @@ class LightGBM(GBDT):
         import lightgbm
 
         self.params = {
-            "verbosity":
-            -1,
-            "bagging_freq":
-            1,
-            "max_depth":
-            trial.suggest_int("max_depth", 3, 11),
-            "learning_rate":
-            trial.suggest_float("learning_rate", 1e-3, 0.1, log=True),
-            "num_leaves":
-            trial.suggest_int("num_leaves", 2, 2**10),
-            "subsample":
-            trial.suggest_float("subsample", 0.05, 1.0),
-            "colsample_bytree":
-            trial.suggest_float("colsample_bytree", 0.05, 1.0),
-            'lambda_l1':
-            trial.suggest_float('lambda_l1', 1e-9, 10.0, log=True),
-            'lambda_l2':
-            trial.suggest_float('lambda_l2', 1e-9, 10.0, log=True),
-            "min_data_in_leaf":
-            trial.suggest_int("min_data_in_leaf", 1, 100),
+            "verbosity": -1,
+            "bagging_freq": 1,
+            "max_depth": trial.suggest_int("max_depth", 3, 11),
+            "learning_rate": trial.suggest_float("learning_rate", 1e-3, 0.1, log=True),
+            "num_leaves": trial.suggest_int("num_leaves", 2, 2**10),
+            "subsample": trial.suggest_float("subsample", 0.05, 1.0),
+            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.05, 1.0),
+            "lambda_l1": trial.suggest_float("lambda_l1", 1e-9, 10.0, log=True),
+            "lambda_l2": trial.suggest_float("lambda_l2", 1e-9, 10.0, log=True),
+            "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 1, 100),
         }
 
         if self.task_type == TaskType.REGRESSION:
@@ -261,21 +259,27 @@ class LightGBM(GBDT):
             self.params["objective"] = "multiclass"
             self.params["metric"] = "multi_error"
             self.params["num_class"] = self._num_classes or len(
-                np.unique(train_data.label))
+                np.unique(train_data.label)
+            )
         else:
-            raise ValueError(f"{self.__class__.__name__} is not supported for "
-                             f"{self.task_type}.")
+            raise ValueError(
+                f"{self.__class__.__name__} is not supported for " f"{self.task_type}."
+            )
 
         boost = lightgbm.train(
-            self.params, train_data, num_boost_round=num_boost_round,
+            self.params,
+            train_data,
+            num_boost_round=num_boost_round,
             valid_sets=[eval_data],
             callbacks=[
                 lightgbm.early_stopping(stopping_rounds=50, verbose=False),
-                lightgbm.log_evaluation(period=2000)
-            ])
+                lightgbm.log_evaluation(period=2000),
+            ],
+        )
         pred = self._predict_helper(boost, eval_data.data)
-        score = self.compute_metric(torch.from_numpy(eval_data.label),
-                                    torch.from_numpy(pred))
+        score = self.compute_metric(
+            torch.from_numpy(eval_data.label), torch.from_numpy(pred)
+        )
         return score
 
     def _tune(
@@ -297,23 +301,25 @@ class LightGBM(GBDT):
         val_x, val_y = val_data
         assert train_y is not None
         assert val_y is not None
-        train_data = lightgbm.Dataset(train_x, label=train_y,
-                                      free_raw_data=False)
+        train_data = lightgbm.Dataset(train_x, label=train_y, free_raw_data=False)
         eval_data = lightgbm.Dataset(val_x, label=val_y, free_raw_data=False)
 
         study.optimize(
-            lambda trial: self.objective(trial, train_data, eval_data,
-                                         num_boost_round),
-            num_trials)
+            lambda trial: self.objective(trial, train_data, eval_data, num_boost_round),
+            num_trials,
+        )
         self.params.update(study.best_params)
 
         self.model = lightgbm.train(
-            self.params, train_data, num_boost_round=num_boost_round,
+            self.params,
+            train_data,
+            num_boost_round=num_boost_round,
             valid_sets=[eval_data],
             callbacks=[
                 lightgbm.early_stopping(stopping_rounds=50, verbose=False),
-                lightgbm.log_evaluation(period=2000)
-            ])
+                lightgbm.log_evaluation(period=2000),
+            ],
+        )
 
     def _predict(self, test_x: Any) -> Tensor:
         pred = self._predict_helper(self.model, test_x)
@@ -323,5 +329,3 @@ class LightGBM(GBDT):
         import lightgbm
 
         self.model = lightgbm.Booster(model_file=path)
-
-

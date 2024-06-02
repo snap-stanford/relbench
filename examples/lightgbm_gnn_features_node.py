@@ -8,21 +8,19 @@ import numpy as np
 import torch
 from inferred_stypes import dataset2inferred_stypes
 from model import Model
-from torch_lightgbm import LightGBM # hacked version of torch-frame lightgbm
 from text_embedder import GloveTextEmbedding
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
+from torch_lightgbm import LightGBM  # hacked version of torch-frame lightgbm
 from tqdm import tqdm
 
 from relbench.data import NodeTask, RelBenchDataset
 from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_graph
-
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stackex")
@@ -169,21 +167,24 @@ def test(loader: NeighborLoader) -> np.ndarray:
         pred_list.append(pred.detach().cpu())
     return torch.cat(pred_list, dim=0).numpy()
 
+
 @torch.no_grad()
 def embed(
-    model: Model, loader: NeighborLoader,
+    model: Model,
+    loader: NeighborLoader,
     no_label: bool = False,
     stop_at: int = None,
 ) -> Dict[str, float]:
 
     # remove model.head from the model
     from torch.nn import Identity
+
     model_embed = copy.deepcopy(model)
-    model_embed.head = Identity() # remove the head
+    model_embed.head = Identity()  # remove the head
     model_embed.eval()
 
     embed_list = []
-    y_list = [] 
+    y_list = []
     for idx, batch in enumerate(tqdm(loader)):
         batch = batch.to(device)
         embed = model_embed(
@@ -192,7 +193,7 @@ def embed(
         )
         embed_list.append(embed.detach().cpu())
 
-        if not no_label: 
+        if not no_label:
             y = batch[entity_table].y
             y_list.append(y.detach().cpu())
 
@@ -210,7 +211,7 @@ def embed(
 
 
 # =====================
-# Model training 
+# Model training
 # =====================
 model = Model(
     data=data,
@@ -249,10 +250,8 @@ else:
             best_val_metric = val_metrics[tune_metric]
             state_dict = copy.deepcopy(model.state_dict())
 
-
     # save state dict
     torch.save(state_dict, STATE_DICT_PTH)
-
 
 
 val_pred_accum = 0
@@ -275,7 +274,11 @@ print("=====================")
 print("Embedding performance")
 print("=====================")
 
-emb_train, y_train = embed(model, loader_dict["train"], stop_at=args.sample_size // args.batch_size if args.sample_size else None)
+emb_train, y_train = embed(
+    model,
+    loader_dict["train"],
+    stop_at=args.sample_size // args.batch_size if args.sample_size else None,
+)
 emb_val, y_val = embed(model, loader_dict["val"])
 emb_test, _ = embed(model, loader_dict["test"], no_label=True)
 
@@ -289,7 +292,7 @@ from torch_frame import TaskType as TaskTypeTorchFrame
 
 if tune_metric == "roc_auc":
     tune_metric = Metric.ROCAUC
-elif tune_metric == 'mae':
+elif tune_metric == "mae":
     tune_metric = Metric.MAE
 
     
@@ -308,4 +311,3 @@ print(f"Val: {task.evaluate(pred, task.val_table)}")
 
 pred = model.predict(emb_test).numpy()
 print(f"Test: {task.evaluate(pred)}")
-
