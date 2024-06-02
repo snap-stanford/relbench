@@ -42,7 +42,7 @@ def test_node_train_fake_product_dataset(tmp_path):
     x_dict = gnn(x_dict, data.edge_index_dict)
     x = head(x_dict["customer"])
 
-    assert len(x_dict) == 3
+    assert len(x_dict) == 4
     assert x_dict["customer"].size() == (100, 64)
     assert x_dict["review"].size() == (540, 64)
     assert x_dict["product"].size() == (30, 64)
