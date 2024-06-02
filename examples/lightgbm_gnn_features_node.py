@@ -38,7 +38,7 @@ parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--num_workers", type=int, default=1)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_ensembles", type=int, default=1)
-parser.add_argument("--force_retrain", action="store_true") # If true, force retrain the model
+parser.add_argument("--attempt_load_state_dict", action="store_true") # If true, try to load pretrained state dict
 parser.add_argument("--sample_size", type=int, default=None, help="Subsample the specified number of training data to train lightgbm model.",)
 args = parser.parse_args()
 
@@ -226,7 +226,7 @@ model = Model(
 STATE_DICT_PTH = "results/{args.dataset}_{args.task}_state_dict.pth"
 
 # if state dict exists, load it
-if os.path.exists(STATE_DICT_PTH) and not args.force_retrain:
+if os.path.exists(STATE_DICT_PTH) and args.attempt_load_state_dict:
     # load state dict
     state_dict = torch.load(STATE_DICT_PTH)
     model.load_state_dict(state_dict)
@@ -253,11 +253,8 @@ else:
     # save state dict
     torch.save(state_dict, STATE_DICT_PTH)
 
-# =====================
-# =====================        
 
 
-# Sort according to the validation performance
 val_pred_accum = 0
 test_pred_accum = 0
 
@@ -286,16 +283,15 @@ emb_test, _ = embed(model, loader_dict["test"], no_label=True)
 train_data = (emb_train, y_train)
 val_data = (emb_val, y_val)
 
-# convert tune_metric to  torch-frame Metric format
+# rename tune_metric to  torch-frame Metric format
 from torch_frame.typing import Metric
 from torch_frame import TaskType as TaskTypeTorchFrame
-#breakpoint()
+
 if tune_metric == "roc_auc":
     tune_metric = Metric.ROCAUC
 elif tune_metric == 'mae':
     tune_metric = Metric.MAE
 
-#reakpoint()
     
 relbench2torch_frame = {
     TaskType.MULTILABEL_CLASSIFICATION: TaskTypeTorchFrame.MULTILABEL_CLASSIFICATION,
@@ -306,9 +302,6 @@ task_type = relbench2torch_frame[task.task_type]
 model = LightGBM(task_type=task_type, metric=tune_metric)
 model.tune(train_data, val_data, num_trials=10)
 
-
-#pred = model.predict(emb_train).numpy()
-#print(f"Train: {task.evaluate(pred, task.train_table)}")
 
 pred = model.predict(emb_val).numpy()
 print(f"Val: {task.evaluate(pred, task.val_table)}")
