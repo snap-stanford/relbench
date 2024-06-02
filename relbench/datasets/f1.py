@@ -5,7 +5,7 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.f1 import DidNotFinishTask, PositionTask, QualifyingTask
+from relbench.tasks.f1 import DriverDNFTask, DriverPositionTask, DriverTop3Task
 from relbench.utils import unzip_processor
 
 
@@ -14,11 +14,7 @@ class F1Dataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2005-01-01")
     test_timestamp = pd.Timestamp("2010-01-01")
     max_eval_time_frames = 40
-    task_cls_list = [
-        PositionTask,
-        DidNotFinishTask,
-        QualifyingTask,
-    ]
+    task_cls_list = [DriverPositionTask, DriverDNFTask, DriverTop3Task]
 
     def __init__(
         self,

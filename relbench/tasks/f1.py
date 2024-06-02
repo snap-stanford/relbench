@@ -6,12 +6,11 @@ from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, r2, rmse, roc_auc
 
 
-class PositionTask(RelBenchNodeTask):
+class DriverPositionTask(RelBenchNodeTask):
     r"""Predict the average finishing position of each driver
-    all races in the next 2 months.
-    """
+    all races in the next 2 months."""
 
-    name = "rel-f1-position"
+    name = "driver-position"
     task_type = TaskType.REGRESSION
     entity_col = "driverId"
     entity_table = "drivers"
@@ -65,10 +64,10 @@ class PositionTask(RelBenchNodeTask):
         )
 
 
-class DidNotFinishTask(RelBenchNodeTask):
+class DriverDNFTask(RelBenchNodeTask):
     r"""Predict the if each driver will DNF (not finish) a race in the next 1 month."""
 
-    name = "rel-f1-dnf"
+    name = "driver-dnf"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "driverId"
     entity_table = "drivers"
@@ -125,10 +124,10 @@ class DidNotFinishTask(RelBenchNodeTask):
         )
 
 
-class QualifyingTask(RelBenchNodeTask):
+class DriverTop3Task(RelBenchNodeTask):
     r"""Predict if each driver will qualify in the top-3 for a race within the next 1 month."""
 
-    name = "rel-f1-qualifying"
+    name = "driver-top3"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "driverId"
     entity_table = "drivers"

@@ -182,7 +182,7 @@ dataset2inferred_stypes = {
             "product_id": stype.numerical,
         },
     },
-    "rel-stackex": {
+    "rel-stack": {
         "postLinks": {
             "Id": stype.numerical,
             "RelatedPostId": stype.numerical,
@@ -512,6 +512,3 @@ dataset2inferred_stypes = {
         },
     },
 }
-
-
-dataset2inferred_stypes["rel-math-stackex"] = dataset2inferred_stypes["rel-stackex"]
