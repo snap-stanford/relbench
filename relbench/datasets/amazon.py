@@ -56,7 +56,7 @@ class AmazonDataset(RelBenchDataset):
         self.category = category
         self.use_5_core = use_5_core
 
-        self.name = f"{self.name}-{category}{'_5_core' if use_5_core else ''}"
+        # self.name = f"{self.name}-{category}{'_5_core' if use_5_core else ''}"
 
         super().__init__(process=process)
 
