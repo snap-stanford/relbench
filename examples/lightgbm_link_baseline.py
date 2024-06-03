@@ -13,8 +13,9 @@ from torch_frame.data import Dataset
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 
-from relbench.data import LinkTask, RelBenchDataset, RelBenchLinkTask, Table
+from relbench.data import RelBenchDataset, RelBenchLinkTask, Table
 from relbench.datasets import get_dataset
+from relbench.external.utils import remove_pkey_fkey
 
 LINK_PRED_BASELINE_TARGET_COL_NAME = "link_pred_baseline_target_column_name"
 PRED_SCORE_COL_NAME = "pred_score_col_name"
@@ -39,44 +40,42 @@ test_table = task.test_table
 # entity and target table features during lightGBM training.
 dfs: Dict[str, pd.DataFrame] = {}
 target_dfs: Dict[str, pd.DateOffset] = {}
-lhs_entity_table = dataset.db.table_dict[task.src_entity_table]
-lhs_entity_df = lhs_entity_table.df
-rhs_entity_table = dataset.db.table_dict[task.dst_entity_table]
-rhs_entity_df = rhs_entity_table.df
+src_entity_table = dataset.db.table_dict[task.src_entity_table]
+src_entity_df = src_entity_table.df
+dst_entity_table = dataset.db.table_dict[task.dst_entity_table]
+dst_entity_df = dst_entity_table.df
 
 # Prepare col_to_stype dictioanry mapping between column names and stypes
 # for torch_frame Dataset initialization.
 col_to_stype = {}
-lhs_entity_table_col_to_stype = dataset2inferred_stypes[args.dataset][
+src_entity_table_col_to_stype = dataset2inferred_stypes[args.dataset][
     task.src_entity_table
 ]
-rhs_entity_table_col_to_stype = dataset2inferred_stypes[args.dataset][
+dst_entity_table_col_to_stype = dataset2inferred_stypes[args.dataset][
     task.dst_entity_table
 ]
 
-if lhs_entity_table.pkey_col is not None:
-    del lhs_entity_table_col_to_stype[lhs_entity_table.pkey_col]
-for fkey_col in lhs_entity_table.fkey_col_to_pkey_table.keys():
-    del lhs_entity_table_col_to_stype[fkey_col]
-if rhs_entity_table.pkey_col is not None:
-    del rhs_entity_table_col_to_stype[rhs_entity_table.pkey_col]
-for fkey_col in rhs_entity_table.fkey_col_to_pkey_table.keys():
-    del rhs_entity_table_col_to_stype[fkey_col]
+remove_pkey_fkey(src_entity_table_col_to_stype, src_entity_table)
+remove_pkey_fkey(dst_entity_table_col_to_stype, dst_entity_table)
 
-lhs_rhs_intersection_column_names = set(lhs_entity_table_col_to_stype.keys()) & set(
-    rhs_entity_table_col_to_stype.keys()
+# Rename the column to stype column names appearing in both `src_entity_table`
+# and `dst_entity_table` with `_x` and `_y` suffix respectively since they
+# will automatically be renamed this way after train/val/test table join with
+# both of them in torch frame data preparation.
+src_dst_intersection_column_names = set(src_entity_table_col_to_stype.keys()) & set(
+    dst_entity_table_col_to_stype.keys()
 )
-for column_name in lhs_rhs_intersection_column_names:
-    lhs_entity_table_col_to_stype[f"{column_name}_x"] = lhs_entity_table_col_to_stype[
+for column_name in src_dst_intersection_column_names:
+    src_entity_table_col_to_stype[f"{column_name}_x"] = src_entity_table_col_to_stype[
         column_name
     ]
-    del lhs_entity_table_col_to_stype[column_name]
-    rhs_entity_table_col_to_stype[f"{column_name}_y"] = rhs_entity_table_col_to_stype[
+    del src_entity_table_col_to_stype[column_name]
+    dst_entity_table_col_to_stype[f"{column_name}_y"] = dst_entity_table_col_to_stype[
         column_name
     ]
-    del rhs_entity_table_col_to_stype[column_name]
-col_to_stype.update(lhs_entity_table_col_to_stype)
-col_to_stype.update(rhs_entity_table_col_to_stype)
+    del dst_entity_table_col_to_stype[column_name]
+col_to_stype.update(src_entity_table_col_to_stype)
+col_to_stype.update(dst_entity_table_col_to_stype)
 col_to_stype[target_col_name] = torch_frame.categorical
 
 # Prepare train/val dataset for lightGBM model training. For each lhs
@@ -89,20 +88,20 @@ for split, table in [
     ("train", train_table),
     ("val", val_table),
 ]:
-    lhs_entity_df = lhs_entity_df.astype(
-        {lhs_entity_table.pkey_col: table.df[left_entity].dtype}
+    src_entity_df = src_entity_df.astype(
+        {src_entity_table.pkey_col: table.df[left_entity].dtype}
     )
 
-    rhs_entity_df = rhs_entity_df.astype(
-        {rhs_entity_table.pkey_col: table.df[right_entity].dtype}
+    dst_entity_df = dst_entity_df.astype(
+        {dst_entity_table.pkey_col: table.df[right_entity].dtype}
     )
 
     # Left join train table and entity table
     df = table.df.merge(
-        lhs_entity_df,
+        src_entity_df,
         how="left",
         left_on=left_entity,
-        right_on=lhs_entity_table.pkey_col,
+        right_on=src_entity_table.pkey_col,
     )
 
     # Transform the mapping between one lhs entity with a list of rhs entities
@@ -118,7 +117,7 @@ for split, table in [
     negative_sample_df_columns.remove(right_entity)
     negative_samples_df = df[negative_sample_df_columns]
     negative_samples_df[right_entity] = np.random.choice(
-        rhs_entity_df[rhs_entity_table.pkey_col], size=len(negative_samples_df)
+        dst_entity_df[dst_entity_table.pkey_col], size=len(negative_samples_df)
     )
     negative_samples_df[target_col_name] = 0
 
@@ -127,10 +126,10 @@ for split, table in [
     df = pd.concat([df, negative_samples_df], ignore_index=True)
     df = pd.merge(
         df,
-        rhs_entity_df,
+        dst_entity_df,
         how="left",
         left_on=right_entity,
-        right_on=rhs_entity_table.pkey_col,
+        right_on=dst_entity_table.pkey_col,
     )
     dfs[split] = df
 
@@ -144,15 +143,15 @@ trainval_table_df = pd.concat([train_table.df, val_table.df], axis=0)
 trainval_table_df.drop(columns=[train_table.time_col], inplace=True)
 
 
-def rhs_entities_aggr(rhs_entities):
+def dst_entities_aggr(dst_entities):
     r"concatenate and deduplicate rhs entities"
-    concatenated = [item for sublist in rhs_entities for item in sublist]
+    concatenated = [item for sublist in dst_entities for item in sublist]
     return list(set(concatenated))
 
 
 grouped_deduped_trainval = (
     trainval_table_df.groupby(left_entity)[right_entity]
-    .apply(rhs_entities_aggr)
+    .apply(dst_entities_aggr)
     .reset_index()
 )
 test_df = pd.merge(test_df, grouped_deduped_trainval, how="left", on=left_entity)
@@ -179,18 +178,18 @@ test_df[right_entity] = test_df[right_entity].apply(
 # Include lhs and rhs entity table features for `test_df`
 test_df = pd.merge(
     test_df,
-    lhs_entity_df,
+    src_entity_df,
     how="left",
     left_on=left_entity,
-    right_on=lhs_entity_table.pkey_col,
+    right_on=src_entity_table.pkey_col,
 )
 test_df = test_df.explode(right_entity)
 test_df = pd.merge(
     test_df,
-    rhs_entity_df,
+    dst_entity_df,
     how="left",
     left_on=right_entity,
-    right_on=rhs_entity_table.pkey_col,
+    right_on=dst_entity_table.pkey_col,
 )
 dfs["test"] = test_df
 
