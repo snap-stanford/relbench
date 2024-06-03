@@ -41,37 +41,54 @@ new_name = {
     "rel-trial": "rel-trial",
     # tasks
     ## rel-amazon
+    ### node classification
     "rel-amazon-churn": "user-churn",
-    "rel-amazon-ltv": "user-ltv",
     "rel-amazon-product-churn": "item-churn",
+    ### node regression
+    "rel-amazon-ltv": "user-ltv",
     "rel-amazon-product-ltv": "item-ltv",
+    ### link prediction
     "rel-amazon-rec-purchase": "user-item-purchase",
     "rel-amazon-rec-5-star": "user-item-rate",
     "rel-amazon-rec-detailed-review": "user-item-review",
     ## rel-avito
+    ### node regression
     "rel-avito-click": "user-clicks",
+    ### link prediction
     "rel-avito-rec": "user-ad-click",
     ## rel-event
+    ### node regression
     "rel-event-attendence": "user-attendance",
     ## rel-f1
-    "rel-f1-position": "driver-position",
+    ### node classification
     "rel-f1-dnf": "driver-dnf",
     "rel-f1-qualifying": "driver-top3",
+    ### node regression
+    "rel-f1-position": "driver-position",
     ## rel-hm
-    "rel-hm-rec": "user-item-purchase",
+    ### node classification
     "rel-hm-churn": "user-churn",
+    ### node regression
     "rel-hm-sales": "item-sales",
+    ### link prediction
+    "rel-hm-rec": "user-item-purchase",
     ## rel-stack
+    ### node classification
     "rel-stackex-engage": "user-engagement",
-    "rel-stackex-votes": "post-votes",
     "rel-stackex-badges": "user-badge",
+    ### node regression
+    "rel-stackex-votes": "post-votes",
+    ### link prediction
     "rel-stackex-comment-on-post": "user-post-comment",
     "rel-stackex-related-post": "post-post-related",
     ## rel-trial
+    ### node classification
     "rel-trial-outcome": "study-outcome",
-    "rel-trial-adverse": "study-adverse",
     "rel-trial-withdrawal": "study-withdrawal",
+    ### node regression
+    "rel-trial-adverse": "study-adverse",
     "rel-trial-site": "site-success",
+    ### link prediction
     "rel-trial-sponsor-condition": "condition-sponsor-rec",
     "rel-trial-sponsor-facility": "site-sponsor-rec",
 }
