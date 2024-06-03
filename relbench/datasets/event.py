@@ -9,6 +9,7 @@ import pooch
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.event import UserAttendanceTask
 from relbench.utils import decompress_gz_file
+from relbench.utils import unzip_processor
 
 
 class EventDataset(RelBenchDataset):
@@ -46,7 +47,14 @@ class EventDataset(RelBenchDataset):
                 self.err_msg.format(data=table_path, url=self.url, path=table_path)
 
     def make_db(self) -> Database:
-        path = os.path.join("data", "event-recommendation")
+        url = "https://relbench.stanford.edu/data/rel-event-raw.zip"
+        path = pooch.retrieve(
+            url,
+            known_hash="9cb01d6e5e8bd60db61c769656d69bdd0864ed8030d9932784e8338ed5d1183e",
+            progressbar=True,
+            processor=unzip_processor,
+        )        
+
         zip = os.path.join(path, "event-recommendation-engine-challenge.zip")
         users = os.path.join(path, "users.csv")
         user_friends = os.path.join(path, "user_friends.csv")
