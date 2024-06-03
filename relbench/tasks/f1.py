@@ -199,11 +199,15 @@ class DriverTop3Task(RelBenchNodeTask):
         )
 
 
-class DriverConstructorTask(RelBenchLinkTask):
-    r"""Predict a list of constructors a driver will join in
-    the next 10 years, according to F1 race results."""
+######## link prediction tasks ########
 
-    name = "rel-f1-driver-constructor"
+
+class DriverConstructorResultTask(RelBenchLinkTask):
+    r"""Predict a list of constructors a driver will join in
+    the next 10 years, depending on the F1 race results.
+    """
+
+    name = "driver-constructor-result"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "driverId"
     src_entity_table = "drivers"

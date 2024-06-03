@@ -6,7 +6,7 @@ import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.f1 import (
-    DriverConstructorTask,
+    DriverConstructorResultTask,
     DriverDNFTask,
     DriverPositionTask,
     DriverTop3Task,
@@ -263,7 +263,7 @@ class F1LinkDataset(F1Dataset):
     val_timestamp = pd.Timestamp("2002-01-01")
     test_timestamp = pd.Timestamp("2013-01-01")
     max_eval_time_frames = 1
-    task_cls_list = [DriverConstructorTask]
+    task_cls_list = [DriverConstructorResultTask]
 
     def __init__(
         self,
