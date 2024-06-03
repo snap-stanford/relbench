@@ -5,7 +5,12 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.f1 import DidNotFinishTask, PositionTask, QualifyingTask
+from relbench.tasks.f1 import (
+    DriverConstructorResultTask,
+    DriverDNFTask,
+    DriverPositionTask,
+    DriverTop3Task,
+)
 from relbench.utils import unzip_processor
 
 
@@ -14,11 +19,7 @@ class F1Dataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2005-01-01")
     test_timestamp = pd.Timestamp("2010-01-01")
     max_eval_time_frames = 40
-    task_cls_list = [
-        PositionTask,
-        DidNotFinishTask,
-        QualifyingTask,
-    ]
+    task_cls_list = [DriverPositionTask, DriverDNFTask, DriverTop3Task]
 
     def __init__(
         self,
@@ -44,8 +45,6 @@ class F1Dataset(RelBenchDataset):
 
         path = os.path.join(path, "raw")
 
-        print("Current working directory:", os.getcwd())
-
         circuits = pd.read_csv(os.path.join(path, "circuits.csv"))
         drivers = pd.read_csv(os.path.join(path, "drivers.csv"))
         results = pd.read_csv(os.path.join(path, "results.csv"))
@@ -58,7 +57,10 @@ class F1Dataset(RelBenchDataset):
         )
         qualifying = pd.read_csv(os.path.join(path, "qualifying.csv"))
 
-        ## remove columns that are irrelevant, leak time, or have too many missing values
+        # Remove columns that are irrelevant, leak time,
+        # or have too many missing values
+
+        # Drop the Wikipedia URL and some time columns with many missing values
         races.drop(
             columns=[
                 "url",
@@ -76,16 +78,19 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
+        # Drop the Wikipedia URL as it is unique for each row
         circuits.drop(
-            columns=["url", "alt"],
+            columns=["url"],
             inplace=True,
         )
 
+        # Drop the Wikipedia URL (unique) and number (803 / 857 are nulls)
         drivers.drop(
             columns=["number", "url"],
             inplace=True,
         )
 
+        # Drop the positionText, time, fastestLapTime and fastestLapSpeed
         results.drop(
             columns=[
                 "positionText",
@@ -96,30 +101,41 @@ class F1Dataset(RelBenchDataset):
             inplace=True,
         )
 
+        # Drop the positionText
         standings.drop(
             columns=["positionText"],
             inplace=True,
         )
 
+        # Drop the Wikipedia URL
         constructors.drop(
             columns=["url"],
             inplace=True,
         )
 
+        # Drop the positionText
         constructor_standings.drop(
             columns=["positionText"],
             inplace=True,
         )
 
+        # Drop the status as it only contains two categories, and
+        # only 17 rows have value 'D' (0.138%)
+        constructor_results.drop(
+            columns=["status"],
+            inplace=True,
+        )
+
+        # Drop the time in qualifying 1, 2, and 3
         qualifying.drop(
             columns=["q1", "q2", "q3"],
             inplace=True,
         )
 
-        ## replase missing data and combine date and time columns
+        # replase missing data and combine date and time columns
         races["time"] = races["time"].replace(r"^\\N$", "00:00:00", regex=True)
         races["date"] = races["date"] + " " + races["time"]
-        ## change time column to unix time
+        # Convert date column to pd.Timestamp
         races["date"] = pd.to_datetime(races["date"])
 
         # add time column to other tables
@@ -136,12 +152,18 @@ class F1Dataset(RelBenchDataset):
             races[["raceId", "date"]], on="raceId", how="left"
         )
 
-        # subtract a day from the date to account for the fact
+        # Subtract a day from the date to account for the fact
         # that the qualifying time is the day before the main race
         qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
 
-        # replace "\N" with NaN in all tables
+        # Replace "\N" with NaN in results tables
         results = results.replace(r"^\\N$", np.nan, regex=True)
+
+        # Replace "\N" with NaN in circuits tables, especially
+        # for the column `alt` which has 3 rows of "\N"
+        circuits = circuits.replace(r"^\\N$", np.nan, regex=True)
+        # Convert alt from string to float
+        circuits["alt"] = circuits["alt"].astype(float)
 
         # Convert non-numeric values to NaN in the specified column
         results["rank"] = pd.to_numeric(results["rank"], errors="coerce")
@@ -154,6 +176,9 @@ class F1Dataset(RelBenchDataset):
             results["milliseconds"], errors="coerce"
         )
         results["fastestLap"] = pd.to_numeric(results["fastestLap"], errors="coerce")
+
+        # Convert drivers date of birth to datetime
+        drivers["dob"] = pd.to_datetime(drivers["dob"])
 
         tables = {}
 
@@ -231,3 +256,19 @@ class F1Dataset(RelBenchDataset):
         )
 
         return Database(tables)
+
+
+class F1LinkDataset(F1Dataset):
+    name = "rel-f1-link"
+    val_timestamp = pd.Timestamp("2002-01-01")
+    test_timestamp = pd.Timestamp("2013-01-01")
+    max_eval_time_frames = 1
+    task_cls_list = [DriverConstructorResultTask]
+
+    def __init__(
+        self,
+        *,
+        process: bool = False,
+        cache_dir: str = None,
+    ):
+        super().__init__(process=process, cache_dir=cache_dir)

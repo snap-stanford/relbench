@@ -9,13 +9,13 @@ import pandas as pd
 
 from relbench.data import Database, Dataset, Table
 from relbench.tasks.amazon import (
-    ChurnTask,
-    LTVTask,
-    ProductChurnTask,
-    ProductDetailedReviewRecommendationTask,
-    ProductFiveStarRecommendationTask,
-    ProductLTVTask,
-    ProductRecommendationTask,
+    ItemChurnTask,
+    ItemLTVTask,
+    UserChurnTask,
+    UserItemPurchaseTask,
+    UserItemRateTask,
+    UserItemReviewTask,
+    UserLTVTask,
 )
 
 
@@ -33,8 +33,9 @@ class FakeDataset(Dataset):
         num_products: int = 30,
         num_customers: int = 100,
         num_reviews: int = 600,
+        num_relations: int = 20,
     ):
-        db = self.make_db(num_products, num_customers, num_reviews)
+        db = self.make_db(num_products, num_customers, num_reviews, num_relations)
         db.reindex_pkeys_and_fkeys()
         val_timestamp = db.min_timestamp + 0.8 * (db.max_timestamp - db.min_timestamp)
         test_timestamp = db.min_timestamp + 0.9 * (db.max_timestamp - db.min_timestamp)
@@ -46,17 +47,19 @@ class FakeDataset(Dataset):
             test_timestamp=test_timestamp,
             max_eval_time_frames=max_eval_time_frames,
             task_cls_list=[
-                ChurnTask,
-                ProductChurnTask,
-                LTVTask,
-                ProductLTVTask,
-                ProductRecommendationTask,
-                ProductFiveStarRecommendationTask,
-                ProductDetailedReviewRecommendationTask,
+                UserChurnTask,
+                UserLTVTask,
+                ItemChurnTask,
+                ItemLTVTask,
+                UserItemPurchaseTask,
+                UserItemRateTask,
+                UserItemReviewTask,
             ],
         )
 
-    def make_db(self, num_products, num_customers, num_reviews) -> Database:
+    def make_db(
+        self, num_products, num_customers, num_reviews, num_relations
+    ) -> Database:
         product_df = pd.DataFrame(
             {
                 "product_id": [f"product_id_{i}" for i in range(num_products)],
@@ -87,6 +90,18 @@ class FakeDataset(Dataset):
                 "rating": np.random.randint(1, 6, size=(num_reviews,)),
             }
         )
+        relations_df = pd.DataFrame(
+            {
+                "customer_id": [
+                    f"customer_id_{random.randint(0, num_customers+5)}"
+                    for _ in range(num_relations)
+                ],
+                "product_id": [
+                    f"product_id_{random.randint(0, num_products-1)}"
+                    for _ in range(num_relations)
+                ],
+            }
+        )
 
         return Database(
             table_dict={
@@ -107,6 +122,13 @@ class FakeDataset(Dataset):
                         "product_id": "product",
                     },
                     time_col="review_time",
+                ),
+                "relations": Table(
+                    df=relations_df,
+                    fkey_col_to_pkey_table={
+                        "customer_id": "customer",
+                        "product_id": "product",
+                    },
                 ),
             }
         )

@@ -1,9 +1,20 @@
+from datetime import timedelta
+
+import numpy as np
+import pandas as pd
+import torch
 from torch_frame import TensorFrame
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
 
+from relbench.data import LinkTask
 from relbench.datasets import FakeDataset
-from relbench.external.graph import get_stype_proposal, make_pkey_fkey_graph
+from relbench.external.graph import (
+    get_link_train_table_input,
+    get_stype_proposal,
+    make_pkey_fkey_graph,
+)
+from relbench.metrics import link_prediction_map
 
 
 def test_make_pkey_fkey_graph():
@@ -17,7 +28,7 @@ def test_make_pkey_fkey_graph():
             batch_size=None,
         ),
     )
-    assert set(data.node_types) == {"customer", "review", "product"}
+    assert set(data.node_types) == {"customer", "review", "product", "relations"}
 
     data.validate()
 
@@ -30,7 +41,9 @@ def test_make_pkey_fkey_graph():
     assert data["product"].num_nodes == 30
     assert isinstance(data["product"].tf, TensorFrame)
 
-    assert len(data.edge_types) == 4
+    assert isinstance(data["relations"].tf, TensorFrame)
+
+    assert len(data.edge_types) == 8
     for edge_type in data.edge_types:
         src, _, dst = edge_type
 

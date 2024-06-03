@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.hm import ArticleSalesTask, ChurnTask, RecommendationTask
+from relbench.tasks.hm import ItemSalesTask, UserChurnTask, UserItemPurchaseTask
 
 
 class HMDataset(RelBenchDataset):
@@ -20,7 +20,7 @@ class HMDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2020-09-07")
     test_timestamp = pd.Timestamp("2020-09-14")
     max_eval_time_frames = 1
-    task_cls_list = [RecommendationTask, ChurnTask, ArticleSalesTask]
+    task_cls_list = [UserItemPurchaseTask, UserChurnTask, ItemSalesTask]
 
     def __init__(
         self,

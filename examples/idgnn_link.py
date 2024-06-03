@@ -25,7 +25,7 @@ from relbench.external.loader import SparseTensor
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-hm")
-parser.add_argument("--task", type=str, default="rel-hm-rec")
+parser.add_argument("--task", type=str, default="user-item-purchase")
 parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--eval_epochs_interval", type=int, default=1)
@@ -104,7 +104,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 train_sparse_tensor = SparseTensor(dst_nodes_dict["train"][1], device=device)
 
 
-def train() -> Dict[str, float]:
+def train() -> float:
     model.train()
 
     loss_accum = count_accum = 0
