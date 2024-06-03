@@ -190,7 +190,7 @@ model = Model(
 ).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 state_dict = None
-best_val_metric = 0 if higher_is_better else math.inf
+best_val_metric = -math.inf if higher_is_better else math.inf
 for epoch in range(1, args.epochs + 1):
     train_loss = train()
     val_pred = test(loader_dict["val"])
