@@ -2,14 +2,15 @@ import argparse
 import copy
 
 import torch
-from relbench.data import LinkTask, RelBenchDataset
-from relbench.data.table import Table
-from relbench.data.task_base import TaskType
-from relbench.datasets import get_dataset
 from torch.utils.tensorboard import SummaryWriter
 from torch_geometric.nn import Node2Vec
 from torch_geometric.seed import seed_everything
 from torch_geometric.utils import to_undirected
+
+from relbench.data import LinkTask, RelBenchDataset
+from relbench.data.table import Table
+from relbench.data.task_base import TaskType
+from relbench.datasets import get_dataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-trial")
@@ -101,8 +102,9 @@ for epoch in range(1, args.epochs + 1):
     train_loss = train()
     val_pred = test(task.val_table, task.eval_k)
     val_metrics = task.evaluate(val_pred, task.val_table)
-    print(f"Epoch: {epoch:02d}, Train loss: {train_loss}, "
-          f"Val metrics: {val_metrics}")
+    print(
+        f"Epoch: {epoch:02d}, Train loss: {train_loss}, " f"Val metrics: {val_metrics}"
+    )
 
     if val_metrics[tune_metric] >= best_val_metric:
         best_val_metric = val_metrics[tune_metric]
