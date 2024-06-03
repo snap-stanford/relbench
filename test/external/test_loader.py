@@ -1,4 +1,5 @@
 import random
+from typing import Tuple
 
 import torch
 from torch import Tensor
@@ -8,7 +9,7 @@ from relbench.external.loader import CustomLinkDataset, SparseTensor
 
 def get_lp_setup(
     num_src_nodes, num_dst_nodes, num_timestamps
-) -> tuple[Tensor, Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor, Tensor]:
     src_node_indices = []
     src_time = []
     edge_indices = []

@@ -28,7 +28,8 @@ parser.add_argument("--log_dir", type=str, default="results")
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+if torch.cuda.is_available():
+    torch.set_num_threads(1)
 seed_everything(42)
 
 root_dir = "./data"
@@ -92,9 +93,9 @@ def get_valid_test_dst_entities():
 def test(table: Table, k):
     model.eval()
     z = model()
-    lhs = z[table.df[task.src_entity_col].values]
-    rhs = z[get_valid_test_dst_entities()]
-    _, indices = torch.topk(lhs @ rhs.T, k)
+    src = z[table.df[task.src_entity_col].values]
+    dst = z[get_valid_test_dst_entities()]
+    _, indices = torch.topk(src @ dst.T, k)
     dst_ids = df[task.dst_entity_col].astype(int).values
     mapped_tensor = torch.take(torch.from_numpy(dst_ids), indices)
     return mapped_tensor

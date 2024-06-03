@@ -49,7 +49,7 @@ def test_node_train_fake_product_dataset(tmp_path):
     assert x.size() == (100, 1)
 
     # Ensure that neighbor loading works on train/val/test splits ############
-    task = dataset.get_task("rel-amazon-churn", process=True)
+    task = dataset.get_task("user-churn", process=True)
     assert task.task_type == TaskType.BINARY_CLASSIFICATION
 
     loader_dict: Dict[str, NeighborLoader] = {}
