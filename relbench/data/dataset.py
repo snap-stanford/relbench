@@ -11,10 +11,10 @@ from typing import Any, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
+import pooch
 from torch_frame import stype
 from torch_frame.data import StatType
 from torch_frame.data.stats import compute_col_stats
-import pooch
 
 from relbench import _pooch
 from relbench.data.database import Database
