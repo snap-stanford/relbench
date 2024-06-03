@@ -8,8 +8,7 @@ import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.event import UserAttendanceTask
-from relbench.utils import decompress_gz_file
-from relbench.utils import unzip_processor
+from relbench.utils import decompress_gz_file, unzip_processor
 
 
 class EventDataset(RelBenchDataset):
@@ -53,7 +52,7 @@ class EventDataset(RelBenchDataset):
             known_hash="9cb01d6e5e8bd60db61c769656d69bdd0864ed8030d9932784e8338ed5d1183e",
             progressbar=True,
             processor=unzip_processor,
-        )        
+        )
 
         zip = os.path.join(path, "event-recommendation-engine-challenge.zip")
         users = os.path.join(path, "users.csv")

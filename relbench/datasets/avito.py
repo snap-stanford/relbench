@@ -7,8 +7,7 @@ import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.avito import UserAdClickTask, UserClicksTask
-from relbench.utils import clean_datetime
-from relbench.utils import unzip_processor
+from relbench.utils import clean_datetime, unzip_processor
 
 
 class AvitoDataset(RelBenchDataset):
@@ -39,7 +38,7 @@ class AvitoDataset(RelBenchDataset):
             known_hash="24ae408ee546cf9171742288d1ec6c52e60d332dd47f58eb78fabc64a3034f43",
             progressbar=True,
             processor=unzip_processor,
-        )        
+        )
         path = os.path.join(path, "avito_500k_integ_test")
 
         # Define table names
