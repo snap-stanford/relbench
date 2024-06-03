@@ -2,34 +2,29 @@ import argparse
 import copy
 
 import torch
-from inferred_stypes import dataset2inferred_stypes
+from relbench.data import LinkTask, RelBenchDataset
+from relbench.data.table import Table
+from relbench.data.task_base import TaskType
+from relbench.datasets import get_dataset
 from torch.utils.tensorboard import SummaryWriter
 from torch_geometric.nn import Node2Vec
 from torch_geometric.seed import seed_everything
 from torch_geometric.utils import to_undirected
 
-from relbench.data import LinkTask, RelBenchDataset
-from relbench.data.table import Table
-from relbench.data.task_base import TaskType
-from relbench.datasets import get_dataset
-from relbench.external.graph import make_pkey_fkey_graph
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-trial")
-parser.add_argument("--task", type=str, default="rel-trial-sponsor-condition")
-parser.add_argument("--lr", type=float, default=0.001)
+parser.add_argument("--task", type=str, default="condition-sponsor-rec")
+parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--epochs", type=int, default=3000)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--embedding_dim", type=int, default=128)
-parser.add_argument("--walk_length", type=int, default=10)
-parser.add_argument("--context_size", type=int, default=5)
-parser.add_argument("--num_workers", type=int, default=1)
+parser.add_argument("--walk_length", type=int, default=4)
+parser.add_argument("--context_size", type=int, default=2)
+parser.add_argument("--num_workers", type=int, default=8)
 parser.add_argument("--log_dir", type=str, default="results")
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if torch.cuda.is_available():
-    torch.set_num_threads(1)
 seed_everything(42)
 
 root_dir = "./data"
@@ -40,19 +35,13 @@ task: LinkTask = dataset.get_task(args.task, process=True)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
-col_to_stype_dict = dataset2inferred_stypes[args.dataset]
-
-
 num_src_nodes = task.num_src_nodes
 df = task.train_table.df.explode(task.dst_entity_col)
-# edge from src to dst
-edge_index = torch.stack(
-    [
-        torch.from_numpy(df[task.src_entity_col].astype(int).values),
-        (torch.from_numpy(df[task.dst_entity_col].astype(int).values + num_src_nodes)),
-    ]
-)
 
+# Directional training table edges:
+src = torch.from_numpy(df[task.src_entity_col].astype(int).values)
+dst = torch.from_numpy(df[task.dst_entity_col].astype(int).values)
+edge_index = torch.stack([src, dst + num_src_nodes], dim=0)
 
 model = Node2Vec(
     edge_index=to_undirected(edge_index),
@@ -66,7 +55,9 @@ model = Node2Vec(
 ).to(device)
 
 loader = model.loader(
-    batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers
+    batch_size=args.batch_size,
+    shuffle=True,
+    num_workers=args.num_workers,
 )
 optimizer = torch.optim.SparseAdam(model.parameters(), lr=args.lr)
 
@@ -110,9 +101,8 @@ for epoch in range(1, args.epochs + 1):
     train_loss = train()
     val_pred = test(task.val_table, task.eval_k)
     val_metrics = task.evaluate(val_pred, task.val_table)
-    print(
-        f"Epoch: {epoch:02d}, Train loss: {train_loss}, " f"Val metrics: {val_metrics}"
-    )
+    print(f"Epoch: {epoch:02d}, Train loss: {train_loss}, "
+          f"Val metrics: {val_metrics}")
 
     if val_metrics[tune_metric] >= best_val_metric:
         best_val_metric = val_metrics[tune_metric]
