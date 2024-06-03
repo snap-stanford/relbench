@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import torch
 import torch_frame
-from inferred_stypes import dataset2inferred_stypes
 from text_embedder import GloveTextEmbedding
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
@@ -85,7 +84,7 @@ dfs: Dict[str, pd.DataFrame] = {}
 entity_table = dataset.db.table_dict[task.entity_table]
 entity_df = entity_table.df
 
-col_to_stype = dataset2inferred_stypes[args.dataset][task.entity_table]
+col_to_stype = dataset.col_to_stype_dict[task.entity_table]
 
 if entity_table.pkey_col is not None:
     del col_to_stype[entity_table.pkey_col]

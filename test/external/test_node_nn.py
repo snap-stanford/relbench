@@ -52,6 +52,12 @@ def test_node_train_fake_product_dataset(tmp_path):
     task = dataset.get_task("user-churn", process=True)
     assert task.task_type == TaskType.BINARY_CLASSIFICATION
 
+    # Ensure that stats computation works on train/val/test splits ###########
+    train_stats = task.stats(split="train")
+    val_stats = task.stats(split="val")
+    assert len(train_stats) == 10
+    assert len(val_stats) == 1
+
     loader_dict: Dict[str, NeighborLoader] = {}
     for split, table in [
         ("train", task.train_table),

@@ -1,11 +1,25 @@
+from __future__ import annotations
+
 import os
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import pandas as pd
 from numpy.typing import NDArray
+from torch_frame import stype
+from torch_frame.data.stats import compute_col_stats
 
 from relbench.data.table import Table
-from relbench.data.task_base import BaseTask, _pack_tables
+from relbench.data.task_base import BaseTask, TaskType, _pack_tables
 
 if TYPE_CHECKING:
     from relbench.data import Dataset
@@ -93,3 +107,34 @@ class RelBenchNodeTask(NodeTask):
 
         def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
             return _pack_tables(self, root)
+
+    def stats(
+        self, split: Literal["train", "val", "test"] = "train"
+    ) -> dict[str, dict[str, Any]]:
+        if split == "train":
+            table = self.train_table
+        elif split == "val":
+            table = self.val_table
+        else:
+            table = self.test_table
+        timestamps = table.df[self.time_col].unique()
+        target_stype = stype.categorical
+        if self.task_type == TaskType.REGRESSION:
+            target_stype = stype.numerical
+        if self.task_type == TaskType.MULTILABEL_CLASSIFICATION:
+            raise ValueError(f"Unsupported task type{self.task_type}")
+        res = {}
+        for timestamp in timestamps:
+            temp_df = table.df[table.df[self.time_col] == timestamp]
+            entity_col_stats = compute_col_stats(
+                temp_df[self.entity_col], stype.categorical
+            )
+            target_col_stats = compute_col_stats(
+                temp_df[self.target_col],
+                target_stype,
+            )
+            res[str(timestamp)] = {
+                self.entity_col: entity_col_stats,
+                self.target_col: target_col_stats,
+            }
+        return res

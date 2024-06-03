@@ -6,7 +6,6 @@ from typing import Dict, Tuple
 import numpy as np
 import torch
 import torch.nn.functional as F
-from inferred_stypes import dataset2inferred_stypes
 from model import Model
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
@@ -53,11 +52,9 @@ task: LinkTask = dataset.get_task(args.task, process=True)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
-col_to_stype_dict = dataset2inferred_stypes[args.dataset]
-
 data, col_stats_dict = make_pkey_fkey_graph(
     dataset.db,
-    col_to_stype_dict=col_to_stype_dict,
+    col_to_stype_dict=dataset.col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),

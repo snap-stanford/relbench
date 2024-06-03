@@ -1,9 +1,23 @@
+from __future__ import annotations
+
 import os
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
+from torch_frame import stype
+from torch_frame.data.stats import StatType, compute_col_stats
 
 from relbench.data.table import Table
 from relbench.data.task_base import BaseTask, _pack_tables
@@ -148,3 +162,37 @@ class RelBenchLinkTask(LinkTask):
 
         def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
             return _pack_tables(self, root)
+
+    def stats(
+        self, split: Literal["train", "val", "test"] = "train"
+    ) -> dict[str, dict[str, Any]]:
+        r"""Get source and destination entity column number of unique
+        entities, and average degree between source and destination entity
+        columns for each timestamp.
+        """
+        if split == "train":
+            table = self.train_table
+        elif split == "val":
+            table = self.val_table
+        else:
+            table = self.test_table
+        timestamps = table.df[self.time_col].unique()
+        res = {}
+        for timestamp in timestamps:
+            temp_df = table.df[table.df[self.time_col] == timestamp]
+            src_entity_stats = compute_col_stats(
+                temp_df[self.src_entity_col], stype.categorical
+            )
+            dst_entity_stats = compute_col_stats(
+                temp_df[self.dst_entity_col], stype.multicategorical
+            )
+            src_entity_col_num_unique = sum(src_entity_stats[StatType.COUNT][1])
+            dst_entity_col_num_unique = sum(dst_entity_stats[StatType.MULTI_COUNT][1])
+            res[str(timestamp)] = {
+                "src_entity_col_num_unique": src_entity_col_num_unique,
+                "dst_entity_col_num_unique": dst_entity_col_num_unique,
+                "avg_degree": round(
+                    dst_entity_col_num_unique / src_entity_col_num_unique, 4
+                ),
+            }
+        return res

@@ -1,11 +1,11 @@
-import os
+from __future__ import annotations
+
 import time
-from typing import Union
 
 import pandas as pd
 import pooch
 import pyarrow as pa
-import pyarrow.json
+from torch_frame import stype
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.amazon import (
@@ -252,3 +252,29 @@ class AmazonDataset(RelBenchDataset):
                 ),
             }
         )
+
+    @property
+    def col_to_stype_dict(self) -> dict[str, dict[str, stype]]:
+        return {
+            "product": {
+                "product_id": stype.numerical,
+                "brand": stype.text_embedded,
+                "title": stype.text_embedded,
+                "description": stype.text_embedded,
+                "price": stype.numerical,
+                "category": stype.multicategorical,
+            },
+            "customer": {
+                "customer_id": stype.numerical,
+                "customer_name": stype.text_embedded,
+            },
+            "review": {
+                "review_text": stype.text_embedded,
+                "summary": stype.text_embedded,
+                "review_time": stype.timestamp,
+                "rating": stype.numerical,
+                "verified": stype.categorical,
+                "customer_id": stype.numerical,
+                "product_id": stype.numerical,
+            },
+        }
