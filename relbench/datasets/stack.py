@@ -4,28 +4,28 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.stackex import (
-    BadgesTask,
-    EngageTask,
-    RelatedPostTask,
-    UserCommentOnPostTask,
-    VotesTask,
+from relbench.tasks.stack import (
+    PostPostRelatedTask,
+    PostVotesTask,
+    UserBadgeTask,
+    UserEngagementTask,
+    UserPostCommentTask,
 )
-from relbench.utils import unzip_processor
+from relbench.utils import clean_datetime, unzip_processor
 
 
-class StackExDataset(RelBenchDataset):
-    name = "rel-stackex"
+class StackDataset(RelBenchDataset):
+    name = "rel-stack"
     # 3 months gap
     val_timestamp = pd.Timestamp("2020-10-01")
     test_timestamp = pd.Timestamp("2021-01-01")
     max_eval_time_frames = 1
     task_cls_list = [
-        EngageTask,
-        VotesTask,
-        BadgesTask,
-        UserCommentOnPostTask,
-        RelatedPostTask,
+        UserEngagementTask,
+        PostVotesTask,
+        UserBadgeTask,
+        UserPostCommentTask,
+        PostPostRelatedTask,
     ]
 
     def __init__(
@@ -82,15 +82,13 @@ class StackExDataset(RelBenchDataset):
         comments.drop(columns=["Score"], inplace=True)
         votes.drop(columns=["BountyAmount"], inplace=True)
 
-        ## change time column to pd timestamp series
-        comments["CreationDate"] = pd.to_datetime(comments["CreationDate"])
-        badges["Date"] = pd.to_datetime(badges["Date"])
-        postLinks["CreationDate"] = pd.to_datetime(postLinks["CreationDate"])
-
-        postHistory["CreationDate"] = pd.to_datetime(postHistory["CreationDate"])
-        votes["CreationDate"] = pd.to_datetime(votes["CreationDate"])
-        posts["CreationDate"] = pd.to_datetime(posts["CreationDate"])
-        users["CreationDate"] = pd.to_datetime(users["CreationDate"])
+        comments = clean_datetime(comments, "CreationDate")
+        badges = clean_datetime(badges, "Date")
+        postLinks = clean_datetime(postLinks, "CreationDate")
+        postHistory = clean_datetime(postHistory, "CreationDate")
+        votes = clean_datetime(votes, "CreationDate")
+        users = clean_datetime(users, "CreationDate")
+        posts = clean_datetime(posts, "CreationDate")
 
         tables = {}
 
