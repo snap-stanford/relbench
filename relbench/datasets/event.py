@@ -80,7 +80,7 @@ class EventDataset(RelBenchDataset):
         ).dt.tz_localize(None)
 
         event_interest_df["timestamp"] = pd.to_datetime(
-            event_interest_df["timestamp"]
+            event_interest_df["timestamp"], errors="coerce"
         ).dt.tz_localize(None)
         event_attendees_df["start_time"] = pd.to_datetime(
             event_attendees_df["start_time"], errors="coerce"
