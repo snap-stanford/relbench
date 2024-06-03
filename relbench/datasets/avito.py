@@ -12,6 +12,10 @@ from relbench.utils import clean_datetime
 class AvitoDataset(RelBenchDataset):
     name = "rel-avito"
     url = "https://www.kaggle.com/competitions/avito-context-ad-clicks"
+    err_msg = (
+        "{data} not found. Please download avito data from "
+        "'{url}' and move it to '{path}'."
+    )
 
     # search stream ranges from 2015-04-25 to 2015-05-20
     train_start_timestamp = pd.Timestamp("2015-04-25")
@@ -30,7 +34,7 @@ class AvitoDataset(RelBenchDataset):
 
     def make_db(self) -> Database:
         # Customize path as necessary
-        path = os.path.join("data", "avito_integ_test")
+        path = os.path.join("data", "avito_integ_test_v1")
 
         # Define table names
         ads_info = os.path.join(path, "AdsInfo")
@@ -41,6 +45,10 @@ class AvitoDataset(RelBenchDataset):
         search_stream = os.path.join(path, "SearchStream")
         user_info = os.path.join(path, "UserInfo")
         visit_stream = os.path.join(path, "VisitStream")
+        if not os.path.exists(ads_info):
+            raise RuntimeError(
+                self.err_msg.format(data="Dataset", url=self.url, path=path)
+            )
 
         # Load table as pandas dataframes
         ads_info_df = pd.read_parquet(ads_info)
