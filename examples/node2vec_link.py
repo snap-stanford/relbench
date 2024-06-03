@@ -1,9 +1,7 @@
 import argparse
 import copy
-import os
 
 import torch
-import torch_frame
 from inferred_stypes import dataset2inferred_stypes
 from torch.utils.tensorboard import SummaryWriter
 from torch_geometric.nn import Node2Vec
@@ -42,20 +40,6 @@ tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
-
-# We don't need to specify any text column or use any text
-# embeddings as features are not used in node2vec baseline
-for table_name, table_col_to_stype in col_to_stype_dict.items():
-    for col, stype in table_col_to_stype.items():
-        if stype == torch_frame.text_embedded:
-            col_to_stype_dict[table_name][col] = torch_frame.categorical
-
-
-data, col_stats_dict = make_pkey_fkey_graph(
-    dataset.db,
-    col_to_stype_dict=col_to_stype_dict,
-    cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
-)
 
 
 num_src_nodes = task.num_src_nodes
