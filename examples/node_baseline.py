@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 from scipy.stats import mode
+from torch_geometric.seed import seed_everything
 
 from relbench.data import RelBenchDataset, Table
 from relbench.data.task_base import TaskType
@@ -14,6 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
 parser.add_argument("--task", type=str, default="user-engagement")
 # <<<
+parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--roach_project",
     type=str,
@@ -29,6 +31,7 @@ if args.roach_project:
     roach.store["args"] = args.__dict__
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+seed_everything(args.seed)
 
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
 # >>>
