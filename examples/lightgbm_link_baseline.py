@@ -78,9 +78,9 @@ col_to_stype.update(src_entity_table_col_to_stype)
 col_to_stype.update(dst_entity_table_col_to_stype)
 col_to_stype[target_col_name] = torch_frame.categorical
 
-# Prepare train/val dataset for lightGBM model training. For each lhs
-# entity, their corresponding rhs entities are used as positive label.
-# The same number of random rhs entities are sampled as negative label.
+# Prepare train/val dataset for lightGBM model training. For each src
+# entity, their corresponding dst entities are used as positive label.
+# The same number of random dst entities are sampled as negative label.
 # lightGBM will train and eval on this binary classification task.
 left_entity = list(train_table.fkey_col_to_pkey_table.keys())[0]
 right_entity = list(train_table.fkey_col_to_pkey_table.keys())[1]
@@ -104,14 +104,14 @@ for split, table in [
         right_on=src_entity_table.pkey_col,
     )
 
-    # Transform the mapping between one lhs entity with a list of rhs entities
-    # to lhs entity, rhs entity pairs
+    # Transform the mapping between one src entity with a list of dst entities
+    # to src entity, dst entity pairs
     df = df.explode(right_entity)
 
-    # Add a target col indicating there is a link between lhs and rhs entities
+    # Add a target col indicating there is a link between src and dst entities
     df[target_col_name] = 1
 
-    # Create a negative sampling df, containing lhs and rhs entities pairs,
+    # Create a negative sampling df, containing src and dst entities pairs,
     # such that there are no links between them.
     negative_sample_df_columns = list(df.columns)
     negative_sample_df_columns.remove(right_entity)
@@ -138,13 +138,13 @@ test_df_column_names = list(test_table.df.columns)
 test_df_column_names.remove(right_entity)
 test_df = test_table.df[test_df_column_names]
 
-# Per each lhs entity, collect all past linked rhs entities
+# Per each src entity, collect all past linked dst entities
 trainval_table_df = pd.concat([train_table.df, val_table.df], axis=0)
 trainval_table_df.drop(columns=[train_table.time_col], inplace=True)
 
 
 def dst_entities_aggr(dst_entities):
-    r"concatenate and deduplicate rhs entities"
+    r"concatenate and deduplicate dst entities"
     concatenated = [item for sublist in dst_entities for item in sublist]
     return list(set(concatenated))
 
@@ -156,26 +156,26 @@ grouped_deduped_trainval = (
 )
 test_df = pd.merge(test_df, grouped_deduped_trainval, how="left", on=left_entity)
 
-# collect the most popular rhs entities
-all_rhs_entities = [
+# collect the most popular dst entities
+all_dst_entities = [
     entity for sublist in trainval_table_df[right_entity] for entity in sublist
 ]
-rhs_entity_counter = Counter(all_rhs_entities)
-top_rhs_entities = [
-    entity for entity, _ in rhs_entity_counter.most_common(task.eval_k * 2)
+dst_entity_counter = Counter(all_dst_entities)
+top_dst_entities = [
+    entity for entity, _ in dst_entity_counter.most_common(task.eval_k * 2)
 ]
 test_df[right_entity] = test_df[right_entity].apply(
-    lambda x: x + top_rhs_entities if isinstance(x, list) else top_rhs_entities
+    lambda x: x + top_dst_entities if isinstance(x, list) else top_dst_entities
 )
 
-# For each lhs entity, keep at most `task.eval_k * 2` rhs entity candidates
+# For each src entity, keep at most `task.eval_k * 2` dst entity candidates
 test_df[right_entity] = test_df[right_entity].apply(
     lambda x: (
         x[: task.eval_k * 2] if isinstance(x, list) and len(x) > task.eval_k * 2 else x
     )
 )
 
-# Include lhs and rhs entity table features for `test_df`
+# Include src and dst entity table features for `test_df`
 test_df = pd.merge(
     test_df,
     src_entity_df,
@@ -214,8 +214,8 @@ model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
 
 def evaluate(
     lightgbm_output: pd.DataFrame,
-    lhs_entity_name: str,
-    rhs_entity_name: str,
+    src_entity_name: str,
+    dst_entity_name: str,
     timestamp_col_name: str,
     eval_k: int,
     pred_score: float,
@@ -229,8 +229,8 @@ def evaluate(
     Args:
         lightgbm_output (pd.DataFrame): The lightGBM input dataframe merged
             with output prediction scores.
-        lhs_entity_name (str): The lhs entity name.
-        rhs_entity_name (str): The rhs entity name
+        src_entity_name (str): The src entity name.
+        dst_entity_name (str): The dst entity name
         timestamp_col (str): The name of the time column.
         eval_k (int): Pre-defined eval k parameter for link pred metric
             evaluation.
@@ -242,7 +242,7 @@ def evaluate(
         Dict[str, float]: The link pred metrics
     """
 
-    def adjust_past_rhs_entities(values):
+    def adjust_past_dst_entities(values):
         if len(values) < eval_k:
             return values + [-1] * (eval_k - len(values))
         else:
@@ -250,18 +250,18 @@ def evaluate(
 
     grouped_df = (
         lightgbm_output.sort_values(pred_score, ascending=False)
-        .groupby([lhs_entity_name, timestamp_col_name])[rhs_entity_name]
+        .groupby([src_entity_name, timestamp_col_name])[dst_entity_name]
         .apply(list)
         .reset_index()
     )
-    grouped_df = train_table.df[[lhs_entity_name, timestamp_col_name]].merge(
-        grouped_df, on=[lhs_entity_name, timestamp_col_name], how="left"
+    grouped_df = train_table.df[[src_entity_name, timestamp_col_name]].merge(
+        grouped_df, on=[src_entity_name, timestamp_col_name], how="left"
     )
-    rhs_entity_array = (
-        grouped_df[rhs_entity_name].apply(adjust_past_rhs_entities).tolist()
+    dst_entity_array = (
+        grouped_df[dst_entity_name].apply(adjust_past_dst_entities).tolist()
     )
-    rhs_entity_array = np.array(rhs_entity_array, dtype=int)
-    metrics = task.evaluate(rhs_entity_array, train_table)
+    dst_entity_array = np.array(dst_entity_array, dtype=int)
+    metrics = task.evaluate(dst_entity_array, train_table)
     return metrics
 
 
