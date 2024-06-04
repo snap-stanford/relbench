@@ -13,10 +13,9 @@ from typing import (
     Union,
 )
 
+import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from torch_frame import stype
-from torch_frame.data.stats import compute_col_stats
 
 from relbench.data.table import Table
 from relbench.data.task_base import BaseTask, TaskType, _pack_tables
@@ -111,6 +110,17 @@ class RelBenchNodeTask(NodeTask):
     def stats(
         self, split: Literal["train", "val", "test"] = "train"
     ) -> dict[str, dict[str, Any]]:
+        r"""Get train / val / test table statistics for each timestamp
+        and the whole table, including number of rows and number of entities.
+        Task with different task type has different statistics computed:
+
+        BINARY_CLASSIFICATION: Number of positives and negatives.
+        REGRESSION: Minimum, maximum, mean, median, quantile 25 and,
+            quantile 75 of the target values.
+        MULTILABEL_CLASSIFICATION: Mean, minimum and maximum number of
+            classes per entity. Number and index of classes having minimum
+            and maximum number of classes.
+        """
         if split == "train":
             table = self.train_table
         elif split == "val":
@@ -118,23 +128,68 @@ class RelBenchNodeTask(NodeTask):
         else:
             table = self.test_table
         timestamps = table.df[self.time_col].unique()
-        target_stype = stype.categorical
-        if self.task_type == TaskType.REGRESSION:
-            target_stype = stype.numerical
-        if self.task_type == TaskType.MULTILABEL_CLASSIFICATION:
-            raise ValueError(f"Unsupported task type{self.task_type}")
         res = {}
         for timestamp in timestamps:
             temp_df = table.df[table.df[self.time_col] == timestamp]
-            entity_col_stats = compute_col_stats(
-                temp_df[self.entity_col], stype.categorical
-            )
-            target_col_stats = compute_col_stats(
-                temp_df[self.target_col],
-                target_stype,
-            )
-            res[str(timestamp)] = {
-                self.entity_col: entity_col_stats,
-                self.target_col: target_col_stats,
+            stats = {
+                "num_rows": len(temp_df),
+                "num_unique_entities": temp_df[self.entity_col].nunique(),
             }
+            if self.task_type == TaskType.BINARY_CLASSIFICATION:
+                stats["num_positives"] = (temp_df[self.target_col] == 1).sum()
+                stats["num_negatives"] = (temp_df[self.target_col] == 0).sum()
+            elif self.task_type == TaskType.REGRESSION:
+                stats["min_target"] = temp_df[self.target_col].min()
+                stats["max_target"] = temp_df[self.target_col].max()
+                stats["mean_target"] = temp_df[self.target_col].mean()
+                quantiles = temp_df[self.target_col].quantile([0.25, 0.5, 0.75])
+                stats["quantile_25_target"] = quantiles.iloc[0]
+                stats["median_target"] = quantiles.iloc[1]
+                stats["quantile_75_target"] = quantiles.iloc[2]
+            elif self.task_type == TaskType.MULTILABEL_CLASSIFICATION:
+                arr = np.array([row for row in temp_df[self.target_col]])
+                arr_row = arr.sum(1)
+                stats["mean_num_classes_per_entity"] = round(arr_row.mean(), 4)
+                stats["max_num_classes_per_entity"] = arr_row.max()
+                stats["min_num_classes_per_entity"] = arr_row.min()
+                arr_class = arr.sum(0)
+                max_num_class_idx = arr_class.argmax()
+                stats["max_num_class_idx"] = max_num_class_idx
+                stats["max_num_class_num"] = arr_class[max_num_class_idx]
+                min_num_class_idx = arr_class.argmin()
+                stats["min_num_class_idx"] = min_num_class_idx
+                stats["min_num_class_num"] = arr_class[min_num_class_idx]
+            else:
+                raise ValueError(f"Unsupported task type {self.task_type}")
+            res[str(timestamp)] = stats
+        res["total"] = {
+            "total_num_rows": len(table.df),
+            "total_num_unique_entities": table.df[self.entity_col].nunique(),
+        }
+        if self.task_type == TaskType.BINARY_CLASSIFICATION:
+            res["total"]["total_num_positives"] = (table.df[self.target_col] == 1).sum()
+            res["total"]["num_negatives"] = (table.df[self.target_col] == 0).sum()
+        elif self.task_type == TaskType.REGRESSION:
+            res["total"]["total_min_target"] = table.df[self.target_col].min()
+            res["total"]["total_max_target"] = table.df[self.target_col].max()
+            res["total"]["total_mean_target"] = table.df[self.target_col].mean()
+            quantiles = table.df[self.target_col].quantile([0.25, 0.5, 0.75])
+            res["total"]["total_quantile_25_target"] = quantiles.iloc[0]
+            res["total"]["total_median_target"] = quantiles.iloc[1]
+            res["total"]["total_quantile_75_target"] = quantiles.iloc[2]
+        elif self.task_type == TaskType.MULTILABEL_CLASSIFICATION:
+            arr = np.array([row for row in temp_df[self.target_col]])
+            arr_row = arr.sum(1)
+            res["total"]["total_mean_num_classes_per_entity"] = round(arr_row.mean(), 4)
+            res["total"]["total_max_num_classes_per_entity"] = arr_row.max()
+            res["total"]["total_min_num_classes_per_entity"] = arr_row.min()
+            arr_class = arr.sum(0)
+            max_num_class_idx = arr_class.argmax()
+            res["total"]["total_max_num_class_idx"] = max_num_class_idx
+            res["total"]["total_max_num_class_num"] = arr_class[max_num_class_idx]
+            min_num_class_idx = arr_class.argmin()
+            res["total"]["total_min_num_class_idx"] = min_num_class_idx
+            res["total"]["total_min_num_class_num"] = arr_class[min_num_class_idx]
+        else:
+            raise ValueError(f"Unsupported task type {self.task_type}")
         return res

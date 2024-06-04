@@ -55,8 +55,10 @@ def test_node_train_fake_product_dataset(tmp_path):
     # Ensure that stats computation works on train/val/test splits ###########
     train_stats = task.stats(split="train")
     val_stats = task.stats(split="val")
-    assert len(train_stats) == 10
-    assert len(val_stats) == 1
+    assert len(train_stats) == 11
+    assert len(val_stats) == 2
+    assert len(next(iter(train_stats.values()))) == 4
+    assert len(next(iter(val_stats.values()))) == 4
 
     loader_dict: Dict[str, NeighborLoader] = {}
     for split, table in [

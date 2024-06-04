@@ -25,8 +25,7 @@ dependencies=[
 	"scikit-learn",
 	"typing-extensions",
 	"matplotlib",
-	"networkx",
-	"pytorch_frame>=0.2.2",
+	"networkx"
 ]
 
 [project.optional-dependencies]

@@ -52,9 +52,12 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     train_stats = task.stats(split="train")
     val_stats = task.stats(split="val")
     test_stats = task.stats(split="test")
-    assert len(train_stats) == 10
-    assert len(val_stats) == 1
-    assert len(test_stats) == 1
+    assert len(train_stats) == 11
+    assert len(val_stats) == 2
+    assert len(test_stats) == 2
+    assert len(next(iter(train_stats.values()))) == 4
+    assert len(next(iter(val_stats.values()))) == 4
+    assert len(next(iter(test_stats.values()))) == 4
 
     train_table_input = get_link_train_table_input(task.train_table, task)
     # Test get_link_train_table_input

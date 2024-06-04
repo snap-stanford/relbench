@@ -16,8 +16,6 @@ from typing import (
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from torch_frame import stype
-from torch_frame.data.stats import StatType, compute_col_stats
 
 from relbench.data.table import Table
 from relbench.data.task_base import BaseTask, _pack_tables
@@ -165,10 +163,11 @@ class RelBenchLinkTask(LinkTask):
 
     def stats(
         self, split: Literal["train", "val", "test"] = "train"
-    ) -> dict[str, dict[str, Any]]:
-        r"""Get source and destination entity column number of unique
-        entities, and average degree between source and destination entity
-        columns for each timestamp.
+    ) -> dict[str, dict[str, int]]:
+        r"""Get train / val / test table statistics for each timestamp
+        and the whole table, including number of unique source entities,
+        number of unique destination entities, number of destination
+        entities and number of rows.
         """
         if split == "train":
             table = self.train_table
@@ -180,19 +179,32 @@ class RelBenchLinkTask(LinkTask):
         res = {}
         for timestamp in timestamps:
             temp_df = table.df[table.df[self.time_col] == timestamp]
-            src_entity_stats = compute_col_stats(
-                temp_df[self.src_entity_col], stype.categorical
-            )
-            dst_entity_stats = compute_col_stats(
-                temp_df[self.dst_entity_col], stype.multicategorical
-            )
-            src_entity_col_num_unique = sum(src_entity_stats[StatType.COUNT][1])
-            dst_entity_col_num_unique = sum(dst_entity_stats[StatType.MULTI_COUNT][1])
+            num_unique_src_entities = temp_df[self.src_entity_col].nunique()
+            num_dst_entities = 0
+            dst_entity_set = set()
+            for row in temp_df[self.dst_entity_col]:
+                num_dst_entities += len(row)
+                for item in row:
+                    dst_entity_set.add(item)
+            num_unique_dst_entities = len(dst_entity_set)
+
             res[str(timestamp)] = {
-                "src_entity_col_num_unique": src_entity_col_num_unique,
-                "dst_entity_col_num_unique": dst_entity_col_num_unique,
-                "avg_degree": round(
-                    dst_entity_col_num_unique / src_entity_col_num_unique, 4
-                ),
+                "num_unique_src_entities": num_unique_src_entities,
+                "num_unique_dst_entities": num_unique_dst_entities,
+                "num_dst_entities": num_dst_entities,
+                "num_rows": len(temp_df),
             }
+
+        total_num_dst_entities = sum(
+            stats["num_dst_entities"] for stats in res.values()
+        )
+        total_num_unique_dst_entities = len(
+            set(value for row in table.df[self.dst_entity_col] for value in row)
+        )
+        res["total"] = {
+            "total_num_unique_src_entities": table.df[self.src_entity_col].nunique(),
+            "total_num_unique_dst_entities": total_num_unique_dst_entities,
+            "total_num_dst_entities": total_num_dst_entities,
+            "total_num_rows": len(table.df),
+        }
         return res
