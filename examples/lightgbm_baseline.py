@@ -18,6 +18,7 @@ from tqdm import tqdm
 from relbench.data import RelBenchDataset, RelBenchNodeTask
 from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
+from relbench.external.utils import remove_pkey_fkey
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
@@ -106,11 +107,7 @@ entity_table = dataset.db.table_dict[task.entity_table]
 entity_df = entity_table.df
 
 col_to_stype = dataset2inferred_stypes[args.dataset][task.entity_table]
-
-if entity_table.pkey_col is not None:
-    del col_to_stype[entity_table.pkey_col]
-for fkey_col in entity_table.fkey_col_to_pkey_table.keys():
-    del col_to_stype[fkey_col]
+remove_pkey_fkey(col_to_stype, entity_table)
 
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
     col_to_stype[task.target_col] = torch_frame.categorical
