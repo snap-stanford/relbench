@@ -48,6 +48,8 @@ if args.roach_project:
 root_dir = "./data"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+    torch.set_num_threads(1)
 seed_everything(args.seed)
 
 # TODO: remove process=True once correct data/task is uploaded.
