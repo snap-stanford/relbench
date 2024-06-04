@@ -19,8 +19,8 @@ from relbench.datasets import get_dataset
 from relbench.external.utils import remove_pkey_fkey
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-stackex")
-parser.add_argument("--task", type=str, default="rel-stackex-engage")
+parser.add_argument("--dataset", type=str, default="rel-stack")
+parser.add_argument("--task", type=str, default="user-engage")
 # Use auto-regressive label as hand-crafted feature as input to LightGBM
 parser.add_argument("--use_ar_label", action="store_true")
 parser.add_argument(

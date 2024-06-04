@@ -17,11 +17,11 @@ from relbench.metrics import (
 )
 
 
-class ChurnTask(RelBenchNodeTask):
+class UserChurnTask(RelBenchNodeTask):
     r"""Churn for a customer is 1 if the customer does not review any product
     in the time window, else 0."""
 
-    name = "rel-amazon-churn"
+    name = "user-churn"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "customer_id"
     entity_table = "customer"
@@ -74,11 +74,11 @@ class ChurnTask(RelBenchNodeTask):
         )
 
 
-class LTVTask(RelBenchNodeTask):
+class UserLTVTask(RelBenchNodeTask):
     r"""LTV (life-time value) for a customer is the sum of prices of products
     that the customer reviews in the time window."""
 
-    name = "rel-amazon-ltv"
+    name = "user-ltv"
     task_type = TaskType.REGRESSION
     entity_col = "customer_id"
     entity_table = "customer"
@@ -134,11 +134,11 @@ class LTVTask(RelBenchNodeTask):
         )
 
 
-class ProductChurnTask(RelBenchNodeTask):
+class ItemChurnTask(RelBenchNodeTask):
     r"""Churn for a product is 1 if the product recieves at least one review
     in the time window, else 0."""
 
-    name = "rel-amazon-product-churn"
+    name = "item-churn"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "product_id"
     entity_table = "product"
@@ -191,11 +191,11 @@ class ProductChurnTask(RelBenchNodeTask):
         )
 
 
-class ProductLTVTask(RelBenchNodeTask):
+class ItemLTVTask(RelBenchNodeTask):
     r"""LTV (life-time value) for a product is the numer of times the product
     is purchased in the time window multiplied by price."""
 
-    name = "rel-amazon-product-ltv"
+    name = "item-ltv"
     task_type = TaskType.REGRESSION
     entity_col = "product_id"
     entity_table = "product"
@@ -238,11 +238,11 @@ class ProductLTVTask(RelBenchNodeTask):
         )
 
 
-class ProductRecommendationTask(RelBenchLinkTask):
+class UserItemPurchaseTask(RelBenchLinkTask):
     r"""Predict the list of distinct items each customer will purchase in the
     next two years."""
 
-    name = "rel-amazon-rec-purchase"
+    name = "user-item-purchase"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "customer_id"
     src_entity_table = "customer"
@@ -290,11 +290,11 @@ class ProductRecommendationTask(RelBenchLinkTask):
         )
 
 
-class ProductFiveStarRecommendationTask(RelBenchLinkTask):
+class UserItemRateTask(RelBenchLinkTask):
     r"""Predict the list of distinct items each customer will purchase and give a 5 star review in the
     next two years."""
 
-    name = "rel-amazon-rec-5-star"
+    name = "user-item-rate"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "customer_id"
     src_entity_table = "customer"
@@ -344,11 +344,11 @@ class ProductFiveStarRecommendationTask(RelBenchLinkTask):
         )
 
 
-class ProductDetailedReviewRecommendationTask(RelBenchLinkTask):
+class UserItemReviewTask(RelBenchLinkTask):
     r"""Predict the list of distinct items each customer will purchase and give a detailed review in the
     next two years."""
 
-    name = "rel-amazon-rec-detailed-review"
+    name = "user-item-review"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "customer_id"
     src_entity_table = "customer"
