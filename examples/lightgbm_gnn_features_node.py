@@ -46,6 +46,7 @@ parser.add_argument(
     default=50_000,
     help="Subsample the specified number of training data to train lightgbm model.",
 )
+# <<<
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--roach_project",
@@ -55,6 +56,12 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+if args.roach_project:
+    import roach
+
+    roach.init(args.roach_project)
+    roach.store["args"] = args.__dict__
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
@@ -62,8 +69,8 @@ seed_everything(args.seed)
 
 root_dir = "./data"
 
-# TODO: remove process=True once correct data/task is uploaded.
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
+# >>>
 task: NodeTask = dataset.get_task(args.task, process=True)
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
@@ -346,7 +353,9 @@ print(f"Val: {val_metrics}")
 pred = model.predict(tf_test).numpy()
 print(f"Test: {test_metrics}")
 
+# <<<
 if args.roach_project:
     roach.store["val"] = val_metrics
     roach.store["test"] = test_metrics
     roach.finish()
+# >>>

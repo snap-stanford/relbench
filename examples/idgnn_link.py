@@ -37,18 +37,31 @@ parser.add_argument("--num_neighbors", type=int, default=512)
 parser.add_argument("--temporal_strategy", type=str, default="last")
 parser.add_argument("--num_workers", type=int, default=1)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
-parser.add_argument("--log_dir", type=str, default="results")
+# <<<
+parser.add_argument("--seed", type=int, default=42)
+parser.add_argument(
+    "--roach_project",
+    type=str,
+    default=None,
+    help="This is for internal use only.",
+)
 args = parser.parse_args()
+
+if args.roach_project:
+    import roach
+
+    roach.init(args.roach_project)
+    roach.store["args"] = args.__dict__
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
-seed_everything(42)
+seed_everything(args.seed)
 
 root_dir = "./data"
 
-# TODO: remove process=True once correct data/task is uploaded.
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
+# >>>
 task: LinkTask = dataset.get_task(args.task, process=True)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
@@ -171,8 +184,6 @@ def test(loader: NeighborLoader) -> np.ndarray:
     return pred
 
 
-writer = SummaryWriter(log_dir=args.log_dir)
-
 state_dict = None
 best_val_metric = 0
 for epoch in range(1, args.epochs + 1):
@@ -189,9 +200,6 @@ for epoch in range(1, args.epochs + 1):
             best_val_metric = val_metrics[tune_metric]
             state_dict = copy.deepcopy(model.state_dict())
 
-        writer.add_scalar("train/loss", train_loss, epoch)
-        for name, metric in val_metrics.items():
-            writer.add_scalar(f"val/{name}", metric, epoch)
 
 model.load_state_dict(state_dict)
 val_pred = test(loader_dict["val"])
@@ -202,8 +210,10 @@ test_pred = test(loader_dict["test"])
 test_metrics = task.evaluate(test_pred)
 print(f"Best test metrics: {test_metrics}")
 
-for name, metric in test_metrics.items():
-    writer.add_scalar(f"test/{name}", metric, 0)
 
-writer.flush()
-writer.close()
+# <<<
+if args.roach_project:
+    roach.store["val"] = val_metrics
+    roach.store["test"] = test_metrics
+    roach.finish()
+# >>>

@@ -33,6 +33,7 @@ parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
+# <<<
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--roach_project",
@@ -48,15 +49,15 @@ if args.roach_project:
     roach.init(args.roach_project)
     roach.store["args"] = args.__dict__
 
-root_dir = "./data"
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-# TODO: remove process=True once correct data/task is uploaded.
+root_dir = "./data"
+
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
+# >>>
 task: NodeTask = dataset.get_task(args.task, process=True)
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
@@ -212,7 +213,9 @@ test_pred = test(loader_dict["test"])
 test_metrics = task.evaluate(test_pred)
 print(f"Best test metrics: {test_metrics}")
 
+# <<<
 if args.roach_project:
     roach.store["val"] = val_metrics
     roach.store["test"] = test_metrics
     roach.finish()
+# >>>
