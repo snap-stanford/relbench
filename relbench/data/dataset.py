@@ -5,16 +5,12 @@ import os
 import shutil
 import tempfile
 import time
-from abc import abstractmethod
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Type, Union
+from typing import List, Optional, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
 import pooch
-from torch_frame import stype
-from torch_frame.data import StatType
-from torch_frame.data.stats import compute_col_stats
 
 from relbench import _pooch
 from relbench.data.database import Database
@@ -91,21 +87,6 @@ class Dataset:
                 mask = table.df[fkey_col] >= num_pkeys
                 if mask.any():
                     table.df.loc[mask, fkey_col] = None
-
-    @property
-    @abstractmethod
-    def col_to_stype_dict(self) -> dict[str, dict[str, stype]]:
-        raise NotImplementedError
-
-    def stats(self) -> dict[str, dict[str, dict[StatType, Any]]]:
-        res = {}
-        for table_name, table in self.db.table_dict.items():
-            res[table_name] = {}
-            for col_name, col_stype in self.col_to_stype_dict[table_name].items():
-                res[table_name][col_name] = compute_col_stats(
-                    table.df[col_name], col_stype
-                )
-        return res
 
 
 class RelBenchDataset(Dataset):

@@ -5,7 +5,6 @@ import os
 import numpy as np
 import pandas as pd
 import pooch
-from torch_frame import stype
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.f1 import DriverDNFTask, DriverPositionTask, DriverTop3Task
@@ -254,92 +253,3 @@ class F1Dataset(RelBenchDataset):
         )
 
         return Database(tables)
-
-    @property
-    def col_to_stype_dict(self) -> dict[str, dict[str, stype]]:
-        return {
-            "races": {
-                "raceId": stype.numerical,
-                "year": stype.numerical,
-                "round": stype.numerical,
-                "circuitId": stype.numerical,
-                "name": stype.text_embedded,
-                "date": stype.timestamp,
-                "time": stype.timestamp,
-            },
-            "circuits": {
-                "circuitId": stype.numerical,
-                "circuitRef": stype.text_embedded,
-                "name": stype.text_embedded,
-                "location": stype.text_embedded,
-                "country": stype.categorical,
-                "lat": stype.numerical,
-                "lng": stype.numerical,
-                "alt": stype.numerical,
-            },
-            "drivers": {
-                "driverId": stype.numerical,
-                "driverRef": stype.text_embedded,
-                "code": stype.text_embedded,
-                "forename": stype.text_embedded,
-                "surname": stype.text_embedded,
-                "dob": stype.timestamp,
-                "nationality": stype.categorical,
-            },
-            "results": {
-                "resultId": stype.numerical,
-                "raceId": stype.numerical,
-                "driverId": stype.numerical,
-                "constructorId": stype.numerical,
-                "statusId": stype.categorical,
-                "number": stype.numerical,
-                "grid": stype.numerical,
-                "position": stype.numerical,
-                "positionOrder": stype.numerical,
-                "points": stype.numerical,
-                "laps": stype.numerical,
-                "milliseconds": stype.numerical,
-                "fastestLap": stype.numerical,
-                "rank": stype.numerical,
-                "date": stype.timestamp,
-            },
-            "standings": {
-                "driverStandingsId": stype.numerical,
-                "raceId": stype.numerical,
-                "driverId": stype.numerical,
-                "points": stype.numerical,
-                "position": stype.numerical,
-                "wins": stype.numerical,
-                "date": stype.timestamp,
-            },
-            "constructors": {
-                "constructorId": stype.numerical,
-                "constructorRef": stype.text_embedded,
-                "name": stype.text_embedded,
-                "nationality": stype.categorical,
-            },
-            "constructor_results": {
-                "constructorResultsId": stype.numerical,
-                "raceId": stype.numerical,
-                "constructorId": stype.numerical,
-                "points": stype.numerical,
-                "date": stype.timestamp,
-            },
-            "constructor_standings": {
-                "constructorStandingsId": stype.numerical,
-                "raceId": stype.numerical,
-                "constructorId": stype.numerical,
-                "points": stype.numerical,
-                "position": stype.numerical,
-                "wins": stype.numerical,
-                "date": stype.timestamp,
-            },
-            "qualifying": {
-                "qualifyId": stype.numerical,
-                "raceId": stype.numerical,
-                "driverId": stype.numerical,
-                "constructorId": stype.numerical,
-                "number": stype.numerical,
-                "position": stype.numerical,
-            },
-        }

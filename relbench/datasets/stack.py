@@ -4,7 +4,6 @@ import os
 
 import pandas as pd
 import pooch
-from torch_frame import stype
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.stack import (
@@ -157,81 +156,3 @@ class StackDataset(RelBenchDataset):
         )
 
         return Database(tables)
-
-    @property
-    def col_to_stype_dict(self) -> dict[str, dict[str, stype]]:
-        return {
-            "postLinks": {
-                "Id": stype.numerical,
-                "RelatedPostId": stype.numerical,
-                "PostId": stype.numerical,
-                "LinkTypeId": stype.numerical,
-                "CreationDate": stype.timestamp,
-            },
-            "posts": {
-                "Id": stype.numerical,
-                "PostTypeId": stype.numerical,
-                "AcceptedAnswerId": stype.numerical,
-                "ParentId": stype.numerical,
-                "CreationDate": stype.timestamp,
-                "Body": stype.text_embedded,
-                "OwnerUserId": stype.numerical,
-                # "LastEditorUserId": stype.numerical,
-                # Uninformative text column
-                # "LastEditorDisplayName": stype.text_embedded,
-                "Title": stype.text_embedded,
-                "Tags": stype.text_embedded,
-            },
-            "users": {
-                "Id": stype.numerical,
-                "AccountId": stype.numerical,
-                "CreationDate": stype.timestamp,
-                # Uninformative text column
-                # "DisplayName": stype.text_embedded,
-                # "Location": stype.text_embedded,
-                "AboutMe": stype.text_embedded,
-                # Uninformative text column
-                # "WebsiteUrl": stype.text_embedded,
-            },
-            "votes": {
-                "Id": stype.numerical,
-                "PostId": stype.numerical,
-                "VoteTypeId": stype.numerical,
-                "UserId": stype.numerical,
-                "CreationDate": stype.timestamp,
-            },
-            "comments": {
-                "Id": stype.numerical,
-                "PostId": stype.numerical,
-                "Text": stype.text_embedded,
-                "CreationDate": stype.timestamp,
-                "UserId": stype.numerical,
-                # Uninformative text column
-                # "UserDisplayName": stype.text_embedded,
-                # "ContentLicense": stype.text_embedded,
-            },
-            "badges": {
-                "Id": stype.numerical,
-                "UserId": stype.numerical,
-                "Class": stype.categorical,
-                # Uninformative text column
-                # "Name": stype.text_embedded,
-                "Date": stype.timestamp,
-                "TagBased": stype.categorical,
-            },
-            "postHistory": {
-                "Id": stype.numerical,
-                "PostId": stype.numerical,
-                "UserId": stype.numerical,
-                "PostHistoryTypeId": stype.numerical,
-                # Uninformative text column
-                # "UserDisplayName": stype.text_embedded,
-                "ContentLicense": stype.categorical,
-                # Uninformative text column
-                # "RevisionGUID": stype.text_embedded,
-                "Text": stype.text_embedded,
-                # Uninformative text column
-                # "Comment": stype.text_embedded,
-                "CreationDate": stype.timestamp,
-            },
-        }

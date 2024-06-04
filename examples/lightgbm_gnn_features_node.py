@@ -2,17 +2,17 @@ import argparse
 import copy
 import math
 import os
-from typing import Dict, List
+from typing import Dict
 
 import numpy as np
 import torch
 import torch_frame
+from inferred_stypes import dataset2inferred_stypes
 from model import Model
 from text_embedder import GloveTextEmbedding
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.gbdt import LightGBM
-from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
@@ -58,9 +58,11 @@ root_dir = "./data"
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
 task: NodeTask = dataset.get_task(args.task, process=True)
 
+col_to_stype_dict = dataset2inferred_stypes[args.dataset]
+
 data, col_stats_dict = make_pkey_fkey_graph(
     dataset.db,
-    col_to_stype_dict=dataset.col_to_stype_dict,
+    col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),

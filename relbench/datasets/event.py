@@ -5,7 +5,6 @@ import shutil
 from pathlib import Path
 
 import pandas as pd
-from torch_frame import stype
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.event import UserAttendanceTask
@@ -203,58 +202,3 @@ class EventDataset(RelBenchDataset):
                 ),
             }
         )
-
-    @property
-    def col_to_stype_dict(self) -> dict[str, dict[str, stype]]:
-        common_word_stem_columns = {f"c_{i}": stype.categorical for i in range(1, 101)}
-        return {
-            "users": {
-                "user_id": stype.numerical,
-                "locale": stype.categorical,
-                "birthyear": stype.numerical,
-                "gender": stype.categorical,
-                "joinedAt": stype.timestamp,
-                "location": stype.categorical,
-                "timezone": stype.categorical,
-            },
-            "events": {
-                "event_id": stype.numerical,
-                "user_id": stype.numerical,
-                "start_time": stype.timestamp,
-                "city": stype.categorical,
-                "state": stype.categorical,
-                "zip": stype.categorical,
-                "country": stype.categorical,
-                "lat": stype.numerical,
-                "lng": stype.numerical,
-                "c_other": stype.categorical,
-                **common_word_stem_columns,
-            },
-            "event_attendees": {
-                "event": stype.numerical,
-                "status": stype.categorical,
-                "user_id": stype.numerical,
-                "start_time": stype.timestamp,
-            },
-            "event_interest": {
-                "user": stype.numerical,
-                "event": stype.numerical,
-                "invited": stype.categorical,
-                "timestamp": stype.timestamp,
-                "interested": stype.categorical,
-                "not_interested": stype.categorical,
-            },
-            "user_friends": {
-                "user": stype.numerical,
-                "friend": stype.numerical,
-            },
-            "friends": {
-                "user_id": stype.numerical,
-                "locale": stype.categorical,
-                "birthyear": stype.numerical,
-                "gender": stype.categorical,
-                "joinedAt": stype.timestamp,
-                "location": stype.categorical,
-                "timezone": stype.categorical,
-            },
-        }

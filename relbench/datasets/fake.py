@@ -5,7 +5,6 @@ import string
 
 import numpy as np
 import pandas as pd
-from torch_frame import stype
 
 from relbench.data import Database, Dataset, Table
 from relbench.tasks.amazon import (
@@ -132,29 +131,3 @@ class FakeDataset(Dataset):
                 ),
             }
         )
-
-    @property
-    def col_to_stype_dict(self) -> dict[str, dict[str, stype]]:
-        return {
-            "product": {
-                "product_id": stype.categorical,
-                "category": stype.multicategorical,
-                "title": stype.text_embedded,
-                "price": stype.numerical,
-            },
-            "customer": {
-                "customer_id": stype.categorical,
-                "age": stype.numerical,
-                "gender": stype.categorical,
-            },
-            "review": {
-                "customer_id": stype.categorical,
-                "product_id": stype.categorical,
-                "review_time": stype.timestamp,
-                "rating": stype.numerical,
-            },
-            "relations": {
-                "customer_id": stype.categorical,
-                "product_id": stype.categorical,
-            },
-        }

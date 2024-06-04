@@ -54,13 +54,3 @@ def test_reindex():
             mask = arr < num_pkeys
             arr_indexed = table_indexed.df[fkey_col]
             assert (arr[mask] == arr_indexed[mask]).all()
-
-
-def test_dataset_stats():
-    dataset = FakeDataset()
-    stats = dataset.stats()
-    assert len(stats.keys()) == 4
-    assert len(stats["product"]) == 4
-    assert len(stats["customer"]) == 3
-    assert len(stats["review"]) == 4
-    assert len(stats["relations"]) == 2
