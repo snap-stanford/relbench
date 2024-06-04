@@ -42,6 +42,13 @@ df = task.train_table.df.explode(task.dst_entity_col)
 # Directional training table edges:
 src = torch.from_numpy(df[task.src_entity_col].astype(int).values)
 dst = torch.from_numpy(df[task.dst_entity_col].astype(int).values)
+
+# Since both src nodes and dst nodes start from index 0, so if we
+# use them directly, there will be overlaps in their indices. In order
+# to construct edges, we need to add num_src_nodes to all dst nodes
+# index. So src nodes will range from [0, num_src_nodes) and dst
+# nodes will range from [num_src_nodes, num_dst_nodes + num_src_nodes).
+
 edge_index = torch.stack([src, dst + num_src_nodes], dim=0)
 
 model = Node2Vec(
@@ -106,7 +113,7 @@ for epoch in range(1, args.epochs + 1):
         f"Epoch: {epoch:02d}, Train loss: {train_loss}, " f"Val metrics: {val_metrics}"
     )
 
-    if val_metrics[tune_metric] >= best_val_metric:
+    if val_metrics[tune_metric] > best_val_metric:
         best_val_metric = val_metrics[tune_metric]
         state_dict = copy.deepcopy(model.state_dict())
 
