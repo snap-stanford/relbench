@@ -1,7 +1,7 @@
 import argparse
 import copy
 import os
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy as np
 import torch
@@ -37,9 +37,9 @@ parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--share_same_time", action="store_true", default=True)
 # Whether to use shallow embedding on dst nodes or not.
 parser.add_argument("--use_shallow", action="store_true", default=True)
-parser.add_argument("--num_workers", type=int, default=1)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 # <<<
+parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--roach_project",
@@ -98,7 +98,7 @@ train_loader = LinkNeighborLoader(
     num_workers=args.num_workers,
 )
 
-eval_loaders_dict: Dict[str, tuple[NeighborLoader, NeighborLoader]] = {}
+eval_loaders_dict: Dict[str, Tuple[NeighborLoader, NeighborLoader]] = {}
 for split in ["val", "test"]:
     seed_time = task.val_seed_time if split == "val" else task.test_seed_time
     target_table = task.val_table if split == "val" else task.test_table

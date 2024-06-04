@@ -35,9 +35,9 @@ parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=512)
 parser.add_argument("--temporal_strategy", type=str, default="last")
-parser.add_argument("--num_workers", type=int, default=1)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 # <<<
+parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--roach_project",
