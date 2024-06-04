@@ -10,7 +10,7 @@ import torch
 from inferred_stypes import dataset2inferred_stypes
 from model import Model
 from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, MSELoss
+from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
@@ -80,9 +80,9 @@ if task.task_type == TaskType.BINARY_CLASSIFICATION:
     multilabel = False
 elif task.task_type == TaskType.REGRESSION:
     out_channels = 1
-    loss_fn = MSELoss()
-    tune_metric = "r2"
-    higher_is_better = True
+    loss_fn = L1Loss()
+    tune_metric = "mae"
+    higher_is_better = False
     # Get the clamp value at inference time
     clamp_min, clamp_max = np.percentile(
         task.train_table.df[task.target_col].to_numpy(), [2, 98]
