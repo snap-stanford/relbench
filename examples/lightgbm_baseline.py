@@ -1,4 +1,5 @@
 import argparse
+import os
 from typing import Dict
 
 import numpy as np
@@ -11,6 +12,7 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
+from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
 from relbench.data import RelBenchDataset, RelBenchNodeTask
@@ -25,15 +27,31 @@ parser.add_argument("--use_ar_label", action="store_true")
 parser.add_argument(
     "--sample_size",
     type=int,
-    default=50000,
+    default=50_000,
     help="Subsample the specified number of training data to train lightgbm model.",
+)
+parser.add_argument("--seed", type=int, default=42)
+parser.add_argument(
+    "--roach_project",
+    type=str,
+    default=None,
+    help="This is for internal use only.",
 )
 args = parser.parse_args()
 
+if args.roach_project:
+    import roach
+
+    roach.init(args.roach_project)
+    roach.store["args"] = args.__dict__
+
+root_dir = "./data"
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+seed_everything(args.seed)
 
 # TODO: remove process=True once correct data/task is uploaded.
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
 task: RelBenchNodeTask = dataset.get_task(args.task, process=True)
 
 train_table = task.train_table
@@ -134,7 +152,11 @@ train_dataset = Dataset(
         text_embedder=GloveTextEmbedding(device=device),
         batch_size=256,
     ),
-).materialize()
+).materialize(
+    path=os.path.join(
+        root_dir, f"{args.dataset}_{args.task}_materialized_cache_lightgbm.pt"
+    )
+)
 
 tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
@@ -155,13 +177,14 @@ if task.task_type in [TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION]:
     model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
 
     pred = model.predict(tf_test=tf_train).numpy()
-    print(f"Train: {task.evaluate(pred, train_table)}")
+    train_metrics = task.evaluate(pred, train_table)
 
     pred = model.predict(tf_test=tf_val).numpy()
-    print(f"Val: {task.evaluate(pred, val_table)}")
+    val_metrics = task.evaluate(pred, val_table)
 
     pred = model.predict(tf_test=tf_test).numpy()
-    print(f"Test: {task.evaluate(pred)}")
+    test_metrics = task.evaluate(pred)
+
 elif TaskType.MULTILABEL_CLASSIFICATION:
     y_train = tf_train.y.values.to(torch.long)
     y_val = tf_val.y.values.to(torch.long)
@@ -179,9 +202,21 @@ elif TaskType.MULTILABEL_CLASSIFICATION:
         pred_train_list.append(model.predict(tf_test=tf_train).numpy())
         pred_val_list.append(model.predict(tf_test=tf_val).numpy())
         pred_test_list.append(model.predict(tf_test=tf_test).numpy())
+
     pred_train = np.stack(pred_train_list).transpose()
-    print(f"Train: {task.evaluate(pred_train, train_table)}")
+    train_metrics = task.evaluate(pred_train, train_table)
+
     pred_val = np.stack(pred_val_list).transpose()
-    print(f"Val: {task.evaluate(pred_val, val_table)}")
+    val_metrics = task.evaluate(pred_val, val_table)
+
     pred_test = np.stack(pred_test_list).transpose()
-    print(f"Test: {task.evaluate(pred_test)}")
+    test_metrics = task.evaluate(pred_test)
+
+print(f"Train: {train_metrics}")
+print(f"Val: {val_metrics}")
+print(f"Test: {test_metrics}")
+
+if args.roach_project:
+    roach.store["val"] = val_metrics
+    roach.store["test"] = test_metrics
+    roach.finish()
