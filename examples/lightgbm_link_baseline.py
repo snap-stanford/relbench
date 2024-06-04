@@ -1,4 +1,5 @@
 import argparse
+import copy
 
 # <<<
 import os
@@ -41,6 +42,12 @@ parser.add_argument(
     type=str,
     default=None,
     help="This is for internal use only.",
+)
+parser.add_argument(
+    "--sample_size",
+    type=int,
+    default=50000,
+    help="Subsample the specified number of training data to train lightgbm model.",
 )
 args = parser.parse_args()
 
@@ -108,6 +115,12 @@ col_to_stype.update(src_entity_table_col_to_stype)
 col_to_stype.update(dst_entity_table_col_to_stype)
 col_to_stype[target_col_name] = torch_frame.categorical
 
+# randomly subsample in case training data size is too large.
+sampled_train_table = copy.deepcopy(train_table)
+if args.sample_size > 0 and args.sample_size < len(sampled_train_table):
+    sampled_idx = np.random.permutation(len(sampled_train_table))[: args.sample_size]
+    sampled_train_table.df = sampled_train_table.df.iloc[sampled_idx]
+
 # Prepare train/val dataset for lightGBM model training. For each src
 # entity, their corresponding dst entities are used as positive label.
 # The same number of random dst entities are sampled as negative label.
@@ -115,7 +128,7 @@ col_to_stype[target_col_name] = torch_frame.categorical
 left_entity = list(train_table.fkey_col_to_pkey_table.keys())[0]
 right_entity = list(train_table.fkey_col_to_pkey_table.keys())[1]
 for split, table in [
-    ("train", train_table),
+    ("train", sampled_train_table),
     ("val", val_table),
 ]:
     src_entity_df = src_entity_df.astype(
@@ -315,7 +328,7 @@ train_metrics = evaluate(
     task.train_table.time_col,
     task.eval_k,
     PRED_SCORE_COL_NAME,
-    train_table,
+    sampled_train_table,
     task,
 )
 print(f"Train: {train_metrics}")
