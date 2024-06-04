@@ -2,7 +2,6 @@ import argparse
 import copy
 import math
 import os
-from pathlib import Path
 from typing import Dict
 
 import numpy as np
@@ -24,7 +23,6 @@ from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_g
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, required=True)
 parser.add_argument("--task", type=str, required=True)
-parser.add_argument("--cache_dir", type=str, default=Path("~/.cache").expanduser())
 parser.add_argument("--lr", type=float, default=0.005)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
@@ -50,6 +48,7 @@ if args.roach_project:
     roach.init(args.roach_project)
     roach.store["args"] = args.__dict__
 
+root_dir = "./data"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
@@ -68,7 +67,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    cache_dir=f"{args.cache_dir}/relbench/materialized_tensorframes/{args.dataset}",
+    cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
 )
 
 clamp_min, clamp_max = None, None
