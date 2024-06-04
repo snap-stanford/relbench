@@ -180,14 +180,10 @@ class RelBenchLinkTask(LinkTask):
         for timestamp in timestamps:
             temp_df = table.df[table.df[self.time_col] == timestamp]
             num_unique_src_entities = temp_df[self.src_entity_col].nunique()
-            num_dst_entities = 0
-            dst_entity_set = set()
-            for row in temp_df[self.dst_entity_col]:
-                num_dst_entities += len(row)
-                for item in row:
-                    dst_entity_set.add(item)
-            num_unique_dst_entities = len(dst_entity_set)
-
+            num_dst_entities = sum(len(row) for row in temp_df[self.dst_entity_col])
+            num_unique_dst_entities = len(
+                set(value for row in temp_df[self.dst_entity_col] for value in row)
+            )
             res[str(timestamp)] = {
                 "num_unique_src_entities": num_unique_src_entities,
                 "num_unique_dst_entities": num_unique_dst_entities,

@@ -112,7 +112,7 @@ class RelBenchNodeTask(NodeTask):
     ) -> dict[str, dict[str, Any]]:
         r"""Get train / val / test table statistics for each timestamp
         and the whole table, including number of rows and number of entities.
-        Task with different task type has different statistics computed:
+        Tasks with different task types have different statistics computed:
 
         BINARY_CLASSIFICATION: Number of positives and negatives.
         REGRESSION: Minimum, maximum, mean, median, quantile 25 and,
@@ -136,29 +136,11 @@ class RelBenchNodeTask(NodeTask):
                 "num_unique_entities": temp_df[self.entity_col].nunique(),
             }
             if self.task_type == TaskType.BINARY_CLASSIFICATION:
-                stats["num_positives"] = (temp_df[self.target_col] == 1).sum()
-                stats["num_negatives"] = (temp_df[self.target_col] == 0).sum()
+                self._set_binary_stats(temp_df, stats)
             elif self.task_type == TaskType.REGRESSION:
-                stats["min_target"] = temp_df[self.target_col].min()
-                stats["max_target"] = temp_df[self.target_col].max()
-                stats["mean_target"] = temp_df[self.target_col].mean()
-                quantiles = temp_df[self.target_col].quantile([0.25, 0.5, 0.75])
-                stats["quantile_25_target"] = quantiles.iloc[0]
-                stats["median_target"] = quantiles.iloc[1]
-                stats["quantile_75_target"] = quantiles.iloc[2]
+                self._set_regression_stats(temp_df, stats)
             elif self.task_type == TaskType.MULTILABEL_CLASSIFICATION:
-                arr = np.array([row for row in temp_df[self.target_col]])
-                arr_row = arr.sum(1)
-                stats["mean_num_classes_per_entity"] = round(arr_row.mean(), 4)
-                stats["max_num_classes_per_entity"] = arr_row.max()
-                stats["min_num_classes_per_entity"] = arr_row.min()
-                arr_class = arr.sum(0)
-                max_num_class_idx = arr_class.argmax()
-                stats["max_num_class_idx"] = max_num_class_idx
-                stats["max_num_class_num"] = arr_class[max_num_class_idx]
-                min_num_class_idx = arr_class.argmin()
-                stats["min_num_class_idx"] = min_num_class_idx
-                stats["min_num_class_num"] = arr_class[min_num_class_idx]
+                self._set_multilabel_stats(temp_df, stats)
             else:
                 raise ValueError(f"Unsupported task type {self.task_type}")
             res[str(timestamp)] = stats
@@ -167,29 +149,38 @@ class RelBenchNodeTask(NodeTask):
             "total_num_unique_entities": table.df[self.entity_col].nunique(),
         }
         if self.task_type == TaskType.BINARY_CLASSIFICATION:
-            res["total"]["total_num_positives"] = (table.df[self.target_col] == 1).sum()
-            res["total"]["num_negatives"] = (table.df[self.target_col] == 0).sum()
+            self._set_binary_stats(table.df, res["total"])
         elif self.task_type == TaskType.REGRESSION:
-            res["total"]["total_min_target"] = table.df[self.target_col].min()
-            res["total"]["total_max_target"] = table.df[self.target_col].max()
-            res["total"]["total_mean_target"] = table.df[self.target_col].mean()
-            quantiles = table.df[self.target_col].quantile([0.25, 0.5, 0.75])
-            res["total"]["total_quantile_25_target"] = quantiles.iloc[0]
-            res["total"]["total_median_target"] = quantiles.iloc[1]
-            res["total"]["total_quantile_75_target"] = quantiles.iloc[2]
+            self._set_regression_stats(table.df, res["total"])
         elif self.task_type == TaskType.MULTILABEL_CLASSIFICATION:
-            arr = np.array([row for row in temp_df[self.target_col]])
-            arr_row = arr.sum(1)
-            res["total"]["total_mean_num_classes_per_entity"] = round(arr_row.mean(), 4)
-            res["total"]["total_max_num_classes_per_entity"] = arr_row.max()
-            res["total"]["total_min_num_classes_per_entity"] = arr_row.min()
-            arr_class = arr.sum(0)
-            max_num_class_idx = arr_class.argmax()
-            res["total"]["total_max_num_class_idx"] = max_num_class_idx
-            res["total"]["total_max_num_class_num"] = arr_class[max_num_class_idx]
-            min_num_class_idx = arr_class.argmin()
-            res["total"]["total_min_num_class_idx"] = min_num_class_idx
-            res["total"]["total_min_num_class_num"] = arr_class[min_num_class_idx]
+            self._set_multilabel_stats(table.df, res["total"])
         else:
             raise ValueError(f"Unsupported task type {self.task_type}")
         return res
+
+    def _set_binary_stats(self, df: pd.DataFrame, stats: dict[str, Any]) -> None:
+        stats["num_positives"] = (df[self.target_col] == 1).sum()
+        stats["num_negatives"] = (df[self.target_col] == 0).sum()
+
+    def _set_regression_stats(self, df: pd.DataFrame, stats: dict[str, Any]) -> None:
+        stats["min_target"] = df[self.target_col].min()
+        stats["max_target"] = df[self.target_col].max()
+        stats["mean_target"] = df[self.target_col].mean()
+        quantiles = df[self.target_col].quantile([0.25, 0.5, 0.75])
+        stats["quantile_25_target"] = quantiles.iloc[0]
+        stats["median_target"] = quantiles.iloc[1]
+        stats["quantile_75_target"] = quantiles.iloc[2]
+
+    def _set_multilabel_stats(self, df: pd.DataFrame, stats: dict[str, Any]) -> None:
+        arr = np.array([row for row in df[self.target_col]])
+        arr_row = arr.sum(1)
+        stats["mean_num_classes_per_entity"] = round(arr_row.mean(), 4)
+        stats["max_num_classes_per_entity"] = arr_row.max()
+        stats["min_num_classes_per_entity"] = arr_row.min()
+        arr_class = arr.sum(0)
+        max_num_class_idx = arr_class.argmax()
+        stats["max_num_class_idx"] = max_num_class_idx
+        stats["max_num_class_num"] = arr_class[max_num_class_idx]
+        min_num_class_idx = arr_class.argmin()
+        stats["min_num_class_idx"] = min_num_class_idx
+        stats["min_num_class_num"] = arr_class[min_num_class_idx]
