@@ -162,18 +162,16 @@ all_dst_entities = [
 ]
 dst_entity_counter = Counter(all_dst_entities)
 top_dst_entities = [
-    entity for entity, _ in dst_entity_counter.most_common(task.eval_k * 10)
+    entity for entity, _ in dst_entity_counter.most_common(task.eval_k * 2)
 ]
 test_df[right_entity] = test_df[right_entity].apply(
     lambda x: x + top_dst_entities if isinstance(x, list) else top_dst_entities
 )
 
-# For each src entity, keep at most `task.eval_k * 10` dst entity candidates
+# For each src entity, keep at most `task.eval_k * 2` dst entity candidates
 test_df[right_entity] = test_df[right_entity].apply(
     lambda x: (
-        x[: task.eval_k * 10]
-        if isinstance(x, list) and len(x) > task.eval_k * 10
-        else x
+        x[: task.eval_k * 2] if isinstance(x, list) and len(x) > task.eval_k * 2 else x
     )
 )
 
