@@ -1,11 +1,8 @@
-from __future__ import annotations
-
 import time
 
 import pandas as pd
 import pooch
 import pyarrow as pa
-from torch_frame import stype
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.amazon import (
