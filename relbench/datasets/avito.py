@@ -1,10 +1,11 @@
 import os
 
 import pandas as pd
+import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.avito import UserAdClickTask, UserClicksTask
-from relbench.utils import clean_datetime
+from relbench.utils import clean_datetime, unzip_processor
 
 
 class AvitoDataset(RelBenchDataset):
@@ -28,7 +29,15 @@ class AvitoDataset(RelBenchDataset):
 
     def make_db(self) -> Database:
         # Customize path as necessary
-        path = os.path.join("data", "avito_integ_test")
+        r"""Process the raw files into a database."""
+        url = "https://relbench.stanford.edu/data/rel-avito-raw.zip"
+        path = pooch.retrieve(
+            url,
+            known_hash="24ae408ee546cf9171742288d1ec6c52e60d332dd47f58eb78fabc64a3034f43",
+            progressbar=True,
+            processor=unzip_processor,
+        )
+        path = os.path.join(path, "avito_500k_integ_test")
 
         # Define table names
         ads_info = os.path.join(path, "AdsInfo")
