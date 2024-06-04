@@ -7,7 +7,7 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.event import UserAttendanceTask
+from relbench.tasks.event import EventAttendenceTask, UserAttendanceTask
 from relbench.utils import decompress_gz_file
 
 
@@ -25,8 +25,8 @@ class EventDataset(RelBenchDataset):
     train_start_timestamp = pd.Timestamp("2012-06-20")
     val_timestamp = pd.Timestamp("2012-11-14")
     test_timestamp = pd.Timestamp("2012-11-28")
-    max_eval_time_frames = 2
-    task_cls_list = [UserAttendanceTask]
+    max_eval_time_frames = 1
+    task_cls_list = [UserAttendanceTask, EventAttendenceTask]
 
     def __init__(
         self,
