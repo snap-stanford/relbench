@@ -171,7 +171,9 @@ test_df[right_entity] = test_df[right_entity].apply(
 # For each src entity, keep at most `task.eval_k * 10` dst entity candidates
 test_df[right_entity] = test_df[right_entity].apply(
     lambda x: (
-        x[: task.eval_k * 10] if isinstance(x, list) and len(x) > task.eval_k * 10 else x
+        x[: task.eval_k * 10]
+        if isinstance(x, list) and len(x) > task.eval_k * 10
+        else x
     )
 )
 
