@@ -169,6 +169,7 @@ class ItemSalesTask(RelBenchNodeTask):
             time_col="timestamp",
         )
 
+
 class CustomersPredictionTask(RelBenchLinkTask):
     r"""Predict the list of customers for each artcle in the next
     seven days"""
@@ -207,7 +208,7 @@ class CustomersPredictionTask(RelBenchLinkTask):
                 transactions.article_id
             """
         ).df()
-            
+
         return Table(
             df=df,
             fkey_col_to_pkey_table={
