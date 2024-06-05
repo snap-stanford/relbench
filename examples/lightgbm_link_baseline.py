@@ -54,12 +54,12 @@ dst_entity_df = dst_entity_table.df
 # Prepare col_to_stype dictioanry mapping between column names and stypes
 # for torch_frame Dataset initialization.
 col_to_stype = {}
-src_entity_table_col_to_stype = dataset2inferred_stypes[args.dataset][
+src_entity_table_col_to_stype = copy.deepcopy(dataset2inferred_stypes[args.dataset][
     task.src_entity_table
-]
-dst_entity_table_col_to_stype = dataset2inferred_stypes[args.dataset][
+])
+dst_entity_table_col_to_stype = copy.deepcopy(dataset2inferred_stypes[args.dataset][
     task.dst_entity_table
-]
+])
 
 remove_pkey_fkey(src_entity_table_col_to_stype, src_entity_table)
 remove_pkey_fkey(dst_entity_table_col_to_stype, dst_entity_table)
