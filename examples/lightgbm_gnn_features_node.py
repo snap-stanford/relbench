@@ -37,6 +37,7 @@ parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--num_workers", type=int, default=1)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_ensembles", type=int, default=1)
+parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--attempt_load_state_dict", action="store_true"
 )  # If true, try to load pretrained state dict
@@ -51,12 +52,12 @@ args = parser.parse_args()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
-seed_everything(42)
+seed_everything(args.seed)
 
 root_dir = "./data"
 
 # TODO: remove process=True once correct data/task is uploaded.
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
 task: NodeTask = dataset.get_task(args.task, process=True)
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
@@ -271,11 +272,11 @@ print("=====================")
 model.load_state_dict(state_dict)
 val_pred = test(loader_dict["val"])
 val_metrics = task.evaluate(val_pred, task.val_table)
-print(f"Best Val metrics: {val_metrics}")
+print(f"GNN Val metrics: {val_metrics}")
 
 test_pred = test(loader_dict["test"])
 test_metrics = task.evaluate(test_pred)
-print(f"Best test metrics: {test_metrics}")
+print(f"GNN test metrics: {test_metrics}")
 
 
 print("=====================")
