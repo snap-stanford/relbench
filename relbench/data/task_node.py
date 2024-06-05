@@ -107,9 +107,7 @@ class RelBenchNodeTask(NodeTask):
         def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
             return _pack_tables(self, root)
 
-    def stats(
-        self, split: Literal["train", "val", "test"] = "train"
-    ) -> dict[str, dict[str, Any]]:
+    def stats(self) -> dict[str, dict[str, Any]]:
         r"""Get train / val / test table statistics for each timestamp
         and the whole table, including number of rows and number of entities.
         Tasks with different task types have different statistics computed:
@@ -121,42 +119,62 @@ class RelBenchNodeTask(NodeTask):
             classes per entity. Number and index of classes having minimum
             and maximum number of classes.
         """
-        if split == "train":
-            table = self.train_table
-        elif split == "val":
-            table = self.val_table
-        else:
-            table = self.test_table
-        timestamps = table.df[self.time_col].unique()
         res = {}
-        for timestamp in timestamps:
-            temp_df = table.df[table.df[self.time_col] == timestamp]
-            stats = {
-                "num_rows": len(temp_df),
-                "num_unique_entities": temp_df[self.entity_col].nunique(),
-            }
-            if self.task_type == TaskType.BINARY_CLASSIFICATION:
-                self._set_binary_stats(temp_df, stats)
-            elif self.task_type == TaskType.REGRESSION:
-                self._set_regression_stats(temp_df, stats)
-            elif self.task_type == TaskType.MULTILABEL_CLASSIFICATION:
-                self._set_multilabel_stats(temp_df, stats)
+        for split in ["train", "val", "test"]:
+            if split == "train":
+                table = self.train_table
+            elif split == "val":
+                table = self.val_table
             else:
-                raise ValueError(f"Unsupported task type {self.task_type}")
-            res[str(timestamp)] = stats
+                table = self._full_test_table
+            if table is None:
+                continue
+            timestamps = table.df[self.time_col].unique()
+            split_stats = {}
+            for timestamp in timestamps:
+                temp_df = table.df[table.df[self.time_col] == timestamp]
+                stats = {
+                    "num_rows": len(temp_df),
+                    "num_unique_entities": temp_df[self.entity_col].nunique(),
+                }
+                self._set_stats(temp_df, stats)
+                split_stats[str(timestamp)] = stats
+            split_stats[split] = {
+                "num_rows": len(table.df),
+                "num_unique_entities": table.df[self.entity_col].nunique(),
+            }
+            self._set_stats(table.df, split_stats[split])
+            res[split] = split_stats
+        total_df = pd.concat(
+            [
+                table.df
+                for table in [self.train_table, self.val_table, self._full_test_table]
+                if table is not None
+            ]
+        )
+        res["total"] = {}
+        self._set_stats(total_df, res["total"])
+        train_uniques = set(self.train_table.df[self.entity_col].unique())
+        if self._full_test_table is None:
+            return res
+        test_uniques = set(self._full_test_table.df[self.entity_col].unique())
+        ratio_train_test_entity_overlap = len(
+            train_uniques.intersection(test_uniques)
+        ) / len(test_uniques)
         res["total"] = {
-            "total_num_rows": len(table.df),
-            "total_num_unique_entities": table.df[self.entity_col].nunique(),
+            "ratio_train_test_entity_overlap": ratio_train_test_entity_overlap,
         }
+        return res
+
+    def _set_stats(self, df: pd.DataFrame, stats: dict[str, Any]) -> None:
         if self.task_type == TaskType.BINARY_CLASSIFICATION:
-            self._set_binary_stats(table.df, res["total"])
+            self._set_binary_stats(df, stats)
         elif self.task_type == TaskType.REGRESSION:
-            self._set_regression_stats(table.df, res["total"])
+            self._set_regression_stats(df, stats)
         elif self.task_type == TaskType.MULTILABEL_CLASSIFICATION:
-            self._set_multilabel_stats(table.df, res["total"])
+            self._set_multilabel_stats(df, stats)
         else:
             raise ValueError(f"Unsupported task type {self.task_type}")
-        return res
 
     def _set_binary_stats(self, df: pd.DataFrame, stats: dict[str, Any]) -> None:
         stats["num_positives"] = (df[self.target_col] == 1).sum()

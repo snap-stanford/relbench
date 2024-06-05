@@ -49,15 +49,15 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     assert task.task_type == TaskType.LINK_PREDICTION
 
     # Ensure that stats computation works on train/val/test splits ###########
-    train_stats = task.stats(split="train")
-    val_stats = task.stats(split="val")
-    test_stats = task.stats(split="test")
-    assert len(train_stats) == 11
-    assert len(val_stats) == 2
-    assert len(test_stats) == 2
-    assert len(next(iter(train_stats.values()))) == 4
-    assert len(next(iter(val_stats.values()))) == 4
-    assert len(next(iter(test_stats.values()))) == 4
+    stats = task.stats()
+    assert len(stats) == 4
+    assert len(stats["train"]) == 11
+    assert len(next(iter(stats["train"].values()))) == 4
+    assert len(stats["val"]) == 2
+    assert len(next(iter(stats["val"].values()))) == 4
+    assert len(stats["test"]) == 2
+    assert len(next(iter(stats["test"].values()))) == 4
+    assert len(stats["total"].values()) == 5
 
     train_table_input = get_link_train_table_input(task.train_table, task)
     # Test get_link_train_table_input
