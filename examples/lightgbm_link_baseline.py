@@ -86,9 +86,13 @@ col_to_stype[target_col_name] = torch_frame.categorical
 
 # randomly subsample in case training data size is too large.
 sampled_train_table = copy.deepcopy(train_table)
+sampled_val_table = copy.deepcopy(val_table)
 if args.sample_size > 0 and args.sample_size < len(sampled_train_table):
     sampled_idx = np.random.permutation(len(sampled_train_table))[: args.sample_size]
     sampled_train_table.df = sampled_train_table.df.iloc[sampled_idx]
+if args.sample_size > 0 and args.sample_size < len(sampled_val_table):
+    sampled_idx = np.random.permutation(len(sampled_val_table))[: args.sample_size]
+    sampled_val_table.df = sampled_val_table.df.iloc[sampled_idx]
 
 # Prepare train/val dataset for lightGBM model training. For each src
 # entity, their corresponding dst entities are used as positive label.
@@ -98,7 +102,7 @@ left_entity = list(train_table.fkey_col_to_pkey_table.keys())[0]
 right_entity = list(train_table.fkey_col_to_pkey_table.keys())[1]
 for split, table in [
     ("train", sampled_train_table),
-    ("val", val_table),
+    ("val", sampled_val_table),
 ]:
     src_entity_df = src_entity_df.astype(
         {src_entity_table.pkey_col: table.df[left_entity].dtype}
@@ -304,7 +308,7 @@ val_metrics = evaluate(
     task.train_table.time_col,
     task.eval_k,
     PRED_SCORE_COL_NAME,
-    val_table,
+    sampled_val_table,
     task,
 )
 print(f"Val: {val_metrics}")
