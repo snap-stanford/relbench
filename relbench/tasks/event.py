@@ -29,17 +29,10 @@ class UserAttendanceTask(RelBenchNodeTask):
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         df = duckdb.sql(
-            f"""
-            SELECT
-                event_info.timestamp,
-                event_info.user,
-                event_info.target
-            FROM
-            (SELECT
+            f"""SELECT
                 t.timestamp,
                 event_attendees.user_id AS user,
-                SUM(CASE WHEN event_attendees.status IN ('yes', 'maybe') THEN 1 ELSE 0 END) AS target,
-                LAG(SUM(CASE WHEN event_attendees.status IN ('yes', 'maybe') THEN 1 ELSE 0 END), 1) OVER (PARTITION BY event_attendees.user_id ORDER BY t.timestamp) AS prev_target
+                SUM(CASE WHEN event_attendees.status IN ('yes', 'maybe') THEN 1 ELSE 0 END) AS target
             FROM
                 timestamp_df t
             LEFT JOIN
@@ -50,9 +43,6 @@ class UserAttendanceTask(RelBenchNodeTask):
             GROUP BY
                 t.timestamp,
                 event_attendees.user_id
-                ) event_info
-            WHERE
-                prev_target IS NULL OR prev_target > 0
             """
         ).df()
         df = df.dropna(subset=["user"])
