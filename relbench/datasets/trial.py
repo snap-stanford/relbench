@@ -6,8 +6,8 @@ import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.trial import (
-    ConditionSponsorFundTask,
-    SiteSponsorFundTask,
+    ConditionSponsorRunTask,
+    SiteSponsorRunTask,
     SiteSuccessTask,
     StudyAdverseTask,
     StudyOutcomeTask,
@@ -27,8 +27,8 @@ class TrialDataset(RelBenchDataset):
         StudyAdverseTask,
         StudyWithdrawalTask,
         SiteSuccessTask,
-        ConditionSponsorFundTask,
-        SiteSponsorFundTask,
+        ConditionSponsorRunTask,
+        SiteSponsorRunTask,
     ]
 
     def __init__(
