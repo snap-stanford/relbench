@@ -298,10 +298,10 @@ class SiteSuccessTask(RelBenchNodeTask):
         )
 
 
-class ConditionSponsorRecTask(RelBenchLinkTask):
+class ConditionSponsorFundTask(RelBenchLinkTask):
     r"""Predict whether this condition will have which sponsors."""
 
-    name = "condition-sponsor-rec"
+    name = "condition-sponsor-fund"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "condition_id"
     src_entity_table = "conditions"
@@ -343,10 +343,10 @@ class ConditionSponsorRecTask(RelBenchLinkTask):
         )
 
 
-class SiteSponsorRecTask(RelBenchLinkTask):
+class SiteSponsorFundTask(RelBenchLinkTask):
     r"""Predict whether this sponsor will have a trial in a facility."""
 
-    name = "site-sponsor-rec"
+    name = "site-sponsor-fund"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "facility_id"
     src_entity_table = "facilities"
