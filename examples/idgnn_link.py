@@ -36,22 +36,10 @@ parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=512)
 parser.add_argument("--temporal_strategy", type=str, default="last")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
-# <<<
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument(
-    "--roach_project",
-    type=str,
-    default=None,
-    help="This is for internal use only.",
-)
 args = parser.parse_args()
 
-if args.roach_project:
-    import roach
-
-    roach.init(args.roach_project)
-    roach.store["args"] = args.__dict__
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
@@ -61,7 +49,6 @@ seed_everything(args.seed)
 root_dir = "./data"
 
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-# >>>
 task: LinkTask = dataset.get_task(args.task, process=True)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
@@ -217,11 +204,3 @@ print(f"Best Val metrics: {val_metrics}")
 test_pred = test(loader_dict["test"])
 test_metrics = task.evaluate(test_pred)
 print(f"Best test metrics: {test_metrics}")
-
-
-# <<<
-if args.roach_project:
-    roach.store["val"] = val_metrics
-    roach.store["test"] = test_metrics
-    roach.finish()
-# >>>

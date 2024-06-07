@@ -14,27 +14,13 @@ from relbench.datasets import get_dataset
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
 parser.add_argument("--task", type=str, default="user-engagement")
-# <<<
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument(
-    "--roach_project",
-    type=str,
-    default=None,
-    help="This is for internal use only.",
-)
 args = parser.parse_args()
-
-if args.roach_project:
-    import roach
-
-    roach.init(args.roach_project)
-    roach.store["args"] = args.__dict__
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed_everything(args.seed)
 
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-# >>>
 task = dataset.get_task(args.task, process=True)
 
 train_table = task.train_table
@@ -108,9 +94,6 @@ if task.task_type == TaskType.REGRESSION:
         print(f"Val: {val_metrics}")
         print(f"Test: {test_metrics}")
 
-        if args.roach_project:
-            roach.store[f"{name}/val"] = val_metrics
-            roach.store[f"{name}/test"] = test_metrics
 
 elif task.task_type == TaskType.BINARY_CLASSIFICATION:
     eval_name_list = ["random", "majority"]
@@ -123,9 +106,6 @@ elif task.task_type == TaskType.BINARY_CLASSIFICATION:
         print(f"Val: {val_metrics}")
         print(f"Test: {test_metrics}")
 
-        if args.roach_project:
-            roach.store[f"{name}/val"] = val_metrics
-            roach.store[f"{name}/test"] = test_metrics
 
 elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     eval_name_list = ["random_multilabel", "majority_multilabel"]
@@ -137,10 +117,3 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
         print(f"Test: {test_metrics}")
-
-        if args.roach_project:
-            roach.store[f"{name}/val"] = val_metrics
-            roach.store[f"{name}/test"] = test_metrics
-
-if args.roach_project:
-    roach.finish()

@@ -1,11 +1,9 @@
 import argparse
 import copy
 
-# <<<
 import os
 from collections import Counter
 
-# >>>
 from typing import Dict
 
 import numpy as np
@@ -19,14 +17,11 @@ from torch_frame.data import Dataset
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 
-# <<<
 from torch_geometric.seed import seed_everything
 
 from relbench.data import RelBenchDataset, RelBenchLinkTask, Table
 from relbench.datasets import get_dataset
 from relbench.external.utils import remove_pkey_fkey
-
-# >>>
 
 
 LINK_PRED_BASELINE_TARGET_COL_NAME = "link_pred_baseline_target_column_name"
@@ -35,27 +30,14 @@ PRED_SCORE_COL_NAME = "pred_score_col_name"
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
 parser.add_argument("--task", type=str, default="user-post-comment")
-# <<<
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument(
-    "--roach_project",
-    type=str,
-    default=None,
-    help="This is for internal use only.",
-)
 parser.add_argument(
     "--sample_size",
     type=int,
-    default=50000,
+    default=50_000,
     help="Subsample the specified number of training data to train lightgbm model.",
 )
 args = parser.parse_args()
-
-if args.roach_project:
-    import roach
-
-    roach.init(args.roach_project)
-    roach.store["args"] = args.__dict__
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
@@ -65,7 +47,6 @@ seed_everything(args.seed)
 root_dir = "./data"
 
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-# >>>
 task: RelBenchLinkTask = dataset.get_task(args.task, process=True)
 target_col_name: str = LINK_PRED_BASELINE_TARGET_COL_NAME
 
@@ -245,13 +226,11 @@ train_dataset = Dataset(
         batch_size=256,
     ),
 )
-# <<<
 train_dataset = train_dataset.materialize(
     path=os.path.join(
         root_dir, f"{args.dataset}_{args.task}_materialized_cache_lightgbm_link.pt"
     )
 )
-# >>>
 
 tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
@@ -363,10 +342,3 @@ test_metrics = evaluate(
     task,
 )
 print(f"Test: {test_metrics}")
-
-# <<<
-if args.roach_project:
-    roach.store["val"] = val_metrics
-    roach.store["test"] = test_metrics
-    roach.finish()
-# >>>
