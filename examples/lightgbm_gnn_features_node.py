@@ -34,7 +34,6 @@ parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
-parser.add_argument("--num_workers", type=int, default=1)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_ensembles", type=int, default=1)
 parser.add_argument(
@@ -43,20 +42,35 @@ parser.add_argument(
 parser.add_argument(
     "--sample_size",
     type=int,
-    default=None,
+    default=50_000,
     help="Subsample the specified number of training data to train lightgbm model.",
 )
+# <<<
+parser.add_argument("--num_workers", type=int, default=0)
+parser.add_argument("--seed", type=int, default=42)
+parser.add_argument(
+    "--roach_project",
+    type=str,
+    default=None,
+    help="This is for internal use only.",
+)
 args = parser.parse_args()
+
+if args.roach_project:
+    import roach
+
+    roach.init(args.roach_project)
+    roach.store["args"] = args.__dict__
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
-seed_everything(42)
+seed_everything(args.seed)
 
 root_dir = "./data"
 
-# TODO: remove process=True once correct data/task is uploaded.
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
+# >>>
 task: NodeTask = dataset.get_task(args.task, process=True)
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
@@ -259,7 +273,8 @@ else:
             state_dict = copy.deepcopy(model.state_dict())
 
     # save state dict
-    torch.save(state_dict, STATE_DICT_PTH)
+    if args.attempt_load_state_dict:
+        torch.save(state_dict, STATE_DICT_PTH)
 
 
 val_pred_accum = 0
@@ -332,7 +347,15 @@ model.tune(tf_train, tf_val, num_trials=10)
 
 
 pred = model.predict(tf_val).numpy()
-print(f"Val: {task.evaluate(pred, task.val_table)}")
+val_metrics = task.evaluate(pred, task.val_table)
+print(f"Val: {val_metrics}")
 
 pred = model.predict(tf_test).numpy()
-print(f"Test: {task.evaluate(pred)}")
+print(f"Test: {test_metrics}")
+
+# <<<
+if args.roach_project:
+    roach.store["val"] = val_metrics
+    roach.store["test"] = test_metrics
+    roach.finish()
+# >>>

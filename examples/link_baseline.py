@@ -4,6 +4,7 @@ from typing import Dict
 
 import numpy as np
 import pandas as pd
+from torch_geometric.seed import seed_everything
 
 from relbench.data import LinkTask, Table
 from relbench.datasets import get_dataset
@@ -11,9 +12,26 @@ from relbench.datasets import get_dataset
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
 parser.add_argument("--task", type=str, default="user-post-comment")
+# <<<
+parser.add_argument("--seed", type=int, default=42)
+parser.add_argument(
+    "--roach_project",
+    type=str,
+    default=None,
+    help="This is for internal use only.",
+)
 args = parser.parse_args()
 
-dataset = get_dataset(name=args.dataset, process=True)
+if args.roach_project:
+    import roach
+
+    roach.init(args.roach_project)
+    roach.store["args"] = args.__dict__
+
+seed_everything(args.seed)
+
+dataset = get_dataset(name=args.dataset, process=False)
+# >>>
 task: LinkTask = dataset.get_task(args.task, process=True)
 
 train_table = task.train_table
@@ -88,3 +106,10 @@ for name in eval_name_list:
     print(f"Train: {train_metrics}")
     print(f"Val: {val_metrics}")
     print(f"Test: {test_metrics}")
+
+    if args.roach_project:
+        roach.store[f"{name}/val"] = val_metrics
+        roach.store[f"{name}/test"] = test_metrics
+
+if args.roach_project:
+    roach.finish()

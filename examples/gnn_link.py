@@ -1,7 +1,7 @@
 import argparse
 import copy
 import os
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy as np
 import torch
@@ -34,23 +34,36 @@ parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=160)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 # Use the same seed time across the mini-batch and share the negatives
-parser.add_argument("--share_same_time", action="store_true")
+parser.add_argument("--share_same_time", action="store_true", default=True)
 # Whether to use shallow embedding on dst nodes or not.
-parser.add_argument("--use_shallow", action="store_true")
-parser.add_argument("--num_workers", type=int, default=1)
+parser.add_argument("--use_shallow", action="store_true", default=True)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
-parser.add_argument("--log_dir", type=str, default="results")
+# <<<
+parser.add_argument("--num_workers", type=int, default=0)
+parser.add_argument("--seed", type=int, default=42)
+parser.add_argument(
+    "--roach_project",
+    type=str,
+    default=None,
+    help="This is for internal use only.",
+)
 args = parser.parse_args()
+
+if args.roach_project:
+    import roach
+
+    roach.init(args.roach_project)
+    roach.store["args"] = args.__dict__
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
-seed_everything(42)
+seed_everything(args.seed)
 
 root_dir = "./data"
 
-# TODO: remove process=True once correct data/task is uploaded.
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
+# >>>
 task: LinkTask = dataset.get_task(args.task, process=True)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
@@ -85,7 +98,7 @@ train_loader = LinkNeighborLoader(
     num_workers=args.num_workers,
 )
 
-eval_loaders_dict: Dict[str, tuple[NeighborLoader, NeighborLoader]] = {}
+eval_loaders_dict: Dict[str, Tuple[NeighborLoader, NeighborLoader]] = {}
 for split in ["val", "test"]:
     seed_time = task.val_seed_time if split == "val" else task.test_seed_time
     target_table = task.val_table if split == "val" else task.test_table
@@ -170,15 +183,7 @@ def train() -> float:
         if steps > args.max_steps_per_epoch:
             break
 
-    if count_accum == 0:
-        raise ValueError(
-            f"Did not sample a single '{task.dst_entity_table}' "
-            f"node in any mini-batch. Try to increase the number "
-            f"of layers/hops and re-try. If you run into memory "
-            f"issues with deeper nets, decrease the batch size."
-        )
-
-    return loss_accum / count_accum
+    return loss_accum / (count_accum + 1e-10)  # sometimes count_accum is 0
 
 
 @torch.no_grad()
@@ -219,6 +224,7 @@ for epoch in range(1, args.epochs + 1):
             best_val_metric = val_metrics[tune_metric]
             state_dict = copy.deepcopy(model.state_dict())
 
+
 model.load_state_dict(state_dict)
 val_pred = test(*eval_loaders_dict["val"])
 val_metrics = task.evaluate(val_pred, task.val_table)
@@ -227,3 +233,10 @@ print(f"Best Val metrics: {val_metrics}")
 test_pred = test(*eval_loaders_dict["test"])
 test_metrics = task.evaluate(test_pred)
 print(f"Best test metrics: {test_metrics}")
+
+# <<<
+if args.roach_project:
+    roach.store["val"] = val_metrics
+    roach.store["test"] = test_metrics
+    roach.finish()
+# >>>

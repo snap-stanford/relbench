@@ -10,6 +10,7 @@ from inferred_stypes import dataset2inferred_stypes
 from model import Model
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
+from torch.utils.tensorboard import SummaryWriter
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
@@ -34,20 +35,33 @@ parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=512)
 parser.add_argument("--temporal_strategy", type=str, default="last")
-parser.add_argument("--num_workers", type=int, default=1)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
-parser.add_argument("--log_dir", type=str, default="results")
+# <<<
+parser.add_argument("--num_workers", type=int, default=0)
+parser.add_argument("--seed", type=int, default=42)
+parser.add_argument(
+    "--roach_project",
+    type=str,
+    default=None,
+    help="This is for internal use only.",
+)
 args = parser.parse_args()
+
+if args.roach_project:
+    import roach
+
+    roach.init(args.roach_project)
+    roach.store["args"] = args.__dict__
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
-seed_everything(42)
+seed_everything(args.seed)
 
 root_dir = "./data"
 
-# TODO: remove process=True once correct data/task is uploaded.
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
+# >>>
 task: LinkTask = dataset.get_task(args.task, process=True)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
@@ -203,3 +217,11 @@ print(f"Best Val metrics: {val_metrics}")
 test_pred = test(loader_dict["test"])
 test_metrics = task.evaluate(test_pred)
 print(f"Best test metrics: {test_metrics}")
+
+
+# <<<
+if args.roach_project:
+    roach.store["val"] = val_metrics
+    roach.store["test"] = test_metrics
+    roach.finish()
+# >>>
