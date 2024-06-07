@@ -169,7 +169,15 @@ def train() -> float:
         if steps > args.max_steps_per_epoch:
             break
 
-    return loss_accum / (count_accum + 1e-10)  # sometimes count_accum is 0
+    if count_accum == 0:
+        raise ValueError(
+            f"Did not sample a single '{task.dst_entity_table}' "
+            f"node in any mini-batch. Try to increase the number "
+            f"of layers/hops and re-try. If you run into memory "
+            f"issues with deeper nets, decrease the batch size."
+        )
+
+    return loss_accum / count_accum
 
 
 @torch.no_grad()
