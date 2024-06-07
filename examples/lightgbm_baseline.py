@@ -36,9 +36,12 @@ parser.add_argument(
     help="Subsample the specified number of training data to train lightgbm model.",
 )
 parser.add_argument("--seed", type=int, default=42)
+parser.add_argument(
+    "--cache_dir",
+    type=str,
+    default=os.path.expanduser("~/.cache/relbench/materialized"),
+)
 args = parser.parse_args()
-
-root_dir = "./data"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
@@ -144,9 +147,7 @@ train_dataset = Dataset(
     ),
 )
 train_dataset = train_dataset.materialize(
-    path=os.path.join(
-        root_dir, f"{args.dataset}_{args.task}_materialized_cache_lightgbm.pt"
-    )
+    path=os.path.join(args.cache_dir, f"{args.dataset}_{args.task}.pt")
 )
 
 tf_train = train_dataset.tensor_frame

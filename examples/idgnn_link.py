@@ -38,6 +38,11 @@ parser.add_argument("--temporal_strategy", type=str, default="last")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
+parser.add_argument(
+    "--cache_dir",
+    type=str,
+    default=os.path.expanduser("~/.cache/relbench/materialized"),
+)
 args = parser.parse_args()
 
 
@@ -45,8 +50,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
-
-root_dir = "./data"
 
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
 task: LinkTask = dataset.get_task(args.task, process=True)
@@ -61,7 +64,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
+    cache_dir=os.path.join(args.cache_dir, args.dataset),
 )
 
 num_neighbors = [int(args.num_neighbors // 2**i) for i in range(args.num_layers)]

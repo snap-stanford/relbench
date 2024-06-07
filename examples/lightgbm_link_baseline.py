@@ -37,14 +37,17 @@ parser.add_argument(
     default=50_000,
     help="Subsample the specified number of training data to train lightgbm model.",
 )
+parser.add_argument(
+    "--cache_dir",
+    type=str,
+    default=os.path.expanduser("~/.cache/relbench/materialized"),
+)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
-
-root_dir = "./data"
 
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
 task: RelBenchLinkTask = dataset.get_task(args.task, process=True)
@@ -227,9 +230,7 @@ train_dataset = Dataset(
     ),
 )
 train_dataset = train_dataset.materialize(
-    path=os.path.join(
-        root_dir, f"{args.dataset}_{args.task}_materialized_cache_lightgbm_link.pt"
-    )
+    path=os.path.join(args.cache_dir, f"{args.dataset}_{args.task}.pt")
 )
 
 tf_train = train_dataset.tensor_frame
