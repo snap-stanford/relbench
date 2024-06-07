@@ -10,7 +10,6 @@ from inferred_stypes import dataset2inferred_stypes
 from model import Model
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
-from torch.utils.tensorboard import SummaryWriter
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
@@ -179,8 +178,6 @@ def test(loader: NeighborLoader) -> np.ndarray:
     return pred
 
 
-writer = SummaryWriter(log_dir=args.log_dir)
-
 state_dict = None
 best_val_metric = 0
 for epoch in range(1, args.epochs + 1):
@@ -197,9 +194,6 @@ for epoch in range(1, args.epochs + 1):
             best_val_metric = val_metrics[tune_metric]
             state_dict = copy.deepcopy(model.state_dict())
 
-        writer.add_scalar("train/loss", train_loss, epoch)
-        for name, metric in val_metrics.items():
-            writer.add_scalar(f"val/{name}", metric, epoch)
 
 model.load_state_dict(state_dict)
 val_pred = test(loader_dict["val"])
@@ -209,9 +203,3 @@ print(f"Best Val metrics: {val_metrics}")
 test_pred = test(loader_dict["test"])
 test_metrics = task.evaluate(test_pred)
 print(f"Best test metrics: {test_metrics}")
-
-for name, metric in test_metrics.items():
-    writer.add_scalar(f"test/{name}", metric, 0)
-
-writer.flush()
-writer.close()
