@@ -76,6 +76,6 @@ new_name = {
     "rel-trial-adverse": "study-adverse",
     "rel-trial-withdrawal": "study-withdrawal",
     "rel-trial-site": "site-success",
-    "rel-trial-sponsor-condition": "condition-sponsor-rec",
-    "rel-trial-sponsor-facility": "site-sponsor-rec",
+    "rel-trial-sponsor-condition": "condition-sponsor-run",
+    "rel-trial-sponsor-facility": "site-sponsor-run",
 }
