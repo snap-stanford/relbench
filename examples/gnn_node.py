@@ -22,7 +22,7 @@ from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_g
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-event")
-parser.add_argument("--task", type=str, default="user-attendance")
+parser.add_argument("--task", type=str, default="user-interest")
 parser.add_argument("--lr", type=float, default=0.005)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)

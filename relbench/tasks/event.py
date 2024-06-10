@@ -3,7 +3,7 @@ import pandas as pd
 
 from relbench.data import Database, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import mae, r2, rmse
+from relbench.metrics import accuracy, average_precision, f1, mae, r2, rmse, roc_auc
 
 
 class UserAttendanceTask(RelBenchNodeTask):
@@ -48,6 +48,64 @@ class UserAttendanceTask(RelBenchNodeTask):
         df = df.dropna(subset=["user"])
         df["user"] = df["user"].astype(int)
         df = df.reset_index()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.entity_col: self.entity_table,
+            },
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+class UserInterestTask(RelBenchNodeTask):
+    r"""Predict wheter a user will show interest in an event in the next
+    7 days."""
+
+    name = "user-interest"
+    task_type = TaskType.BINARY_CLASSIFICATION
+    entity_col = "user"
+    entity_table = "users"
+    time_col = "timestamp"
+    timedelta = pd.Timedelta(days=7)
+    metrics = [average_precision, accuracy, f1, roc_auc]
+    target_col = "target"
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        users = db.table_dict["users"].df
+        user_friends = db.table_dict["user_friends"].df
+        friends = db.table_dict["friends"].df
+        events = db.table_dict["events"].df
+        event_attendees = db.table_dict["event_attendees"].df
+        event_interest = db.table_dict["event_interest"].df
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        df = duckdb.sql(
+            f"""SELECT
+                t.timestamp,
+                event_interest.user AS user,
+                CASE
+                    WHEN COUNT(CASE WHEN event_interest.interested = 1 THEN 1 ELSE NULL END) > 2 THEN 1
+                    ELSE 0
+                END AS target
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                event_interest
+            ON
+                event_interest.timestamp > t.timestamp AND
+                event_interest.timestamp <= t.timestamp + INTERVAL '{self.timedelta} days'
+            GROUP BY
+                t.timestamp,
+                event_interest.user
+            """
+        ).df()
+        df = df.dropna(subset=["user"])
+        df["user"] = df["user"].astype(int)
+        df = df.reset_index()
+        import pdb
+
+        pdb.set_trace()
 
         return Table(
             df=df,
