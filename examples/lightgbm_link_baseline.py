@@ -34,11 +34,6 @@ args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# TODO:
-# 1. during training & validation, additionally add 2 columns tacking
-#   the percentage of global popularity and number of past visits.
-# 2. after train & validation, calculate the val & test link prediction
-# metrics
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
 task: RelBenchLinkTask = dataset.get_task(args.task, process=True)
 target_col_name: str = LINK_PRED_BASELINE_TARGET_COL_NAME
@@ -59,12 +54,12 @@ dst_entity_df = dst_entity_table.df
 # Prepare col_to_stype dictioanry mapping between column names and stypes
 # for torch_frame Dataset initialization.
 col_to_stype = {}
-src_entity_table_col_to_stype = copy.deepcopy(dataset2inferred_stypes[args.dataset][
-    task.src_entity_table
-])
-dst_entity_table_col_to_stype = copy.deepcopy(dataset2inferred_stypes[args.dataset][
-    task.dst_entity_table
-])
+src_entity_table_col_to_stype = copy.deepcopy(
+    dataset2inferred_stypes[args.dataset][task.src_entity_table]
+)
+dst_entity_table_col_to_stype = copy.deepcopy(
+    dataset2inferred_stypes[args.dataset][task.dst_entity_table]
+)
 
 remove_pkey_fkey(src_entity_table_col_to_stype, src_entity_table)
 remove_pkey_fkey(dst_entity_table_col_to_stype, dst_entity_table)
@@ -148,66 +143,113 @@ for split, table in [
         left_on=right_entity,
         right_on=dst_entity_table.pkey_col,
     )
+    # TODO: add a helper function here to include global popularity and past
+    # visit columns for train & val set
     dfs[split] = df
+
+
+def prepare_for_link_pred_eval(
+    evaluate_table_df: pd.DataFrame, past_table_df: pd.DataFrame
+) -> pd.DataFrame:
+    """Transform evaluation dataframe into the correct format for link
+    prediction metric calculation.
+
+    Args:
+        pred_table_df (pd.DataFrame): The prediction dataframe.
+        past_table_df (pd.DataFrame): The dataframe containing labels in the
+            past.
+    Returns:
+        (pd.DataFrame): The evaluation dataframe containing past visit and
+            global popularity dst entities as candidate set.
+    """
+
+    def dst_entities_aggr(dst_entities):
+        r"concatenate and rank dst entities"
+        dst_entities_concat = []
+        for dst_entity_list in list(dst_entities):
+            dst_entities_concat.extend(dst_entity_list)
+        counter = Counter(dst_entities_concat)
+        topk = [elem for elem, _ in counter.most_common(task.eval_k)]
+        return topk
+
+    def interleave_lists(list1, list2):
+        interleaved = [item for pair in zip(list1, list2) for item in pair]
+        longer_list = list1 if len(list1) > len(list2) else list2
+        interleaved.extend(longer_list[len(interleaved) // 2 :])
+        return interleaved
+
+    grouped_ranked_past_table_df = (
+        past_table_df.groupby(left_entity)[right_entity]
+        .apply(dst_entities_aggr)
+        .reset_index()
+    )
+    evaluate_table_df = pd.merge(
+        evaluate_table_df, grouped_ranked_past_table_df, how="left", on=left_entity
+    )
+
+    # collect the most popular dst entities
+    all_dst_entities = [
+        entity for sublist in past_table_df[right_entity] for entity in sublist
+    ]
+    dst_entity_counter = Counter(all_dst_entities)
+    top_dst_entities = [
+        entity for entity, _ in dst_entity_counter.most_common(task.eval_k * 2)
+    ]
+
+    evaluate_table_df[right_entity] = evaluate_table_df[right_entity].apply(
+        lambda x: (
+            interleave_lists(x, top_dst_entities)
+            if isinstance(x, list)
+            else top_dst_entities
+        )
+    )
+    # For each src entity, keep at most `task.eval_k * 2` dst entity candidates
+    evaluate_table_df[right_entity] = evaluate_table_df[right_entity].apply(
+        lambda x: (
+            x[: task.eval_k * 2]
+            if isinstance(x, list) and len(x) > task.eval_k * 2
+            else x
+        )
+    )
+
+    # Include src and dst entity table features for `evaluate_table_df`
+    evaluate_table_df = pd.merge(
+        evaluate_table_df,
+        src_entity_df,
+        how="left",
+        left_on=left_entity,
+        right_on=src_entity_table.pkey_col,
+    )
+
+    evaluate_table_df = evaluate_table_df.explode(right_entity)
+    evaluate_table_df = pd.merge(
+        evaluate_table_df,
+        dst_entity_df,
+        how="left",
+        left_on=right_entity,
+        right_on=dst_entity_table.pkey_col,
+    )
+    return evaluate_table_df
+
+
+# Prepare val dataset for lightGBM model evalution
+val_df_pred_column_names = list(val_table.df.columns)
+val_df_pred_column_names.remove(right_entity)
+val_df_pred = val_table.df[val_df_pred_column_names]
+# Per each src entity, collect all past linked dst entities
+val_past_table_df = train_table.df
+val_past_table_df.drop(columns=[train_table.time_col], inplace=True)
+val_df_pred = prepare_for_link_pred_eval(val_df_pred, val_past_table_df)
+dfs["val_pred"] = val_df_pred
 
 # Prepare test dataset for lightGBM model evalution
 test_df_column_names = list(test_table.df.columns)
 test_df_column_names.remove(right_entity)
 test_df = test_table.df[test_df_column_names]
-
 # Per each src entity, collect all past linked dst entities
-trainval_table_df = pd.concat([train_table.df, val_table.df], axis=0)
-trainval_table_df.drop(columns=[train_table.time_col], inplace=True)
-
-
-def dst_entities_aggr(dst_entities):
-    r"concatenate and deduplicate dst entities"
-    concatenated = [item for sublist in dst_entities for item in sublist]
-    return list(set(concatenated))
-
-
-grouped_deduped_trainval = (
-    trainval_table_df.groupby(left_entity)[right_entity]
-    .apply(dst_entities_aggr)
-    .reset_index()
-)
-test_df = pd.merge(test_df, grouped_deduped_trainval, how="left", on=left_entity)
-
-# collect the most popular dst entities
-all_dst_entities = [
-    entity for sublist in trainval_table_df[right_entity] for entity in sublist
-]
-dst_entity_counter = Counter(all_dst_entities)
-top_dst_entities = [
-    entity for entity, _ in dst_entity_counter.most_common(task.eval_k * 2)
-]
-test_df[right_entity] = test_df[right_entity].apply(
-    lambda x: x + top_dst_entities if isinstance(x, list) else top_dst_entities
-)
-
-# For each src entity, keep at most `task.eval_k * 2` dst entity candidates
-test_df[right_entity] = test_df[right_entity].apply(
-    lambda x: (
-        x[: task.eval_k * 2] if isinstance(x, list) and len(x) > task.eval_k * 2 else x
-    )
-)
-
-# Include src and dst entity table features for `test_df`
-test_df = pd.merge(
-    test_df,
-    src_entity_df,
-    how="left",
-    left_on=left_entity,
-    right_on=src_entity_table.pkey_col,
-)
-test_df = test_df.explode(right_entity)
-test_df = pd.merge(
-    test_df,
-    dst_entity_df,
-    how="left",
-    left_on=right_entity,
-    right_on=dst_entity_table.pkey_col,
-)
+test_past_table_df = pd.concat([train_table.df, val_table.df], axis=0)
+test_past_table_df.drop(columns=[train_table.time_col], inplace=True)
+test_df = prepare_for_link_pred_eval(test_df, test_past_table_df)
 dfs["test"] = test_df
 
 train_dataset = Dataset(
@@ -221,6 +263,7 @@ train_dataset = Dataset(
 ).materialize()
 tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
+tf_val_pred = train_dataset.convert_to_tensor_frame(dfs["val_pred"])
 tf_test = train_dataset.convert_to_tensor_frame(dfs["test"])
 
 # tune metric for binary classification problem
@@ -274,6 +317,7 @@ def evaluate(
     grouped_df = train_table.df[[src_entity_name, timestamp_col_name]].merge(
         grouped_df, on=[src_entity_name, timestamp_col_name], how="left"
     )
+
     dst_entity_array = (
         grouped_df[dst_entity_name].apply(adjust_past_dst_entities).tolist()
     )
@@ -299,8 +343,8 @@ train_metrics = evaluate(
 )
 print(f"Train: {train_metrics}")
 
-pred = model.predict(tf_test=tf_val).numpy()
-lightgbm_output = dfs["val"]
+pred = model.predict(tf_test=tf_val_pred).numpy()
+lightgbm_output = val_df_pred
 lightgbm_output[PRED_SCORE_COL_NAME] = pred
 val_metrics = evaluate(
     lightgbm_output,
