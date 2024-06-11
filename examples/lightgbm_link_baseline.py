@@ -90,6 +90,75 @@ if args.sample_size > 0 and args.sample_size < len(sampled_train_table):
     sampled_idx = np.random.permutation(len(sampled_train_table))[: args.sample_size]
     sampled_train_table.df = sampled_train_table.df.iloc[sampled_idx]
 
+
+def dst_entities_aggr(dst_entities):
+    r"concatenate and rank dst entities"
+    dst_entities_concat = []
+    for dst_entity_list in list(dst_entities):
+        dst_entities_concat.extend(dst_entity_list)
+    counter = Counter(dst_entities_concat)
+    topk = [elem for elem, _ in counter.most_common(task.eval_k)]
+    return topk
+
+
+def add_past_label_feature(
+    train_table_df: pd.DataFrame,
+    past_table_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Add past visit count and percentage of global popularity to train table
+    df used for lightGBM training, evaluation of testing.
+
+    Args:
+        evaluate_table_df (pd.DataFrame): The dataframe used for evaluation.
+        past_table_df (pd.DataFrame): The dataframe containing labels in the
+            past.
+    """
+    # Add number of past visit for each left_entity and right_entity pair
+    # Explode the right_entity list to get one row per (left_entity, right_entity) pair
+    exploded_past_table = past_table_df.explode(right_entity)
+
+    # Count occurrences of each (left_entity, right_entity) pair
+    right_entity_count = (
+        exploded_past_table.groupby([left_entity, right_entity])
+        .size()
+        .reset_index(name="num_past_visit")
+    )
+
+    # Merge the count information with train_table_df
+    train_table_df = train_table_df.merge(
+        right_entity_count, how="left", on=[left_entity, right_entity]
+    )
+
+    # Fill NaN values with 0 (if there are any right_entity in train_table_df not present in past_table_df)
+    train_table_df["num_past_visit"] = (
+        train_table_df["num_past_visit"].fillna(0).astype(int)
+    )
+
+    # Add percentage of global popularity for each right_entity
+    # Count occurrences of each right_entity
+    right_entity_count = exploded_past_table[right_entity].value_counts().reset_index()
+
+    # Calculate the fraction
+    total_right_entities = len(exploded_past_table)
+    right_entity_count["global_popularity_fraction"] = (
+        right_entity_count["count"] / total_right_entities
+    )
+
+    # Merge the fraction information with train_table_df
+    train_table_df = train_table_df.merge(
+        right_entity_count[[right_entity, "global_popularity_fraction"]],
+        how="left",
+        on=right_entity,
+    )
+
+    # Fill NaN values with 0 (if there are any right_entity in train_table_df not present in past_table_df)
+    train_table_df["global_popularity_fraction"] = train_table_df[
+        "global_popularity_fraction"
+    ].fillna(0)
+
+    return train_table_df
+
+
 # Prepare train/val dataset for lightGBM model training. For each src
 # entity, their corresponding dst entities are used as positive label.
 # The same number of random dst entities are sampled as negative label.
@@ -143,8 +212,7 @@ for split, table in [
         left_on=right_entity,
         right_on=dst_entity_table.pkey_col,
     )
-    # TODO: add a helper function here to include global popularity and past
-    # visit columns for train & val set
+    df = add_past_label_feature(df, train_table.df)
     dfs[split] = df
 
 
@@ -162,15 +230,6 @@ def prepare_for_link_pred_eval(
         (pd.DataFrame): The evaluation dataframe containing past visit and
             global popularity dst entities as candidate set.
     """
-
-    def dst_entities_aggr(dst_entities):
-        r"concatenate and rank dst entities"
-        dst_entities_concat = []
-        for dst_entity_list in list(dst_entities):
-            dst_entities_concat.extend(dst_entity_list)
-        counter = Counter(dst_entities_concat)
-        topk = [elem for elem, _ in counter.most_common(task.eval_k)]
-        return topk
 
     def interleave_lists(list1, list2):
         interleaved = [item for pair in zip(list1, list2) for item in pair]
@@ -229,6 +288,8 @@ def prepare_for_link_pred_eval(
         left_on=right_entity,
         right_on=dst_entity_table.pkey_col,
     )
+
+    evaluate_table_df = add_past_label_feature(evaluate_table_df, past_table_df)
     return evaluate_table_df
 
 
