@@ -275,7 +275,7 @@ dataset2inferred_stypes = {
             "country": stype.categorical,
             "lat": stype.numerical,
             "lng": stype.numerical,
-            "alt": stype.numerical,
+            # "alt": stype.numerical,
         },
         "drivers": {
             "driverId": stype.numerical,
