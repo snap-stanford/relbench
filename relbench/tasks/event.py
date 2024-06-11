@@ -60,16 +60,15 @@ class UserAttendanceTask(RelBenchNodeTask):
 
 
 class UserInterestTask(RelBenchNodeTask):
-    r"""Predict wheter a user will show interest in an event in the next
-    7 days."""
+    r"""Predict number of events a user will be interested in the next 7 days."""
 
     name = "user-interest"
-    task_type = TaskType.BINARY_CLASSIFICATION
+    task_type = TaskType.REGRESSION
     entity_col = "user"
     entity_table = "users"
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=7)
-    metrics = [average_precision, accuracy, f1, roc_auc]
+    metrics = [r2, mae, rmse]
     target_col = "target"
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -84,10 +83,7 @@ class UserInterestTask(RelBenchNodeTask):
             f"""SELECT
                 t.timestamp,
                 event_interest.user AS user,
-                CASE
-                    WHEN COUNT(CASE WHEN event_interest.interested = 1 THEN 1 ELSE NULL END) > 2 THEN 1
-                    ELSE 0
-                END AS target
+                SUM(CASE WHEN event_interest.interested = 1 THEN 1 ELSE 0 END) AS target
             FROM
                 timestamp_df t
             LEFT JOIN
@@ -103,9 +99,6 @@ class UserInterestTask(RelBenchNodeTask):
         df = df.dropna(subset=["user"])
         df["user"] = df["user"].astype(int)
         df = df.reset_index()
-        import pdb
-
-        pdb.set_trace()
 
         return Table(
             df=df,

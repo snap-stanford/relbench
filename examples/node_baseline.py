@@ -11,8 +11,8 @@ from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-stack")
-parser.add_argument("--task", type=str, default="user-engage")
+parser.add_argument("--dataset", type=str, default="rel-event")
+parser.add_argument("--task", type=str, default="user-interest")
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
