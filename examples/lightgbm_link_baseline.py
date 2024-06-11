@@ -1,9 +1,7 @@
 import argparse
 import copy
-
 import os
 from collections import Counter
-
 from typing import Dict
 
 import numpy as np
@@ -16,13 +14,11 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
-
 from torch_geometric.seed import seed_everything
 
 from relbench.data import RelBenchDataset, RelBenchLinkTask, Table
 from relbench.datasets import get_dataset
 from relbench.external.utils import remove_pkey_fkey
-
 
 LINK_PRED_BASELINE_TARGET_COL_NAME = "link_pred_baseline_target_column_name"
 PRED_SCORE_COL_NAME = "pred_score_col_name"

@@ -1,7 +1,5 @@
 import argparse
-
 import os
-
 from typing import Dict
 
 import numpy as np
@@ -14,7 +12,6 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
-
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
@@ -22,7 +19,6 @@ from relbench.data import RelBenchDataset, RelBenchNodeTask
 from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 from relbench.external.utils import remove_pkey_fkey
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")

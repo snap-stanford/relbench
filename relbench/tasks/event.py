@@ -3,18 +3,7 @@ import pandas as pd
 
 from relbench.data import Database, RelBenchNodeTask, Table
 from relbench.data.task_base import TaskType
-from relbench.metrics import (
-    accuracy,
-    average_precision,
-    f1,
-    link_prediction_map,
-    link_prediction_precision,
-    link_prediction_recall,
-    mae,
-    r2,
-    rmse,
-    roc_auc,
-)
+from relbench.metrics import mae, r2, rmse
 
 
 class UserAttendanceTask(RelBenchNodeTask):
@@ -40,8 +29,7 @@ class UserAttendanceTask(RelBenchNodeTask):
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         df = duckdb.sql(
-            f"""
-            SELECT
+            f"""SELECT
                 t.timestamp,
                 event_attendees.user_id AS user,
                 SUM(CASE WHEN event_attendees.status IN ('yes', 'maybe') THEN 1 ELSE 0 END) AS target
