@@ -12,7 +12,7 @@ from relbench.datasets import get_dataset
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-event")
-parser.add_argument("--task", type=str, default="user-interest")
+parser.add_argument("--task", type=str, default="user-repeat")
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

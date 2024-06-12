@@ -15,7 +15,7 @@ class UserAttendanceTask(RelBenchNodeTask):
     entity_col = "user"
     entity_table = "users"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=14)
+    timedelta = pd.Timedelta(days=7)
     metrics = [r2, mae, rmse]
     target_col = "target"
 

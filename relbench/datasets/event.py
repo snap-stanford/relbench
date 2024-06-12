@@ -24,7 +24,7 @@ class EventDataset(RelBenchDataset):
 
     train_start_timestamp = pd.Timestamp("2012-06-20")
     val_timestamp = pd.Timestamp("2012-11-21")
-    test_timestamp = pd.Timestamp("2012-12-05")
+    test_timestamp = pd.Timestamp("2012-11-29")
     max_eval_time_frames = 1
     task_cls_list = [UserAttendanceTask, UserRepeatTask]
 
