@@ -15,7 +15,7 @@ class UserAttendanceTask(RelBenchNodeTask):
     entity_col = "user"
     entity_table = "users"
     time_col = "timestamp"
-    timedelta = pd.Timedelta(days=7)
+    timedelta = pd.Timedelta(days=14)
     metrics = [r2, mae, rmse]
     target_col = "target"
 
@@ -59,16 +59,18 @@ class UserAttendanceTask(RelBenchNodeTask):
         )
 
 
-class UserInterestTask(RelBenchNodeTask):
-    r"""Predict number of events a user will be interested in the next 7 days."""
+class UserRepeatTask(RelBenchNodeTask):
+    r"""Predict whether if a user will attend an event in the
+    next 7 days if they have already attended an event in the
+    last 7 days."""
 
-    name = "user-interest"
-    task_type = TaskType.REGRESSION
+    name = "user-repeat"
+    task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "user"
     entity_table = "users"
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=7)
-    metrics = [r2, mae, rmse]
+    metrics = [accuracy, average_precision, f1, roc_auc]
     target_col = "target"
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -79,23 +81,40 @@ class UserInterestTask(RelBenchNodeTask):
         event_attendees = db.table_dict["event_attendees"].df
         event_interest = db.table_dict["event_interest"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        if len(timestamp_df) == 1:
+            new_row = pd.DataFrame({"timestamp": [timestamps[0] - self.timedelta]})
+            timestamp_df = pd.concat([new_row, timestamp_df], ignore_index=True)
+
         df = duckdb.sql(
-            f"""SELECT
-                t.timestamp,
-                event_interest.user AS user,
-                SUM(CASE WHEN event_interest.interested = 1 THEN 1 ELSE 0 END) AS target
+            f"""
+            WITH tb AS(
+                SELECT
+                    t.timestamp AS timestamp,
+                    event_attendees.user_id AS user,
+                    MAX(CASE WHEN event_attendees.status IN ('yes', 'maybe') THEN 1 ELSE 0 END) AS target,
+                    LAG(MAX(CASE WHEN event_attendees.status IN ('yes', 'maybe') THEN 1 ELSE 0 END)) OVER (PARTITION BY event_attendees.user_id ORDER BY t.timestamp) as prev_target
+                FROM
+                    timestamp_df t
+                LEFT JOIN
+                    event_attendees
+                ON
+                    event_attendees.start_time > t.timestamp AND
+                    event_attendees.start_time <= t.timestamp + INTERVAL '{self.timedelta} days'
+                GROUP BY
+                    t.timestamp,
+                    event_attendees.user_id
+            )
+            SELECT
+                timestamp,
+                user,
+                target
             FROM
-                timestamp_df t
-            LEFT JOIN
-                event_interest
-            ON
-                event_interest.timestamp > t.timestamp AND
-                event_interest.timestamp <= t.timestamp + INTERVAL '{self.timedelta} days'
-            GROUP BY
-                t.timestamp,
-                event_interest.user
+                tb
+            WHERE
+                prev_target = 1;
             """
         ).df()
+
         df = df.dropna(subset=["user"])
         df["user"] = df["user"].astype(int)
         df = df.reset_index()
