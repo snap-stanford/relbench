@@ -5,20 +5,22 @@ import numpy as np
 import pandas as pd
 import torch
 from scipy.stats import mode
+from torch_geometric.seed import seed_everything
 
 from relbench.data import RelBenchDataset, Table
 from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-event")
-parser.add_argument("--task", type=str, default="user-repeat")
+parser.add_argument("--dataset", type=str, default="rel-stack")
+parser.add_argument("--task", type=str, default="user-engagement")
+parser.add_argument("--seed", type=int, default=42)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+seed_everything(args.seed)
 
-# TODO: remove process=True once correct data/task is uploaded.
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
 task = dataset.get_task(args.task, process=True)
 
 train_table = task.train_table
@@ -92,6 +94,7 @@ if task.task_type == TaskType.REGRESSION:
         print(f"Val: {val_metrics}")
         print(f"Test: {test_metrics}")
 
+
 elif task.task_type == TaskType.BINARY_CLASSIFICATION:
     eval_name_list = ["random", "majority"]
     for name in eval_name_list:
@@ -102,6 +105,7 @@ elif task.task_type == TaskType.BINARY_CLASSIFICATION:
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
         print(f"Test: {test_metrics}")
+
 
 elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     eval_name_list = ["random_multilabel", "majority_multilabel"]
