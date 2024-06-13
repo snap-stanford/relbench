@@ -139,11 +139,11 @@ class RelBenchNodeTask(NodeTask):
                 }
                 self._set_stats(temp_df, stats)
                 split_stats[str(timestamp)] = stats
-            split_stats[split] = {
+            split_stats["total"] = {
                 "num_rows": len(table.df),
                 "num_unique_entities": table.df[self.entity_col].nunique(),
             }
-            self._set_stats(table.df, split_stats[split])
+            self._set_stats(table.df, split_stats["total"])
             res[split] = split_stats
         total_df = pd.concat(
             [

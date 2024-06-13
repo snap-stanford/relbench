@@ -200,7 +200,7 @@ class RelBenchLinkTask(LinkTask):
                 num_dst_entities,
                 num_rows,
             ) = self._get_stats(table.df)
-            split_stats[f"{split}_total"] = {
+            split_stats["total"] = {
                 "num_unique_src_entities": num_unique_src_entities,
                 "num_unique_dst_entities": num_unique_dst_entities,
                 "num_dst_entities": num_dst_entities,
