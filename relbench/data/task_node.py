@@ -161,9 +161,9 @@ class RelBenchNodeTask(NodeTask):
         ratio_train_test_entity_overlap = len(
             train_uniques.intersection(test_uniques)
         ) / len(test_uniques)
-        res["total"] = {
-            "ratio_train_test_entity_overlap": ratio_train_test_entity_overlap,
-        }
+        res["total"][
+            "ratio_train_test_entity_overlap"
+        ] = ratio_train_test_entity_overlap
         return res
 
     def _set_stats(self, df: pd.DataFrame, stats: dict[str, Any]) -> None:
