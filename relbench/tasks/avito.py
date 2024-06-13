@@ -71,7 +71,7 @@ class AdsClicksTask(RelBenchNodeTask):
 
 class UserVisitsTask(RelBenchNodeTask):
     r"""Predict whether each customer will visit more than one ad in the next
-    5 dyas.
+    4 days.
     """
 
     name = "user-visits"
