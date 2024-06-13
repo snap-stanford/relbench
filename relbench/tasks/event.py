@@ -60,7 +60,7 @@ class UserAttendanceTask(RelBenchNodeTask):
 
 
 class UserRepeatTask(RelBenchNodeTask):
-    r"""Predict whether if a user will attend an event in the
+    r"""Predict whether a user will attend an event in the
     next 7 days if they have already attended an event in the
     last 7 days."""
 
