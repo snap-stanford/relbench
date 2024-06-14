@@ -113,45 +113,45 @@ def add_past_label_feature(
         past_table_df (pd.DataFrame): The dataframe containing labels in the
             past.
     """
-    # Add number of past visit for each left_entity and right_entity pair
-    # Explode the right_entity list to get one row per (left_entity, right_entity) pair
-    exploded_past_table = past_table_df.explode(right_entity)
+    # Add number of past visit for each src_entity and dst_entity pair
+    # Explode the dst_entity list to get one row per (src_entity, dst_entity) pair
+    exploded_past_table = past_table_df.explode(dst_entity)
 
-    # Count occurrences of each (left_entity, right_entity) pair
-    right_entity_count = (
-        exploded_past_table.groupby([left_entity, right_entity])
+    # Count occurrences of each (src_entity, dst_entity) pair
+    dst_entity_count = (
+        exploded_past_table.groupby([src_entity, dst_entity])
         .size()
         .reset_index(name="num_past_visit")
     )
 
     # Merge the count information with train_table_df
     train_table_df = train_table_df.merge(
-        right_entity_count, how="left", on=[left_entity, right_entity]
+        dst_entity_count, how="left", on=[src_entity, dst_entity]
     )
 
-    # Fill NaN values with 0 (if there are any right_entity in train_table_df not present in past_table_df)
+    # Fill NaN values with 0 (if there are any dst_entity in train_table_df not present in past_table_df)
     train_table_df["num_past_visit"] = (
         train_table_df["num_past_visit"].fillna(0).astype(int)
     )
 
-    # Add percentage of global popularity for each right_entity
-    # Count occurrences of each right_entity
-    right_entity_count = exploded_past_table[right_entity].value_counts().reset_index()
+    # Add percentage of global popularity for each dst_entity
+    # Count occurrences of each dst_entity
+    dst_entity_count = exploded_past_table[dst_entity].value_counts().reset_index()
 
     # Calculate the fraction
     total_right_entities = len(exploded_past_table)
-    right_entity_count["global_popularity_fraction"] = (
-        right_entity_count["count"] / total_right_entities
+    dst_entity_count["global_popularity_fraction"] = (
+        dst_entity_count["count"] / dst_entity_count["count"].max()
     )
 
     # Merge the fraction information with train_table_df
     train_table_df = train_table_df.merge(
-        right_entity_count[[right_entity, "global_popularity_fraction"]],
+        dst_entity_count[[dst_entity, "global_popularity_fraction"]],
         how="left",
-        on=right_entity,
+        on=dst_entity,
     )
 
-    # Fill NaN values with 0 (if there are any right_entity in train_table_df not present in past_table_df)
+    # Fill NaN values with 0 (if there are any dst_entity in train_table_df not present in past_table_df)
     train_table_df["global_popularity_fraction"] = train_table_df[
         "global_popularity_fraction"
     ].fillna(0)
@@ -163,31 +163,31 @@ def add_past_label_feature(
 # entity, their corresponding dst entities are used as positive label.
 # The same number of random dst entities are sampled as negative label.
 # lightGBM will train and eval on this binary classification task.
-left_entity = list(train_table.fkey_col_to_pkey_table.keys())[0]
-right_entity = list(train_table.fkey_col_to_pkey_table.keys())[1]
+src_entity = list(train_table.fkey_col_to_pkey_table.keys())[0]
+dst_entity = list(train_table.fkey_col_to_pkey_table.keys())[1]
 for split, table in [
     ("train", sampled_train_table),
     ("val", val_table),
 ]:
     src_entity_df = src_entity_df.astype(
-        {src_entity_table.pkey_col: table.df[left_entity].dtype}
+        {src_entity_table.pkey_col: table.df[src_entity].dtype}
     )
 
     dst_entity_df = dst_entity_df.astype(
-        {dst_entity_table.pkey_col: table.df[right_entity].dtype}
+        {dst_entity_table.pkey_col: table.df[dst_entity].dtype}
     )
 
     # Left join train table and entity table
     df = table.df.merge(
         src_entity_df,
         how="left",
-        left_on=left_entity,
+        left_on=src_entity,
         right_on=src_entity_table.pkey_col,
     )
 
     # Transform the mapping between one src entity with a list of dst entities
     # to src entity, dst entity pairs
-    df = df.explode(right_entity)
+    df = df.explode(dst_entity)
 
     # Add a target col indicating there is a link between src and dst entities
     df[target_col_name] = 1
@@ -195,9 +195,9 @@ for split, table in [
     # Create a negative sampling df, containing src and dst entities pairs,
     # such that there are no links between them.
     negative_sample_df_columns = list(df.columns)
-    negative_sample_df_columns.remove(right_entity)
+    negative_sample_df_columns.remove(dst_entity)
     negative_samples_df = df[negative_sample_df_columns]
-    negative_samples_df[right_entity] = np.random.choice(
+    negative_samples_df[dst_entity] = np.random.choice(
         dst_entity_df[dst_entity_table.pkey_col], size=len(negative_samples_df)
     )
     negative_samples_df[target_col_name] = 0
@@ -209,7 +209,7 @@ for split, table in [
         df,
         dst_entity_df,
         how="left",
-        left_on=right_entity,
+        left_on=dst_entity,
         right_on=dst_entity_table.pkey_col,
     )
     df = add_past_label_feature(df, train_table.df)
@@ -238,24 +238,24 @@ def prepare_for_link_pred_eval(
         return interleaved
 
     grouped_ranked_past_table_df = (
-        past_table_df.groupby(left_entity)[right_entity]
+        past_table_df.groupby(src_entity)[dst_entity]
         .apply(dst_entities_aggr)
         .reset_index()
     )
     evaluate_table_df = pd.merge(
-        evaluate_table_df, grouped_ranked_past_table_df, how="left", on=left_entity
+        evaluate_table_df, grouped_ranked_past_table_df, how="left", on=src_entity
     )
 
     # collect the most popular dst entities
     all_dst_entities = [
-        entity for sublist in past_table_df[right_entity] for entity in sublist
+        entity for sublist in past_table_df[dst_entity] for entity in sublist
     ]
     dst_entity_counter = Counter(all_dst_entities)
     top_dst_entities = [
         entity for entity, _ in dst_entity_counter.most_common(task.eval_k * 2)
     ]
 
-    evaluate_table_df[right_entity] = evaluate_table_df[right_entity].apply(
+    evaluate_table_df[dst_entity] = evaluate_table_df[dst_entity].apply(
         lambda x: (
             interleave_lists(x, top_dst_entities)
             if isinstance(x, list)
@@ -263,7 +263,7 @@ def prepare_for_link_pred_eval(
         )
     )
     # For each src entity, keep at most `task.eval_k * 2` dst entity candidates
-    evaluate_table_df[right_entity] = evaluate_table_df[right_entity].apply(
+    evaluate_table_df[dst_entity] = evaluate_table_df[dst_entity].apply(
         lambda x: (
             x[: task.eval_k * 2]
             if isinstance(x, list) and len(x) > task.eval_k * 2
@@ -276,16 +276,16 @@ def prepare_for_link_pred_eval(
         evaluate_table_df,
         src_entity_df,
         how="left",
-        left_on=left_entity,
+        left_on=src_entity,
         right_on=src_entity_table.pkey_col,
     )
 
-    evaluate_table_df = evaluate_table_df.explode(right_entity)
+    evaluate_table_df = evaluate_table_df.explode(dst_entity)
     evaluate_table_df = pd.merge(
         evaluate_table_df,
         dst_entity_df,
         how="left",
-        left_on=right_entity,
+        left_on=dst_entity,
         right_on=dst_entity_table.pkey_col,
     )
 
@@ -295,7 +295,7 @@ def prepare_for_link_pred_eval(
 
 # Prepare val dataset for lightGBM model evalution
 val_df_pred_column_names = list(val_table.df.columns)
-val_df_pred_column_names.remove(right_entity)
+val_df_pred_column_names.remove(dst_entity)
 val_df_pred = val_table.df[val_df_pred_column_names]
 # Per each src entity, collect all past linked dst entities
 val_past_table_df = train_table.df
@@ -305,7 +305,7 @@ dfs["val_pred"] = val_df_pred
 
 # Prepare test dataset for lightGBM model evalution
 test_df_column_names = list(test_table.df.columns)
-test_df_column_names.remove(right_entity)
+test_df_column_names.remove(dst_entity)
 test_df = test_table.df[test_df_column_names]
 # Per each src entity, collect all past linked dst entities
 test_past_table_df = pd.concat([train_table.df, val_table.df], axis=0)
@@ -394,8 +394,8 @@ lightgbm_output = dfs["train"]
 lightgbm_output[PRED_SCORE_COL_NAME] = pred
 train_metrics = evaluate(
     lightgbm_output,
-    left_entity,
-    right_entity,
+    src_entity,
+    dst_entity,
     task.train_table.time_col,
     task.eval_k,
     PRED_SCORE_COL_NAME,
@@ -409,8 +409,8 @@ lightgbm_output = val_df_pred
 lightgbm_output[PRED_SCORE_COL_NAME] = pred
 val_metrics = evaluate(
     lightgbm_output,
-    left_entity,
-    right_entity,
+    src_entity,
+    dst_entity,
     task.train_table.time_col,
     task.eval_k,
     PRED_SCORE_COL_NAME,
@@ -425,8 +425,8 @@ lightgbm_output = dfs["test"]
 lightgbm_output[PRED_SCORE_COL_NAME] = pred
 test_metrics = evaluate(
     lightgbm_output,
-    left_entity,
-    right_entity,
+    src_entity,
+    dst_entity,
     task.train_table.time_col,
     task.eval_k,
     PRED_SCORE_COL_NAME,
