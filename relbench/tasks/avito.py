@@ -18,8 +18,8 @@ from relbench.metrics import (
 
 
 class AdsClicksTask(RelBenchNodeTask):
-    r"""Assuming the ad will be clicked in the next 4 days, predict the CTR
-    for each ad.
+    r"""Assuming the ad will be clicked in the next 4 days, predict the
+    Click-Through-Rate (CTR) for each ad.
     """
 
     name = "ads-clicks"
@@ -121,8 +121,8 @@ class UserVisitsTask(RelBenchNodeTask):
 
 
 class UserClicksTask(RelBenchNodeTask):
-    r"""Predict the each customer will click on more than one ads in the
-    next 4 days
+    r"""Predict whether the each customer will click on more than one ads in
+    the next 4 days
     """
 
     name = "user-clicks"
@@ -180,7 +180,7 @@ class UserClicksTask(RelBenchNodeTask):
 
 
 class UserAdVisitTask(RelBenchLinkTask):
-    r"""Predict the list of ads user will visit in the next 4 days"""
+    r"""Predict the distinct list of ads a user will visit in the next 4 days"""
 
     name = "user-ad-visit"
     task_type = TaskType.LINK_PREDICTION
