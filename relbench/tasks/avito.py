@@ -13,6 +13,7 @@ from relbench.metrics import (
     mae,
     r2,
     rmse,
+    roc_auc,
 )
 
 
