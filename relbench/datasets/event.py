@@ -2,12 +2,10 @@ import os
 import shutil
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
-import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.event import UserAttendanceTask
+from relbench.tasks.event import UserAttendanceTask, UserIgnoreTask, UserRepeatTask
 from relbench.utils import decompress_gz_file, unzip_processor
 
 
@@ -23,10 +21,10 @@ class EventDataset(RelBenchDataset):
     )
 
     train_start_timestamp = pd.Timestamp("2012-06-20")
-    val_timestamp = pd.Timestamp("2012-11-14")
-    test_timestamp = pd.Timestamp("2012-11-28")
-    max_eval_time_frames = 2
-    task_cls_list = [UserAttendanceTask]
+    val_timestamp = pd.Timestamp("2012-11-21")
+    test_timestamp = pd.Timestamp("2012-11-29")
+    max_eval_time_frames = 1
+    task_cls_list = [UserAttendanceTask, UserRepeatTask, UserIgnoreTask]
 
     def __init__(
         self,
