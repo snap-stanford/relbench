@@ -2,7 +2,7 @@ import argparse
 import copy
 import math
 import os
-from typing import Dict, List
+from typing import Dict
 
 import numpy as np
 import torch
@@ -13,7 +13,6 @@ from text_embedder import GloveTextEmbedding
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.gbdt import LightGBM
-from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm

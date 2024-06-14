@@ -2,9 +2,7 @@ import os
 import shutil
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
-import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.event import UserAttendanceTask, UserIgnoreTask, UserRepeatTask

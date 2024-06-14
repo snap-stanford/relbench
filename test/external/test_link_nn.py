@@ -48,6 +48,17 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     task: LinkTask = dataset.get_task("user-item-purchase", process=True)
     assert task.task_type == TaskType.LINK_PREDICTION
 
+    # Ensure that stats computation works on train/val/test splits ###########
+    stats = task.stats()
+    assert len(stats) == 4
+    assert len(stats["train"]) == 11
+    assert len(next(iter(stats["train"].values()))) == 4
+    assert len(stats["val"]) == 2
+    assert len(next(iter(stats["val"].values()))) == 4
+    assert len(stats["test"]) == 2
+    assert len(next(iter(stats["test"].values()))) == 4
+    assert len(stats["total"].values()) == 5
+
     train_table_input = get_link_train_table_input(task.train_table, task)
     # Test get_link_train_table_input
     for index, row in task.train_table.df.iterrows():

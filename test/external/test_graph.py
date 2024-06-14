@@ -1,20 +1,9 @@
-from datetime import timedelta
-
-import numpy as np
-import pandas as pd
-import torch
 from torch_frame import TensorFrame
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
 
-from relbench.data import LinkTask
 from relbench.datasets import FakeDataset
-from relbench.external.graph import (
-    get_link_train_table_input,
-    get_stype_proposal,
-    make_pkey_fkey_graph,
-)
-from relbench.metrics import link_prediction_map
+from relbench.external.graph import get_stype_proposal, make_pkey_fkey_graph
 
 
 def test_make_pkey_fkey_graph():
