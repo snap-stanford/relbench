@@ -18,7 +18,7 @@ dependencies=[
 	"pandas",
 	"pooch",
 	"pyarrow",
-	"numpy",
+	"numpy==1.26.0",
 	"duckdb",
 	"requests",
 	"tqdm",
