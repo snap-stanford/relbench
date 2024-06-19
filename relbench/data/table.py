@@ -1,9 +1,8 @@
-import copy
 import json
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Union
 
 import pandas as pd
 import pyarrow as pa

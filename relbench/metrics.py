@@ -87,26 +87,26 @@ def r2(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 
 ####### Multilabel metrics
 ## TODO: revisit Multi-label metrics
-def multilabel_auprc_micro(true: NDArray[np.int_], pred: NDArray[np.float_]) -> float:
+def multilabel_auprc_micro(true: NDArray[np.int_], pred: NDArray[np.float64]) -> float:
     # Flatten true and prediction arrays for micro-average computation
     true_flat = np.ravel(np.stack(true))
     pred_flat = np.ravel(pred)
     return skm.average_precision_score(true_flat, pred_flat, average="micro")
 
 
-def multilabel_auprc_macro(true: NDArray[np.int_], pred: NDArray[np.float_]) -> float:
+def multilabel_auprc_macro(true: NDArray[np.int_], pred: NDArray[np.float64]) -> float:
     true = np.stack(true)
     return skm.average_precision_score(true, pred, average="macro")
 
 
-def multilabel_auroc_micro(true: NDArray[np.int_], pred: NDArray[np.float_]) -> float:
+def multilabel_auroc_micro(true: NDArray[np.int_], pred: NDArray[np.float64]) -> float:
     # Flatten true and prediction arrays for micro-average computation
     true_flat = np.ravel(np.stack(true))
     pred_flat = np.ravel(pred)
     return skm.roc_auc_score(true_flat, pred_flat, average="micro")
 
 
-def multilabel_auroc_macro(true: NDArray[np.int_], pred: NDArray[np.float_]) -> float:
+def multilabel_auroc_macro(true: NDArray[np.int_], pred: NDArray[np.float64]) -> float:
     true = np.stack(true)
     return skm.roc_auc_score(true, pred, average="macro")
 

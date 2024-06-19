@@ -1,24 +1,32 @@
 import os
-import shutil
-from pathlib import Path
 
 import pandas as pd
+import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.avito import UserAdClickTask, UserClicksTask
-from relbench.utils import clean_datetime
+from relbench.tasks.avito import (
+    AdsClicksTask,
+    UserAdVisitTask,
+    UserClicksTask,
+    UserVisitsTask,
+)
+from relbench.utils import clean_datetime, unzip_processor
 
 
 class AvitoDataset(RelBenchDataset):
     name = "rel-avito"
     url = "https://www.kaggle.com/competitions/avito-context-ad-clicks"
+    err_msg = (
+        "{data} not found. Please download avito data from "
+        "'{url}' and move it to '{path}'."
+    )
 
     # search stream ranges from 2015-04-25 to 2015-05-20
     train_start_timestamp = pd.Timestamp("2015-04-25")
-    val_timestamp = pd.Timestamp("2015-05-09")
+    val_timestamp = pd.Timestamp("2015-05-08")
     test_timestamp = pd.Timestamp("2015-05-14")
     max_eval_time_frames = 1
-    task_cls_list = [UserClicksTask, UserAdClickTask]
+    task_cls_list = [AdsClicksTask, UserVisitsTask, UserAdVisitTask, UserClicksTask]
 
     def __init__(
         self,
@@ -30,7 +38,15 @@ class AvitoDataset(RelBenchDataset):
 
     def make_db(self) -> Database:
         # Customize path as necessary
-        path = os.path.join("data", "avito_integ_test")
+        r"""Process the raw files into a database."""
+        url = "https://relbench.stanford.edu/data/rel-avito-raw.zip"
+        path = pooch.retrieve(
+            url,
+            known_hash="24ae408ee546cf9171742288d1ec6c52e60d332dd47f58eb78fabc64a3034f43",
+            progressbar=True,
+            processor=unzip_processor,
+        )
+        path = os.path.join(path, "avito_500k_integ_test")
 
         # Define table names
         ads_info = os.path.join(path, "AdsInfo")
@@ -41,6 +57,10 @@ class AvitoDataset(RelBenchDataset):
         search_stream = os.path.join(path, "SearchStream")
         user_info = os.path.join(path, "UserInfo")
         visit_stream = os.path.join(path, "VisitStream")
+        if not os.path.exists(ads_info):
+            raise RuntimeError(
+                self.err_msg.format(data="Dataset", url=self.url, path=path)
+            )
 
         # Load table as pandas dataframes
         ads_info_df = pd.read_parquet(ads_info)
