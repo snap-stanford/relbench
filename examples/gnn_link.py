@@ -1,7 +1,7 @@
 import argparse
 import copy
 import os
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy as np
 import torch
@@ -10,7 +10,6 @@ from inferred_stypes import dataset2inferred_stypes
 from model import Model
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
-from torch.utils.tensorboard import SummaryWriter
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
@@ -35,23 +34,25 @@ parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=160)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 # Use the same seed time across the mini-batch and share the negatives
-parser.add_argument("--share_same_time", action="store_true")
+parser.add_argument("--share_same_time", action="store_true", default=True)
 # Whether to use shallow embedding on dst nodes or not.
-parser.add_argument("--use_shallow", action="store_true")
-parser.add_argument("--num_workers", type=int, default=1)
+parser.add_argument("--use_shallow", action="store_true", default=True)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
-parser.add_argument("--log_dir", type=str, default="results")
+parser.add_argument("--num_workers", type=int, default=0)
+parser.add_argument("--seed", type=int, default=42)
+parser.add_argument(
+    "--cache_dir",
+    type=str,
+    default=os.path.expanduser("~/.cache/relbench/materialized"),
+)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
-seed_everything(42)
+seed_everything(args.seed)
 
-root_dir = "./data"
-
-# TODO: remove process=True once correct data/task is uploaded.
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
 task: LinkTask = dataset.get_task(args.task, process=True)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
@@ -64,7 +65,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
+    cache_dir=os.path.join(args.cache_dir, args.dataset),
 )
 
 num_neighbors = [int(args.num_neighbors // 2**i) for i in range(args.num_layers)]
@@ -86,7 +87,7 @@ train_loader = LinkNeighborLoader(
     num_workers=args.num_workers,
 )
 
-eval_loaders_dict: Dict[str, tuple[NeighborLoader, NeighborLoader]] = {}
+eval_loaders_dict: Dict[str, Tuple[NeighborLoader, NeighborLoader]] = {}
 for split in ["val", "test"]:
     seed_time = task.val_seed_time if split == "val" else task.test_seed_time
     target_table = task.val_table if split == "val" else task.test_table
@@ -196,8 +197,6 @@ def test(src_loader: NeighborLoader, dst_loader: NeighborLoader) -> np.ndarray:
     return pred
 
 
-writer = SummaryWriter(log_dir=args.log_dir)
-
 state_dict = None
 best_val_metric = 0
 for epoch in range(1, args.epochs + 1):
@@ -214,9 +213,6 @@ for epoch in range(1, args.epochs + 1):
             best_val_metric = val_metrics[tune_metric]
             state_dict = copy.deepcopy(model.state_dict())
 
-        writer.add_scalar("train/loss", train_loss, epoch)
-        for name, metric in val_metrics.items():
-            writer.add_scalar(f"val/{name}", metric, epoch)
 
 model.load_state_dict(state_dict)
 val_pred = test(*eval_loaders_dict["val"])
@@ -226,9 +222,3 @@ print(f"Best Val metrics: {val_metrics}")
 test_pred = test(*eval_loaders_dict["test"])
 test_metrics = task.evaluate(test_pred)
 print(f"Best test metrics: {test_metrics}")
-
-for name, metric in test_metrics.items():
-    writer.add_scalar(f"test/{name}", metric, 0)
-
-writer.flush()
-writer.close()

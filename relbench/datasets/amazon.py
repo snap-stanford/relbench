@@ -1,11 +1,8 @@
-import os
 import time
-from typing import Union
 
 import pandas as pd
 import pooch
 import pyarrow as pa
-import pyarrow.json
 
 from relbench.data import Database, RelBenchDataset, Table
 from relbench.tasks.amazon import (

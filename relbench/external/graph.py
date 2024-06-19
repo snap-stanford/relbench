@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -160,7 +160,7 @@ class NodeTrainTableInput(NamedTuple):
 def get_node_train_table_input(
     table: Table,
     task: NodeTask,
-    multilabel=False,
+    multilabel: bool = False,
 ) -> NodeTrainTableInput:
     nodes = torch.from_numpy(table.df[task.entity_col].astype(int).values)
 

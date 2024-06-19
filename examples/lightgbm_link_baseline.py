@@ -1,5 +1,6 @@
 import argparse
 import copy
+import os
 from collections import Counter
 from typing import Dict
 
@@ -13,6 +14,7 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
+from torch_geometric.seed import seed_everything
 
 from relbench.data import RelBenchDataset, RelBenchLinkTask, Table
 from relbench.datasets import get_dataset
@@ -24,17 +26,26 @@ PRED_SCORE_COL_NAME = "pred_score_col_name"
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
 parser.add_argument("--task", type=str, default="user-post-comment")
+parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--sample_size",
     type=int,
-    default=50000,
+    default=50_000,
     help="Subsample the specified number of training data to train lightgbm model.",
+)
+parser.add_argument(
+    "--cache_dir",
+    type=str,
+    default=os.path.expanduser("~/.cache/relbench/materialized"),
 )
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+    torch.set_num_threads(1)
+seed_everything(args.seed)
 
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=True)
+dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
 task: RelBenchLinkTask = dataset.get_task(args.task, process=True)
 target_col_name: str = LINK_PRED_BASELINE_TARGET_COL_NAME
 
@@ -321,7 +332,11 @@ train_dataset = Dataset(
         text_embedder=GloveTextEmbedding(device=device),
         batch_size=256,
     ),
-).materialize()
+)
+train_dataset = train_dataset.materialize(
+    path=os.path.join(args.cache_dir, f"{args.dataset}_{args.task}.pt")
+)
+
 tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
 tf_val_pred = train_dataset.convert_to_tensor_frame(dfs["val_pred"])
