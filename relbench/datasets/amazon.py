@@ -215,7 +215,7 @@ class AmazonDataset(Dataset):
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        return Database(
+        db = Database(
             table_dict={
                 "product": Table(
                     df=pdf,
@@ -240,3 +240,6 @@ class AmazonDataset(Dataset):
                 ),
             }
         )
+
+        db = db.from_(pd.Timestamp("2008-01-01"))
+        return db
