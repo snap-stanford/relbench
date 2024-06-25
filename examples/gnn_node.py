@@ -52,9 +52,9 @@ seed_everything(args.seed)
 
 task: NodeTask = get_task(args.dataset, args.task)
 dataset: Dataset = task.dataset
-train_table = task.default_train_table
-val_table = task.default_val_table
-test_table = task.test_table
+train_table = task.get_table("train")
+val_table = task.get_table("val")
+test_table = task.get_table("test")
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
 
@@ -206,5 +206,5 @@ val_metrics = task.evaluate(val_pred, task.val_table)
 print(f"Best Val metrics: {val_metrics}")
 
 test_pred = test(loader_dict["test"])
-test_metrics = task.evaluate(test_pred)
+test_metrics = task.evaluate(test_pred, task.test_table)
 print(f"Best test metrics: {test_metrics}")

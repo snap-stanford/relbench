@@ -64,7 +64,7 @@ def get_dataset(name: str, download=False) -> Dataset:
         return AmazonDataset(cache_dir=cache_dir)
 
 
-def get_task(dataset_name: str, task_name: str, download=True) -> Task:
+def get_task(dataset_name: str, task_name: str, download=False) -> Task:
     if download:
         pooch_registry.fetch(
             f"{dataset_name}/tasks/{task_name}.zip",
