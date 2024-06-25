@@ -47,8 +47,14 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-task: NodeTask = dataset.get_task(args.task, process=True)
+# dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
+# task: NodeTask = dataset.get_task(args.task, process=True)
+
+task: NodeTask = get_task(args.dataset, args.task)
+dataset: Dataset = task.dataset
+train_table = task.default_train_table
+val_table = task.default_val_table
+test_table = task.test_table
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
 
@@ -75,7 +81,7 @@ elif task.task_type == TaskType.REGRESSION:
     higher_is_better = False
     # Get the clamp value at inference time
     clamp_min, clamp_max = np.percentile(
-        task.train_table.df[task.target_col].to_numpy(), [2, 98]
+        train_table.df[task.target_col].to_numpy(), [2, 98]
     )
     multilabel = False
 elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
@@ -89,9 +95,9 @@ else:
 
 loader_dict: Dict[str, NeighborLoader] = {}
 for split, table in [
-    ("train", task.train_table),
-    ("val", task.val_table),
-    ("test", task.test_table),
+    ("train", train_table),
+    ("val", val_table),
+    ("test", test_table),
 ]:
     table_input = get_node_train_table_input(
         table=table, task=task, multilabel=multilabel

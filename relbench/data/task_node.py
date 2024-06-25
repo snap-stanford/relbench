@@ -66,14 +66,11 @@ class NodeTask(Task):
     def evaluate(
         self,
         pred: NDArray,
-        target_table: Optional[Table] = None,
+        target_table: Table,
         metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
     ) -> Dict[str, float]:
         if metrics is None:
             metrics = self.metrics
-
-        if target_table is None:
-            target_table = self._full_test_table
 
         target = target_table.df[self.target_col].to_numpy()
         if len(pred) != len(target):
