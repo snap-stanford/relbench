@@ -18,13 +18,13 @@ import pandas as pd
 from numpy.typing import NDArray
 
 from relbench.data.table import Table
-from relbench.data.task_base import BaseTask, TaskType, _pack_tables
+from relbench.data.task_base import Task, TaskType
 
 if TYPE_CHECKING:
     from relbench.data import Dataset
 
 
-class NodeTask(BaseTask):
+class NodeTask(Task):
     r"""A link prediction task on a dataset."""
 
     def __init__(
@@ -34,25 +34,29 @@ class NodeTask(BaseTask):
         target_col: str,
         entity_table: str,
         entity_col: str,
+        time_col: str,
         metrics: List[Callable[[NDArray, NDArray], float]],
+        task_type: TaskType,
+        cache_dir: str | os.PathLike | None = None,
     ):
         super().__init__(
             dataset=dataset,
             timedelta=timedelta,
             metrics=metrics,
+            cache_dir=cache_dir,
         )
         self.target_col = target_col
         self.entity_table = entity_table
         self.entity_col = entity_col
-
-        self._full_test_table = None
-        self._cached_table_dict = {}
+        self.time_col = time_col
+        self.task_type = task_type
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
     def filter_dangling_entities(self, table: Table) -> Table:
-        num_entities = len(self.dataset.db.table_dict[self.entity_table])
+        db = self.dataset.get_db()
+        num_entities = len(db.table_dict[self.entity_table])
         filter_mask = table.df[self.entity_col] >= num_entities
 
         if filter_mask.any():
@@ -80,32 +84,6 @@ class NodeTask(BaseTask):
             )
 
         return {fn.__name__: fn(target, pred) for fn in metrics}
-
-
-class RelBenchNodeTask(NodeTask):
-    name: str
-    entity_col: str
-    entity_table: str
-    time_col: str
-    timedelta: pd.Timedelta
-    target_col: str
-    task_dir: str = "tasks"
-
-    def __init__(self, dataset: str, process: bool = False) -> None:
-        super().__init__(
-            dataset=dataset,
-            timedelta=self.timedelta,
-            target_col=self.target_col,
-            entity_table=self.entity_table,
-            entity_col=self.entity_col,
-            metrics=self.metrics,
-        )
-
-        if not process:
-            self.set_cached_table_dict(self.name, self.task_dir, self.dataset.name)
-
-        def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
-            return _pack_tables(self, root)
 
     def stats(self) -> dict[str, dict[str, Any]]:
         r"""Get train / val / test table statistics for each timestamp
