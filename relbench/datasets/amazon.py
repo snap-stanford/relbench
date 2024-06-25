@@ -1,38 +1,15 @@
+import os
 import time
 
 import pandas as pd
 import pooch
 import pyarrow as pa
+import pyarrow.json
 
-from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.amazon import (
-    ItemChurnTask,
-    ItemLTVTask,
-    UserChurnTask,
-    UserItemPurchaseTask,
-    UserItemRateTask,
-    UserItemReviewTask,
-    UserLTVTask,
-)
+from relbench.data import Database, Dataset, Table
 
 
-class AmazonDataset(RelBenchDataset):
-    name = "rel-amazon"
-    val_timestamp = pd.Timestamp("2015-10-01")
-    test_timestamp = pd.Timestamp("2016-01-01")
-    train_start_timestamp = pd.Timestamp("2008-01-01")
-
-    max_eval_time_frames = 1
-    task_cls_list = [
-        UserChurnTask,
-        UserLTVTask,
-        ItemChurnTask,
-        ItemLTVTask,
-        UserItemPurchaseTask,
-        UserItemRateTask,
-        UserItemReviewTask,
-    ]
-
+class AmazonDataset(Dataset):
     category_list = ["books", "fashion"]
 
     url_prefix = "https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2"
@@ -47,17 +24,31 @@ class AmazonDataset(RelBenchDataset):
         self,
         category: str = "books",
         use_5_core: bool = True,
-        *,
-        process: bool = False,
+        val_timestamp: pd.Timestamp = pd.Timestamp("2015-10-01"),
+        test_timestamp: pd.Timestamp = pd.Timestamp("2016-01-01"),
+        cache_dir: str | None = None,
     ):
         self.category = category
         self.use_5_core = use_5_core
 
-        # self.name = f"{self.name}-{category}{'_5_core' if use_5_core else ''}"
+        super().__init__(
+            val_timestamp=val_timestamp,
+            test_timestamp=test_timestamp,
+            cache_dir=cache_dir,
+        )
 
-        super().__init__(process=process)
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(\n"
+            + f"  category={self.category},\n"
+            + f"  use_5_core={self.use_5_core},\n"
+            + f"  val_timestamp={self.val_timestamp},\n"
+            + f"  test_timestamp={self.test_timestamp},\n"
+            + f"  cache_dir={self.cache_dir},\n"
+            + ")"
+        )
 
-    def make_db(self) -> Database:
+    def _make_db(self) -> Database:
         r"""Process the raw files into a database."""
 
         ### product table ###

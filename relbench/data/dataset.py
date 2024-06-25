@@ -19,72 +19,49 @@ from relbench.utils import unzip_processor
 class Dataset:
     def __init__(
         self,
-        db: Database,
-        train_start_timestamp: Optional[pd.Timestamp],
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
-        max_eval_time_frames: int,
-        task_cls_list: List[Type[BaseTask]],
+        cache_dir: str | None = None,
     ) -> None:
         r"""Class holding database and task table construction logic.
 
         Args:
             db (Database): The database object.
-            train_start_timestamp (pd.Timestamp, optional): If specified, we create
-                train table after the specified time.
             val_timestamp (pd.Timestamp): The first timestamp for making val table.
             test_timestamp (pd.Timestamp): The first timestamp for making test table.
-            max_eval_time_frames (int): The maximum number of unique timestamps used to build test and val tables.
-            task_cls_list (List[Type[BaseTask]]): A list of allowed tasks for this database.
-
         """
-        self._full_db = db
-        self.train_start_timestamp = train_start_timestamp
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
-        self.max_eval_time_frames = max_eval_time_frames
-        self.task_cls_dict = {task_cls.name: task_cls for task_cls in task_cls_list}
-
-        self.db = db.upto(test_timestamp)
-
-        self.validate_and_correct_db()
+        self.cache_dir = cache_dir
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}()"
+        return (
+            f"{self.__class__.__name__}(\n"
+            + f"  val_timestamp={self.val_timestamp},\n"
+            + f"  test_timestamp={self.test_timestamp},\n"
+            + f"  cache_dir={self.cache_dir},\n"
+            + ")"
+        )
 
-    @property
-    def task_names(self) -> List[str]:
-        return list(self.task_cls_dict.keys())
+    def get_db(self, upto_test_timestamp=True) -> Database:
+        if self.cache_dir is None:
+            db = self._make_db()
+        else:
+            db_path = f"{self.cache_dir}/db"
+            if not Path(db_path).exists():
+                db = self._make_db()
+                db.reindex_pkeys_and_fkeys()
+                db.save(db_path)
+            else:
+                db = Database.load(db_path)
 
-    def get_task(self, task_name: str, *args, **kwargs) -> BaseTask:
-        if task_name not in self.task_cls_dict:
-            raise ValueError(
-                f"{self.__class__.name} does not support the task {task_name}."
-                f"Please choose from {self.task_names}."
-            )
-        return self.task_cls_dict[task_name](self, *args, **kwargs)
+        if upto_test_timestamp:
+            db = db.upto(self.test_timestamp)
 
-    def validate_and_correct_db(self):
-        r"""Validate and correct input db in-place."""
-        # Validate that all primary keys are consecutively index.
+        return db
 
-        for table_name, table in self.db.table_dict.items():
-            if table.pkey_col is not None:
-                ser = table.df[table.pkey_col]
-                if not (ser.values == np.arange(len(ser))).all():
-                    raise RuntimeError(
-                        f"The primary key column {table.pkey_col} of table "
-                        f"{table_name} is not consecutively index."
-                    )
-
-        # Discard any foreign keys that are larger than primary key table as
-        # dangling foreign keys (represented as None).
-        for table_name, table in self.db.table_dict.items():
-            for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items():
-                num_pkeys = len(self.db.table_dict[pkey_table_name])
-                mask = table.df[fkey_col] >= num_pkeys
-                if mask.any():
-                    table.df.loc[mask, fkey_col] = None
+    def _make_db(self) -> Database:
+        raise NotImplementedError
 
 
 class RelBenchDataset(Dataset):
@@ -106,7 +83,6 @@ class RelBenchDataset(Dataset):
 
             print("reindexing pkeys and fkeys...")
             tic = time.time()
-            db.reindex_pkeys_and_fkeys()
             toc = time.time()
             print(f"done in {toc - tic:.2f} seconds.")
 
@@ -138,9 +114,6 @@ class RelBenchDataset(Dataset):
             self.max_eval_time_frames,
             self.task_cls_list,
         )
-
-    def make_db(self) -> Database:
-        raise NotImplementedError
 
     def pack_db(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
         with tempfile.TemporaryDirectory() as tmpdir:
