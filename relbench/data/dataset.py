@@ -1,3 +1,4 @@
+from functools import cached_property
 import hashlib
 import os
 import shutil
@@ -45,7 +46,8 @@ class Dataset:
     def _make_db(self) -> Database:
         raise NotImplementedError
 
-    def get_db(self, upto_test_timestamp=True) -> Database:
+    @cached_property
+    def db(self) -> Database:
         if self.cache_dir is None:
             db = self._make_db()
             db.reindex_pkeys_and_fkeys()
@@ -58,7 +60,7 @@ class Dataset:
             else:
                 db = Database.load(db_path)
 
-        if upto_test_timestamp:
-            db = db.upto(self.test_timestamp)
+        self._full_db = db
+        db = db.upto(self.test_timestamp)
 
         return db

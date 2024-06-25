@@ -1,3 +1,4 @@
+from functools import cached_property
 import hashlib
 import os
 import shutil
@@ -58,10 +59,9 @@ class Task:
         raise NotImplementedError
 
     def _make_default_train_table(self) -> Table:
-        db = self.dataset.get_db()
         timestamps = pd.date_range(
             start=self.dataset.val_timestamp - self.timedelta,
-            end=db.min_timestamp,
+            end=self.dataset.db.min_timestamp,
             freq=-self.timedelta,
         )
         if len(timestamps) < 3:
@@ -69,11 +69,12 @@ class Task:
                 f"The number of training time frames is too few. "
                 f"({len(timestamps)} given)"
             )
-        table = self.make_table(db, timestamps)
+        table = self.make_table(self.dataset.db, timestamps)
         table = self.filter_dangling_entities(table)
         return table
 
-    def get_default_train_table(self) -> Table:
+    @cached_property
+    def default_train_table(self) -> Table:
         """Returns the train table for a task."""
         if self.cache_dir is None:
             table = self._make_default_train_table()
@@ -87,8 +88,7 @@ class Task:
         return table
 
     def _make_default_val_table(self) -> Table:
-        db = self.dataset.get_db()
-        if self.dataset.val_timestamp + self.timedelta > db.max_timestamp:
+        if self.dataset.val_timestamp + self.timedelta > self.dataset.db.max_timestamp:
             raise RuntimeError(
                 "val timestamp + timedelta is larger than max timestamp! "
                 "This would cause val labels to be generated with "
@@ -102,7 +102,7 @@ class Task:
         )
 
         table = self.make_table(
-            db,
+            self.dataset.db,
             pd.date_range(
                 self.dataset.val_timestamp,
                 end_timestamp,
@@ -112,7 +112,8 @@ class Task:
         table = self.filter_dangling_entities(table)
         return table
 
-    def get_default_val_table(self) -> Table:
+    @cached_property
+    def default_val_table(self) -> Table:
         if self.cache_dir is None:
             table = self._make_default_val_table()
         else:
@@ -125,8 +126,10 @@ class Task:
         return table
 
     def _make_test_table(self) -> Table:
-        db = self.dataset.get_db(upto_test_timestamp=False)
-        if self.dataset.test_timestamp + self.timedelta > db.max_timestamp:
+        if (
+            self.dataset.test_timestamp + self.timedelta
+            > self.dataset._full_db.max_timestamp
+        ):
             raise RuntimeError(
                 "test timestamp + timedelta is larger than max timestamp! "
                 "This would cause test labels to be generated with "
@@ -136,11 +139,11 @@ class Task:
         # must stop by max_timestamp - timedelta
         end_timestamp = min(
             self.dataset.test_timestamp,
-            self.dataset.get_db().max_timestamp - self.timedelta,
+            self.dataset._full_db.max_timestamp - self.timedelta,
         )
 
         table = self.make_table(
-            self.dataset.get_db(),
+            self.dataset._full_db,
             pd.date_range(
                 self.dataset.test_timestamp,
                 end_timestamp,
@@ -161,7 +164,8 @@ class Task:
             time_col=table.time_col,
         )
 
-    def get_test_table(self) -> Table:
+    @cached_property
+    def test_table(self) -> Table:
         if self.cache_dir is None:
             table = self._make_test_table()
         else:
