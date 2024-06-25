@@ -1,5 +1,5 @@
 import os
-from functools import lru_cache
+from functools import cached_property
 from pathlib import Path
 from typing import Dict, Union
 
@@ -42,8 +42,7 @@ class Database:
 
         return cls(table_dict)
 
-    @property
-    @lru_cache(maxsize=None)
+    @cached_property
     def min_timestamp(self) -> pd.Timestamp:
         r"""Returns the earliest timestamp in the database."""
 
@@ -62,8 +61,7 @@ class Database:
             if table.time_col is not None
         )
 
-    @property
-    @lru_cache(maxsize=None)
+    @cached_property
     def max_timestamp(self) -> pd.Timestamp:
         r"""Returns the latest timestamp in the database."""
 

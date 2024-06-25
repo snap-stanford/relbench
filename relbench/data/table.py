@@ -1,6 +1,6 @@
 import json
 import os
-from functools import lru_cache
+from functools import cached_property
 from pathlib import Path
 from typing import Dict, Optional, Union
 
@@ -123,8 +123,7 @@ class Table:
             time_col=self.time_col,
         )
 
-    @property
-    @lru_cache(maxsize=None)
+    @cached_property
     def min_timestamp(self) -> pd.Timestamp:
         r"""Returns the earliest time in the table."""
 
@@ -133,8 +132,7 @@ class Table:
 
         return self.df[self.time_col].min()
 
-    @property
-    @lru_cache(maxsize=None)
+    @cached_property
     def max_timestamp(self) -> pd.Timestamp:
         r"""Returns the latest time in the table."""
 
