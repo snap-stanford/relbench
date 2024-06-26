@@ -243,3 +243,6 @@ class AmazonDataset(Dataset):
 
         db = db.from_(pd.Timestamp("2008-01-01"))
         return db
+
+
+register_dataset("rel-amazon", AmazonDataset)

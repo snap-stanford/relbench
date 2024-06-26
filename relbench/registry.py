@@ -33,6 +33,12 @@ pooch_registry = pooch.create(
     },
 )
 
+dataset_registry = {}
+
+
+def register_dataset(name, cls, *args, **kwargs):
+    dataset_registry[name] = (cls, args, kwargs)
+
 
 def unzip_processor(fname: str | os.PathLike, action: str, pooch: pooch.Pooch) -> Path:
     zip_path = Path(fname)
@@ -60,8 +66,9 @@ def get_dataset(name: str, download=False) -> Dataset:
         )
     cache_dir = f"{pooch.os_cache('relbench')}/{name}"
 
-    if name == "rel-amazon":
-        return AmazonDataset(cache_dir=cache_dir)
+    cls, args, kwargs = dataset_registry[name]
+
+    return cls(*args, cache_dir=cache_dir, **kwargs)
 
 
 def get_task(dataset_name: str, task_name: str, download=False) -> Task:
