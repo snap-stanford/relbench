@@ -8,7 +8,8 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
 
 from relbench.data.task_base import TaskType
-from relbench.datasets import FakeDataset
+from relbench.datasets.fake import FakeDataset
+from relbench.tasks.amazon import UserChurnTask
 from relbench.external.graph import (
     get_node_train_table_input,
     get_stype_proposal,
@@ -49,7 +50,7 @@ def test_node_train_fake_product_dataset(tmp_path):
     assert x.size() == (100, 1)
 
     # Ensure that neighbor loading works on train/val/test splits ############
-    task = dataset.get_task("user-churn", process=True)
+    task = UserChurnTask(dataset)
     assert task.task_type == TaskType.BINARY_CLASSIFICATION
 
     stats = task.stats()
