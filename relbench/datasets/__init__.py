@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from ..data import Dataset
-from . import amazon
+from . import amazon, avito, event, f1, hm, stack, trial
 
 dataset_registry = {}
 
@@ -27,3 +27,9 @@ def get_dataset(name: str) -> Dataset:
 
 
 register_dataset("rel-amazon", amazon.AmazonDataset)
+register_dataset("rel-avito", avito.AvitoDataset)
+register_dataset("rel-event", event.EventDataset)
+register_dataset("rel-f1", f1.F1Dataset)
+register_dataset("rel-hm", hm.HMDataset)
+register_dataset("rel-stack", stack.StackDataset)
+register_dataset("rel-trial", trial.TrialDataset)
