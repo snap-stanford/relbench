@@ -1,11 +1,19 @@
 from collections import defaultdict
 from functools import lru_cache
 
+import pooch
+
 from ..data import BaseTask
 from ..datasets import get_dataset
 from . import amazon, avito, event, f1, hm, stack, trial
 
 task_registry = defaultdict(dict)
+
+DOWNLOAD_REGISTRY = pooch.create(
+    path=pooch.os_cache("relbench"),
+    base_url="https://relbench.stanford.edu/staging_data/",  # TODO: change
+    registry={},
+)
 
 
 def register_task(
@@ -22,8 +30,21 @@ def get_task_names(dataset_name: str):
     return list(task_registry[dataset_name].keys())
 
 
+def download_task(dataset_name: str, task_name: str) -> None:
+    try:
+        DOWNLOAD_REGISTRY.fetch(
+            f"{dataset_name}/tasks/{task_name}.zip",
+            processor=pooch.Unzip(extract_dir=task_name),
+            progressbar=True,
+        )
+    except ValueError:
+        print("failed to download, will attempt to make task from scratch")
+
+
 @lru_cache(maxsize=None)
-def get_task(dataset_name: str, task_name: str) -> BaseTask:
+def get_task(dataset_name: str, task_name: str, download=True) -> BaseTask:
+    if download:
+        download_task(dataset_name, task_name)
     dataset = get_dataset(dataset_name)
     cls, args, kwargs = task_registry[dataset_name][task_name]
     task = cls(dataset, *args, **kwargs)
