@@ -23,7 +23,7 @@ class Dataset:
         db_path: str,
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
-        max_eval_time_frames: int,
+        max_eval_time_frames: int = 1,
     ) -> None:
         r"""Class holding database and task table construction logic.
 
