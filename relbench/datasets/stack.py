@@ -4,13 +4,6 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.stack import (
-    PostPostRelatedTask,
-    PostVotesTask,
-    UserBadgeTask,
-    UserEngagementTask,
-    UserPostCommentTask,
-)
 from relbench.utils import clean_datetime, unzip_processor
 
 
@@ -20,13 +13,6 @@ class StackDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2020-10-01")
     test_timestamp = pd.Timestamp("2021-01-01")
     max_eval_time_frames = 1
-    task_cls_list = [
-        UserEngagementTask,
-        PostVotesTask,
-        UserBadgeTask,
-        UserPostCommentTask,
-        PostPostRelatedTask,
-    ]
 
     def __init__(
         self,

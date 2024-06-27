@@ -4,12 +4,6 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.avito import (
-    AdsClicksTask,
-    UserAdVisitTask,
-    UserClicksTask,
-    UserVisitsTask,
-)
 from relbench.utils import clean_datetime, unzip_processor
 
 
@@ -26,7 +20,6 @@ class AvitoDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2015-05-08")
     test_timestamp = pd.Timestamp("2015-05-14")
     max_eval_time_frames = 1
-    task_cls_list = [AdsClicksTask, UserVisitsTask, UserAdVisitTask, UserClicksTask]
 
     def __init__(
         self,
