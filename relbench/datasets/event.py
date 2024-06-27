@@ -5,7 +5,6 @@ from pathlib import Path
 import pandas as pd
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.event import UserAttendanceTask, UserIgnoreTask, UserRepeatTask
 from relbench.utils import decompress_gz_file, unzip_processor
 
 
@@ -24,7 +23,6 @@ class EventDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2012-11-21")
     test_timestamp = pd.Timestamp("2012-11-29")
     max_eval_time_frames = 1
-    task_cls_list = [UserAttendanceTask, UserRepeatTask, UserIgnoreTask]
 
     def __init__(
         self,

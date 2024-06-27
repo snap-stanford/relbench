@@ -5,15 +5,6 @@ import pooch
 import pyarrow as pa
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.amazon import (
-    ItemChurnTask,
-    ItemLTVTask,
-    UserChurnTask,
-    UserItemPurchaseTask,
-    UserItemRateTask,
-    UserItemReviewTask,
-    UserLTVTask,
-)
 
 
 class AmazonDataset(RelBenchDataset):
@@ -23,15 +14,6 @@ class AmazonDataset(RelBenchDataset):
     train_start_timestamp = pd.Timestamp("2008-01-01")
 
     max_eval_time_frames = 1
-    task_cls_list = [
-        UserChurnTask,
-        UserLTVTask,
-        ItemChurnTask,
-        ItemLTVTask,
-        UserItemPurchaseTask,
-        UserItemRateTask,
-        UserItemReviewTask,
-    ]
 
     category_list = ["books", "fashion"]
 
