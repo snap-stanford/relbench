@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pooch
 
-from relbench import _pooch
+from relbench import DOWNLOAD_REGISTRY
 from relbench.data.database import Database
 from relbench.data.task_base import BaseTask
 from relbench.utils import unzip_processor
@@ -119,7 +119,7 @@ class RelBenchDataset(Dataset):
             print(f"use process=False to load from cache.")
 
         else:
-            db_path = _pooch.fetch(
+            db_path = DOWNLOAD_REGISTRY.fetch(
                 f"{self.name}/{self.db_dir}.zip",
                 processor=unzip_processor,
                 progressbar=True,

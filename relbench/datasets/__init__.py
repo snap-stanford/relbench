@@ -1,44 +1,29 @@
-from relbench.data import RelBenchDataset
-from relbench.datasets.amazon import AmazonDataset
-from relbench.datasets.avito import AvitoDataset
-from relbench.datasets.event import EventDataset
-from relbench.datasets.f1 import F1Dataset, F1LinkDataset
-from relbench.datasets.fake import FakeDataset
-from relbench.datasets.hm import HMDataset
-from relbench.datasets.stack import StackDataset
-from relbench.datasets.trial import TrialDataset
+from functools import lru_cache
 
-dataset_cls_list = [
-    AmazonDataset,
-    EventDataset,
-    AvitoDataset,
-    F1Dataset,
-    F1LinkDataset,
-    StackDataset,
-    TrialDataset,
-    HMDataset,
-]
+from ..data import Dataset
+from . import amazon
 
-dataset_cls_dict = {dataset_cls.name: dataset_cls for dataset_cls in dataset_cls_list}
-
-dataset_names = list(dataset_cls_dict.keys())
+dataset_registry = {}
 
 
-def get_dataset(name: str, *args, **kwargs) -> RelBenchDataset:
-    r"""Returns a dataset by name."""
-    return dataset_cls_dict[name](*args, **kwargs)
+def register_dataset(
+    name: str,
+    cls: Dataset,
+    *args,
+    **kwargs,
+):
+    dataset_registry[name] = (cls, args, kwargs)
 
 
-__all__ = [
-    "AmazonDataset",
-    "EventDataset",
-    "AvitoDataset",
-    "F1Dataset",
-    "F1LinkDataset",
-    "StackDataset",
-    "TrialDataset",
-    "HMDataset",
-    "dataset_cls_dict",
-    "dataset_names",
-    "get_dataset",
-]
+def get_dataset_names():
+    return list(dataset_registry.keys())
+
+
+@lru_cache(maxsize=None)
+def get_dataset(name: str) -> Dataset:
+    cls, args, kwargs = dataset_registry[name]
+    dataset = cls(*args, **kwargs)
+    return dataset
+
+
+register_dataset("rel-amazon", amazon.AmazonDataset)
