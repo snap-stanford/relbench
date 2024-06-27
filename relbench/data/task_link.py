@@ -143,7 +143,7 @@ class RelBenchLinkTask(LinkTask):
     metrics: List[Callable[[NDArray, NDArray], float]]
     eval_k: int
 
-    def __init__(self, dataset: str, process: bool = False) -> None:
+    def __init__(self, dataset: str, process: bool = True) -> None:
         super().__init__(
             dataset=dataset,
             timedelta=self.timedelta,
