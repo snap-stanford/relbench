@@ -1,3 +1,4 @@
+from functools import lru_cache
 import hashlib
 import os
 import shutil
@@ -19,7 +20,7 @@ from relbench.utils import unzip_processor
 class Dataset:
     def __init__(
         self,
-        db: Database,
+        db_path: str,
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
         max_eval_time_frames: int,
@@ -33,12 +34,10 @@ class Dataset:
             max_eval_time_frames (int): The maximum number of unique timestamps used to build test and val tables.
 
         """
-        self._full_db = db
+        self.db_path = db_path
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
         self.max_eval_time_frames = max_eval_time_frames
-
-        self.db = db.upto(test_timestamp)
 
         self.validate_and_correct_db()
 
@@ -67,17 +66,9 @@ class Dataset:
                 if mask.any():
                     table.df.loc[mask, fkey_col] = None
 
-
-class RelBenchDataset(Dataset):
-    name: str
-    val_timestamp: pd.Timestamp
-    test_timestamp: pd.Timestamp
-
-    db_dir: str = "db"
-
-    def __init__(self, process=None) -> None:
-        db_path = pooch.os_cache("relbench") / self.name / self.db_dir
-        if not db_path.exists():
+    @lru_cache(maxsize=None)
+    def get_db(self, upto_test_timestamp=True) -> Database:
+        if not self.db_path.exists():
             print("making Database object from raw files...")
             tic = time.time()
             db = self.make_db()
@@ -90,33 +81,32 @@ class RelBenchDataset(Dataset):
             toc = time.time()
             print(f"done in {toc - tic:.2f} seconds.")
 
-            print(f"caching Database object to {db_path}...")
+            print(f"caching Database object to {self.db_path}...")
             tic = time.time()
-            db.save(db_path)
+            db.save(self.db_path)
             toc = time.time()
             print(f"done in {toc - tic:.2f} seconds.")
             print(f"use process=False to load from cache.")
 
         else:
-            print(f"loading Database object from {db_path}...")
+            print(f"loading Database object from {self.db_path}...")
             tic = time.time()
-            db = Database.load(db_path)
+            db = Database.load(self.db_path)
             toc = time.time()
             print(f"done in {toc - tic:.2f} seconds.")
 
-        super().__init__(
-            db,
-            self.val_timestamp,
-            self.test_timestamp,
-            self.max_eval_time_frames,
-        )
+        if upto_test_timestamp:
+            db = db.upto(self.test_timestamp)
+
+        return db
 
     def make_db(self) -> Database:
         raise NotImplementedError
 
+    # TODO: move out of here
     def pack_db(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
         with tempfile.TemporaryDirectory() as tmpdir:
-            db_path = Path(tmpdir) / self.db_dir
+            db_path = Path(tmpdir) / "db"
             print(f"saving Database object to {db_path}...")
             tic = time.time()
             self._full_db.save(db_path)
@@ -125,7 +115,7 @@ class RelBenchDataset(Dataset):
 
             print("making zip archive for db...")
             tic = time.time()
-            zip_path = Path(root) / self.name / self.db_dir
+            zip_path = Path(root) / self.name / "db"
             zip_path = shutil.make_archive(zip_path, "zip", db_path)
             toc = time.time()
             print(f"done in {toc - tic:.2f} seconds.")
@@ -136,4 +126,4 @@ class RelBenchDataset(Dataset):
         print(f"upload: {zip_path}")
         print(f"sha256: {sha256}")
 
-        return f"{self.name}/{self.db_dir}.zip", sha256
+        return f"{self.name}/db.zip", sha256
