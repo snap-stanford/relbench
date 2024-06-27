@@ -19,7 +19,6 @@ class EventDataset(RelBenchDataset):
         "kaggle competitions download -c event-recommendation-engine-challenge"
     )
 
-    train_start_timestamp = pd.Timestamp("2012-06-20")
     val_timestamp = pd.Timestamp("2012-11-21")
     test_timestamp = pd.Timestamp("2012-11-29")
     max_eval_time_frames = 1
@@ -85,7 +84,7 @@ class EventDataset(RelBenchDataset):
             event_attendees_df["start_time"].dt.tz_localize(None).apply(pd.Timestamp)
         )
 
-        return Database(
+        db = Database(
             table_dict={
                 "users": Table(
                     df=users_df,
@@ -130,3 +129,7 @@ class EventDataset(RelBenchDataset):
                 ),
             }
         )
+
+        db = db.from_(pd.Timestamp("2012-06-20"))
+
+        return db
