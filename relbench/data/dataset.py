@@ -121,7 +121,7 @@ class RelBenchDataset(Dataset):
         else:
             db_path = _pooch.fetch(
                 f"{self.name}/{self.db_dir}.zip",
-                processor=unzip_processor,
+                processor=pooch.Unzip(extract_dir=f"{self.name}/{self.db_dir}"),
                 progressbar=True,
             )
             print(f"loading Database object from {db_path}...")
