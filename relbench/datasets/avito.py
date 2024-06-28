@@ -3,11 +3,11 @@ import os
 import pandas as pd
 import pooch
 
-from relbench.data import Database, RelBenchDataset, Table
+from relbench.data import Database, Dataset, Table
 from relbench.utils import clean_datetime, unzip_processor
 
 
-class AvitoDataset(RelBenchDataset):
+class AvitoDataset(Dataset):
     name = "rel-avito"
     url = "https://www.kaggle.com/competitions/avito-context-ad-clicks"
     err_msg = (

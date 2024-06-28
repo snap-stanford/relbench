@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 import pooch
 
-from relbench.data import Database, RelBenchDataset, Table
+from relbench.data import Database, Dataset, Table
 from relbench.utils import unzip_processor
 
 
-class F1Dataset(RelBenchDataset):
+class F1Dataset(Dataset):
     name = "rel-f1"
     val_timestamp = pd.Timestamp("2005-01-01")
     test_timestamp = pd.Timestamp("2010-01-01")

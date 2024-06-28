@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from relbench.data import Database, RelBenchDataset, Table
+from relbench.data import Database, Dataset, Table
 
 
-class HMDataset(RelBenchDataset):
+class HMDataset(Dataset):
     name = "rel-hm"
     url = (
         "https://www.kaggle.com/competitions/"
@@ -76,6 +76,6 @@ class HMDataset(RelBenchDataset):
             }
         )
 
-    db = db.from_(pd.Timestamp("2019-09-07"))
+        db = db.from_(pd.Timestamp("2019-09-07"))
 
-    return db
+        return db

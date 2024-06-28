@@ -1,5 +1,5 @@
 from .database import Database
-from .dataset import Dataset, RelBenchDataset
+from .dataset import Dataset
 from .table import Table
 from .task_base import BaseTask
 from .task_link import LinkTask, RelBenchLinkTask

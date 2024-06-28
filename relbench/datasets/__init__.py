@@ -3,7 +3,7 @@ from functools import lru_cache
 import pooch
 
 from ..data import Dataset
-from . import amazon, avito, event, f1, hm, stack, trial
+from . import amazon, avito, event, fake, f1, hm, stack, trial
 
 dataset_registry = {}
 
@@ -62,3 +62,5 @@ register_dataset("rel-f1", f1.F1Dataset)
 register_dataset("rel-hm", hm.HMDataset)
 register_dataset("rel-stack", stack.StackDataset)
 register_dataset("rel-trial", trial.TrialDataset)
+
+register_dataset("rel-fake", fake.FakeDataset)

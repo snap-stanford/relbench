@@ -20,9 +20,9 @@ from relbench.utils import unzip_processor
 class Dataset:
     def __init__(
         self,
-        db_path: str,
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
+        db_path: str = None,
         max_eval_time_frames: int = 1,
     ) -> None:
         r"""Class holding database and task table construction logic.
@@ -34,12 +34,14 @@ class Dataset:
             max_eval_time_frames (int): The maximum number of unique timestamps used to build test and val tables.
 
         """
-        self.db_path = db_path
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
-        self.max_eval_time_frames = max_eval_time_frames
 
-        self.validate_and_correct_db()
+        if db_path is None:
+            db_path = tempfile.mkdtemp()
+        self.db_path = db_path
+
+        self.max_eval_time_frames = max_eval_time_frames
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
@@ -68,7 +70,7 @@ class Dataset:
 
     @lru_cache(maxsize=None)
     def get_db(self, upto_test_timestamp=True) -> Database:
-        if not self.db_path.exists():
+        if not Path(self.db_path).exists() or not any(Path(self.db_path).iterdir()):
             print("making Database object from raw files...")
             tic = time.time()
             db = self.make_db()

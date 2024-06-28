@@ -4,10 +4,10 @@ import pandas as pd
 import pooch
 import pyarrow as pa
 
-from relbench.data import Database, RelBenchDataset, Table
+from relbench.data import Database, Dataset, Table
 
 
-class AmazonDataset(RelBenchDataset):
+class AmazonDataset(Dataset):
     name = "rel-amazon"
     val_timestamp = pd.Timestamp("2015-10-01")
     test_timestamp = pd.Timestamp("2016-01-01")

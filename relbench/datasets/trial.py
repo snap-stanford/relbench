@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 import pooch
 
-from relbench.data import Database, RelBenchDataset, Table
+from relbench.data import Database, Dataset, Table
 from relbench.utils import unzip_processor
 
 
-class TrialDataset(RelBenchDataset):
+class TrialDataset(Dataset):
     name = "rel-trial"
     # 1 year gap
     val_timestamp = pd.Timestamp("2020-01-01")

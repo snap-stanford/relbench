@@ -89,3 +89,5 @@ register_task("rel-trial", "study-withdrawal", trial.StudyWithdrawalTask)
 register_task("rel-trial", "site-success", trial.SiteSuccessTask)
 register_task("rel-trial", "condition-sponsor-run", trial.ConditionSponsorRunTask)
 register_task("rel-trial", "site-sponsor-run", trial.SiteSponsorRunTask)
+
+register_task("rel-fake", "user-churn", amazon.UserChurnTask)

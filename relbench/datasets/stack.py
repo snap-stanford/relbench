@@ -3,11 +3,11 @@ import os
 import pandas as pd
 import pooch
 
-from relbench.data import Database, RelBenchDataset, Table
+from relbench.data import Database, Dataset, Table
 from relbench.utils import clean_datetime, unzip_processor
 
 
-class StackDataset(RelBenchDataset):
+class StackDataset(Dataset):
     name = "rel-stack"
     # 3 months gap
     val_timestamp = pd.Timestamp("2020-10-01")

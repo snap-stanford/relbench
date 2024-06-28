@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from relbench.data import Database, RelBenchDataset, Table
+from relbench.data import Database, Dataset, Table
 from relbench.utils import decompress_gz_file, unzip_processor
 
 
-class EventDataset(RelBenchDataset):
+class EventDataset(Dataset):
     name = "rel-event"
     url = "https://www.kaggle.com/competitions/event-recommendation-engine-challenge"  # noqa
     err_msg = (

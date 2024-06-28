@@ -11,7 +11,7 @@ from torch_geometric.typing import NodeType
 
 from relbench.data import LinkTask
 from relbench.data.task_base import TaskType
-from relbench.datasets.fake import FakeDataset
+from relbench.datasets import get_dataset
 from relbench.tasks.amazon import UserItemPurchaseTask
 from relbench.external.graph import (
     get_link_train_table_input,
@@ -23,11 +23,11 @@ from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
 
 
 def test_link_train_fake_product_dataset(tmp_path):
-    dataset = FakeDataset()
+    dataset = get_dataset("rel-fake", download=False)
 
     data, col_stats_dict = make_pkey_fkey_graph(
-        dataset.db,
-        get_stype_proposal(dataset.db),
+        dataset.get_db(),
+        get_stype_proposal(dataset.get_db()),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),
