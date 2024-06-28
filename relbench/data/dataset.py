@@ -91,7 +91,7 @@ class Dataset:
     def make_db(self) -> Database:
         raise NotImplementedError
 
-    # TODO: move out of here
+    # TODO: move out of here.
     def pack_db(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = Path(tmpdir) / "db"
