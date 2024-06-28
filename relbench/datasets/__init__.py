@@ -28,6 +28,8 @@ def register_dataset(
     *args,
     **kwargs,
 ):
+    relbench_cache = pooch.os_cache("relbench")
+    kwargs = {"cache_dir": f"{relbench_cache}/{name}", **kwargs}
     dataset_registry[name] = (cls, args, kwargs)
 
 

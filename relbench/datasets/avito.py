@@ -20,14 +20,6 @@ class AvitoDataset(Dataset):
     test_timestamp = pd.Timestamp("2015-05-14")
     max_eval_time_frames = 1
 
-    def __init__(
-        self,
-        *,
-        process: bool = False,
-    ):
-        self.name = f"{self.name}"
-        super().__init__(process=process)
-
     def make_db(self) -> Database:
         # Customize path as necessary
         r"""Process the raw files into a database."""

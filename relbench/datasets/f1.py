@@ -14,16 +14,6 @@ class F1Dataset(Dataset):
     test_timestamp = pd.Timestamp("2010-01-01")
     max_eval_time_frames = 40
 
-    def __init__(
-        self,
-        *,
-        process: bool = False,
-        cache_dir: str = None,
-    ):
-        self.cache_dir = cache_dir
-        self.name = f"{self.name}"
-        super().__init__(process=process)
-
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
         url = "https://relbench.stanford.edu/data/relbench-f1-raw.zip"
@@ -33,7 +23,6 @@ class F1Dataset(Dataset):
             known_hash="2933348953b30aa9723b4831fea8071b336b74977bbcf1fb059da63a04f06eba",
             progressbar=True,
             processor=unzip_processor,
-            path=self.cache_dir,
         )
 
         path = os.path.join(path, "raw")

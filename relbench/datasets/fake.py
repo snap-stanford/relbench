@@ -31,11 +31,7 @@ class FakeDataset(Dataset):
         val_timestamp = min_timestamp + 0.8 * (max_timestamp - min_timestamp)
         test_timestamp = min_timestamp + 0.9 * (max_timestamp - min_timestamp)
         max_eval_time_frames = 1
-        super().__init__(
-            val_timestamp=val_timestamp,
-            test_timestamp=test_timestamp,
-            max_eval_time_frames=max_eval_time_frames,
-        )
+        super().__init__()
 
     def make_db(self) -> Database:
         num_products = self.num_products

@@ -23,14 +23,6 @@ class EventDataset(Dataset):
     test_timestamp = pd.Timestamp("2012-11-29")
     max_eval_time_frames = 1
 
-    def __init__(
-        self,
-        *,
-        process: bool = False,
-    ):
-        self.name = f"{self.name}"
-        super().__init__(process=process)
-
     def check_table_and_decompress_if_exists(self, table_path: str, alt_path: str = ""):
         if not os.path.exists(table_path) or (
             alt_path != "" and not os.path.exists(alt_path)

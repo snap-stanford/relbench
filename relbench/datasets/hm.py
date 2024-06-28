@@ -19,14 +19,6 @@ class HMDataset(Dataset):
     test_timestamp = pd.Timestamp("2020-09-14")
     max_eval_time_frames = 1
 
-    def __init__(
-        self,
-        *,
-        process: bool = False,
-    ):
-        self.name = f"{self.name}"
-        super().__init__(process=process)
-
     def make_db(self) -> Database:
         path = os.path.join("data", "hm-recommendation")
         zip = os.path.join(path, "h-and-m-personalized-fashion-recommendations.zip")

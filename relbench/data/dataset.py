@@ -18,26 +18,15 @@ from relbench.utils import unzip_processor
 
 
 class Dataset:
+    val_timestamp: pd.Timestamp
+    test_timestamp: pd.Timestamp
+    max_eval_time_frames: int = 1
+
     def __init__(
         self,
-        val_timestamp: pd.Timestamp,
-        test_timestamp: pd.Timestamp,
-        cache_dir: str = None,
-        max_eval_time_frames: int = 1,
+        cache_dir: Optional[str] = None,
     ) -> None:
-        r"""Class holding database and task table construction logic.
-
-        Args:
-            db (Database): The database object.
-            val_timestamp (pd.Timestamp): The first timestamp for making val table.
-            test_timestamp (pd.Timestamp): The first timestamp for making test table.
-            max_eval_time_frames (int): The maximum number of unique timestamps used to build test and val tables.
-
-        """
-        self.val_timestamp = val_timestamp
-        self.test_timestamp = test_timestamp
         self.cache_dir = cache_dir
-        self.max_eval_time_frames = max_eval_time_frames
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
