@@ -22,7 +22,7 @@ class Dataset:
         self,
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
-        db_path: str = None,
+        cache_dir: str = None,
         max_eval_time_frames: int = 1,
     ) -> None:
         r"""Class holding database and task table construction logic.
@@ -36,16 +36,13 @@ class Dataset:
         """
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
-
-        if db_path is None:
-            db_path = tempfile.mkdtemp()
-        self.db_path = db_path
-
+        self.cache_dir = cache_dir
         self.max_eval_time_frames = max_eval_time_frames
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
 
+    # TODO: remove this or db.reindex_pkeys_and_fkeys
     def validate_and_correct_db(self):
         r"""Validate and correct input db in-place."""
         # Validate that all primary keys are consecutively index.
@@ -70,7 +67,15 @@ class Dataset:
 
     @lru_cache(maxsize=None)
     def get_db(self, upto_test_timestamp=True) -> Database:
-        if not Path(self.db_path).exists() or not any(Path(self.db_path).iterdir()):
+        db_path = f"{self.cache_dir}/db"
+        if self.cache_dir and Path(db_path).exists() and any(Path(db_path).iterdir()):
+            print(f"loading Database object from {self.db_path}...")
+            tic = time.time()
+            db = Database.load(self.db_path)
+            toc = time.time()
+            print(f"done in {toc - tic:.2f} seconds.")
+
+        else:
             print("making Database object from raw files...")
             tic = time.time()
             db = self.make_db()
@@ -83,19 +88,12 @@ class Dataset:
             toc = time.time()
             print(f"done in {toc - tic:.2f} seconds.")
 
-            print(f"caching Database object to {self.db_path}...")
-            tic = time.time()
-            db.save(self.db_path)
-            toc = time.time()
-            print(f"done in {toc - tic:.2f} seconds.")
-            print(f"use process=False to load from cache.")
-
-        else:
-            print(f"loading Database object from {self.db_path}...")
-            tic = time.time()
-            db = Database.load(self.db_path)
-            toc = time.time()
-            print(f"done in {toc - tic:.2f} seconds.")
+            if self.cache_dir:
+                print(f"caching Database object to {self.db_path}...")
+                tic = time.time()
+                db.save(self.db_path)
+                toc = time.time()
+                print(f"done in {toc - tic:.2f} seconds.")
 
         if upto_test_timestamp:
             db = db.upto(self.test_timestamp)
