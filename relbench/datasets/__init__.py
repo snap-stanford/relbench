@@ -38,18 +38,15 @@ def get_dataset_names():
 
 
 def download_dataset(name: str) -> None:
-    try:
-        DOWNLOAD_REGISTRY.fetch(
-            f"{name}/db.zip",
-            processor=pooch.Unzip(extract_dir="db"),
-            progressbar=True,
-        )
-    except ValueError:
-        print("failed to download, will attempt to make db from raw files")
+    DOWNLOAD_REGISTRY.fetch(
+        f"{name}/db.zip",
+        processor=pooch.Unzip(extract_dir="db"),
+        progressbar=True,
+    )
 
 
 @lru_cache(maxsize=None)
-def get_dataset(name: str, download=True) -> Dataset:
+def get_dataset(name: str, download=False) -> Dataset:
     if download:
         download_dataset(name)
     cls, args, kwargs = dataset_registry[name]

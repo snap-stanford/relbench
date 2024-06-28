@@ -57,9 +57,9 @@ class Dataset:
     def get_db(self, upto_test_timestamp=True) -> Database:
         db_path = f"{self.cache_dir}/db"
         if self.cache_dir and Path(db_path).exists() and any(Path(db_path).iterdir()):
-            print(f"loading Database object from {self.db_path}...")
+            print(f"loading Database object from {db_path}...")
             tic = time.time()
-            db = Database.load(self.db_path)
+            db = Database.load(db_path)
             toc = time.time()
             print(f"done in {toc - tic:.2f} seconds.")
 
@@ -77,9 +77,9 @@ class Dataset:
             print(f"done in {toc - tic:.2f} seconds.")
 
             if self.cache_dir:
-                print(f"caching Database object to {self.db_path}...")
+                print(f"caching Database object to {db_path}...")
                 tic = time.time()
-                db.save(self.db_path)
+                db.save(db_path)
                 toc = time.time()
                 print(f"done in {toc - tic:.2f} seconds.")
 
