@@ -10,7 +10,9 @@ import pandas as pd
 from numpy.typing import NDArray
 
 from relbench import DOWNLOAD_REGISTRY
-from relbench.data import Database, Dataset, Table
+from relbench.data.database import Database
+from relbench.data.dataset import Dataset
+from relbench.data.table import Table
 
 
 class BaseTask:

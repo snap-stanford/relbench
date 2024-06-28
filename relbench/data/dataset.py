@@ -13,7 +13,6 @@ import pooch
 
 from relbench import DOWNLOAD_REGISTRY
 from relbench.data.database import Database
-from relbench.data.task_base import BaseTask
 from relbench.utils import unzip_processor
 
 
