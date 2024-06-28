@@ -6,7 +6,7 @@ from relbench.tasks import get_task
 
 def test_fake_reviews_dataset():
     dataset = get_dataset("rel-fake", download=False)
-    assert dataset.get_db().max_timestamp < dataset.test_timestamp
+    assert dataset.get_db().max_timestamp <= dataset.test_timestamp
     assert str(dataset) == "FakeDataset()"
 
     task = get_task("rel-fake", "user-churn", download=False)

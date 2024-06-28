@@ -193,6 +193,7 @@ class TaskType(Enum):
     LINK_PREDICTION = "link_prediction"
 
 
+# TODO: move somewhere else
 def _pack_tables(task, root: Union[str, os.PathLike]) -> Tuple[str, str]:
     _dummy_db = Database(
         table_dict={

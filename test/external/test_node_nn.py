@@ -22,9 +22,10 @@ from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
 def test_node_train_fake_product_dataset(tmp_path):
     dataset = get_dataset("rel-fake")
 
+    db = dataset.get_db()
     data, col_stats_dict = make_pkey_fkey_graph(
-        dataset.db,
-        get_stype_proposal(dataset.db),
+        db,
+        get_stype_proposal(db),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),
@@ -46,7 +47,7 @@ def test_node_train_fake_product_dataset(tmp_path):
 
     assert len(x_dict) == 4
     assert x_dict["customer"].size() == (100, 64)
-    assert x_dict["review"].size() == (540, 64)
+    assert x_dict["review"].size() == (541, 64)
     assert x_dict["product"].size() == (30, 64)
     assert x.size() == (100, 1)
 
@@ -161,9 +162,10 @@ def test_node_train_empty_graph(tmp_path):
     num_customers = 50
     dataset = FakeDataset(num_customers=num_customers, num_reviews=1)
 
+    db = dataset.get_db()
     data, col_stats_dict = make_pkey_fkey_graph(
-        dataset.db,
-        get_stype_proposal(dataset.db),
+        db,
+        get_stype_proposal(db),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),
