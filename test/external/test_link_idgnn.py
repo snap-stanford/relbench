@@ -11,7 +11,7 @@ from torch_geometric.typing import NodeType
 
 from relbench.data import LinkTask
 from relbench.data.task_base import TaskType
-from relbench.datasets import get_dataset
+from relbench.datasets.fake import FakeDataset
 from relbench.external.graph import (
     get_link_train_table_input,
     get_stype_proposal,
@@ -23,7 +23,7 @@ from relbench.tasks.amazon import UserItemPurchaseTask
 
 
 def test_link_train_fake_product_dataset(tmp_path):
-    dataset = get_dataset("rel-fake", download=False)
+    dataset = FakeDataset()
 
     data, col_stats_dict = make_pkey_fkey_graph(
         dataset.get_db(),

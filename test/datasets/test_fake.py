@@ -1,15 +1,15 @@
 import copy
 
-from relbench.datasets import get_dataset
-from relbench.tasks import get_task
+from relbench.datasets.fake import FakeDataset
+from relbench.tasks.amazon import UserChurnTask
 
 
 def test_fake_reviews_dataset():
-    dataset = get_dataset("rel-fake", download=False)
+    dataset = FakeDataset()
     assert dataset.get_db().max_timestamp <= dataset.test_timestamp
     assert str(dataset) == "FakeDataset()"
 
-    task = get_task("rel-fake", "user-churn", download=False)
+    task = UserChurnTask(dataset)
     assert str(task) == "UserChurnTask(dataset=FakeDataset())"
 
     train_table = task.train_table
@@ -29,7 +29,7 @@ def test_fake_reviews_dataset():
 
 
 def test_reindex():
-    dataset = get_dataset("rel-fake", download=False)
+    dataset = FakeDataset()
     db = dataset.make_db()
     db_indexed = copy.deepcopy(db)
     db_indexed.reindex_pkeys_and_fkeys()

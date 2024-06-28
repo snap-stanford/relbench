@@ -8,7 +8,6 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
 
 from relbench.data.task_base import TaskType
-from relbench.datasets import get_dataset
 from relbench.datasets.fake import FakeDataset
 from relbench.external.graph import (
     get_node_train_table_input,
@@ -20,7 +19,7 @@ from relbench.tasks.amazon import UserChurnTask
 
 
 def test_node_train_fake_product_dataset(tmp_path):
-    dataset = get_dataset("rel-fake")
+    dataset = FakeDataset()
 
     db = dataset.get_db()
     data, col_stats_dict = make_pkey_fkey_graph(
