@@ -76,6 +76,6 @@ class HMDataset(RelBenchDataset):
             }
         )
 
-    db = db.from_(pd.Timestamp("2019-09-07"))
+        db = db.from_(pd.Timestamp("2019-09-07"))
 
-    return db
+        return db
