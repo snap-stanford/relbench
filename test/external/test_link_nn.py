@@ -13,7 +13,6 @@ from torch_geometric.typing import NodeType
 from relbench.data import LinkTask
 from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
-from relbench.tasks.amazon import UserItemPurchaseTask
 from relbench.external.graph import (
     get_link_train_table_input,
     get_stype_proposal,
@@ -22,6 +21,7 @@ from relbench.external.graph import (
 from relbench.external.loader import LinkNeighborLoader
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
 from relbench.external.utils import to_unix_time
+from relbench.tasks.amazon import UserItemPurchaseTask
 
 
 @pytest.mark.parametrize(

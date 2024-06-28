@@ -10,13 +10,13 @@ from torch_geometric.nn import MLP
 from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 from relbench.datasets.fake import FakeDataset
-from relbench.tasks.amazon import UserChurnTask
 from relbench.external.graph import (
     get_node_train_table_input,
     get_stype_proposal,
     make_pkey_fkey_graph,
 )
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
+from relbench.tasks.amazon import UserChurnTask
 
 
 def test_node_train_fake_product_dataset(tmp_path):
