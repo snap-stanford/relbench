@@ -12,7 +12,7 @@ from torch_geometric.typing import NodeType
 
 from relbench.data import LinkTask
 from relbench.data.task_base import TaskType
-from relbench.datasets import FakeDataset
+from relbench.datasets.fake import FakeDataset
 from relbench.external.graph import (
     get_link_train_table_input,
     get_stype_proposal,
@@ -21,6 +21,7 @@ from relbench.external.graph import (
 from relbench.external.loader import LinkNeighborLoader
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
 from relbench.external.utils import to_unix_time
+from relbench.tasks.amazon import UserItemPurchaseTask
 
 
 @pytest.mark.parametrize(
@@ -31,8 +32,8 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     dataset = FakeDataset()
 
     data, col_stats_dict = make_pkey_fkey_graph(
-        dataset.db,
-        get_stype_proposal(dataset.db),
+        dataset.get_db(),
+        get_stype_proposal(dataset.get_db()),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),
@@ -45,7 +46,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     gnn = HeteroGraphSAGE(data.node_types, data.edge_types, 64)
 
     # Ensure that neighbor loading works on train/val/test splits ############
-    task: LinkTask = dataset.get_task("user-item-purchase", process=True)
+    task: LinkTask = UserItemPurchaseTask(dataset)
     assert task.task_type == TaskType.LINK_PREDICTION
 
     # Ensure that stats computation works on train/val/test splits ###########

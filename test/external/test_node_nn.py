@@ -8,21 +8,23 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
 
 from relbench.data.task_base import TaskType
-from relbench.datasets import FakeDataset
+from relbench.datasets.fake import FakeDataset
 from relbench.external.graph import (
     get_node_train_table_input,
     get_stype_proposal,
     make_pkey_fkey_graph,
 )
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
+from relbench.tasks.amazon import UserChurnTask
 
 
 def test_node_train_fake_product_dataset(tmp_path):
     dataset = FakeDataset()
 
+    db = dataset.get_db()
     data, col_stats_dict = make_pkey_fkey_graph(
-        dataset.db,
-        get_stype_proposal(dataset.db),
+        db,
+        get_stype_proposal(db),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),
@@ -44,12 +46,12 @@ def test_node_train_fake_product_dataset(tmp_path):
 
     assert len(x_dict) == 4
     assert x_dict["customer"].size() == (100, 64)
-    assert x_dict["review"].size() == (540, 64)
+    assert x_dict["review"].size() == (541, 64)
     assert x_dict["product"].size() == (30, 64)
     assert x.size() == (100, 1)
 
     # Ensure that neighbor loading works on train/val/test splits ############
-    task = dataset.get_task("user-churn", process=True)
+    task = UserChurnTask(dataset)
     assert task.task_type == TaskType.BINARY_CLASSIFICATION
 
     stats = task.stats()
@@ -159,9 +161,10 @@ def test_node_train_empty_graph(tmp_path):
     num_customers = 50
     dataset = FakeDataset(num_customers=num_customers, num_reviews=1)
 
+    db = dataset.get_db()
     data, col_stats_dict = make_pkey_fkey_graph(
-        dataset.db,
-        get_stype_proposal(dataset.db),
+        db,
+        get_stype_proposal(db),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),
