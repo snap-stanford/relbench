@@ -91,7 +91,7 @@ class RelBenchNodeTask(NodeTask):
     target_col: str
     task_dir: str = "tasks"
 
-    def __init__(self, dataset: str, process: bool = False) -> None:
+    def __init__(self, dataset: str, process: bool = True) -> None:
         super().__init__(
             dataset=dataset,
             timedelta=self.timedelta,

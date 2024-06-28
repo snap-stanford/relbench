@@ -5,15 +5,6 @@ import numpy as np
 import pandas as pd
 
 from relbench.data import Database, Dataset, Table
-from relbench.tasks.amazon import (
-    ItemChurnTask,
-    ItemLTVTask,
-    UserChurnTask,
-    UserItemPurchaseTask,
-    UserItemRateTask,
-    UserItemReviewTask,
-    UserLTVTask,
-)
 
 
 def _generate_random_string(min_length: int, max_length: int) -> str:
@@ -39,19 +30,9 @@ class FakeDataset(Dataset):
         max_eval_time_frames = 1
         super().__init__(
             db=db,
-            train_start_timestamp=None,
             val_timestamp=val_timestamp,
             test_timestamp=test_timestamp,
             max_eval_time_frames=max_eval_time_frames,
-            task_cls_list=[
-                UserChurnTask,
-                UserLTVTask,
-                ItemChurnTask,
-                ItemLTVTask,
-                UserItemPurchaseTask,
-                UserItemRateTask,
-                UserItemReviewTask,
-            ],
         )
 
     def make_db(

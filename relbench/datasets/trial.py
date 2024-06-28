@@ -5,14 +5,6 @@ import pandas as pd
 import pooch
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.trial import (
-    ConditionSponsorRunTask,
-    SiteSponsorRunTask,
-    SiteSuccessTask,
-    StudyAdverseTask,
-    StudyOutcomeTask,
-    StudyWithdrawalTask,
-)
 from relbench.utils import unzip_processor
 
 
@@ -22,14 +14,6 @@ class TrialDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2020-01-01")
     test_timestamp = pd.Timestamp("2021-01-01")
     max_eval_time_frames = 1
-    task_cls_list = [
-        StudyOutcomeTask,
-        StudyAdverseTask,
-        StudyWithdrawalTask,
-        SiteSuccessTask,
-        ConditionSponsorRunTask,
-        SiteSponsorRunTask,
-    ]
 
     def __init__(
         self,

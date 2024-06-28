@@ -5,7 +5,6 @@ from pathlib import Path
 import pandas as pd
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.event import UserAttendanceTask, UserIgnoreTask, UserRepeatTask
 from relbench.utils import decompress_gz_file, unzip_processor
 
 
@@ -20,11 +19,9 @@ class EventDataset(RelBenchDataset):
         "kaggle competitions download -c event-recommendation-engine-challenge"
     )
 
-    train_start_timestamp = pd.Timestamp("2012-06-20")
     val_timestamp = pd.Timestamp("2012-11-21")
     test_timestamp = pd.Timestamp("2012-11-29")
     max_eval_time_frames = 1
-    task_cls_list = [UserAttendanceTask, UserRepeatTask, UserIgnoreTask]
 
     def __init__(
         self,
@@ -87,7 +84,7 @@ class EventDataset(RelBenchDataset):
             event_attendees_df["start_time"].dt.tz_localize(None).apply(pd.Timestamp)
         )
 
-        return Database(
+        db = Database(
             table_dict={
                 "users": Table(
                     df=users_df,
@@ -132,3 +129,7 @@ class EventDataset(RelBenchDataset):
                 ),
             }
         )
+
+        db = db.from_(pd.Timestamp("2012-06-20"))
+
+        return db

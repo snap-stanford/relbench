@@ -2,7 +2,7 @@ from torch_frame import TensorFrame
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
 
-from relbench.datasets import FakeDataset
+from relbench.datasets.fake import FakeDataset
 from relbench.external.graph import get_stype_proposal, make_pkey_fkey_graph
 
 

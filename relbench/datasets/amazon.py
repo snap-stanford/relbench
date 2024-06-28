@@ -5,33 +5,14 @@ import pooch
 import pyarrow as pa
 
 from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.amazon import (
-    ItemChurnTask,
-    ItemLTVTask,
-    UserChurnTask,
-    UserItemPurchaseTask,
-    UserItemRateTask,
-    UserItemReviewTask,
-    UserLTVTask,
-)
 
 
 class AmazonDataset(RelBenchDataset):
     name = "rel-amazon"
     val_timestamp = pd.Timestamp("2015-10-01")
     test_timestamp = pd.Timestamp("2016-01-01")
-    train_start_timestamp = pd.Timestamp("2008-01-01")
 
     max_eval_time_frames = 1
-    task_cls_list = [
-        UserChurnTask,
-        UserLTVTask,
-        ItemChurnTask,
-        ItemLTVTask,
-        UserItemPurchaseTask,
-        UserItemRateTask,
-        UserItemReviewTask,
-    ]
 
     category_list = ["books", "fashion"]
 
@@ -224,7 +205,7 @@ class AmazonDataset(RelBenchDataset):
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        return Database(
+        db = Database(
             table_dict={
                 "product": Table(
                     df=pdf,
@@ -249,3 +230,7 @@ class AmazonDataset(RelBenchDataset):
                 ),
             }
         )
+
+        db = db.from_(pd.Timestamp("2008-01-01"))
+
+        return db
