@@ -46,12 +46,16 @@ def test_link_train_fake_product_dataset(tmp_path):
     task = UserItemPurchaseTask(dataset)
     assert task.task_type == TaskType.LINK_PREDICTION
 
+    train_table = task.get_table("train")
+    val_table = task.get_table("val")
+    test_table = task.get_table("test")
+
     loader_dict: Dict[str, NeighborLoader] = {}
     dst_nodes_dict: Dict[str, Tuple[NodeType, Tensor]] = {}
     for split, table in [
-        ("train", task.train_table),
-        ("val", task.val_table),
-        ("test", task.test_table),
+        ("train", train_table),
+        ("val", val_table),
+        ("test", test_table),
     ]:
         table_input = get_link_train_table_input(table, task)
         dst_nodes_dict[split] = table_input.dst_nodes
@@ -140,6 +144,6 @@ def test_link_train_fake_product_dataset(tmp_path):
                 pred_list.append(pred_mini)
         pred = torch.cat(pred_list, dim=0).numpy()
         if split == "val":
-            task.evaluate(pred, task.val_table)
+            task.evaluate(pred, val_table)
         else:
             task.evaluate(pred)

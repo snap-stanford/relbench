@@ -65,7 +65,7 @@ class LinkTask(BaseTask):
             metrics = self.metrics
 
         if target_table is None:
-            target_table = self._full_test_table
+            target_table = self.get_table("test", mask_input_cols=False)
 
         expected_pred_shape = (len(target_table), self.eval_k)
         if pred.shape != expected_pred_shape:
@@ -114,14 +114,7 @@ class LinkTask(BaseTask):
         res = {}
         for split in ["train", "val", "test"]:
             split_stats = {}
-            if split == "train":
-                table = self.train_table
-            elif split == "val":
-                table = self.val_table
-            else:
-                table = self.test_table
-            if table is None:
-                continue
+            table = self.get_table(split, mask_input_cols=False)
             timestamps = table.df[self.time_col].unique()
             for timestamp in timestamps:
                 temp_df = table.df[table.df[self.time_col] == timestamp]
@@ -154,7 +147,11 @@ class LinkTask(BaseTask):
         total_df = pd.concat(
             [
                 table.df
-                for table in [self.train_table, self.val_table, self.test_table]
+                for table in [
+                    self.get_table("train"),
+                    self.get_table("val"),
+                    self.get_table("test"),
+                ]
                 if table is not None
             ]
         )
@@ -167,10 +164,10 @@ class LinkTask(BaseTask):
             "num_dst_entities": num_dst_entities,
             "num_rows": num_rows,
         }
-        train_uniques = set(self.train_table.df[self.src_entity_col].unique())
-        if self.test_table is None:
+        train_uniques = set(self.get_table("train").df[self.src_entity_col].unique())
+        if self.get_table("test") is None:
             return res
-        test_uniques = set(self.test_table.df[self.src_entity_col].unique())
+        test_uniques = set(self.get_table("test").df[self.src_entity_col].unique())
         ratio_train_test_entity_overlap = len(
             train_uniques.intersection(test_uniques)
         ) / len(test_uniques)

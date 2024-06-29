@@ -12,8 +12,8 @@ def test_fake_reviews_dataset():
     task = UserChurnTask(dataset)
     assert str(task) == "UserChurnTask(dataset=FakeDataset())"
 
-    train_table = task.train_table
-    val_table = task.val_table
+    train_table = task.get_table("train")
+    val_table = task.get_table("val")
     for table in [train_table, val_table]:
         assert set(table.df.columns) >= {
             "timestamp",
@@ -21,7 +21,7 @@ def test_fake_reviews_dataset():
             "churn",
         }
 
-    test_table = task.test_table
+    test_table = task.get_table("test")
     assert set(test_table.df.columns) == {
         "timestamp",
         "customer_id",

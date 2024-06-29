@@ -52,6 +52,8 @@ class BaseTask:
         raise NotImplementedError
 
     def _get_table(self, split: str) -> Table:
+        db = self.dataset.get_db(upto_test_timestamp=split != "test")
+
         if split == "train":
             start = self.dataset.val_timestamp - self.timedelta
             end = db.min_timestamp
@@ -65,7 +67,7 @@ class BaseTask:
                     "insufficient aggregation time."
                 )
 
-            start = (self.dataset.val_timestamp,)
+            start = self.dataset.val_timestamp
             end = min(
                 self.dataset.val_timestamp
                 + self.timedelta * (self.dataset.max_eval_time_frames - 1),
@@ -89,15 +91,13 @@ class BaseTask:
             )
             freq = self.timedelta
 
-        timestamps = pd.date_range(start, end, freq)
+        timestamps = pd.date_range(start=start, end=end, freq=freq)
 
         if split == "train" and len(timestamps) < 3:
             raise RuntimeError(
                 f"The number of training time frames is too few. "
                 f"({len(timestamps)} given)"
             )
-
-        db = self.dataset.get_db(upto_test_timestamp=split != "test")
 
         table = self.make_table(db, timestamps)
         table = self.filter_dangling_entities(table)

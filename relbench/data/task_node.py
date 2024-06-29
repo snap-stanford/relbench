@@ -55,7 +55,7 @@ class NodeTask(BaseTask):
             metrics = self.metrics
 
         if target_table is None:
-            target_table = self._full_test_table
+            target_table = self.get_table("test", mask_input_cols=False)
 
         target = target_table.df[self.target_col].to_numpy()
         if len(pred) != len(target):
@@ -80,14 +80,7 @@ class NodeTask(BaseTask):
         """
         res = {}
         for split in ["train", "val", "test"]:
-            if split == "train":
-                table = self.train_table
-            elif split == "val":
-                table = self.val_table
-            else:
-                table = self._full_test_table
-            if table is None:
-                continue
+            table = self.get_table(split, mask_input_cols=False)
             timestamps = table.df[self.time_col].unique()
             split_stats = {}
             for timestamp in timestamps:
@@ -107,16 +100,19 @@ class NodeTask(BaseTask):
         total_df = pd.concat(
             [
                 table.df
-                for table in [self.train_table, self.val_table, self._full_test_table]
+                for table in [
+                    self.get_table(split, mask_input_cols=False)
+                    for split in ["train", "val", "test"]
+                ]
                 if table is not None
             ]
         )
         res["total"] = {}
         self._set_stats(total_df, res["total"])
-        train_uniques = set(self.train_table.df[self.entity_col].unique())
-        if self._full_test_table is None:
-            return res
-        test_uniques = set(self._full_test_table.df[self.entity_col].unique())
+        train_uniques = set(self.get_table("train").df[self.entity_col].unique())
+        test_uniques = set(
+            self.get_table("test", mask_input_cols=False).df[self.entity_col].unique()
+        )
         ratio_train_test_entity_overlap = len(
             train_uniques.intersection(test_uniques)
         ) / len(test_uniques)
