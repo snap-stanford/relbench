@@ -15,8 +15,7 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench.data import LinkTask, RelBenchDataset
-from relbench.data.task_base import TaskType
+from relbench.data import Dataset, LinkTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.external.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.external.loader import LinkNeighborLoader
@@ -34,8 +33,10 @@ parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=160)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 # Use the same seed time across the mini-batch and share the negatives
+# TODO: fix, currently this cannot be made false
 parser.add_argument("--share_same_time", action="store_true", default=True)
 # Whether to use shallow embedding on dst nodes or not.
+# TODO: fix, currently this cannot be made false
 parser.add_argument("--use_shallow", action="store_true", default=True)
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
@@ -52,8 +53,8 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-task: LinkTask = dataset.get_task(args.task, process=True)
+dataset: Dataset = get_dataset(name=args.dataset)
+task: LinkTask = dataset.get_task(args.task)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
@@ -70,7 +71,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
 
 num_neighbors = [int(args.num_neighbors // 2**i) for i in range(args.num_layers)]
 
-train_table_input = get_link_train_table_input(task.train_table, task)
+train_table_input = get_link_train_table_input(task.get_table("train"), task)
 train_loader = LinkNeighborLoader(
     data=data,
     num_neighbors=num_neighbors,
