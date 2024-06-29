@@ -4,12 +4,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.event import UserAttendanceTask, UserIgnoreTask, UserRepeatTask
+from relbench.data import Database, Dataset, Table
 from relbench.utils import decompress_gz_file, unzip_processor
 
 
-class EventDataset(RelBenchDataset):
+class EventDataset(Dataset):
     name = "rel-event"
     url = "https://www.kaggle.com/competitions/event-recommendation-engine-challenge"  # noqa
     err_msg = (
@@ -20,19 +19,9 @@ class EventDataset(RelBenchDataset):
         "kaggle competitions download -c event-recommendation-engine-challenge"
     )
 
-    train_start_timestamp = pd.Timestamp("2012-06-20")
     val_timestamp = pd.Timestamp("2012-11-21")
     test_timestamp = pd.Timestamp("2012-11-29")
     max_eval_time_frames = 1
-    task_cls_list = [UserAttendanceTask, UserRepeatTask, UserIgnoreTask]
-
-    def __init__(
-        self,
-        *,
-        process: bool = False,
-    ):
-        self.name = f"{self.name}"
-        super().__init__(process=process)
 
     def check_table_and_decompress_if_exists(self, table_path: str, alt_path: str = ""):
         if not os.path.exists(table_path) or (
@@ -87,7 +76,7 @@ class EventDataset(RelBenchDataset):
             event_attendees_df["start_time"].dt.tz_localize(None).apply(pd.Timestamp)
         )
 
-        return Database(
+        db = Database(
             table_dict={
                 "users": Table(
                     df=users_df,
@@ -132,3 +121,7 @@ class EventDataset(RelBenchDataset):
                 ),
             }
         )
+
+        db = db.from_(pd.Timestamp("2012-06-20"))
+
+        return db
