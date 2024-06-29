@@ -3,13 +3,13 @@ import os
 import shutil
 import tempfile
 from enum import Enum
+from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, List, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import pandas as pd
 from numpy.typing import NDArray
 
-from relbench import DOWNLOAD_REGISTRY
 from relbench.data.database import Database
 from relbench.data.dataset import Dataset
 from relbench.data.table import Table
