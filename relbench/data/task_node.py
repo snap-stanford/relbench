@@ -27,29 +27,13 @@ if TYPE_CHECKING:
 class NodeTask(BaseTask):
     r"""A link prediction task on a dataset."""
 
-    def __init__(
-        self,
-        dataset: "Dataset",
-        timedelta: pd.Timedelta,
-        target_col: str,
-        entity_table: str,
-        entity_col: str,
-        metrics: List[Callable[[NDArray, NDArray], float]],
-    ):
-        super().__init__(
-            dataset=dataset,
-            timedelta=timedelta,
-            metrics=metrics,
-        )
-        self.target_col = target_col
-        self.entity_table = entity_table
-        self.entity_col = entity_col
-
-        self._full_test_table = None
-        self._cached_table_dict = {}
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(dataset={self.dataset})"
+    name: str
+    entity_col: str
+    entity_table: str
+    time_col: str
+    target_col: str
+    timedelta: pd.Timedelta
+    metrics: List[Callable[[NDArray, NDArray], float]]
 
     def filter_dangling_entities(self, table: Table) -> Table:
         db = self.dataset.get_db()
@@ -81,32 +65,6 @@ class NodeTask(BaseTask):
             )
 
         return {fn.__name__: fn(target, pred) for fn in metrics}
-
-
-class RelBenchNodeTask(NodeTask):
-    name: str
-    entity_col: str
-    entity_table: str
-    time_col: str
-    timedelta: pd.Timedelta
-    target_col: str
-    task_dir: str = "tasks"
-
-    def __init__(self, dataset: str, process: bool = True) -> None:
-        super().__init__(
-            dataset=dataset,
-            timedelta=self.timedelta,
-            target_col=self.target_col,
-            entity_table=self.entity_table,
-            entity_col=self.entity_col,
-            metrics=self.metrics,
-        )
-
-        if not process:
-            self.set_cached_table_dict(self.name, self.task_dir, self.dataset.name)
-
-        def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
-            return _pack_tables(self, root)
 
     def stats(self) -> dict[str, dict[str, Any]]:
         r"""Get train / val / test table statistics for each timestamp
