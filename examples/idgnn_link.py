@@ -52,7 +52,7 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-task: LinkTask = dataset.get_task(args.task, process=True)
+task: LinkTask = get_task(args.task, process=True)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 

@@ -51,24 +51,16 @@ seed_everything(args.seed)
 dataset: Dataset = get_dataset(args.dataset)
 task: NodeTask = get_task(args.dataset, args.task)
 
+col_to_stype_dict = dataset2inferred_stypes[args.dataset]
 
-cache_dir = f"{args.cache_dir}/{args.dataset}"
-try:
-    data = torch.load(f"{cache_dir}/data.pt", map_location="cpu")
-    col_stats_dict = torch.load(f"{cache_dir}/col_stats_dict.pt", map_location="cpu")
-except FileNotFoundError:
-    col_to_stype_dict = dataset2inferred_stypes[args.dataset]
-    data, col_stats_dict = make_pkey_fkey_graph(
-        dataset.get_db(),
-        col_to_stype_dict=col_to_stype_dict,
-        text_embedder_cfg=TextEmbedderConfig(
-            text_embedder=GloveTextEmbedding(device=device), batch_size=256
-        ),
-    )
-    Path(cache_dir).mkdir(parents=True, exist_ok=True)
-    torch.save(data, f"{cache_dir}/data.pt")
-    torch.save(col_stats_dict, f"{cache_dir}/col_stats_dict.pt")
-
+data, col_stats_dict = make_pkey_fkey_graph(
+    dataset.get_db(),
+    col_to_stype_dict=col_to_stype_dict,
+    text_embedder_cfg=TextEmbedderConfig(
+        text_embedder=GloveTextEmbedding(device=device), batch_size=256
+    ),
+    cache_dir=os.path.join(args.cache_dir, args.dataset),
+)
 
 clamp_min, clamp_max = None, None
 if task.task_type == TaskType.BINARY_CLASSIFICATION:

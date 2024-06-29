@@ -19,6 +19,7 @@ from relbench.data import Dataset, LinkTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.external.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.external.loader import LinkNeighborLoader
+from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-hm")
@@ -53,15 +54,15 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: Dataset = get_dataset(name=args.dataset)
-task: LinkTask = dataset.get_task(args.task)
+dataset: Dataset = get_dataset(args.dataset)
+task: LinkTask = get_task(args.dataset, args.task)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
 
 data, col_stats_dict = make_pkey_fkey_graph(
-    dataset.db,
+    dataset.get_db(),
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
@@ -91,7 +92,7 @@ train_loader = LinkNeighborLoader(
 eval_loaders_dict: Dict[str, Tuple[NeighborLoader, NeighborLoader]] = {}
 for split in ["val", "test"]:
     seed_time = task.val_seed_time if split == "val" else task.test_seed_time
-    target_table = task.val_table if split == "val" else task.test_table
+    target_table = task.get_table(split)
     src_node_indices = torch.from_numpy(target_table.df[task.src_entity_col].values)
     src_loader = NeighborLoader(
         data,
@@ -204,7 +205,7 @@ for epoch in range(1, args.epochs + 1):
     train_loss = train()
     if epoch % args.eval_epochs_interval == 0:
         val_pred = test(*eval_loaders_dict["val"])
-        val_metrics = task.evaluate(val_pred, task.val_table)
+        val_metrics = task.evaluate(val_pred, task.get_table("val"))
         print(
             f"Epoch: {epoch:02d}, Train loss: {train_loss}, "
             f"Val metrics: {val_metrics}"
@@ -217,7 +218,7 @@ for epoch in range(1, args.epochs + 1):
 
 model.load_state_dict(state_dict)
 val_pred = test(*eval_loaders_dict["val"])
-val_metrics = task.evaluate(val_pred, task.val_table)
+val_metrics = task.evaluate(val_pred, task.get_table("val"))
 print(f"Best Val metrics: {val_metrics}")
 
 test_pred = test(*eval_loaders_dict["test"])

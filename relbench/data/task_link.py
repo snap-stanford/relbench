@@ -89,6 +89,7 @@ class LinkTask(BaseTask):
 
         return {fn.__name__: fn(pred_isin, dst_count) for fn in metrics}
 
+    # TODO: should these be here? seed_time is confusing terminology?
     @property
     def num_src_nodes(self) -> int:
         return len(self.dataset.get_db().table_dict[self.src_entity_table])
