@@ -1,12 +1,12 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchNodeTask, Table
+from relbench.data import Database, NodeTask, Table
 from relbench.data.task_base import TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, r2, rmse, roc_auc
 
 
-class UserAttendanceTask(RelBenchNodeTask):
+class UserAttendanceTask(NodeTask):
     r"""Predict the number of events a user will go to in the next seven days
     7 days."""
 
@@ -59,7 +59,7 @@ class UserAttendanceTask(RelBenchNodeTask):
         )
 
 
-class UserRepeatTask(RelBenchNodeTask):
+class UserRepeatTask(NodeTask):
     r"""Predict whether a user will attend an event in the
     next 7 days if they have already attended an event in the
     last 14 days."""
@@ -139,7 +139,7 @@ class UserRepeatTask(RelBenchNodeTask):
         )
 
 
-class UserIgnoreTask(RelBenchNodeTask):
+class UserIgnoreTask(NodeTask):
     r"""Predict whether a user will ignore more than 2 event invitations
     in the next 7 days."""
 
