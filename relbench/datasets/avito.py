@@ -3,17 +3,11 @@ import os
 import pandas as pd
 import pooch
 
-from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.avito import (
-    AdsClicksTask,
-    UserAdVisitTask,
-    UserClicksTask,
-    UserVisitsTask,
-)
+from relbench.data import Database, Dataset, Table
 from relbench.utils import clean_datetime, unzip_processor
 
 
-class AvitoDataset(RelBenchDataset):
+class AvitoDataset(Dataset):
     name = "rel-avito"
     url = "https://www.kaggle.com/competitions/avito-context-ad-clicks"
     err_msg = (
@@ -22,19 +16,9 @@ class AvitoDataset(RelBenchDataset):
     )
 
     # search stream ranges from 2015-04-25 to 2015-05-20
-    train_start_timestamp = pd.Timestamp("2015-04-25")
     val_timestamp = pd.Timestamp("2015-05-08")
     test_timestamp = pd.Timestamp("2015-05-14")
     max_eval_time_frames = 1
-    task_cls_list = [AdsClicksTask, UserVisitsTask, UserAdVisitTask, UserClicksTask]
-
-    def __init__(
-        self,
-        *,
-        process: bool = False,
-    ):
-        self.name = f"{self.name}"
-        super().__init__(process=process)
 
     def make_db(self) -> Database:
         # Customize path as necessary
@@ -145,4 +129,8 @@ class AvitoDataset(RelBenchDataset):
             },
             time_col="ViewDate",
         )
-        return Database(tables)
+        db = Database(tables)
+
+        db = db.from_(pd.Timestamp("2015-04-25"))
+
+        return db

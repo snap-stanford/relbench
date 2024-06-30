@@ -6,8 +6,9 @@ import numpy as np
 import pandas as pd
 from torch_geometric.seed import seed_everything
 
-from relbench.data import LinkTask, Table
+from relbench.data import Dataset, LinkTask, Table
 from relbench.datasets import get_dataset
+from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
@@ -18,12 +19,12 @@ args = parser.parse_args()
 
 seed_everything(args.seed)
 
-dataset = get_dataset(name=args.dataset, process=False)
-task: LinkTask = dataset.get_task(args.task, process=True)
+dataset: Dataset = get_dataset(args.dataset)
+task: LinkTask = get_task(args.dataset, args.task)
 
-train_table = task.train_table
-test_table = task.test_table
-val_table = task.val_table
+train_table = task.get_table("train")
+val_table = task.get_table("val")
+test_table = task.get_table("test")
 
 trainval_table_df = pd.concat([train_table.df, val_table.df], axis=0)
 trainval_table = Table(

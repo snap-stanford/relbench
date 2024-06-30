@@ -9,7 +9,6 @@ from torch_frame import stype
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.data import Dataset
 from torch_frame.data.stats import StatType
-from torch_frame.utils import infer_df_stype
 from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
 from torch_geometric.utils import sort_edge_index
@@ -17,25 +16,6 @@ from torch_geometric.utils import sort_edge_index
 from relbench.data import Database, LinkTask, NodeTask, Table
 from relbench.data.task_base import TaskType
 from relbench.external.utils import remove_pkey_fkey, to_unix_time
-
-
-def get_stype_proposal(db: Database) -> Dict[str, Dict[str, Any]]:
-    r"""Propose stype for columns of a set of tables in the given database.
-
-    Args:
-        db (Database): : The database object containing a set of tables.
-
-    Returns:
-        Dict[str, Dict[str, Any]]: A dictionary mapping table name into
-            :obj:`col_to_stype` (mapping column names into inferred stypes).
-    """
-
-    inferred_col_to_stype_dict = {}
-    for table_name, table in db.table_dict.items():
-        inferred_col_to_stype = infer_df_stype(table.df)
-        inferred_col_to_stype_dict[table_name] = inferred_col_to_stype
-
-    return inferred_col_to_stype_dict
 
 
 def make_pkey_fkey_graph(

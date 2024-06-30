@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
+from relbench.data import Database, LinkTask, NodeTask, Table
 from relbench.data.task_base import TaskType
 from relbench.metrics import (
     accuracy,
@@ -17,7 +17,7 @@ from relbench.metrics import (
 )
 
 
-class DriverPositionTask(RelBenchNodeTask):
+class DriverPositionTask(NodeTask):
     r"""Predict the average finishing position of each driver
     all races in the next 2 months.
     """
@@ -76,7 +76,7 @@ class DriverPositionTask(RelBenchNodeTask):
         )
 
 
-class DriverDNFTask(RelBenchNodeTask):
+class DriverDNFTask(NodeTask):
     r"""Predict the if each driver will DNF (not finish) a race in the next 1 month."""
 
     name = "driver-dnf"
@@ -136,7 +136,7 @@ class DriverDNFTask(RelBenchNodeTask):
         )
 
 
-class DriverTop3Task(RelBenchNodeTask):
+class DriverTop3Task(NodeTask):
     r"""Predict if each driver will qualify in the top-3 for
     a race within the next 1 month.
     """
@@ -202,7 +202,7 @@ class DriverTop3Task(RelBenchNodeTask):
 ######## link prediction tasks ########
 
 
-class DriverConstructorResultTask(RelBenchLinkTask):
+class DriverConstructorResultTask(LinkTask):
     r"""Predict a list of constructors a driver will join in
     the next 10 years, depending on the F1 race results.
     """

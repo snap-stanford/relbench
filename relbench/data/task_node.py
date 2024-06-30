@@ -27,32 +27,17 @@ if TYPE_CHECKING:
 class NodeTask(BaseTask):
     r"""A link prediction task on a dataset."""
 
-    def __init__(
-        self,
-        dataset: "Dataset",
-        timedelta: pd.Timedelta,
-        target_col: str,
-        entity_table: str,
-        entity_col: str,
-        metrics: List[Callable[[NDArray, NDArray], float]],
-    ):
-        super().__init__(
-            dataset=dataset,
-            timedelta=timedelta,
-            metrics=metrics,
-        )
-        self.target_col = target_col
-        self.entity_table = entity_table
-        self.entity_col = entity_col
-
-        self._full_test_table = None
-        self._cached_table_dict = {}
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(dataset={self.dataset})"
+    name: str
+    entity_col: str
+    entity_table: str
+    time_col: str
+    target_col: str
+    timedelta: pd.Timedelta
+    metrics: List[Callable[[NDArray, NDArray], float]]
 
     def filter_dangling_entities(self, table: Table) -> Table:
-        num_entities = len(self.dataset.db.table_dict[self.entity_table])
+        db = self.dataset.get_db()
+        num_entities = len(db.table_dict[self.entity_table])
         filter_mask = table.df[self.entity_col] >= num_entities
 
         if filter_mask.any():
@@ -70,7 +55,7 @@ class NodeTask(BaseTask):
             metrics = self.metrics
 
         if target_table is None:
-            target_table = self._full_test_table
+            target_table = self.get_table("test", mask_input_cols=False)
 
         target = target_table.df[self.target_col].to_numpy()
         if len(pred) != len(target):
@@ -80,32 +65,6 @@ class NodeTask(BaseTask):
             )
 
         return {fn.__name__: fn(target, pred) for fn in metrics}
-
-
-class RelBenchNodeTask(NodeTask):
-    name: str
-    entity_col: str
-    entity_table: str
-    time_col: str
-    timedelta: pd.Timedelta
-    target_col: str
-    task_dir: str = "tasks"
-
-    def __init__(self, dataset: str, process: bool = False) -> None:
-        super().__init__(
-            dataset=dataset,
-            timedelta=self.timedelta,
-            target_col=self.target_col,
-            entity_table=self.entity_table,
-            entity_col=self.entity_col,
-            metrics=self.metrics,
-        )
-
-        if not process:
-            self.set_cached_table_dict(self.name, self.task_dir, self.dataset.name)
-
-        def pack_tables(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
-            return _pack_tables(self, root)
 
     def stats(self) -> dict[str, dict[str, Any]]:
         r"""Get train / val / test table statistics for each timestamp
@@ -121,14 +80,7 @@ class RelBenchNodeTask(NodeTask):
         """
         res = {}
         for split in ["train", "val", "test"]:
-            if split == "train":
-                table = self.train_table
-            elif split == "val":
-                table = self.val_table
-            else:
-                table = self._full_test_table
-            if table is None:
-                continue
+            table = self.get_table(split, mask_input_cols=False)
             timestamps = table.df[self.time_col].unique()
             split_stats = {}
             for timestamp in timestamps:
@@ -148,16 +100,19 @@ class RelBenchNodeTask(NodeTask):
         total_df = pd.concat(
             [
                 table.df
-                for table in [self.train_table, self.val_table, self._full_test_table]
+                for table in [
+                    self.get_table(split, mask_input_cols=False)
+                    for split in ["train", "val", "test"]
+                ]
                 if table is not None
             ]
         )
         res["total"] = {}
         self._set_stats(total_df, res["total"])
-        train_uniques = set(self.train_table.df[self.entity_col].unique())
-        if self._full_test_table is None:
-            return res
-        test_uniques = set(self._full_test_table.df[self.entity_col].unique())
+        train_uniques = set(self.get_table("train").df[self.entity_col].unique())
+        test_uniques = set(
+            self.get_table("test", mask_input_cols=False).df[self.entity_col].unique()
+        )
         ratio_train_test_entity_overlap = len(
             train_uniques.intersection(test_uniques)
         ) / len(test_uniques)

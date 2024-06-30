@@ -82,6 +82,15 @@ class Database:
             }
         )
 
+    def from_(self, time_stamp: pd.Timestamp) -> Self:
+        r"""Returns a database with all rows from time_stamp."""
+
+        return Database(
+            table_dict={
+                name: table.from_(time_stamp) for name, table in self.table_dict.items()
+            }
+        )
+
     def reindex_pkeys_and_fkeys(self) -> None:
         r"""Mapping primary and foreign keys into indices according to
         the ordering in the primary key tables.

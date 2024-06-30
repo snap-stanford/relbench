@@ -3,32 +3,32 @@ import os
 import shutil
 import tempfile
 from enum import Enum
+from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, List, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import pandas as pd
 from numpy.typing import NDArray
 
-from relbench import _pooch
 from relbench.data.database import Database
+from relbench.data.dataset import Dataset
 from relbench.data.table import Table
-from relbench.utils import unzip_processor
-
-if TYPE_CHECKING:
-    from relbench.data import Dataset
 
 
 class BaseTask:
     r"""A task on a dataset."""
 
+    timedelta: pd.Timedelta
+    metrics: List[Callable[[NDArray, NDArray], float]]
+
     def __init__(
         self,
-        dataset: "Dataset",
-        timedelta: pd.Timedelta,
-        metrics: List[Callable[[NDArray, NDArray], float]],
+        dataset: Dataset,
+        cache_dir: Optional[str] = None,
     ):
         self.dataset = dataset
-        self.timedelta = timedelta
+        self.cache_dir = cache_dir
+
         time_diff = self.dataset.test_timestamp - self.dataset.val_timestamp
         if time_diff < self.timedelta:
             raise ValueError(
@@ -36,11 +36,6 @@ class BaseTask:
                 f"and test timestamps (timedelta: {timedelta}, time "
                 f"diff: {time_diff})."
             )
-
-        self.metrics = metrics
-
-        self._full_test_table = None
-        self._cached_table_dict = {}
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={self.dataset})"
@@ -56,98 +51,76 @@ class BaseTask:
 
         raise NotImplementedError
 
-    @property
-    def train_table(self) -> Table:
-        """Returns the train table for a task."""
-        if "train" not in self._cached_table_dict:
-            timestamps = pd.date_range(
-                start=self.dataset.val_timestamp - self.timedelta,
-                end=self.dataset.train_start_timestamp or self.dataset.db.min_timestamp,
-                freq=-self.timedelta,
-            )
-            if len(timestamps) < 3:
-                raise RuntimeError(
-                    f"The number of training time frames is too few. "
-                    f"({len(timestamps)} given)"
-                )
-            table = self.make_table(
-                self.dataset.db,
-                timestamps,
-            )
-            self._cached_table_dict["train"] = table
-        else:
-            table = self._cached_table_dict["train"]
-        return self.filter_dangling_entities(table)
+    def _get_table(self, split: str) -> Table:
+        db = self.dataset.get_db(upto_test_timestamp=split != "test")
 
-    @property
-    def val_table(self) -> Table:
-        r"""Returns the val table for a task."""
-        if "val" not in self._cached_table_dict:
-            if (
-                self.dataset.val_timestamp + self.timedelta
-                > self.dataset.db.max_timestamp
-            ):
+        if split == "train":
+            start = self.dataset.val_timestamp - self.timedelta
+            end = db.min_timestamp
+            freq = -self.timedelta
+
+        elif split == "val":
+            if self.dataset.val_timestamp + self.timedelta > db.max_timestamp:
                 raise RuntimeError(
                     "val timestamp + timedelta is larger than max timestamp! "
                     "This would cause val labels to be generated with "
                     "insufficient aggregation time."
                 )
 
-            # must stop by test_timestamp - timedelta to avoid time leakage
-            end_timestamp = min(
+            start = self.dataset.val_timestamp
+            end = min(
                 self.dataset.val_timestamp
                 + self.timedelta * (self.dataset.max_eval_time_frames - 1),
                 self.dataset.test_timestamp - self.timedelta,
             )
+            freq = self.timedelta
 
-            table = self.make_table(
-                self.dataset.db,
-                pd.date_range(
-                    self.dataset.val_timestamp,
-                    end_timestamp,
-                    freq=self.timedelta,
-                ),
-            )
-            self._cached_table_dict["val"] = table
-        else:
-            table = self._cached_table_dict["val"]
-        return self.filter_dangling_entities(table)
-
-    @property
-    def test_table(self) -> Table:
-        r"""Returns the test table for a task."""
-        if "full_test" not in self._cached_table_dict:
-            if (
-                self.dataset.test_timestamp + self.timedelta
-                > self.dataset._full_db.max_timestamp
-            ):
+        elif split == "test":
+            if self.dataset.test_timestamp + self.timedelta > db.max_timestamp:
                 raise RuntimeError(
                     "test timestamp + timedelta is larger than max timestamp! "
                     "This would cause test labels to be generated with "
                     "insufficient aggregation time."
                 )
 
-            # must stop by max_timestamp - timedelta
-            end_timestamp = min(
+            start = self.dataset.test_timestamp
+            end = min(
                 self.dataset.test_timestamp
                 + self.timedelta * (self.dataset.max_eval_time_frames - 1),
-                self.dataset._full_db.max_timestamp - self.timedelta,
+                db.max_timestamp - self.timedelta,
+            )
+            freq = self.timedelta
+
+        timestamps = pd.date_range(start=start, end=end, freq=freq)
+
+        if split == "train" and len(timestamps) < 3:
+            raise RuntimeError(
+                f"The number of training time frames is too few. "
+                f"({len(timestamps)} given)"
             )
 
-            full_table = self.make_table(
-                self.dataset._full_db,
-                pd.date_range(
-                    self.dataset.test_timestamp,
-                    end_timestamp,
-                    freq=self.timedelta,
-                ),
-            )
-            self._cached_table_dict["full_test"] = full_table
+        table = self.make_table(db, timestamps)
+        table = self.filter_dangling_entities(table)
+
+        return table
+
+    @lru_cache(maxsize=None)
+    def get_table(self, split, mask_input_cols=None):
+        if mask_input_cols is None:
+            mask_input_cols = split == "test"
+
+        table_path = f"{self.cache_dir}/{split}.parquet"
+        if self.cache_dir and Path(table_path).exists():
+            table = Table.load(table_path)
         else:
-            full_table = self._cached_table_dict["full_test"]
-        self._full_test_table = self.filter_dangling_entities(full_table)
+            table = self._get_table(split)
+            if self.cache_dir:
+                table.save(table_path)
 
-        return self._mask_input_cols(self._full_test_table)
+        if mask_input_cols:
+            table = self._mask_input_cols(table)
+
+        return table
 
     def _mask_input_cols(self, table: Table) -> Table:
         input_cols = [
@@ -169,15 +142,6 @@ class BaseTask:
         r"""Evaluate a prediction table."""
         raise NotImplementedError
 
-    def set_cached_table_dict(self, task_name: str, task_dir: str, dataset_name: str):
-        task_path = _pooch.fetch(
-            f"{dataset_name}/{task_dir}/{task_name}.zip",
-            processor=unzip_processor,
-            progressbar=True,
-        )
-
-        self._cached_table_dict = Database.load(task_path).table_dict
-
 
 class TaskType(Enum):
     r"""The type of the task.
@@ -196,6 +160,7 @@ class TaskType(Enum):
     LINK_PREDICTION = "link_prediction"
 
 
+# TODO: move somewhere else
 def _pack_tables(task, root: Union[str, os.PathLike]) -> Tuple[str, str]:
     _dummy_db = Database(
         table_dict={

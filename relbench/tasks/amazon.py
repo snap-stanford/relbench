@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
+from relbench.data import Database, LinkTask, NodeTask, Table
 from relbench.data.task_base import TaskType
 from relbench.metrics import (
     accuracy,
@@ -17,7 +17,7 @@ from relbench.metrics import (
 )
 
 
-class UserChurnTask(RelBenchNodeTask):
+class UserChurnTask(NodeTask):
     r"""Churn for a customer is 1 if the customer does not review any product
     in the time window, else 0."""
 
@@ -74,7 +74,7 @@ class UserChurnTask(RelBenchNodeTask):
         )
 
 
-class UserLTVTask(RelBenchNodeTask):
+class UserLTVTask(NodeTask):
     r"""LTV (life-time value) for a customer is the sum of prices of products
     that the customer reviews in the time window."""
 
@@ -134,7 +134,7 @@ class UserLTVTask(RelBenchNodeTask):
         )
 
 
-class ItemChurnTask(RelBenchNodeTask):
+class ItemChurnTask(NodeTask):
     r"""Churn for a product is 1 if the product recieves at least one review
     in the time window, else 0."""
 
@@ -191,7 +191,7 @@ class ItemChurnTask(RelBenchNodeTask):
         )
 
 
-class ItemLTVTask(RelBenchNodeTask):
+class ItemLTVTask(NodeTask):
     r"""LTV (life-time value) for a product is the numer of times the product
     is purchased in the time window multiplied by price."""
 
@@ -238,7 +238,7 @@ class ItemLTVTask(RelBenchNodeTask):
         )
 
 
-class UserItemPurchaseTask(RelBenchLinkTask):
+class UserItemPurchaseTask(LinkTask):
     r"""Predict the list of distinct items each customer will purchase in the
     next two years."""
 
@@ -290,7 +290,7 @@ class UserItemPurchaseTask(RelBenchLinkTask):
         )
 
 
-class UserItemRateTask(RelBenchLinkTask):
+class UserItemRateTask(LinkTask):
     r"""Predict the list of distinct items each customer will purchase and give a 5 star review in the
     next two years."""
 
@@ -344,7 +344,7 @@ class UserItemRateTask(RelBenchLinkTask):
         )
 
 
-class UserItemReviewTask(RelBenchLinkTask):
+class UserItemReviewTask(LinkTask):
     r"""Predict the list of distinct items each customer will purchase and give a detailed review in the
     next two years."""
 

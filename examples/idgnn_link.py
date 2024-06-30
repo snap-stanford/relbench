@@ -1,27 +1,30 @@
 import argparse
 import copy
+import json
 import os
+from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-from inferred_stypes import dataset2inferred_stypes
 from model import Model
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
 from torch.utils.tensorboard import SummaryWriter
+from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from torch_geometric.typing import NodeType
 from tqdm import tqdm
 
-from relbench.data import LinkTask, RelBenchDataset
-from relbench.data.task_base import TaskType
+from relbench.data import Dataset, LinkTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.external.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.external.loader import SparseTensor
+from relbench.external.utils import get_stype_proposal
+from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-hm")
@@ -39,9 +42,7 @@ parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
-    "--cache_dir",
-    type=str,
-    default=os.path.expanduser("~/.cache/relbench/materialized"),
+    "--cache_dir", type=str, default=os.path.expanduser("~/.cache/relbench")
 )
 args = parser.parse_args()
 
@@ -51,31 +52,38 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-task: LinkTask = dataset.get_task(args.task, process=True)
+dataset: Dataset = get_dataset(args.dataset)
+task: LinkTask = get_task(args.dataset, args.task)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
-col_to_stype_dict = dataset2inferred_stypes[args.dataset]
+stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
+try:
+    with open(stypes_cache_path, "r") as f:
+        col_to_stype_dict = json.load(f)
+    for table, col_to_stype in col_to_stype_dict.items():
+        for col, stype_str in col_to_stype.items():
+            col_to_stype[col] = stype(stype_str)
+except FileNotFoundError:
+    col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    with open(stypes_cache_path, "w") as f:
+        json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 data, col_stats_dict = make_pkey_fkey_graph(
-    dataset.db,
+    dataset.get_db(),
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    cache_dir=os.path.join(args.cache_dir, args.dataset),
+    cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
 )
 
 num_neighbors = [int(args.num_neighbors // 2**i) for i in range(args.num_layers)]
 
 loader_dict: Dict[str, NeighborLoader] = {}
 dst_nodes_dict: Dict[str, Tuple[NodeType, Tensor]] = {}
-for split, table in [
-    ("train", task.train_table),
-    ("val", task.val_table),
-    ("test", task.test_table),
-]:
+for split in ["train", "val", "test"]:
+    table = task.get_table(split)
     table_input = get_link_train_table_input(table, task)
     dst_nodes_dict[split] = table_input.dst_nodes
     loader_dict[split] = NeighborLoader(
@@ -188,7 +196,7 @@ for epoch in range(1, args.epochs + 1):
     train_loss = train()
     if epoch % args.eval_epochs_interval == 0:
         val_pred = test(loader_dict["val"])
-        val_metrics = task.evaluate(val_pred, task.val_table)
+        val_metrics = task.evaluate(val_pred, task.get_table("val"))
         print(
             f"Epoch: {epoch:02d}, Train loss: {train_loss}, "
             f"Val metrics: {val_metrics}"
@@ -201,7 +209,7 @@ for epoch in range(1, args.epochs + 1):
 
 model.load_state_dict(state_dict)
 val_pred = test(loader_dict["val"])
-val_metrics = task.evaluate(val_pred, task.val_table)
+val_metrics = task.evaluate(val_pred, task.get_table("val"))
 print(f"Best Val metrics: {val_metrics}")
 
 test_pred = test(loader_dict["test"])

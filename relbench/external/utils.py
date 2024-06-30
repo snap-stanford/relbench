@@ -2,8 +2,10 @@ from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
+from torch_frame import stype
+from torch_frame.utils import infer_df_stype
 
-from relbench.data import Table
+from relbench.data import Database, Table
 
 
 def to_unix_time(ser: pd.Series) -> np.ndarray:
@@ -24,3 +26,22 @@ def remove_pkey_fkey(col_to_stype: Dict[str, Any], table: Table) -> dict:
     for fkey in table.fkey_col_to_pkey_table.keys():
         if fkey in col_to_stype:
             col_to_stype.pop(fkey)
+
+
+def get_stype_proposal(db: Database) -> Dict[str, Dict[str, stype]]:
+    r"""Propose stype for columns of a set of tables in the given database.
+
+    Args:
+        db (Database): The database object containing a set of tables.
+
+    Returns:
+        Dict[str, Dict[str, Any]]: A dictionary mapping table name into
+            :obj:`col_to_stype` (mapping column names into inferred stypes).
+    """
+
+    inferred_col_to_stype_dict = {}
+    for table_name, table in db.table_dict.items():
+        inferred_col_to_stype = infer_df_stype(table.df)
+        inferred_col_to_stype_dict[table_name] = inferred_col_to_stype
+
+    return inferred_col_to_stype_dict
