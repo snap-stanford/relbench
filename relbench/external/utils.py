@@ -32,7 +32,7 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, stype]]:
     r"""Propose stype for columns of a set of tables in the given database.
 
     Args:
-        db (Database): : The database object containing a set of tables.
+        db (Database): The database object containing a set of tables.
 
     Returns:
         Dict[str, Dict[str, Any]]: A dictionary mapping table name into
