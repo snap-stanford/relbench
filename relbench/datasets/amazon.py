@@ -3,6 +3,7 @@ import time
 import pandas as pd
 import pooch
 import pyarrow as pa
+import pyarrow.json
 
 from relbench.data import Database, Dataset, Table
 
