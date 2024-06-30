@@ -42,7 +42,7 @@ parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
-    "--cache_dir", type=str, default=os.path.expanduser("~/.cache/relbench")
+    "--cache_dir", type=str, default=os.path.expanduser("~/.cache/relbench_examples")
 )
 args = parser.parse_args()
 
