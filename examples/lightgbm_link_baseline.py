@@ -11,14 +11,14 @@ import torch_frame
 from inferred_stypes import dataset2inferred_stypes
 from text_embedder import GloveTextEmbedding
 from torch_frame.config.text_embedder import TextEmbedderConfig
-from torch_frame.data import Dataset
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 
-from relbench.data import RelBenchDataset, RelBenchLinkTask, Table
+from relbench.data import Dataset, LinkTask, Table
 from relbench.datasets import get_dataset
 from relbench.external.utils import remove_pkey_fkey
+from relbench.tasks import get_task
 
 LINK_PRED_BASELINE_TARGET_COL_NAME = "link_pred_baseline_target_column_name"
 PRED_SCORE_COL_NAME = "pred_score_col_name"
@@ -45,21 +45,22 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-task: RelBenchLinkTask = dataset.get_task(args.task, process=True)
+dataset: Dataset = get_dataset(args.dataset)
+task: LinkTask = get_task(args.dataset, args.task)
 target_col_name: str = LINK_PRED_BASELINE_TARGET_COL_NAME
 
-train_table = task.train_table
-val_table = task.val_table
-test_table = task.test_table
+train_table = task.get_table("train")
+val_table = task.get_table("val")
+test_table = task.get_table("test")
 
 # We plan to merge train table with entity and target table to include both
 # entity and target table features during lightGBM training.
 dfs: Dict[str, pd.DataFrame] = {}
 target_dfs: Dict[str, pd.DateOffset] = {}
-src_entity_table = dataset.db.table_dict[task.src_entity_table]
+db = dataset.get_db()
+src_entity_table = db.table_dict[task.src_entity_table]
 src_entity_df = src_entity_table.df
-dst_entity_table = dataset.db.table_dict[task.dst_entity_table]
+dst_entity_table = db.table_dict[task.dst_entity_table]
 dst_entity_df = dst_entity_table.df
 
 # Prepare col_to_stype dictioanry mapping between column names and stypes
@@ -324,7 +325,7 @@ test_past_table_df.drop(columns=[train_table.time_col], inplace=True)
 test_df = prepare_for_link_pred_eval(test_df, test_past_table_df)
 dfs["test"] = test_df
 
-train_dataset = Dataset(
+train_dataset = torch_frame.data.Dataset(
     df=dfs["train"],
     col_to_stype=col_to_stype,
     target_col=target_col_name,

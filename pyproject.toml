@@ -35,7 +35,9 @@ example=[
 	"torch_geometric",
 	"faiss-cpu",
 	"sentence-transformers",
-	"tensorboard",
+	# TODO: should be dependencies of torch_frame actually
+	"lightgbm",
+	"optuna",
 ]
 test=[
 	"pytest",

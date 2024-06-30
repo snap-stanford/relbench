@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
+from relbench.data import Database, LinkTask, NodeTask, Table
 from relbench.data.task_base import TaskType
 from relbench.metrics import (
     accuracy,
@@ -23,7 +23,7 @@ from relbench.metrics import (
 )
 
 
-class StudyOutcomeTask(RelBenchNodeTask):
+class StudyOutcomeTask(NodeTask):
     r"""Predict if the trials in the next 1 year will achieve its primary outcome."""
 
     name = "study-outcome"
@@ -85,7 +85,7 @@ class StudyOutcomeTask(RelBenchNodeTask):
         )
 
 
-class StudyAdverseTask(RelBenchNodeTask):
+class StudyAdverseTask(NodeTask):
     r"""Predict the number of affected patients with severe advsere events/death for the trial in the next 1 year."""
 
     name = "study-adverse"
@@ -140,7 +140,7 @@ class StudyAdverseTask(RelBenchNodeTask):
         )
 
 
-class StudyWithdrawalTask(RelBenchNodeTask):
+class StudyWithdrawalTask(NodeTask):
     r"""Predict the the set of reasons of withdrawals for each trial in the next 1 year"""
 
     name = "study-withdrawal"
@@ -239,7 +239,7 @@ class StudyWithdrawalTask(RelBenchNodeTask):
         return self.label2reason
 
 
-class SiteSuccessTask(RelBenchNodeTask):
+class SiteSuccessTask(NodeTask):
     r"""Predict the success rate of a trial site in the next 1 year."""
 
     name = "site-success"
@@ -298,7 +298,7 @@ class SiteSuccessTask(RelBenchNodeTask):
         )
 
 
-class ConditionSponsorRunTask(RelBenchLinkTask):
+class ConditionSponsorRunTask(LinkTask):
     r"""Predict whether this condition will have which sponsors."""
 
     name = "condition-sponsor-run"
@@ -343,7 +343,7 @@ class ConditionSponsorRunTask(RelBenchLinkTask):
         )
 
 
-class SiteSponsorRunTask(RelBenchLinkTask):
+class SiteSponsorRunTask(LinkTask):
     r"""Predict whether this sponsor will have a trial in a facility."""
 
     name = "site-sponsor-run"
