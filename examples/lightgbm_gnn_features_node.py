@@ -60,8 +60,8 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: Dataset = get_dataset(args.dataset)
-task: NodeTask = get_task(args.dataset, args.task)
+dataset: Dataset = get_dataset(args.dataset, download=True)
+task: NodeTask = get_task(args.dataset, args.task, download=True)
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:

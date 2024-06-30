@@ -52,8 +52,8 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: Dataset = get_dataset(args.dataset)
-task: LinkTask = get_task(args.dataset, args.task)
+dataset: Dataset = get_dataset(args.dataset, download=True)
+task: LinkTask = get_task(args.dataset, args.task, download=True)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
