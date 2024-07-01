@@ -41,7 +41,9 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, stype]]:
 
     inferred_col_to_stype_dict = {}
     for table_name, table in db.table_dict.items():
-        inferred_col_to_stype = infer_df_stype(table.df)
+        df = table.df
+        df = df.sample(min(10_000, len(df)))
+        inferred_col_to_stype = infer_df_stype(df)
         inferred_col_to_stype_dict[table_name] = inferred_col_to_stype
 
     return inferred_col_to_stype_dict
