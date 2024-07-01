@@ -14,7 +14,7 @@ hashes = json.loads(hashes_str)
 
 DOWNLOAD_REGISTRY = pooch.create(
     path=pooch.os_cache("relbench"),
-    base_url="https://relbench.stanford.edu/staging_data/",  # TODO: change
+    base_url="https://relbench.stanford.edu/download/",
     registry=hashes,
 )
 
