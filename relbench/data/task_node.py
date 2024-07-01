@@ -19,6 +19,7 @@ class NodeTask(BaseTask):
     entity_table: str
     time_col: str
     target_col: str
+    task_type: TaskType
     timedelta: pd.Timedelta
     metrics: List[Callable[[NDArray, NDArray], float]]
 

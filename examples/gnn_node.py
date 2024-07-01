@@ -63,6 +63,7 @@ try:
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
     col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
 

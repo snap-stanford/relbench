@@ -29,12 +29,11 @@ class Dataset:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
 
-    # TODO: remove this or db.reindex_pkeys_and_fkeys
-    def validate_and_correct_db(self):
+    def validate_and_correct_db(self, db):
         r"""Validate and correct input db in-place."""
         # Validate that all primary keys are consecutively index.
 
-        for table_name, table in self.db.table_dict.items():
+        for table_name, table in db.table_dict.items():
             if table.pkey_col is not None:
                 ser = table.df[table.pkey_col]
                 if not (ser.values == np.arange(len(ser))).all():
@@ -45,9 +44,9 @@ class Dataset:
 
         # Discard any foreign keys that are larger than primary key table as
         # dangling foreign keys (represented as None).
-        for table_name, table in self.db.table_dict.items():
+        for table_name, table in db.table_dict.items():
             for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items():
-                num_pkeys = len(self.db.table_dict[pkey_table_name])
+                num_pkeys = len(db.table_dict[pkey_table_name])
                 mask = table.df[fkey_col] >= num_pkeys
                 if mask.any():
                     table.df.loc[mask, fkey_col] = None
@@ -84,6 +83,8 @@ class Dataset:
 
         if upto_test_timestamp:
             db = db.upto(self.test_timestamp)
+
+        self.validate_and_correct_db(db)
 
         return db
 

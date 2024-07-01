@@ -15,9 +15,27 @@ from relbench.data.dataset import Dataset
 from relbench.data.table import Table
 
 
+class TaskType(Enum):
+    r"""The type of the task.
+
+    Attributes:
+        REGRESSION: Regression task.
+        MULTICLASS_CLASSIFICATION: Multi-class classification task.
+        BINARY_CLASSIFICATION: Binary classification task.
+        MULTILABEL_CLASSIFICATION: Multi-label classification task.
+        LINK_PREDICTION: Link prediction task."
+    """
+
+    REGRESSION = "regression"
+    BINARY_CLASSIFICATION = "binary_classification"
+    MULTILABEL_CLASSIFICATION = "multilabel_classification"
+    LINK_PREDICTION = "link_prediction"
+
+
 class BaseTask:
     r"""A task on a dataset."""
 
+    task_type: TaskType
     timedelta: pd.Timedelta
     metrics: List[Callable[[NDArray, NDArray], float]]
 
@@ -141,20 +159,3 @@ class BaseTask:
     def evaluate(self):
         r"""Evaluate a prediction table."""
         raise NotImplementedError
-
-
-class TaskType(Enum):
-    r"""The type of the task.
-
-    Attributes:
-        REGRESSION: Regression task.
-        MULTICLASS_CLASSIFICATION: Multi-class classification task.
-        BINARY_CLASSIFICATION: Binary classification task.
-        MULTILABEL_CLASSIFICATION: Multi-label classification task.
-        LINK_PREDICTION: Link prediction task."
-    """
-
-    REGRESSION = "regression"
-    BINARY_CLASSIFICATION = "binary_classification"
-    MULTILABEL_CLASSIFICATION = "multilabel_classification"
-    LINK_PREDICTION = "link_prediction"
