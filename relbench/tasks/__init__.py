@@ -1,3 +1,5 @@
+import json
+import pkgutil
 from collections import defaultdict
 from functools import lru_cache
 
@@ -9,10 +11,14 @@ from . import amazon, avito, event, f1, hm, stack, trial
 
 task_registry = defaultdict(dict)
 
+hashes_file = pkgutil.get_data(__name__, "tasks/hashes.json")
+with open(hashes_file, "r") as f:
+    hashes = json.load(f)
+
 DOWNLOAD_REGISTRY = pooch.create(
     path=pooch.os_cache("relbench"),
     base_url="https://relbench.stanford.edu/staging_data/",  # TODO: change
-    registry={},
+    registry=hashes,
 )
 
 
