@@ -26,7 +26,7 @@ _pooch = pooch.create(
         "rel-math-stackex/db.zip": "00b193587f1ee0b39c77d2b561385f00fbc3b4ca0929f420e16ddd53115ce3ea",
         "rel-f1/db.zip": "e41ca0d69d54f16b408fe03b6c19b772ae701336cf84260ef5c84fca798a1422",
         "rel-hm/db.zip": "6ff6537f2fed885c5c8a94525364678dea206c57006de0edb4d76ca71c9c114e",
-        "rel-avito/db.zip": "09fe913ece4f17f79ca0d2c1d25ed9f6f7e803fa4a08dcf520b7a0e73f34b1ed",
+        "rel-avito/db.zip": "2765bcb4d624563202c1652828a7c04de4a22a8bbc7faa9b7d2232964f4a4949",
         "rel-event/db.zip": "141f4842600d091250c1f94e4c479c35e76d7ec3aef9155316f83d4828d85e5e",
         "rel-amazon/db.zip": "2fb5d1b6f0d8886374bc25b3a81becbe191ad30e524ac7fb998bab4c87010adc",
         "rel-stack/db.zip": "b703d141f86c210e9e6809807ec0bcf9b3e2fcd32a679835c9d71d8048b89188",
