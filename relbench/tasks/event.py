@@ -62,7 +62,7 @@ class UserAttendanceTask(RelBenchNodeTask):
 class UserRepeatTask(RelBenchNodeTask):
     r"""Predict whether a user will attend an event in the
     next 7 days if they have already attended an event in the
-    last 7 days."""
+    last 14 days."""
 
     name = "user-repeat"
     task_type = TaskType.BINARY_CLASSIFICATION
@@ -81,8 +81,16 @@ class UserRepeatTask(RelBenchNodeTask):
         event_attendees = db.table_dict["event_attendees"].df
         event_interest = db.table_dict["event_interest"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        eval_timestamp_len = len(timestamp_df)
         if len(timestamp_df) == 1:
-            new_row = pd.DataFrame({"timestamp": [timestamps[0] - self.timedelta]})
+            new_row = pd.DataFrame(
+                {
+                    "timestamp": [
+                        timestamps[0] - self.timedelta * 2,
+                        timestamps[0] - self.timedelta,
+                    ]
+                }
+            )
             timestamp_df = pd.concat([new_row, timestamp_df], ignore_index=True)
 
         df = duckdb.sql(
@@ -92,7 +100,7 @@ class UserRepeatTask(RelBenchNodeTask):
                     t.timestamp AS timestamp,
                     event_attendees.user_id AS user,
                     MAX(CASE WHEN event_attendees.status IN ('yes', 'maybe') THEN 1 ELSE 0 END) AS target,
-                    LAG(MAX(CASE WHEN event_attendees.status IN ('yes', 'maybe') THEN 1 ELSE 0 END)) OVER (PARTITION BY event_attendees.user_id ORDER BY t.timestamp) as prev_target
+                    MAX(MAX(CASE WHEN event_attendees.status IN ('yes', 'maybe') THEN 1 ELSE 0 END)) OVER (PARTITION BY event_attendees.user_id ORDER BY t.timestamp ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) as prev_target
                 FROM
                     timestamp_df t
                 LEFT JOIN
@@ -114,6 +122,9 @@ class UserRepeatTask(RelBenchNodeTask):
                 prev_target = 1;
             """
         ).df()
+
+        if eval_timestamp_len == 1:
+            df = df[df.timestamp == df.timestamp.max()]
 
         df = df.dropna(subset=["user"])
         df["user"] = df["user"].astype(int)
