@@ -9,9 +9,8 @@ from . import amazon, avito, event, f1, fake, hm, stack, trial
 
 dataset_registry = {}
 
-hashes_file = pkgutil.get_data(__name__, "datasets/hashes.json")
-with open(hashes_file, "r") as f:
-    hashes = json.load(f)
+hashes_str = pkgutil.get_data(__name__, "hashes.json")
+hashes = json.loads(hashes_str)
 
 DOWNLOAD_REGISTRY = pooch.create(
     path=pooch.os_cache("relbench"),

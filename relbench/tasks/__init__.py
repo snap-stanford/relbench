@@ -11,9 +11,8 @@ from . import amazon, avito, event, f1, hm, stack, trial
 
 task_registry = defaultdict(dict)
 
-hashes_file = pkgutil.get_data(__name__, "tasks/hashes.json")
-with open(hashes_file, "r") as f:
-    hashes = json.load(f)
+hashes_str = pkgutil.get_data(__name__, "hashes.json")
+hashes = json.loads(hashes_str)
 
 DOWNLOAD_REGISTRY = pooch.create(
     path=pooch.os_cache("relbench"),
