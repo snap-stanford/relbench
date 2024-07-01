@@ -88,7 +88,6 @@ register_task("rel-stack", "post-post-related", stack.PostPostRelatedTask)
 
 register_task("rel-trial", "study-outcome", trial.StudyOutcomeTask)
 register_task("rel-trial", "study-adverse", trial.StudyAdverseTask)
-register_task("rel-trial", "study-withdrawal", trial.StudyWithdrawalTask)
 register_task("rel-trial", "site-success", trial.SiteSuccessTask)
 register_task("rel-trial", "condition-sponsor-run", trial.ConditionSponsorRunTask)
 register_task("rel-trial", "site-sponsor-run", trial.SiteSponsorRunTask)
