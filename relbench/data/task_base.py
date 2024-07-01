@@ -33,7 +33,7 @@ class BaseTask:
         if time_diff < self.timedelta:
             raise ValueError(
                 f"timedelta cannot be larger than the difference between val "
-                f"and test timestamps (timedelta: {timedelta}, time "
+                f"and test timestamps (timedelta: {self.timedelta}, time "
                 f"diff: {time_diff})."
             )
 
