@@ -51,7 +51,7 @@ parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--cache_dir",
     type=str,
-    default=os.path.expanduser("~/.cache/relbench_examples/materialized"),
+    default=os.path.expanduser("~/.cache/relbench_examples"),
 )
 args = parser.parse_args()
 
