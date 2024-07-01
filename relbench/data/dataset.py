@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 import pooch
 
-from relbench import DOWNLOAD_REGISTRY
 from relbench.data.database import Database
 from relbench.utils import unzip_processor
 

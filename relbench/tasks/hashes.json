@@ -25,5 +25,9 @@
   "rel-trial/tasks/study-withdrawal.zip": "328eef92f153332d0be2fc3f4823a5c07a5aa5da5946b850e3cf7fb1fbd858da",
   "rel-trial/tasks/study-adverse.zip": "59d7e1f4f4a9fb6f33df232319c010bbd97543b026c7240ce8f91c2a7df5e244",
   "rel-trial/tasks/site-success.zip": "713d243bd264dd8663d0ff078777f4c632276c0ec2c0ce437abcdbeb4b5812cf",
-  "rel-trial/tasks/condition-sponsor-run.zip": "77cf9fb3eea20f0878c796837718cd079328fc4bfcd6112384c3fb9b84fd8795"
+  "rel-trial/tasks/condition-sponsor-run.zip": "77cf9fb3eea20f0878c796837718cd079328fc4bfcd6112384c3fb9b84fd8795",
+  "rel-avito/tasks/user-visits.zip": "0f57684e1f410eeeb5ba4b6802573ac0bc107ff3a5376c153c068f86c23f18a7",
+  "rel-avito/tasks/ads-clicks.zip": "ec00ae6c93d80dde4634161d644d2af0701ab9ec3271b9d66cf4fceb2ac37e82",
+  "rel-avito/tasks/user-ad-visit.zip": "e6159d26f9d5a67fd34be01363600952f0cb3952033c91d76f5defef4e904ed2",
+  "rel-avito/tasks/user-clicks.zip": "696f925091a563e8b987e2a9be7d30b97d8e3354222365a134fa0b6bfefadf38"
 }
