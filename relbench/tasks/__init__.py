@@ -70,7 +70,6 @@ register_task("rel-event", "user-ignore", event.UserIgnoreTask)
 register_task("rel-f1", "driver-position", f1.DriverPositionTask)
 register_task("rel-f1", "driver-dnf", f1.DriverDNFTask)
 register_task("rel-f1", "driver-top3", f1.DriverTop3Task)
-register_task("rel-f1", "driver-constructor-result", f1.DriverConstructorResultTask)
 
 register_task("rel-hm", "user-item-purchase", hm.UserItemPurchaseTask)
 register_task("rel-hm", "user-churn", hm.UserChurnTask)
