@@ -39,7 +39,7 @@ class AvitoDataset(RelBenchDataset):
     def make_db(self) -> Database:
         # Customize path as necessary
         r"""Process the raw files into a database."""
-        url = "https://relbench.stanford.edu/data/rel-avito-raw.zip"
+        url = "https://relbench.stanford.edu/data/rel-avito-raw-100k.zip"
         path = pooch.retrieve(
             url,
             known_hash="24ae408ee546cf9171742288d1ec6c52e60d332dd47f58eb78fabc64a3034f43",
