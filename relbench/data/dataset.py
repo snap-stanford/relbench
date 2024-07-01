@@ -89,28 +89,3 @@ class Dataset:
 
     def make_db(self) -> Database:
         raise NotImplementedError
-
-    # TODO: move out of here.
-    def pack_db(self, root: Union[str, os.PathLike]) -> Tuple[str, str]:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            db_path = Path(tmpdir) / "db"
-            print(f"saving Database object to {db_path}...")
-            tic = time.time()
-            self._full_db.save(db_path)
-            toc = time.time()
-            print(f"done in {toc - tic:.2f} seconds.")
-
-            print("making zip archive for db...")
-            tic = time.time()
-            zip_path = Path(root) / self.name / "db"
-            zip_path = shutil.make_archive(zip_path, "zip", db_path)
-            toc = time.time()
-            print(f"done in {toc - tic:.2f} seconds.")
-
-        with open(zip_path, "rb") as f:
-            sha256 = hashlib.sha256(f.read()).hexdigest()
-
-        print(f"upload: {zip_path}")
-        print(f"sha256: {sha256}")
-
-        return f"{self.name}/db.zip", sha256

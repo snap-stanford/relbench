@@ -158,30 +158,3 @@ class TaskType(Enum):
     BINARY_CLASSIFICATION = "binary_classification"
     MULTILABEL_CLASSIFICATION = "multilabel_classification"
     LINK_PREDICTION = "link_prediction"
-
-
-# TODO: move somewhere else
-def _pack_tables(task, root: Union[str, os.PathLike]) -> Tuple[str, str]:
-    _dummy_db = Database(
-        table_dict={
-            "train": task.train_table,
-            "val": task.val_table,
-            "test": task.test_table,
-            "full_test": task._full_test_table,
-        }
-    )
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        task_path = Path(tmpdir) / task.name
-        _dummy_db.save(task_path)
-
-        zip_base_path = Path(root) / task.dataset.name / task.task_dir / task.name
-        zip_path = shutil.make_archive(zip_base_path, "zip", task_path)
-
-    with open(zip_path, "rb") as f:
-        sha256 = hashlib.sha256(f.read()).hexdigest()
-
-    print(f"upload: {zip_path}")
-    print(f"sha256: {sha256}")
-
-    return f"{task.dataset.name}/{task.task_dir}/{task.name}.zip", sha256
