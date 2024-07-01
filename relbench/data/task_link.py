@@ -18,7 +18,7 @@ import pandas as pd
 from numpy.typing import NDArray
 
 from relbench.data.table import Table
-from relbench.data.task_base import BaseTask, _pack_tables
+from relbench.data.task_base import BaseTask
 from relbench.external.utils import to_unix_time
 
 if TYPE_CHECKING:
