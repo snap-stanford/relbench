@@ -33,8 +33,8 @@ parser.add_argument("--eval_epochs_interval", type=int, default=1)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
-parser.add_argument("--num_layers", type=int, default=2)
-parser.add_argument("--num_neighbors", type=int, default=160)
+parser.add_argument("--num_layers", type=int, default=4)
+parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 # Use the same seed time across the mini-batch and share the negatives
 # TODO: fix, currently this cannot be made false
