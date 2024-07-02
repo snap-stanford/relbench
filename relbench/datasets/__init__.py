@@ -5,7 +5,7 @@ from functools import lru_cache
 import pooch
 
 from ..data import Dataset
-from . import amazon, avito, event, f1, fake, hm, stack, trial
+from . import amazon, avito, event, f1, hm, stack, trial
 
 dataset_registry = {}
 

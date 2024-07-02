@@ -1,18 +1,12 @@
-import hashlib
-import os
-import shutil
-import tempfile
 import time
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Optional, Tuple, Type, Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
-import pooch
 
 from relbench.data.database import Database
-from relbench.utils import unzip_processor
 
 
 class Dataset:

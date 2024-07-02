@@ -53,15 +53,6 @@ class Database:
             if table.time_col is not None
         )
 
-    def max_timestamp(self) -> pd.Timestamp:
-        r"""Returns the latest timestamp in the database."""
-
-        return max(
-            table.max_timestamp
-            for table in self.table_dict.values()
-            if table.time_col is not None
-        )
-
     @property
     @lru_cache(maxsize=None)
     def max_timestamp(self) -> pd.Timestamp:
