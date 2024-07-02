@@ -155,6 +155,7 @@ def train() -> float:
             break
 
     if count_accum == 0:
+        # TODO: print warning, and still run ignoring this batch
         raise ValueError(
             f"Did not sample a single '{task.dst_entity_table}' "
             f"node in any mini-batch. Try to increase the number "
