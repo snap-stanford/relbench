@@ -163,7 +163,7 @@ def add_past_label_feature(
     dst_entity_count = exploded_past_table[dst_entity].value_counts().reset_index()
 
     # Calculate the fraction
-    total_right_entities = len(exploded_past_table)
+    # total_right_entities = len(exploded_past_table)
     dst_entity_count["global_popularity_fraction"] = (
         dst_entity_count["count"] / dst_entity_count["count"].max()
     )
