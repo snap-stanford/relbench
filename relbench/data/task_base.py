@@ -28,6 +28,7 @@ class TaskType(Enum):
 
     REGRESSION = "regression"
     BINARY_CLASSIFICATION = "binary_classification"
+    MULTICLASS_CLASSIFICATION = "multiclass_classification"
     MULTILABEL_CLASSIFICATION = "multilabel_classification"
     LINK_PREDICTION = "link_prediction"
 
