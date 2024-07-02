@@ -134,7 +134,7 @@ def run_main(rank, world_size, args, data, task, col_stats_dict):
     ).to(device)
 
     if world_size > 1:
-        model = DistributedDataParallel(model, device_ids=[rank])
+        model = DistributedDataParallel(model, device_ids=[rank], static_graph=True)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
