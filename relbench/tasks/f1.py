@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
+from relbench.data import Database, LinkTask, NodeTask, Table
 from relbench.data.task_base import TaskType
 from relbench.metrics import (
     accuracy,
@@ -17,7 +17,7 @@ from relbench.metrics import (
 )
 
 
-class DriverPositionTask(RelBenchNodeTask):
+class DriverPositionTask(NodeTask):
     r"""Predict the average finishing position of each driver
     all races in the next 2 months.
     """
@@ -76,7 +76,7 @@ class DriverPositionTask(RelBenchNodeTask):
         )
 
 
-class DriverDNFTask(RelBenchNodeTask):
+class DriverDNFTask(NodeTask):
     r"""Predict the if each driver will DNF (not finish) a race in the next 1 month."""
 
     name = "driver-dnf"
@@ -136,7 +136,7 @@ class DriverDNFTask(RelBenchNodeTask):
         )
 
 
-class DriverTop3Task(RelBenchNodeTask):
+class DriverTop3Task(NodeTask):
     r"""Predict if each driver will qualify in the top-3 for
     a race within the next 1 month.
     """
@@ -194,71 +194,6 @@ class DriverTop3Task(RelBenchNodeTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
-            pkey_col=None,
-            time_col=self.time_col,
-        )
-
-
-######## link prediction tasks ########
-
-
-class DriverConstructorResultTask(RelBenchLinkTask):
-    r"""Predict a list of constructors a driver will join in
-    the next 10 years, depending on the F1 race results.
-    """
-
-    name = "driver-constructor-result"
-    task_type = TaskType.LINK_PREDICTION
-    src_entity_col = "driverId"
-    src_entity_table = "drivers"
-    dst_entity_col = "constructorId"
-    dst_entity_table = "constructors"
-    time_col = "timestamp"
-    timedelta = pd.Timedelta(days=365 * 10)
-    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
-    eval_k = 5
-
-    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for DriverConstructorTask."""
-        timestamp_df = pd.DataFrame({"timestamp": timestamps})
-
-        constructors = db.table_dict["constructors"].df
-        drivers = db.table_dict["drivers"].df
-        results = db.table_dict["results"].df
-
-        df = duckdb.sql(
-            f"""
-            SELECT
-                t.timestamp,
-                dri.driverId as driverId,
-                LIST(DISTINCT re.constructorId) AS constructorId
-            FROM
-                timestamp_df t
-            LEFT JOIN
-                results re
-            ON
-                re.date > t.timestamp AND
-                re.date <= t.timestamp + INTERVAL '{self.timedelta} days'
-            LEFT JOIN
-                constructors c
-            ON
-                c.constructorId = re.constructorId
-            LEFT JOIN
-                drivers dri
-            ON
-                dri.driverId = re.driverId
-            GROUP BY
-                t.timestamp,
-                dri.driverId
-            """
-        ).df()
-
-        return Table(
-            df=df,
-            fkey_col_to_pkey_table={
-                self.src_entity_col: self.src_entity_table,
-                self.dst_entity_col: self.dst_entity_table,
-            },
             pkey_col=None,
             time_col=self.time_col,
         )

@@ -8,21 +8,20 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
 
 from relbench.data.task_base import TaskType
-from relbench.datasets import FakeDataset
-from relbench.external.graph import (
-    get_node_train_table_input,
-    get_stype_proposal,
-    make_pkey_fkey_graph,
-)
+from relbench.datasets.fake import FakeDataset
+from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
+from relbench.external.utils import get_stype_proposal
+from relbench.tasks.amazon import UserChurnTask
 
 
 def test_node_train_fake_product_dataset(tmp_path):
     dataset = FakeDataset()
 
+    db = dataset.get_db()
     data, col_stats_dict = make_pkey_fkey_graph(
-        dataset.db,
-        get_stype_proposal(dataset.db),
+        db,
+        get_stype_proposal(db),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),
@@ -49,23 +48,20 @@ def test_node_train_fake_product_dataset(tmp_path):
     assert x.size() == (100, 1)
 
     # Ensure that neighbor loading works on train/val/test splits ############
-    task = dataset.get_task("user-churn", process=True)
+    task = UserChurnTask(dataset)
     assert task.task_type == TaskType.BINARY_CLASSIFICATION
 
     stats = task.stats()
-    assert len(stats) == 3
+    assert len(stats) == 4
     assert len(stats["train"]) == 11
     assert len(next(iter(stats["train"].values()))) == 4
     assert len(stats["val"]) == 2
     assert len(next(iter(stats["val"].values()))) == 4
-    assert len(stats["total"].values()) == 2
+    assert len(stats["total"].values()) == 3
 
     loader_dict: Dict[str, NeighborLoader] = {}
-    for split, table in [
-        ("train", task.train_table),
-        ("val", task.val_table),
-        ("test", task.test_table),
-    ]:
+    for split in ["train", "val", "test"]:
+        table = task.get_table(split)
         table_input = get_node_train_table_input(table=table, task=task)
         loader = NeighborLoader(
             data,
@@ -89,7 +85,7 @@ def test_node_train_fake_product_dataset(tmp_path):
 
     # Ensure that mini-batch training works ###################################
 
-    train_table_input = get_node_train_table_input(task.train_table, task=task)
+    train_table_input = get_node_train_table_input(task.get_table("train"), task=task)
 
     optimizer = torch.optim.Adam(
         list(encoder.parameters()) + list(gnn.parameters()) + list(head.parameters()),
@@ -143,13 +139,13 @@ def test_node_train_fake_product_dataset(tmp_path):
             target = torch.cat(target_list)
             assert torch.allclose(
                 target,
-                torch.from_numpy(task.val_table.df[task.target_col].values).to(
+                torch.from_numpy(task.get_table("val").df[task.target_col].values).to(
                     target.dtype
                 ),
             )
         pred = torch.cat(pred_list, dim=0).numpy()
         if split == "val":
-            task.evaluate(pred, task.val_table)
+            task.evaluate(pred, task.get_table("val"))
         else:
             task.evaluate(pred)
 
@@ -159,9 +155,10 @@ def test_node_train_empty_graph(tmp_path):
     num_customers = 50
     dataset = FakeDataset(num_customers=num_customers, num_reviews=1)
 
+    db = dataset.get_db()
     data, col_stats_dict = make_pkey_fkey_graph(
-        dataset.db,
-        get_stype_proposal(dataset.db),
+        db,
+        get_stype_proposal(db),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),

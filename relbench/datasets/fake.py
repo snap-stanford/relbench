@@ -5,15 +5,6 @@ import numpy as np
 import pandas as pd
 
 from relbench.data import Database, Dataset, Table
-from relbench.tasks.amazon import (
-    ItemChurnTask,
-    ItemLTVTask,
-    UserChurnTask,
-    UserItemPurchaseTask,
-    UserItemRateTask,
-    UserItemReviewTask,
-    UserLTVTask,
-)
 
 
 def _generate_random_string(min_length: int, max_length: int) -> str:
@@ -23,8 +14,6 @@ def _generate_random_string(min_length: int, max_length: int) -> str:
 
 
 class FakeDataset(Dataset):
-    name = "rel-fake"
-
     def __init__(
         self,
         num_products: int = 30,
@@ -32,31 +21,23 @@ class FakeDataset(Dataset):
         num_reviews: int = 600,
         num_relations: int = 20,
     ):
-        db = self.make_db(num_products, num_customers, num_reviews, num_relations)
-        db.reindex_pkeys_and_fkeys()
-        val_timestamp = db.min_timestamp + 0.8 * (db.max_timestamp - db.min_timestamp)
-        test_timestamp = db.min_timestamp + 0.9 * (db.max_timestamp - db.min_timestamp)
-        max_eval_time_frames = 1
-        super().__init__(
-            db=db,
-            train_start_timestamp=None,
-            val_timestamp=val_timestamp,
-            test_timestamp=test_timestamp,
-            max_eval_time_frames=max_eval_time_frames,
-            task_cls_list=[
-                UserChurnTask,
-                UserLTVTask,
-                ItemChurnTask,
-                ItemLTVTask,
-                UserItemPurchaseTask,
-                UserItemRateTask,
-                UserItemReviewTask,
-            ],
-        )
+        self.num_products = num_products
+        self.num_customers = num_customers
+        self.num_reviews = num_reviews
+        self.num_relations = num_relations
 
-    def make_db(
-        self, num_products, num_customers, num_reviews, num_relations
-    ) -> Database:
+        min_timestamp = pd.Timestamp(0, unit="D")
+        max_timestamp = pd.Timestamp(2 * (num_reviews - 1), unit="D")
+        self.val_timestamp = min_timestamp + 0.8 * (max_timestamp - min_timestamp)
+        self.test_timestamp = min_timestamp + 0.9 * (max_timestamp - min_timestamp)
+        self.max_eval_time_frames = 1
+        super().__init__()
+
+    def make_db(self) -> Database:
+        num_products = self.num_products
+        num_customers = self.num_customers
+        num_reviews = self.num_reviews
+        num_relations = self.num_relations
         product_df = pd.DataFrame(
             {
                 "product_id": [f"product_id_{i}" for i in range(num_products)],

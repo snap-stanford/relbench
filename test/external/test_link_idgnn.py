@@ -11,22 +11,20 @@ from torch_geometric.typing import NodeType
 
 from relbench.data import LinkTask
 from relbench.data.task_base import TaskType
-from relbench.datasets import FakeDataset
-from relbench.external.graph import (
-    get_link_train_table_input,
-    get_stype_proposal,
-    make_pkey_fkey_graph,
-)
+from relbench.datasets.fake import FakeDataset
+from relbench.external.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.external.loader import SparseTensor
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
+from relbench.external.utils import get_stype_proposal
+from relbench.tasks.amazon import UserItemPurchaseTask
 
 
 def test_link_train_fake_product_dataset(tmp_path):
     dataset = FakeDataset()
 
     data, col_stats_dict = make_pkey_fkey_graph(
-        dataset.db,
-        get_stype_proposal(dataset.db),
+        dataset.get_db(),
+        get_stype_proposal(dataset.get_db()),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),
@@ -42,15 +40,19 @@ def test_link_train_fake_product_dataset(tmp_path):
     id_awareness = torch.nn.Embedding(1, channels)
 
     # Ensure that neighbor loading works on train/val/test splits ############
-    task: LinkTask = dataset.get_task("user-item-purchase", process=True)
+    task = UserItemPurchaseTask(dataset)
     assert task.task_type == TaskType.LINK_PREDICTION
+
+    train_table = task.get_table("train")
+    val_table = task.get_table("val")
+    test_table = task.get_table("test")
 
     loader_dict: Dict[str, NeighborLoader] = {}
     dst_nodes_dict: Dict[str, Tuple[NodeType, Tensor]] = {}
     for split, table in [
-        ("train", task.train_table),
-        ("val", task.val_table),
-        ("test", task.test_table),
+        ("train", train_table),
+        ("val", val_table),
+        ("test", test_table),
     ]:
         table_input = get_link_train_table_input(table, task)
         dst_nodes_dict[split] = table_input.dst_nodes
@@ -139,6 +141,6 @@ def test_link_train_fake_product_dataset(tmp_path):
                 pred_list.append(pred_mini)
         pred = torch.cat(pred_list, dim=0).numpy()
         if split == "val":
-            task.evaluate(pred, task.val_table)
+            task.evaluate(pred, val_table)
         else:
             task.evaluate(pred)
