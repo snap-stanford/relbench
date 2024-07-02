@@ -46,7 +46,7 @@ class EventDataset(RelBenchDataset):
 
     def make_db(self) -> Database:
         path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data',
-                'event')
+                'rel-event')
         users = os.path.join(path, "users.csv")
         user_friends = os.path.join(path, "user_friends.csv")
         events = os.path.join(path, "events.csv")
