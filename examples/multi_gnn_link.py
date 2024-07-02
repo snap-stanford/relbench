@@ -42,14 +42,11 @@ def run_main(rank, world_size, args, data, task, col_stats_dict):
 
     train_table_input = get_link_train_table_input(task.train_table, task)
 
-    src_nodes = (
-        train_table_input.src_nodes[0],
-        train_table_input.src_nodes[1].split(
-            train_table_input.src_nodes[1].shape[0] // world_size
-        )[rank],
-    )
 
-    # dst_nodes = (train_table_input.dst_nodes[0],
+    #src_nodes = (train_table_input.src_nodes[0],
+    #             train_table_input.src_nodes[1].split(train_table_input.src_nodes[1].shape[0] // world_size)[rank])
+    
+    #dst_nodes = (train_table_input.dst_nodes[0],
     #             train_table_input.dst_nodes[1].split(train_table_input.dst_nodes[1].shape[0] // world_size)[rank])
     #
     split_size = (
@@ -67,6 +64,9 @@ def run_main(rank, world_size, args, data, task, col_stats_dict):
     )
     dst_nodes = (train_table_input.dst_nodes[0], dst_nodes_tensor.to_sparse_csr())
 
+    src_nodes = (train_table_input.src_nodes[0], train_table_input.src_nodes[1][indices])
+    src_time = train_table_input.src_time[indices]
+
     train_loader = LinkNeighborLoader(
         data=data,
         num_neighbors=num_neighbors,
@@ -74,7 +74,7 @@ def run_main(rank, world_size, args, data, task, col_stats_dict):
         src_nodes=src_nodes,
         dst_nodes=dst_nodes,
         num_dst_nodes=train_table_input.num_dst_nodes,
-        src_time=train_table_input.src_time,
+        src_time=src_time,
         share_same_time=args.share_same_time,
         batch_size=args.batch_size,
         temporal_strategy=args.temporal_strategy,
@@ -177,7 +177,8 @@ def run_main(rank, world_size, args, data, task, col_stats_dict):
             count_accum += x_src.size(0)
 
             steps += 1
-            progress_bar.update(world_size)
+            if rank == 0:
+                progress_bar.update(world_size)
             if steps > args.max_steps_per_epoch:
                 break
 
