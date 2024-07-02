@@ -11,7 +11,6 @@ import torch.nn.functional as F
 from model import Model
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
-from torch.utils.tensorboard import SummaryWriter
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
