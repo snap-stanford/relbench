@@ -45,8 +45,7 @@ class EventDataset(RelBenchDataset):
                 self.err_msg.format(data=table_path, url=self.url, path=table_path)
 
     def make_db(self) -> Database:
-        path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data',
-                'rel-event')
+        path = osp.join(osp.dirname(osp.realpath(__file__)), "..", "data", "rel-event")
         users = os.path.join(path, "users.csv")
         user_friends = os.path.join(path, "user_friends.csv")
         events = os.path.join(path, "events.csv")
