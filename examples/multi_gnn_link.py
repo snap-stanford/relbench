@@ -42,11 +42,10 @@ def run_main(rank, world_size, args, data, task, col_stats_dict):
 
     train_table_input = get_link_train_table_input(task.train_table, task)
 
-
-    #src_nodes = (train_table_input.src_nodes[0],
+    # src_nodes = (train_table_input.src_nodes[0],
     #             train_table_input.src_nodes[1].split(train_table_input.src_nodes[1].shape[0] // world_size)[rank])
-    
-    #dst_nodes = (train_table_input.dst_nodes[0],
+
+    # dst_nodes = (train_table_input.dst_nodes[0],
     #             train_table_input.dst_nodes[1].split(train_table_input.dst_nodes[1].shape[0] // world_size)[rank])
     #
     split_size = (
@@ -64,7 +63,10 @@ def run_main(rank, world_size, args, data, task, col_stats_dict):
     )
     dst_nodes = (train_table_input.dst_nodes[0], dst_nodes_tensor.to_sparse_csr())
 
-    src_nodes = (train_table_input.src_nodes[0], train_table_input.src_nodes[1][indices])
+    src_nodes = (
+        train_table_input.src_nodes[0],
+        train_table_input.src_nodes[1][indices],
+    )
     src_time = train_table_input.src_time[indices]
 
     train_loader = LinkNeighborLoader(
