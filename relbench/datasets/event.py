@@ -1,4 +1,5 @@
 import os
+import os.path as osp
 import shutil
 from pathlib import Path
 
@@ -44,13 +45,8 @@ class EventDataset(RelBenchDataset):
                 self.err_msg.format(data=table_path, url=self.url, path=table_path)
 
     def make_db(self) -> Database:
-        url = "https://relbench.stanford.edu/data/rel-event-raw.zip"
-        path = pooch.retrieve(
-            url,
-            known_hash="9cb01d6e5e8bd60db61c769656d69bdd0864ed8030d9932784e8338ed5d1183e",
-            progressbar=True,
-            processor=unzip_processor,
-        )
+        path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data',
+                'event')
         users = os.path.join(path, "users.csv")
         user_friends = os.path.join(path, "user_friends.csv")
         events = os.path.join(path, "events.csv")
