@@ -6,7 +6,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from relbench.data.database import Database
+from .database import Database
 
 
 class Dataset:

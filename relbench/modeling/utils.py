@@ -5,7 +5,7 @@ import pandas as pd
 from torch_frame import stype
 from torch_frame.utils import infer_df_stype
 
-from relbench.data import Database, Table
+from relbench.base import Database, Table
 
 
 def to_unix_time(ser: pd.Series) -> np.ndarray:

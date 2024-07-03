@@ -13,9 +13,8 @@ from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
 from torch_geometric.utils import sort_edge_index
 
-from relbench.data import Database, LinkTask, NodeTask, Table
-from relbench.data.task_base import TaskType
-from relbench.external.utils import remove_pkey_fkey, to_unix_time
+from relbench.base import Database, LinkTask, NodeTask, Table, TaskType
+from relbench.modeling.utils import remove_pkey_fkey, to_unix_time
 
 
 def make_pkey_fkey_graph(

@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from relbench.data.table import Table
-from relbench.data.task_base import BaseTask, TaskType
+from .table import Table
+from .task_base import BaseTask, TaskType
 
 
 class NodeTask(BaseTask):

@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import pooch
 
-from relbench.data import Database, Dataset, Table
+from relbench.base import Database, Dataset, Table
 from relbench.utils import decompress_gz_file, unzip_processor
 
 

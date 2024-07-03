@@ -1,3 +1,3 @@
-from . import data, datasets, external, tasks
+from relbench import base, datasets, modeling, tasks
 
-__version__ = "0.1.1"  # TODO: update this
+__version__ = "1.0.0"

@@ -4,7 +4,7 @@ import string
 import numpy as np
 import pandas as pd
 
-from relbench.data import Database, Dataset, Table
+from relbench.base import Database, Dataset, Table
 
 
 def _generate_random_string(min_length: int, max_length: int) -> str:

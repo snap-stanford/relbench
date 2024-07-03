@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from relbench.data import Database, Dataset, Table
+from relbench.base import Database, Dataset, Table
 
 
 class HMDataset(Dataset):
