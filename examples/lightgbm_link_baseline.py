@@ -347,11 +347,12 @@ train_dataset = torch_frame.data.Dataset(
         batch_size=256,
     ),
 )
-path = Path(
-    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/link_train.pt"
-)
-path.parent.mkdir(parents=True, exist_ok=True)
-train_dataset = train_dataset.materialize(path=path)
+# path = Path(
+#     f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/link_train.pt"
+# )
+# path.parent.mkdir(parents=True, exist_ok=True)
+# train_dataset = train_dataset.materialize(path=path)
+train_dataset = train_dataset.materialize()
 
 tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
