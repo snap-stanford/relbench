@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
+from relbench.data import Database, LinkTask, NodeTask, Table
 from relbench.data.task_base import TaskType
 from relbench.metrics import (
     accuracy,
@@ -17,7 +17,7 @@ from relbench.metrics import (
 )
 
 
-class UserItemPurchaseTask(RelBenchLinkTask):
+class UserItemPurchaseTask(LinkTask):
     r"""Predict the list of articles each customer will purchase in the next
     seven days"""
 
@@ -67,7 +67,7 @@ class UserItemPurchaseTask(RelBenchLinkTask):
         )
 
 
-class UserChurnTask(RelBenchNodeTask):
+class UserChurnTask(NodeTask):
     r"""Predict the churn for a customer (no transactions) in the next week."""
 
     name = "user-churn"
@@ -122,7 +122,7 @@ class UserChurnTask(RelBenchNodeTask):
         )
 
 
-class ItemSalesTask(RelBenchNodeTask):
+class ItemSalesTask(NodeTask):
     r"""Predict the total sales for an article (the sum of prices of the
     associated transactions) in the next week."""
 

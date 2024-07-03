@@ -23,6 +23,8 @@ def register_task(
     *args,
     **kwargs,
 ):
+    cache_dir = f"{pooch.os_cache('relbench')}/{dataset_name}/tasks/{task_name}"
+    kwargs = {"cache_dir": cache_dir, **kwargs}
     task_registry[dataset_name][task_name] = (cls, args, kwargs)
 
 
@@ -31,18 +33,15 @@ def get_task_names(dataset_name: str):
 
 
 def download_task(dataset_name: str, task_name: str) -> None:
-    try:
-        DOWNLOAD_REGISTRY.fetch(
-            f"{dataset_name}/tasks/{task_name}.zip",
-            processor=pooch.Unzip(extract_dir=task_name),
-            progressbar=True,
-        )
-    except ValueError:
-        print("failed to download, will attempt to make task from scratch")
+    DOWNLOAD_REGISTRY.fetch(
+        f"{dataset_name}/tasks/{task_name}.zip",
+        processor=pooch.Unzip(extract_dir=task_name),
+        progressbar=True,
+    )
 
 
 @lru_cache(maxsize=None)
-def get_task(dataset_name: str, task_name: str, download=True) -> BaseTask:
+def get_task(dataset_name: str, task_name: str, download=False) -> BaseTask:
     if download:
         download_task(dataset_name, task_name)
     dataset = get_dataset(dataset_name)

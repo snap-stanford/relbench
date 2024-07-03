@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
+from relbench.data import Database, LinkTask, NodeTask, Table
 from relbench.data.task_base import TaskType
 from relbench.metrics import (
     accuracy,
@@ -17,7 +17,7 @@ from relbench.metrics import (
 )
 
 
-class AdsClicksTask(RelBenchNodeTask):
+class AdsClicksTask(NodeTask):
     r"""Assuming the ad will be clicked in the next 4 days, predict the
     Click-Through-Rate (CTR) for each ad.
     """
@@ -69,7 +69,7 @@ class AdsClicksTask(RelBenchNodeTask):
         )
 
 
-class UserVisitsTask(RelBenchNodeTask):
+class UserVisitsTask(NodeTask):
     r"""Predict whether each customer will visit more than one ad in the next
     4 days.
     """
@@ -120,7 +120,7 @@ class UserVisitsTask(RelBenchNodeTask):
         )
 
 
-class UserClicksTask(RelBenchNodeTask):
+class UserClicksTask(NodeTask):
     r"""Predict whether the each customer will click on more than one ads in
     the next 4 days
     """
@@ -179,7 +179,7 @@ class UserClicksTask(RelBenchNodeTask):
         )
 
 
-class UserAdVisitTask(RelBenchLinkTask):
+class UserAdVisitTask(LinkTask):
     r"""Predict the distinct list of ads a user will visit in the next 4 days"""
 
     name = "user-ad-visit"
