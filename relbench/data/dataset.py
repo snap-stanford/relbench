@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pooch
 
-from relbench import _pooch
+from relbench import DOWNLOAD_REGISTRY
 from relbench.data.database import Database
 from relbench.data.task_base import BaseTask
 from relbench.utils import unzip_processor
@@ -24,7 +24,6 @@ class Dataset:
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
         max_eval_time_frames: int,
-        task_cls_list: List[Type[BaseTask]],
     ) -> None:
         r"""Class holding database and task table construction logic.
 
@@ -35,7 +34,6 @@ class Dataset:
             val_timestamp (pd.Timestamp): The first timestamp for making val table.
             test_timestamp (pd.Timestamp): The first timestamp for making test table.
             max_eval_time_frames (int): The maximum number of unique timestamps used to build test and val tables.
-            task_cls_list (List[Type[BaseTask]]): A list of allowed tasks for this database.
 
         """
         self._full_db = db
@@ -43,7 +41,6 @@ class Dataset:
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
         self.max_eval_time_frames = max_eval_time_frames
-        self.task_cls_dict = {task_cls.name: task_cls for task_cls in task_cls_list}
 
         self.db = db.upto(test_timestamp)
 
@@ -51,18 +48,6 @@ class Dataset:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
-
-    @property
-    def task_names(self) -> List[str]:
-        return list(self.task_cls_dict.keys())
-
-    def get_task(self, task_name: str, *args, **kwargs) -> BaseTask:
-        if task_name not in self.task_cls_dict:
-            raise ValueError(
-                f"{self.__class__.name} does not support the task {task_name}."
-                f"Please choose from {self.task_names}."
-            )
-        return self.task_cls_dict[task_name](self, *args, **kwargs)
 
     def validate_and_correct_db(self):
         r"""Validate and correct input db in-place."""
@@ -92,12 +77,12 @@ class RelBenchDataset(Dataset):
     train_start_timestamp: Optional[pd.Timestamp] = None
     val_timestamp: pd.Timestamp
     test_timestamp: pd.Timestamp
-    task_cls_list: List[Type[BaseTask]]
 
     db_dir: str = "db"
 
-    def __init__(self, *, process: bool = False) -> None:
-        if process:
+    def __init__(self, process=None) -> None:
+        db_path = pooch.os_cache("relbench") / self.name / self.db_dir
+        if not db_path.exists():
             print("making Database object from raw files...")
             tic = time.time()
             db = self.make_db()
@@ -110,7 +95,6 @@ class RelBenchDataset(Dataset):
             toc = time.time()
             print(f"done in {toc - tic:.2f} seconds.")
 
-            db_path = pooch.os_cache("relbench") / self.name / self.db_dir
             print(f"caching Database object to {db_path}...")
             tic = time.time()
             db.save(db_path)
@@ -119,11 +103,6 @@ class RelBenchDataset(Dataset):
             print(f"use process=False to load from cache.")
 
         else:
-            db_path = _pooch.fetch(
-                f"{self.name}/{self.db_dir}.zip",
-                processor=unzip_processor,
-                progressbar=True,
-            )
             print(f"loading Database object from {db_path}...")
             tic = time.time()
             db = Database.load(db_path)
@@ -136,7 +115,6 @@ class RelBenchDataset(Dataset):
             self.val_timestamp,
             self.test_timestamp,
             self.max_eval_time_frames,
-            self.task_cls_list,
         )
 
     def make_db(self) -> Database:

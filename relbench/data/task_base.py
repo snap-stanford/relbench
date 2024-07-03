@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Callable, List, Tuple, Union
 import pandas as pd
 from numpy.typing import NDArray
 
-from relbench import _pooch
+from relbench import DOWNLOAD_REGISTRY
 from relbench.data.database import Database
 from relbench.data.table import Table
 from relbench.utils import unzip_processor
@@ -170,7 +170,7 @@ class BaseTask:
         raise NotImplementedError
 
     def set_cached_table_dict(self, task_name: str, task_dir: str, dataset_name: str):
-        task_path = _pooch.fetch(
+        task_path = DOWNLOAD_REGISTRY.fetch(
             f"{dataset_name}/{task_dir}/{task_name}.zip",
             processor=unzip_processor,
             progressbar=True,

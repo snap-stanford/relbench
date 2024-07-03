@@ -11,7 +11,7 @@ from torch_geometric.typing import NodeType
 
 from relbench.data import LinkTask
 from relbench.data.task_base import TaskType
-from relbench.datasets import FakeDataset
+from relbench.datasets.fake import FakeDataset
 from relbench.external.graph import (
     get_link_train_table_input,
     get_stype_proposal,
@@ -19,6 +19,7 @@ from relbench.external.graph import (
 )
 from relbench.external.loader import SparseTensor
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
+from relbench.tasks.amazon import UserItemPurchaseTask
 
 
 def test_link_train_fake_product_dataset(tmp_path):
@@ -42,7 +43,7 @@ def test_link_train_fake_product_dataset(tmp_path):
     id_awareness = torch.nn.Embedding(1, channels)
 
     # Ensure that neighbor loading works on train/val/test splits ############
-    task: LinkTask = dataset.get_task("user-item-purchase", process=True)
+    task = UserItemPurchaseTask(dataset)
     assert task.task_type == TaskType.LINK_PREDICTION
 
     loader_dict: Dict[str, NeighborLoader] = {}
