@@ -23,14 +23,14 @@ class AvitoDataset(Dataset):
     def make_db(self) -> Database:
         # Customize path as necessary
         r"""Process the raw files into a database."""
-        url = "https://relbench.stanford.edu/data/rel-avito-raw.zip"
+        url = "https://relbench.stanford.edu/data/rel-avito-raw-100k.zip"
         path = pooch.retrieve(
             url,
-            known_hash="24ae408ee546cf9171742288d1ec6c52e60d332dd47f58eb78fabc64a3034f43",
+            known_hash="ad4fc1789d8a5073ea449049888c671899525c9a8a42359ca75d1f17d04d7929",
             progressbar=True,
             processor=unzip_processor,
         )
-        path = os.path.join(path, "avito_500k_integ_test")
+        path = os.path.join(path, "avito_100k_integ_test")
 
         # Define table names
         ads_info = os.path.join(path, "AdsInfo")
