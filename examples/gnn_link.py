@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 from typing import Dict, Tuple
+import warnings
 
 import numpy as np
 import torch
@@ -33,7 +34,7 @@ parser.add_argument("--eval_epochs_interval", type=int, default=1)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
-parser.add_argument("--num_layers", type=int, default=4)
+parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 # Use the same seed time across the mini-batch and share the negatives
@@ -189,14 +190,14 @@ def train() -> float:
             break
 
     if count_accum == 0:
-        raise ValueError(
+        warnings.warn(
             f"Did not sample a single '{task.dst_entity_table}' "
             f"node in any mini-batch. Try to increase the number "
             f"of layers/hops and re-try. If you run into memory "
             f"issues with deeper nets, decrease the batch size."
         )
 
-    return loss_accum / count_accum
+    return loss_accum / count_accum if count_accum > 0 else float("nan")
 
 
 @torch.no_grad()
