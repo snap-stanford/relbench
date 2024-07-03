@@ -24,7 +24,6 @@ Additionally, RelBench provides a first open-source implementation of a Graph Ne
 
 # Key Papers
 
- 
  [**RelBench Paper**](https://relbench.stanford.edu/paper.pdf) RelBench: A Benchmark for Deep Learning
 on Relational Databases. 
 
@@ -34,6 +33,9 @@ on Relational Databases.
 Learning on Relational Databases. 
 
 <!--- Matthias Fey*, Weihua Hu*, Kexin Huang*, Jan Eric Lenssen*, Rishabh Ranjan, Joshua Robinson*, Rex Ying, Jiaxuan You, Jure Leskovec.-->
+
+# Design of RelBench
+
 
 # Installation
 
@@ -83,21 +85,31 @@ Additionally, you can evaluate validation (or training) predictions as such:
 task.evaluate(val_pred, task.val_table)
 ```
 
-# Demos
-List of working demos:
+# Tutorials
+To get started with RelBench, we provide some helpful Colab notebook tutorials. For now these tutorials cover (i) how to load data using RelBench, focusing on providing users with the understanding of RelBench data logic needed to use RelBench data freely with any desired ML models, and (ii) training a GNN predictive model to solve any tasks in RelBench.
 
 | Name  | Description                                             |
 |-------|---------------------------------------------------------|
+| [Data](https://colab.research.google.com/drive/1PAOktBqh_3QzgAKi53F4JbQxoOuBsUBY?usp=sharing)   | How to load and explore RelBench data  
 | [Modeling](https://colab.research.google.com/drive/1_z0aKcs5XndEacX1eob6csDuR4DYhGQU?usp=sharing)| Train your first GNN-based model on RelBench.                   |
-| [Data](https://colab.research.google.com/drive/1PAOktBqh_3QzgAKi53F4JbQxoOuBsUBY?usp=sharing)   | exploring RelBench data                         |
+                      |
 
 # Cite RelBench
 
-If you use RelBench in your work, please cite our paper:
+If you use RelBench in your work, please cite our position paper and benchmark paper:
 ```
-@article{relbench,
+@article{relationaldeeplearning,
   title={Relational Deep Learning: Graph Representation Learning on Relational Tables},
   author={Matthias Fey, Weihua Hu, Kexin Huang, Jan Eric Lenssen, Rishabh Ranjan, Joshua Robinson, Rex Ying, Jiaxuan You, Jure Leskovec},
-  year={2023}
+  journal={ICML Position Paper}
+  year={2024}
+}
+```
+
+```
+@article{relbench,
+  title={RelBench: A Benchmark for Deep Learning on Relational Databases},
+  author={Joshua Robinson, Rishabh Ranjan, Weihua Hu, Kexin Huang, Jiaqi Han, Alejandro Dobles, Matthias Fey, Jan Eric Lenssen, Yiwen Yuan, Zecheng Zhang, Xinwei He, Jure Leskovec},
+  year={2024}
 }
 ```
