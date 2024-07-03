@@ -3,11 +3,11 @@ import os
 import pandas as pd
 import pooch
 
-from relbench.data import Database, RelBenchDataset, Table
+from relbench.data import Database, Dataset, Table
 from relbench.utils import clean_datetime, unzip_processor
 
 
-class AvitoDataset(RelBenchDataset):
+class AvitoDataset(Dataset):
     name = "rel-avito"
     url = "https://www.kaggle.com/competitions/avito-context-ad-clicks"
     err_msg = (
@@ -19,14 +19,6 @@ class AvitoDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2015-05-08")
     test_timestamp = pd.Timestamp("2015-05-14")
     max_eval_time_frames = 1
-
-    def __init__(
-        self,
-        *,
-        process: bool = False,
-    ):
-        self.name = f"{self.name}"
-        super().__init__(process=process)
 
     def make_db(self) -> Database:
         # Customize path as necessary

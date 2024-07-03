@@ -5,11 +5,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from relbench.data import Database, RelBenchDataset, Table
+from relbench.data import Database, Dataset, Table
 from relbench.utils import decompress_gz_file, unzip_processor
 
 
-class EventDataset(RelBenchDataset):
+class EventDataset(Dataset):
     name = "rel-event"
     url = "https://www.kaggle.com/competitions/event-recommendation-engine-challenge"  # noqa
     err_msg = (
@@ -23,14 +23,6 @@ class EventDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2012-11-21")
     test_timestamp = pd.Timestamp("2012-11-29")
     max_eval_time_frames = 1
-
-    def __init__(
-        self,
-        *,
-        process: bool = False,
-    ):
-        self.name = f"{self.name}"
-        super().__init__(process=process)
 
     def check_table_and_decompress_if_exists(self, table_path: str, alt_path: str = ""):
         if not os.path.exists(table_path) or (

@@ -11,11 +11,8 @@ from numpy.typing import NDArray
 
 from relbench import DOWNLOAD_REGISTRY
 from relbench.data.database import Database
+from relbench.data.dataset import Dataset
 from relbench.data.table import Table
-from relbench.utils import unzip_processor
-
-if TYPE_CHECKING:
-    from relbench.data import Dataset
 
 
 class BaseTask:
@@ -59,10 +56,11 @@ class BaseTask:
     @property
     def train_table(self) -> Table:
         """Returns the train table for a task."""
+        db = self.dataset.get_db()
         if "train" not in self._cached_table_dict:
             timestamps = pd.date_range(
                 start=self.dataset.val_timestamp - self.timedelta,
-                end=self.dataset.db.min_timestamp,
+                end=db.min_timestamp,
                 freq=-self.timedelta,
             )
             if len(timestamps) < 3:
@@ -71,7 +69,7 @@ class BaseTask:
                     f"({len(timestamps)} given)"
                 )
             table = self.make_table(
-                self.dataset.db,
+                db,
                 timestamps,
             )
             self._cached_table_dict["train"] = table
@@ -82,11 +80,9 @@ class BaseTask:
     @property
     def val_table(self) -> Table:
         r"""Returns the val table for a task."""
+        db = self.dataset.get_db()
         if "val" not in self._cached_table_dict:
-            if (
-                self.dataset.val_timestamp + self.timedelta
-                > self.dataset.db.max_timestamp
-            ):
+            if self.dataset.val_timestamp + self.timedelta > db.max_timestamp:
                 raise RuntimeError(
                     "val timestamp + timedelta is larger than max timestamp! "
                     "This would cause val labels to be generated with "
@@ -101,7 +97,7 @@ class BaseTask:
             )
 
             table = self.make_table(
-                self.dataset.db,
+                db,
                 pd.date_range(
                     self.dataset.val_timestamp,
                     end_timestamp,
@@ -115,12 +111,10 @@ class BaseTask:
 
     @property
     def test_table(self) -> Table:
+        db = self.dataset.get_db(upto_test_timestamp=False)
         r"""Returns the test table for a task."""
         if "full_test" not in self._cached_table_dict:
-            if (
-                self.dataset.test_timestamp + self.timedelta
-                > self.dataset._full_db.max_timestamp
-            ):
+            if self.dataset.test_timestamp + self.timedelta > db.max_timestamp:
                 raise RuntimeError(
                     "test timestamp + timedelta is larger than max timestamp! "
                     "This would cause test labels to be generated with "
@@ -131,11 +125,11 @@ class BaseTask:
             end_timestamp = min(
                 self.dataset.test_timestamp
                 + self.timedelta * (self.dataset.max_eval_time_frames - 1),
-                self.dataset._full_db.max_timestamp - self.timedelta,
+                db.max_timestamp - self.timedelta,
             )
 
             full_table = self.make_table(
-                self.dataset._full_db,
+                db,
                 pd.date_range(
                     self.dataset.test_timestamp,
                     end_timestamp,
@@ -196,6 +190,7 @@ class TaskType(Enum):
     LINK_PREDICTION = "link_prediction"
 
 
+# TODO: move somewhere else
 def _pack_tables(task, root: Union[str, os.PathLike]) -> Tuple[str, str]:
     _dummy_db = Database(
         table_dict={

@@ -52,7 +52,8 @@ class NodeTask(BaseTask):
         return f"{self.__class__.__name__}(dataset={self.dataset})"
 
     def filter_dangling_entities(self, table: Table) -> Table:
-        num_entities = len(self.dataset.db.table_dict[self.entity_table])
+        db = self.dataset.get_db()
+        num_entities = len(db.table_dict[self.entity_table])
         filter_mask = table.df[self.entity_col] >= num_entities
 
         if filter_mask.any():

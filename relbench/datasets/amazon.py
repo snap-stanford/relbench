@@ -4,17 +4,15 @@ import pandas as pd
 import pooch
 import pyarrow as pa
 
-from relbench.data import Database, RelBenchDataset, Table
+from relbench.data import Database, Dataset, Table
 
 
-class AmazonDataset(RelBenchDataset):
+class AmazonDataset(Dataset):
     name = "rel-amazon"
     val_timestamp = pd.Timestamp("2015-10-01")
     test_timestamp = pd.Timestamp("2016-01-01")
 
     max_eval_time_frames = 1
-
-    category_list = ["books", "fashion"]
 
     url_prefix = "https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2"
     _category_to_url_key = {"books": "Books", "fashion": "AMAZON_FASHION"}
@@ -28,15 +26,11 @@ class AmazonDataset(RelBenchDataset):
         self,
         category: str = "books",
         use_5_core: bool = True,
-        *,
-        process: bool = False,
+        cache_dir: str = None,
     ):
         self.category = category
         self.use_5_core = use_5_core
-
-        # self.name = f"{self.name}-{category}{'_5_core' if use_5_core else ''}"
-
-        super().__init__(process=process)
+        super().__init__(cache_dir=cache_dir)
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""

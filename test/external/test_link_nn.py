@@ -32,8 +32,8 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     dataset = FakeDataset()
 
     data, col_stats_dict = make_pkey_fkey_graph(
-        dataset.db,
-        get_stype_proposal(dataset.db),
+        dataset.get_db(),
+        get_stype_proposal(dataset.get_db()),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),

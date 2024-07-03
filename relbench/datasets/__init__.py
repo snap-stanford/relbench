@@ -3,7 +3,7 @@ from functools import lru_cache
 import pooch
 
 from ..data import Dataset
-from . import amazon, avito, event, f1, hm, stack, trial
+from . import amazon, avito, event, f1, fake, hm, stack, trial
 
 dataset_registry = {}
 
@@ -28,6 +28,8 @@ def register_dataset(
     *args,
     **kwargs,
 ):
+    relbench_cache = pooch.os_cache("relbench")
+    kwargs = {"cache_dir": f"{relbench_cache}/{name}", **kwargs}
     dataset_registry[name] = (cls, args, kwargs)
 
 
@@ -36,18 +38,15 @@ def get_dataset_names():
 
 
 def download_dataset(name: str) -> None:
-    try:
-        DOWNLOAD_REGISTRY.fetch(
-            f"{name}/db.zip",
-            processor=pooch.Unzip(extract_dir="db"),
-            progressbar=True,
-        )
-    except ValueError:
-        print("failed to download, will attempt to make db from raw files")
+    DOWNLOAD_REGISTRY.fetch(
+        f"{name}/db.zip",
+        processor=pooch.Unzip(extract_dir="db"),
+        progressbar=True,
+    )
 
 
 @lru_cache(maxsize=None)
-def get_dataset(name: str, download=True) -> Dataset:
+def get_dataset(name: str, download=False) -> Dataset:
     if download:
         download_dataset(name)
     cls, args, kwargs = dataset_registry[name]

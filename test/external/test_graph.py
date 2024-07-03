@@ -10,8 +10,8 @@ def test_make_pkey_fkey_graph():
     dataset = FakeDataset()
 
     data, _ = make_pkey_fkey_graph(
-        dataset.db,
-        get_stype_proposal(dataset.db),
+        dataset.get_db(),
+        get_stype_proposal(dataset.get_db()),
         text_embedder_cfg=TextEmbedderConfig(
             HashTextEmbedder(16),
             batch_size=None,

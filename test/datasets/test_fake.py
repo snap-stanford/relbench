@@ -6,7 +6,7 @@ from relbench.tasks.amazon import UserChurnTask
 
 def test_fake_reviews_dataset():
     dataset = FakeDataset()
-    assert dataset.db.max_timestamp < dataset.test_timestamp
+    assert dataset.get_db().max_timestamp <= dataset.test_timestamp
     assert str(dataset) == "FakeDataset()"
 
     task = UserChurnTask(dataset)
@@ -30,7 +30,7 @@ def test_fake_reviews_dataset():
 
 def test_reindex():
     dataset = FakeDataset()
-    db = dataset.make_db(30, 100, 500, 20)
+    db = dataset.make_db()
     db_indexed = copy.deepcopy(db)
     db_indexed.reindex_pkeys_and_fkeys()
     for table_name in db.table_dict.keys():

@@ -116,11 +116,11 @@ class LinkTask(BaseTask):
 
     @property
     def num_src_nodes(self) -> int:
-        return len(self.dataset.db.table_dict[self.src_entity_table])
+        return len(self.dataset.get_db().table_dict[self.src_entity_table])
 
     @property
     def num_dst_nodes(self) -> int:
-        return len(self.dataset.db.table_dict[self.dst_entity_table])
+        return len(self.dataset.get_db().table_dict[self.dst_entity_table])
 
     @property
     def val_seed_time(self) -> int:

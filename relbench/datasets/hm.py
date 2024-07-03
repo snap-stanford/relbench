@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from relbench.data import Database, RelBenchDataset, Table
+from relbench.data import Database, Dataset, Table
 
 
-class HMDataset(RelBenchDataset):
+class HMDataset(Dataset):
     name = "rel-hm"
     url = (
         "https://www.kaggle.com/competitions/"
@@ -18,14 +18,6 @@ class HMDataset(RelBenchDataset):
     val_timestamp = pd.Timestamp("2020-09-07")
     test_timestamp = pd.Timestamp("2020-09-14")
     max_eval_time_frames = 1
-
-    def __init__(
-        self,
-        *,
-        process: bool = False,
-    ):
-        self.name = f"{self.name}"
-        super().__init__(process=process)
 
     def make_db(self) -> Database:
         path = os.path.join("data", "hm-recommendation")
