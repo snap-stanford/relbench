@@ -62,6 +62,7 @@ seed_everything(args.seed)
 
 dataset: Dataset = get_dataset(args.dataset)
 task: NodeTask = get_task(args.dataset, args.task)
+<<<<<<< HEAD
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:
@@ -74,6 +75,8 @@ except FileNotFoundError:
     col_to_stype_dict = get_stype_proposal(dataset.get_db())
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
+=======
+>>>>>>> main
 
 
 data, col_stats_dict = make_pkey_fkey_graph(

@@ -9,7 +9,6 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
 from torch_geometric.typing import NodeType
 
-from relbench.data import LinkTask
 from relbench.data.task_base import TaskType
 from relbench.datasets.fake import FakeDataset
 from relbench.external.graph import get_link_train_table_input, make_pkey_fkey_graph
