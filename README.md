@@ -42,6 +42,9 @@ This paper outlines our proposal for how to do end-to-end deep learning on relat
 
 # Design of RelBench
 
+<p align="center"><img src="https://relbench.stanford.edu/img/relbench-fig.png" alt="logo" width="900px" /></p>
+
+TODO: say more.
 
 # Installation
 
