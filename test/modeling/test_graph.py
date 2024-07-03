@@ -3,8 +3,8 @@ from torch_frame.config import TextEmbedderConfig
 from torch_frame.testing.text_embedder import HashTextEmbedder
 
 from relbench.datasets.fake import FakeDataset
-from relbench.external.graph import make_pkey_fkey_graph
-from relbench.external.utils import get_stype_proposal
+from relbench.modeling.graph import make_pkey_fkey_graph
+from relbench.modeling.utils import get_stype_proposal
 
 
 def test_make_pkey_fkey_graph():

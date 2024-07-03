@@ -1,6 +1,6 @@
 import pandas as pd
 
-from relbench.data import Table
+from relbench.base import Table
 
 
 def test_table():

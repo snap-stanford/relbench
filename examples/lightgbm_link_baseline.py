@@ -17,9 +17,9 @@ from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 
-from relbench.data import Dataset, LinkTask, Table
+from relbench.base import Dataset, LinkTask, Table
 from relbench.datasets import get_dataset
-from relbench.external.utils import get_stype_proposal, remove_pkey_fkey
+from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 from relbench.tasks import get_task
 
 LINK_PRED_BASELINE_TARGET_COL_NAME = "link_pred_baseline_target_column_name"
