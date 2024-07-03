@@ -16,7 +16,6 @@ class AvitoDataset(RelBenchDataset):
     )
 
     # search stream ranges from 2015-04-25 to 2015-05-20
-    train_start_timestamp = pd.Timestamp("2015-04-25")
     val_timestamp = pd.Timestamp("2015-05-08")
     test_timestamp = pd.Timestamp("2015-05-14")
     max_eval_time_frames = 1
@@ -138,4 +137,8 @@ class AvitoDataset(RelBenchDataset):
             },
             time_col="ViewDate",
         )
-        return Database(tables)
+        db = Database(tables)
+
+        db = db.from_(pd.Timestamp("2015-04-25"))
+
+        return db

@@ -110,6 +110,19 @@ class Table:
             time_col=self.time_col,
         )
 
+    def from_(self, time_stamp: pd.Timestamp) -> Self:
+        r"""Returns a table with all rows from time."""
+
+        if self.time_col is None:
+            return self
+
+        return Table(
+            df=self.df.query(f"{self.time_col} >= @time_stamp"),
+            fkey_col_to_pkey_table=self.fkey_col_to_pkey_table,
+            pkey_col=self.pkey_col,
+            time_col=self.time_col,
+        )
+
     @property
     @lru_cache(maxsize=None)
     def min_timestamp(self) -> pd.Timestamp:

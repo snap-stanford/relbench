@@ -15,7 +15,6 @@ class HMDataset(RelBenchDataset):
     )
     # Train for the most recent 1 year out of 2 years of the original
     # time period
-    train_start_timestamp = pd.Timestamp("2019-09-07")
     val_timestamp = pd.Timestamp("2020-09-07")
     test_timestamp = pd.Timestamp("2020-09-14")
     max_eval_time_frames = 1
@@ -54,7 +53,7 @@ class HMDataset(RelBenchDataset):
             transactions_df["t_dat"], format="%Y-%m-%d"
         )
 
-        return Database(
+        db = Database(
             table_dict={
                 "article": Table(
                     df=articles_df,
@@ -76,3 +75,7 @@ class HMDataset(RelBenchDataset):
                 ),
             }
         )
+
+        db = db.from_(pd.Timestamp("2019-09-07"))
+
+        return db

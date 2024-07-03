@@ -20,7 +20,6 @@ class Dataset:
     def __init__(
         self,
         db: Database,
-        train_start_timestamp: Optional[pd.Timestamp],
         val_timestamp: pd.Timestamp,
         test_timestamp: pd.Timestamp,
         max_eval_time_frames: int,
@@ -29,15 +28,12 @@ class Dataset:
 
         Args:
             db (Database): The database object.
-            train_start_timestamp (pd.Timestamp, optional): If specified, we create
-                train table after the specified time.
             val_timestamp (pd.Timestamp): The first timestamp for making val table.
             test_timestamp (pd.Timestamp): The first timestamp for making test table.
             max_eval_time_frames (int): The maximum number of unique timestamps used to build test and val tables.
 
         """
         self._full_db = db
-        self.train_start_timestamp = train_start_timestamp
         self.val_timestamp = val_timestamp
         self.test_timestamp = test_timestamp
         self.max_eval_time_frames = max_eval_time_frames
@@ -74,7 +70,6 @@ class Dataset:
 
 class RelBenchDataset(Dataset):
     name: str
-    train_start_timestamp: Optional[pd.Timestamp] = None
     val_timestamp: pd.Timestamp
     test_timestamp: pd.Timestamp
 
@@ -111,7 +106,6 @@ class RelBenchDataset(Dataset):
 
         super().__init__(
             db,
-            self.train_start_timestamp,
             self.val_timestamp,
             self.test_timestamp,
             self.max_eval_time_frames,
