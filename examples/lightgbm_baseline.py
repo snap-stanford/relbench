@@ -9,16 +9,15 @@ import torch_frame
 from inferred_stypes import dataset2inferred_stypes
 from text_embedder import GloveTextEmbedding
 from torch_frame.config.text_embedder import TextEmbedderConfig
-from torch_frame.data import Dataset
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench.data import RelBenchDataset, RelBenchNodeTask
-from relbench.data.task_base import TaskType
+from relbench.data import Dataset, NodeTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.external.utils import remove_pkey_fkey
+from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
@@ -44,12 +43,12 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-task: RelBenchNodeTask = dataset.get_task(args.task, process=True)
+dataset: Dataset = get_dataset(args.dataset)
+task: NodeTask = get_task(args.dataset, args.task)
 
-train_table = task.train_table
-val_table = task.val_table
-test_table = task.test_table
+train_table = task.get_table("train")
+val_table = task.get_table("val")
+test_table = task.get_table("test")
 
 ar_label_cols = []
 
@@ -93,7 +92,7 @@ if args.use_ar_label:
             )
 
 dfs: Dict[str, pd.DataFrame] = {}
-entity_table = dataset.db.table_dict[task.entity_table]
+entity_table = dataset.get_db().table_dict[task.entity_table]
 entity_df = entity_table.df
 
 col_to_stype = dataset2inferred_stypes[args.dataset][task.entity_table]
@@ -133,7 +132,7 @@ for split, table in [
         right_on=entity_table.pkey_col,
     )
 
-train_dataset = Dataset(
+train_dataset = torch_frame.data.Dataset(
     df=dfs["train"],
     col_to_stype=col_to_stype,
     target_col=task.target_col,
