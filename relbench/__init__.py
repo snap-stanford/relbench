@@ -4,7 +4,6 @@ DOWNLOAD_REGISTRY = pooch.create(
     path=pooch.os_cache("relbench"),
     base_url="https://relbench.stanford.edu/staging_data/",  # TODO: change
     registry={
-<<<<<<< HEAD
         "rel-amazon/db.zip": "2fb5d1b6f0d8886374bc25b3a81becbe191ad30e524ac7fb998bab4c87010adc",
         "rel-avito/db.zip": "09fe913ece4f17f79ca0d2c1d25ed9f6f7e803fa4a08dcf520b7a0e73f34b1ed",
         "rel-event/db.zip": "141f4842600d091250c1f94e4c479c35e76d7ec3aef9155316f83d4828d85e5e",
