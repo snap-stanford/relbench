@@ -79,8 +79,6 @@ class EventDataset(Dataset):
             event_interest_df["timestamp"]
         ).dt.tz_localize(None)
 
-<<<<<<< HEAD
-=======
         if not os.path.exists(os.path.join(path, "user_friends_flattened.csv")):
             user_friends_df = pd.read_csv(user_friends)
             user_friends_df = (
@@ -146,7 +144,6 @@ class EventDataset(Dataset):
                 subset=["user_id"]
             )
 
->>>>>>> main
         db = Database(
             table_dict={
                 "users": Table(
