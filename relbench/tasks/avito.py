@@ -16,7 +16,7 @@ from relbench.metrics import (
 )
 
 
-class AdsClicksTask(NodeTask):
+class AdClicksTask(NodeTask):
     r"""Assuming the ad will be clicked in the next 4 days, predict the
     Click-Through-Rate (CTR) for each ad.
     """
