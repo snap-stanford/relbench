@@ -1,7 +1,6 @@
 from typing import Tuple
 
 import numpy as np
-import pandas as pd
 import sklearn.metrics as skm
 from numpy.typing import NDArray
 
@@ -86,7 +85,6 @@ def r2(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 
 
 ####### Multilabel metrics
-## TODO: revisit Multi-label metrics
 def multilabel_auprc_micro(true: NDArray[np.int_], pred: NDArray[np.float64]) -> float:
     # Flatten true and prediction arrays for micro-average computation
     true_flat = np.ravel(np.stack(true))

@@ -20,6 +20,7 @@ class NodeTask(BaseTask):
     task_type: TaskType
     timedelta: pd.Timedelta
     metrics: List[Callable[[NDArray, NDArray], float]]
+    num_eval_timestamps: int = 1
 
     def filter_dangling_entities(self, table: Table) -> Table:
         db = self.dataset.get_db()

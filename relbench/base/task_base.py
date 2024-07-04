@@ -34,6 +34,7 @@ class BaseTask:
 
     task_type: TaskType
     timedelta: pd.Timedelta
+    num_eval_timestamps: int = 1
     metrics: List[Callable[[NDArray, NDArray], float]]
 
     def __init__(
@@ -85,7 +86,7 @@ class BaseTask:
             start = self.dataset.val_timestamp
             end = min(
                 self.dataset.val_timestamp
-                + self.timedelta * (self.dataset.max_eval_time_frames - 1),
+                + self.timedelta * (self.num_eval_timestamps - 1),
                 self.dataset.test_timestamp - self.timedelta,
             )
             freq = self.timedelta
@@ -101,7 +102,7 @@ class BaseTask:
             start = self.dataset.test_timestamp
             end = min(
                 self.dataset.test_timestamp
-                + self.timedelta * (self.dataset.max_eval_time_frames - 1),
+                + self.timedelta * (self.num_eval_timestamps - 1),
                 db.max_timestamp - self.timedelta,
             )
             freq = self.timedelta
