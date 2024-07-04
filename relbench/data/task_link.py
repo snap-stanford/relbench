@@ -18,7 +18,7 @@ import pandas as pd
 from numpy.typing import NDArray
 
 from relbench.data.table import Table
-from relbench.data.task_base import BaseTask, _pack_tables
+from relbench.data.task_base import BaseTask, TaskType
 from relbench.external.utils import to_unix_time
 
 if TYPE_CHECKING:
@@ -35,6 +35,7 @@ class LinkTask(BaseTask):
     dst_entity_table: str
     time_col: str
     eval_k: int
+    task_type: TaskType
     timedelta: pd.Timedelta
     metrics: List[Callable[[NDArray, NDArray], float]]
 

@@ -1,27 +1,14 @@
 from __future__ import annotations
 
 import os
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
 from relbench.data.table import Table
-from relbench.data.task_base import BaseTask, TaskType, _pack_tables
-
-if TYPE_CHECKING:
-    from relbench.data import Dataset
+from relbench.data.task_base import BaseTask, TaskType
 
 
 class NodeTask(BaseTask):
@@ -32,6 +19,7 @@ class NodeTask(BaseTask):
     entity_table: str
     time_col: str
     target_col: str
+    task_type: TaskType
     timedelta: pd.Timedelta
     metrics: List[Callable[[NDArray, NDArray], float]]
 

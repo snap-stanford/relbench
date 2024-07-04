@@ -41,7 +41,13 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, stype]]:
 
     inferred_col_to_stype_dict = {}
     for table_name, table in db.table_dict.items():
-        inferred_col_to_stype = infer_df_stype(table.df)
+        df = table.df
+        df = df.sample(min(1_000, len(df)))
+        inferred_col_to_stype = infer_df_stype(df)
+        # Hack for now. This is relevant for rel-amazon.
+        for col, stype_ in inferred_col_to_stype.items():
+            if stype_.value == "embedding":
+                inferred_col_to_stype[col] = stype.multicategorical
         inferred_col_to_stype_dict[table_name] = inferred_col_to_stype
 
     return inferred_col_to_stype_dict

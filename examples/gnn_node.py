@@ -40,7 +40,7 @@ parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--cache_dir",
     type=str,
-    default=os.path.expanduser("~/.cache/relbench"),
+    default=os.path.expanduser("~/.cache/relbench_examples"),
 )
 args = parser.parse_args()
 
@@ -50,8 +50,8 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: Dataset = get_dataset(args.dataset)
-task: NodeTask = get_task(args.dataset, args.task)
+dataset: Dataset = get_dataset(args.dataset, download=True)
+task: NodeTask = get_task(args.dataset, args.task, download=True)
 
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
@@ -63,6 +63,7 @@ try:
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
     col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
 

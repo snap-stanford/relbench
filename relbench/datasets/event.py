@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 
 import pandas as pd
+import pooch
 
 from relbench.data import Database, Dataset, Table
 from relbench.utils import decompress_gz_file, unzip_processor
@@ -78,71 +79,6 @@ class EventDataset(Dataset):
         event_interest_df["timestamp"] = pd.to_datetime(
             event_interest_df["timestamp"]
         ).dt.tz_localize(None)
-
-        if not os.path.exists(os.path.join(path, "user_friends_flattened.csv")):
-            user_friends_df = pd.read_csv(user_friends)
-            user_friends_df = (
-                user_friends_df.set_index("user")["friends"]
-                .str.split(expand=True)
-                .stack()
-                .reset_index()
-            )
-            user_friends_df.columns = ["user", "index", "friend"]
-            user_friends_flattened_df = user_friends_df.drop("index", axis=1).assign(
-                user=lambda df: df["user"].astype(int),
-                friend=lambda df: df["friend"].astype(int),
-            )
-            user_friends_flattened_df.to_csv(
-                os.path.join(path, "user_friends_flattened.csv")
-            )
-        else:
-            user_friends_flattened_df = pd.read_csv(
-                os.path.join(path, "user_friends_flattened.csv")
-            )
-
-        if not os.path.exists(os.path.join(path, "event_attendees_flattened.csv")):
-            event_attendees_df = pd.read_csv(event_attendees)
-            melted_df = event_attendees_df.melt(
-                id_vars=["event"],
-                value_vars=["yes", "maybe", "invited", "no"],
-                var_name="status",
-                value_name="user_ids",
-            )
-            melted_df = melted_df.dropna()
-            melted_df["user_ids"] = melted_df["user_ids"].str.split()
-            melted_df["user_ids"] = melted_df["user_ids"].apply(
-                lambda x: [int(i) for i in x]
-            )
-            exploded_df = melted_df.explode("user_ids")
-            exploded_df["user_ids"] = exploded_df["user_ids"].astype(int)
-            exploded_df.rename(columns={"user_ids": "user_id"}, inplace=True)
-            exploded_df = pd.merge(
-                exploded_df,
-                events_df[["event_id", "start_time"]],
-                left_on="event",
-                right_on="event_id",
-                how="left",
-            )
-            exploded_df = exploded_df.drop("event_id", axis=1)
-            event_attendees_flattened_df = exploded_df.dropna(subset=["user_id"])
-            event_attendees_flattened_df.to_csv(
-                os.path.join(path, "event_attendees_flattened.csv")
-            )
-        else:
-            event_attendees_flattened_df = pd.read_csv(
-                os.path.join(path, "event_attendees_flattened.csv")
-            )
-            event_attendees_flattened_df["start_time"] = pd.to_datetime(
-                event_attendees_flattened_df["start_time"], errors="coerce"
-            )
-            event_attendees_flattened_df["start_time"] = (
-                event_attendees_flattened_df["start_time"]
-                .dt.tz_localize(None)
-                .apply(pd.Timestamp)
-            )
-            event_attendees_flattened_df = event_attendees_flattened_df.dropna(
-                subset=["user_id"]
-            )
 
         db = Database(
             table_dict={
