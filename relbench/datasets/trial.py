@@ -9,11 +9,9 @@ from relbench.utils import unzip_processor
 
 
 class TrialDataset(Dataset):
-    name = "rel-trial"
     # 1 year gap
     val_timestamp = pd.Timestamp("2020-01-01")
     test_timestamp = pd.Timestamp("2021-01-01")
-    max_eval_time_frames = 1
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""

@@ -8,7 +8,6 @@ from relbench.base import Database, Dataset, Table
 
 
 class HMDataset(Dataset):
-    name = "rel-hm"
     url = (
         "https://www.kaggle.com/competitions/"
         "h-and-m-personalized-fashion-recommendations"
@@ -17,7 +16,6 @@ class HMDataset(Dataset):
     # time period
     val_timestamp = pd.Timestamp("2020-09-07")
     test_timestamp = pd.Timestamp("2020-09-14")
-    max_eval_time_frames = 1
 
     def make_db(self) -> Database:
         path = os.path.join("data", "hm-recommendation")
