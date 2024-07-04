@@ -2,9 +2,9 @@ import argparse
 import copy
 import json
 import os
+import warnings
 from pathlib import Path
 from typing import Dict, Tuple
-import warnings
 
 import numpy as np
 import torch
@@ -19,7 +19,7 @@ from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
 from relbench.base import Dataset, LinkTask, TaskType
-from relbench.basesets import get_dataset
+from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.loader import LinkNeighborLoader
 from relbench.modeling.utils import get_stype_proposal
