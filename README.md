@@ -44,7 +44,13 @@ This paper outlines our proposal for how to do end-to-end deep learning on relat
 
 <p align="center"><img src="https://relbench.stanford.edu/img/relbench-fig.png" alt="logo" width="900px" /></p>
 
-TODO: say more.
+RelBench has the following main components:
+1. 7 databases, each automatically downloadable for ease of use (with the exception of H&M, for which RelBench gives other instructions)
+2. Easy 1-line loading of data, including loading the raw tables, and also code for constructing a graph from pkey-fkey links
+3. Your own model, which can use any deep learning stack since RelBench is framework-agnostic. We provide a first model implementation using PyTorch Geometric and PyTorch Frame.
+4. Standardized evaluators - all you need to do is produce a list of predictions for test samples, and RelBench computes metrics to ensure standardized evaluation
+5. A leaderboard you can upload your results to, to track SOTA progress. 
+ 
 
 # Installation
 
