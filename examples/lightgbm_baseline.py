@@ -1,13 +1,15 @@
 import argparse
+import json
 import os
+from pathlib import Path
 from typing import Dict
 
 import numpy as np
 import pandas as pd
 import torch
 import torch_frame
-from inferred_stypes import dataset2inferred_stypes
 from text_embedder import GloveTextEmbedding
+from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
@@ -16,7 +18,7 @@ from tqdm import tqdm
 
 from relbench.data import Dataset, NodeTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.external.utils import remove_pkey_fkey
+from relbench.external.utils import get_stype_proposal, remove_pkey_fkey
 from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
@@ -34,7 +36,7 @@ parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--cache_dir",
     type=str,
-    default=os.path.expanduser("~/.cache/relbench/materialized"),
+    default=os.path.expanduser("~/.cache/relbench"),
 )
 args = parser.parse_args()
 
@@ -95,7 +97,19 @@ dfs: Dict[str, pd.DataFrame] = {}
 entity_table = dataset.get_db().table_dict[task.entity_table]
 entity_df = entity_table.df
 
-col_to_stype = dataset2inferred_stypes[args.dataset][task.entity_table]
+stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
+try:
+    with open(stypes_cache_path, "r") as f:
+        col_to_stype_dict = json.load(f)
+    for table, col_to_stype in col_to_stype_dict.items():
+        for col, stype_str in col_to_stype.items():
+            col_to_stype[col] = stype(stype_str)
+except FileNotFoundError:
+    col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    with open(stypes_cache_path, "w") as f:
+        json.dump(col_to_stype_dict, f, indent=2, default=str)
+
+col_to_stype = col_to_stype_dict[task.entity_table]
 remove_pkey_fkey(col_to_stype, entity_table)
 
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
@@ -141,9 +155,9 @@ train_dataset = torch_frame.data.Dataset(
         batch_size=256,
     ),
 )
-train_dataset = train_dataset.materialize(
-    path=os.path.join(args.cache_dir, f"{args.dataset}_{args.task}.pt")
-)
+path = Path(f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/train.pt")
+path.parent.mkdir(parents=True, exist_ok=True)
+train_dataset = train_dataset.materialize(path=path)
 
 tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])

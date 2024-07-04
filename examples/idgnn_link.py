@@ -1,16 +1,18 @@
 import argparse
 import copy
+import json
 import os
+from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-from inferred_stypes import dataset2inferred_stypes
 from model import Model
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
 from torch.utils.tensorboard import SummaryWriter
+from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
@@ -21,6 +23,7 @@ from relbench.data import Dataset, LinkTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.external.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.external.loader import SparseTensor
+from relbench.external.utils import get_stype_proposal
 from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
@@ -39,9 +42,7 @@ parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
-    "--cache_dir",
-    type=str,
-    default=os.path.expanduser("~/.cache/relbench/materialized"),
+    "--cache_dir", type=str, default=os.path.expanduser("~/.cache/relbench")
 )
 args = parser.parse_args()
 
@@ -56,7 +57,17 @@ task: LinkTask = get_task(args.dataset, args.task)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
-col_to_stype_dict = dataset2inferred_stypes[args.dataset]
+stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
+try:
+    with open(stypes_cache_path, "r") as f:
+        col_to_stype_dict = json.load(f)
+    for table, col_to_stype in col_to_stype_dict.items():
+        for col, stype_str in col_to_stype.items():
+            col_to_stype[col] = stype(stype_str)
+except FileNotFoundError:
+    col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    with open(stypes_cache_path, "w") as f:
+        json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 data, col_stats_dict = make_pkey_fkey_graph(
     dataset.get_db(),
@@ -64,7 +75,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    cache_dir=os.path.join(args.cache_dir, args.dataset),
+    cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
 )
 
 num_neighbors = [int(args.num_neighbors // 2**i) for i in range(args.num_layers)]

@@ -9,16 +9,12 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
 from torch_geometric.typing import NodeType
 
-from relbench.data import LinkTask
 from relbench.data.task_base import TaskType
 from relbench.datasets.fake import FakeDataset
-from relbench.external.graph import (
-    get_link_train_table_input,
-    get_stype_proposal,
-    make_pkey_fkey_graph,
-)
+from relbench.external.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.external.loader import SparseTensor
 from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
+from relbench.external.utils import get_stype_proposal
 from relbench.tasks.amazon import UserItemPurchaseTask
 
 
