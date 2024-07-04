@@ -19,7 +19,6 @@ from relbench.metrics import (
 class StudyOutcomeTask(NodeTask):
     r"""Predict if the trials in the next 1 year will achieve its primary outcome."""
 
-    name = "study-outcome"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "nct_id"
     entity_table = "studies"
@@ -81,7 +80,6 @@ class StudyOutcomeTask(NodeTask):
 class StudyAdverseTask(NodeTask):
     r"""Predict the number of affected patients with severe advsere events/death for the trial in the next 1 year."""
 
-    name = "study-adverse"
     task_type = TaskType.REGRESSION
     entity_col = "nct_id"
     entity_table = "studies"
@@ -136,7 +134,6 @@ class StudyAdverseTask(NodeTask):
 class SiteSuccessTask(NodeTask):
     r"""Predict the success rate of a trial site in the next 1 year."""
 
-    name = "site-success"
     task_type = TaskType.REGRESSION
     entity_col = "facility_id"
     entity_table = "facilities"
@@ -195,7 +192,6 @@ class SiteSuccessTask(NodeTask):
 class ConditionSponsorRunTask(LinkTask):
     r"""Predict whether this condition will have which sponsors."""
 
-    name = "condition-sponsor-run"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "condition_id"
     src_entity_table = "conditions"
@@ -240,7 +236,6 @@ class ConditionSponsorRunTask(LinkTask):
 class SiteSponsorRunTask(LinkTask):
     r"""Predict whether this sponsor will have a trial in a facility."""
 
-    name = "site-sponsor-run"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "facility_id"
     src_entity_table = "facilities"

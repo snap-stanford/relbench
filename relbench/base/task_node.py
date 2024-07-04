@@ -13,7 +13,6 @@ from .task_base import BaseTask, TaskType
 class NodeTask(BaseTask):
     r"""A link prediction task on a dataset."""
 
-    name: str
     entity_col: str
     entity_table: str
     time_col: str

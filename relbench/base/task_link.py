@@ -15,7 +15,6 @@ from .task_base import BaseTask, TaskType
 class LinkTask(BaseTask):
     r"""A link prediction task on a dataset."""
 
-    name: str
     src_entity_col: str
     src_entity_table: str
     dst_entity_col: str
