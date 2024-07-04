@@ -1,4 +1,5 @@
 import os
+import os.path as osp
 import shutil
 from pathlib import Path
 
@@ -34,48 +35,50 @@ class EventDataset(Dataset):
                 self.err_msg.format(data=table_path, url=self.url, path=table_path)
 
     def make_db(self) -> Database:
-        url = "https://relbench.stanford.edu/data/rel-event-raw.zip"
-        path = pooch.retrieve(
-            url,
-            known_hash="9cb01d6e5e8bd60db61c769656d69bdd0864ed8030d9932784e8338ed5d1183e",
-            progressbar=True,
-            processor=unzip_processor,
+        path = osp.join(osp.dirname(osp.realpath(__file__)), "..", "data", "rel-event")
+        users = os.path.join(path, "users.csv")
+        user_friends = os.path.join(path, "user_friends.csv")
+        events = os.path.join(path, "events.csv")
+        event_attendees = os.path.join(path, "event_attendees.csv")
+        if not (os.path.exists(users)):
+            if not os.path.exists(zip):
+                raise RuntimeError(
+                    self.err_msg.format(data="Dataset", url=self.url, path=zip)
+                )
+            else:
+                shutil.unpack_archive(zip, Path(zip).parent)
+        self.check_table_and_decompress_if_exists(
+            user_friends, os.path.join(path, "user_friends_flattened.csv")
         )
-        users_df = pd.read_csv(
-            os.path.join(path, "users.csv"), parse_dates=["joinedAt"]
+        self.check_table_and_decompress_if_exists(events)
+        self.check_table_and_decompress_if_exists(
+            event_attendees, os.path.join(path, "event_attendees_flattened.csv")
         )
-        friends_df = pd.read_csv(
-            os.path.join(path, "users.csv"), parse_dates=["joinedAt"]
-        )
-        user_friends_df = pd.read_csv(os.path.join(path, "user_friends.csv"))
-        events_df = pd.read_csv(os.path.join(path, "events.csv"))
-        events_df = events_df.dropna()
-        events_df["user_id"] = events_df["user_id"].astype(int)
-        event_attendees_df = pd.read_csv(os.path.join(path, "event_attendees.csv"))
-        event_interest_df = pd.read_csv(os.path.join(path, "train.csv"))
+        users_df = pd.read_csv(users, dtype={"user_id": int}, parse_dates=["joinedAt"])
+        users_df["birthyear"] = pd.to_numeric(users_df["birthyear"], errors="coerce")
         users_df["joinedAt"] = pd.to_datetime(
             users_df["joinedAt"], errors="coerce"
         ).dt.tz_localize(None)
-        users_df["birthyear"] = pd.to_numeric(users_df["birthyear"], errors="coerce")
-        friends_df["joinedAt"] = pd.to_datetime(
-            friends_df["joinedAt"], errors="coerce"
-        ).dt.tz_localize(None)
+
+        friends_df = pd.read_csv(
+            users, dtype={"user_id": int}, parse_dates=["joinedAt"]
+        )
         friends_df["birthyear"] = pd.to_numeric(
             friends_df["birthyear"], errors="coerce"
         )
+        friends_df["joinedAt"] = pd.to_datetime(
+            friends_df["joinedAt"], errors="coerce"
+        ).dt.tz_localize(None)
+        events_df = pd.read_csv(events)
         events_df["start_time"] = pd.to_datetime(
             events_df["start_time"], errors="coerce"
         ).dt.tz_localize(None)
 
+        train = os.path.join(path, "train.csv")
+        event_interest_df = pd.read_csv(train)
         event_interest_df["timestamp"] = pd.to_datetime(
-            event_interest_df["timestamp"], errors="coerce"
+            event_interest_df["timestamp"]
         ).dt.tz_localize(None)
-        event_attendees_df["start_time"] = pd.to_datetime(
-            event_attendees_df["start_time"], errors="coerce"
-        )
-        event_attendees_df["start_time"] = (
-            event_attendees_df["start_time"].dt.tz_localize(None).apply(pd.Timestamp)
-        )
 
         db = Database(
             table_dict={
@@ -98,7 +101,7 @@ class EventDataset(Dataset):
                     time_col="start_time",
                 ),
                 "event_attendees": Table(
-                    df=event_attendees_df,
+                    df=event_attendees_flattened_df,
                     fkey_col_to_pkey_table={
                         "event": "events",
                         "user_id": "users",
@@ -114,7 +117,7 @@ class EventDataset(Dataset):
                     time_col="timestamp",
                 ),
                 "user_friends": Table(
-                    df=user_friends_df,
+                    df=user_friends_flattened_df,
                     fkey_col_to_pkey_table={
                         "user": "users",
                         "friend": "friends",
