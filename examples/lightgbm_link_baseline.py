@@ -28,6 +28,7 @@ PRED_SCORE_COL_NAME = "pred_score_col_name"
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
 parser.add_argument("--task", type=str, default="user-post-comment")
+parser.add_argument("--num_trials", type=int, default=10)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--sample_size",
@@ -163,7 +164,7 @@ def add_past_label_feature(
     dst_entity_count = exploded_past_table[dst_entity].value_counts().reset_index()
 
     # Calculate the fraction
-    total_right_entities = len(exploded_past_table)
+    # total_right_entities = len(exploded_past_table)
     dst_entity_count["global_popularity_fraction"] = (
         dst_entity_count["count"] / dst_entity_count["count"].max()
     )
@@ -346,9 +347,12 @@ train_dataset = torch_frame.data.Dataset(
         batch_size=256,
     ),
 )
-path = Path(f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/train.pt")
-path.parent.mkdir(parents=True, exist_ok=True)
-train_dataset = train_dataset.materialize(path=path)
+# path = Path(
+#     f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/link_train.pt"
+# )
+# path.parent.mkdir(parents=True, exist_ok=True)
+# train_dataset = train_dataset.materialize(path=path)
+train_dataset = train_dataset.materialize()
 
 tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
@@ -358,7 +362,7 @@ tf_test = train_dataset.convert_to_tensor_frame(dfs["test"])
 # tune metric for binary classification problem
 tune_metric = Metric.ROCAUC
 model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
-model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
+model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 
 
 def evaluate(
@@ -424,7 +428,7 @@ train_metrics = evaluate(
     lightgbm_output,
     src_entity,
     dst_entity,
-    task.train_table.time_col,
+    train_table.time_col,
     task.eval_k,
     PRED_SCORE_COL_NAME,
     sampled_train_table,
@@ -439,7 +443,7 @@ val_metrics = evaluate(
     lightgbm_output,
     src_entity,
     dst_entity,
-    task.train_table.time_col,
+    train_table.time_col,
     task.eval_k,
     PRED_SCORE_COL_NAME,
     val_table,
@@ -455,7 +459,7 @@ test_metrics = evaluate(
     lightgbm_output,
     src_entity,
     dst_entity,
-    task.train_table.time_col,
+    train_table.time_col,
     task.eval_k,
     PRED_SCORE_COL_NAME,
     test_table,

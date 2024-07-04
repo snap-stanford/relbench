@@ -1,7 +1,4 @@
 import os
-import os.path as osp
-import shutil
-from pathlib import Path
 
 import pandas as pd
 import pooch

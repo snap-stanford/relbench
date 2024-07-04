@@ -1,17 +1,6 @@
 from __future__ import annotations
 
-import os
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import Callable, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -20,9 +9,6 @@ from numpy.typing import NDArray
 from relbench.data.table import Table
 from relbench.data.task_base import BaseTask, TaskType
 from relbench.external.utils import to_unix_time
-
-if TYPE_CHECKING:
-    from relbench.data import Dataset
 
 
 class LinkTask(BaseTask):

@@ -24,6 +24,7 @@ from relbench.tasks import get_task
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
 parser.add_argument("--task", type=str, default="user-engage")
+parser.add_argument("--num_trials", type=int, default=10)
 # Use auto-regressive label as hand-crafted feature as input to LightGBM
 parser.add_argument("--use_ar_label", action="store_true")
 parser.add_argument(
@@ -156,7 +157,9 @@ train_dataset = torch_frame.data.Dataset(
         batch_size=256,
     ),
 )
-path = Path(f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/train.pt")
+path = Path(
+    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/node_train.pt"
+)
 path.parent.mkdir(parents=True, exist_ok=True)
 train_dataset = train_dataset.materialize(path=path)
 
@@ -176,7 +179,7 @@ else:
 
 if task.task_type in [TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION]:
     model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
-    model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
+    model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 
     pred = model.predict(tf_test=tf_train).numpy()
     train_metrics = task.evaluate(pred, train_table)
