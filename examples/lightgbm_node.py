@@ -26,7 +26,8 @@ parser.add_argument("--dataset", type=str, default="rel-stack")
 parser.add_argument("--task", type=str, default="user-engage")
 parser.add_argument("--num_trials", type=int, default=10)
 # Use auto-regressive label as hand-crafted feature as input to LightGBM
-parser.add_argument("--use_ar_label", action="store_true")
+parser.add_argument("--use_ar_label", action="store_true", default=False)
+parser.add_argument("--no-use_ar_label", dest="use_ar_label", action="store_false")
 parser.add_argument(
     "--sample_size",
     type=int,
