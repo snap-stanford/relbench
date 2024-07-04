@@ -1,8 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, LinkTask, NodeTask, Table
-from relbench.data.task_base import TaskType
+from relbench.base import Database, LinkTask, NodeTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
     average_precision,

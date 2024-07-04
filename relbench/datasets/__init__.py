@@ -4,8 +4,8 @@ from functools import lru_cache
 
 import pooch
 
-from ..data import Dataset
-from . import amazon, avito, event, f1, hm, stack, trial
+from relbench.base import Dataset
+from relbench.datasets import amazon, avito, event, f1, hm, stack, trial
 
 dataset_registry = {}
 

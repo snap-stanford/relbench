@@ -5,9 +5,9 @@ from functools import lru_cache
 
 import pooch
 
-from ..data import BaseTask
-from ..datasets import get_dataset
-from . import amazon, avito, event, f1, hm, stack, trial
+from relbench.base import BaseTask
+from relbench.datasets import get_dataset
+from relbench.tasks import amazon, avito, event, f1, hm, stack, trial
 
 task_registry = defaultdict(dict)
 

@@ -6,7 +6,7 @@ from typing import Dict, Union
 import pandas as pd
 from typing_extensions import Self
 
-from relbench.data.table import Table
+from .table import Table
 
 
 class Database:

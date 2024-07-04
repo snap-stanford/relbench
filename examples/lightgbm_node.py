@@ -16,9 +16,9 @@ from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench.data import Dataset, NodeTask, TaskType
+from relbench.base import Dataset, NodeTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.external.utils import get_stype_proposal, remove_pkey_fkey
+from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()

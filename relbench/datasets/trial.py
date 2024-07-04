@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pooch
 
-from relbench.data import Database, Dataset, Table
+from relbench.base import Database, Dataset, Table
 from relbench.utils import unzip_processor
 
 

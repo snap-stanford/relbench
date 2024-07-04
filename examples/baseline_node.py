@@ -7,7 +7,7 @@ import torch
 from scipy.stats import mode
 from torch_geometric.seed import seed_everything
 
-from relbench.data import Dataset, NodeTask, Table, TaskType
+from relbench.base import Dataset, NodeTask, Table, TaskType
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task
 

@@ -6,9 +6,10 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from relbench.data.table import Table
-from relbench.data.task_base import BaseTask, TaskType
-from relbench.external.utils import to_unix_time
+# TODO: remove!
+from ..modeling.utils import to_unix_time
+from .table import Table
+from .task_base import BaseTask, TaskType
 
 
 class LinkTask(BaseTask):

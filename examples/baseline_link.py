@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from torch_geometric.seed import seed_everything
 
-from relbench.data import Dataset, LinkTask, Table
+from relbench.base import Dataset, LinkTask, Table
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task
 

@@ -6,9 +6,9 @@ from typing import Callable, List, Optional
 import pandas as pd
 from numpy.typing import NDArray
 
-from relbench.data.database import Database
-from relbench.data.dataset import Dataset
-from relbench.data.table import Table
+from .database import Database
+from .dataset import Dataset
+from .table import Table
 
 
 class TaskType(Enum):

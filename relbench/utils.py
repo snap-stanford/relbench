@@ -9,7 +9,7 @@ import networkx as nx
 import pandas as pd
 import pooch
 
-from relbench.data import Database
+from relbench.base import Database
 
 
 def decompress_gz_file(input_path: str, output_path: str):

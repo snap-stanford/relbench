@@ -10,13 +10,12 @@ from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.typing import NodeType
 
-from relbench.data import LinkTask
-from relbench.data.task_base import TaskType
+from relbench.base import LinkTask, TaskType
 from relbench.datasets.fake import FakeDataset
-from relbench.external.graph import get_link_train_table_input, make_pkey_fkey_graph
-from relbench.external.loader import LinkNeighborLoader
-from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
-from relbench.external.utils import get_stype_proposal, to_unix_time
+from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
+from relbench.modeling.loader import LinkNeighborLoader
+from relbench.modeling.nn import HeteroEncoder, HeteroGraphSAGE
+from relbench.modeling.utils import get_stype_proposal, to_unix_time
 from relbench.tasks.amazon import UserItemPurchaseTask
 
 

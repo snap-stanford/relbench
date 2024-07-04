@@ -17,10 +17,10 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench.data import Dataset, NodeTask, TaskType
+from relbench.base import Dataset, NodeTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.external.graph import get_node_train_table_input, make_pkey_fkey_graph
-from relbench.external.utils import get_stype_proposal
+from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
+from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
