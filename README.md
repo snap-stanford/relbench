@@ -70,11 +70,11 @@ from relbench.datasets import dataset_names
 print(dataset_names)
 ```
 
-For a concrete example, to obtain the `rel-stackex` relational database, do:
+For a concrete example, to obtain the `rel-stack` relational database, a database of questions and answers from Stack Exchange, do:
 
 ```python
 from relbench.datasets import get_dataset
-dataset = get_dataset(name="rel-stackex")
+dataset = get_dataset(name="rel-stack")
 ```
 
 To see the tasks available for this dataset:
