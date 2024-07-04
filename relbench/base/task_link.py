@@ -1,21 +1,15 @@
 from __future__ import annotations
 
-from typing import (
-    Callable,
-    Dict,
-    List,
-    Optional,
-)
+from typing import Callable, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from .table import Table
-from .task_base import BaseTask, TaskType
-
 # TODO: remove!
 from ..modeling.utils import to_unix_time
+from .table import Table
+from .task_base import BaseTask, TaskType
 
 
 class LinkTask(BaseTask):

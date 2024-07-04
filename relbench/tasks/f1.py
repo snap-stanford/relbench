@@ -2,15 +2,7 @@ import duckdb
 import pandas as pd
 
 from relbench.base import Database, NodeTask, Table, TaskType
-from relbench.metrics import (
-    accuracy,
-    average_precision,
-    f1,
-    mae,
-    r2,
-    rmse,
-    roc_auc,
-)
+from relbench.metrics import accuracy, average_precision, f1, mae, r2, rmse, roc_auc
 
 
 class DriverPositionTask(NodeTask):
