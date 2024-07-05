@@ -106,7 +106,7 @@ class LinkTask(BaseTask):
     def test_seed_time(self) -> int:
         return to_unix_time(pd.Series([self.dataset.test_timestamp]))[0]
 
-    def stats(self) -> dict[str, dict[str, int]]:
+    def stats(self) -> Dict[str, Dict[str, int]]:
         r"""Get train / val / test table statistics for each timestamp
         and the whole table, including number of unique source entities,
         number of unique destination entities, number of destination
