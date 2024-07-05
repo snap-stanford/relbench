@@ -63,8 +63,6 @@ class BaseTask:
     ) -> Table:
         r"""To be implemented by subclass."""
 
-        # TODO: ensure that tasks follow the right-closed convention
-
         raise NotImplementedError
 
     def _get_table(self, split: str) -> Table:

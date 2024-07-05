@@ -13,15 +13,12 @@ class Database:
     r"""A database is a collection of named tables linked by foreign key -
     primary key connections."""
 
-    # TODO: maybe add a function to visualize schema in jupyter
-
     def __init__(self, table_dict: Dict[str, Table]) -> None:
         r"""Creates a database from a dictionary of tables."""
 
         self.table_dict = table_dict
 
     def __repr__(self) -> str:
-        # TODO: add more info
         return f"{self.__class__.__name__}()"
 
     def save(self, path: Union[str, os.PathLike]) -> None:
