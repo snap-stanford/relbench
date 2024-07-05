@@ -177,7 +177,7 @@ class LinkTask(BaseTask):
         ] = ratio_train_test_entity_overlap
         return res
 
-    def _get_stats(self, df: pd.DataFrame) -> list[int]:
+    def _get_stats(self, df: pd.DataFrame) -> List[int]:
         num_unique_src_entities = df[self.src_entity_col].nunique()
         num_unique_dst_entities = len(
             set(value for row in df[self.dst_entity_col] for value in row)
