@@ -22,16 +22,16 @@ dependencies=[
 	"duckdb",
 	"scikit-learn",
 	"typing-extensions",
-]
 
 [project.optional-dependencies]
-example=[
+full=[
 	"torch",
 	# We rely on https://github.com/pyg-team/pytorch-frame/pull/395 for rel-amazon.
 	# TODO: use the PyPI version when it's released.
 	"pytorch_frame[full] @ git+https://github.com/pyg-team/pytorch-frame",
 	"torch_geometric",
-	"faiss-cpu",
+]
+example=[
 	"sentence-transformers",
 	"tqdm",
 ]
