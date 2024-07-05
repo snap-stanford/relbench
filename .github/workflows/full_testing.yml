@@ -32,7 +32,7 @@ jobs:
 
       - name: Install main package
         run: |
-          pip install .[example,test]
+          pip install .[full,test]
 
       - name: Run tests
         run: |
