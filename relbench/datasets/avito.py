@@ -8,7 +8,6 @@ from relbench.utils import clean_datetime, unzip_processor
 
 
 class AvitoDataset(Dataset):
-    name = "rel-avito"
     url = "https://www.kaggle.com/competitions/avito-context-ad-clicks"
     err_msg = (
         "{data} not found. Please download avito data from "
@@ -18,7 +17,6 @@ class AvitoDataset(Dataset):
     # search stream ranges from 2015-04-25 to 2015-05-20
     val_timestamp = pd.Timestamp("2015-05-08")
     test_timestamp = pd.Timestamp("2015-05-14")
-    max_eval_time_frames = 1
 
     def make_db(self) -> Database:
         # Customize path as necessary

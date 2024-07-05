@@ -8,6 +8,7 @@ from numpy.typing import NDArray
 
 # TODO: remove!
 from ..modeling.utils import to_unix_time
+from .dataset import Dataset
 from .table import Table
 from .task_base import BaseTask, TaskType
 
@@ -15,7 +16,6 @@ from .task_base import BaseTask, TaskType
 class LinkTask(BaseTask):
     r"""A link prediction task on a dataset."""
 
-    name: str
     src_entity_col: str
     src_entity_table: str
     dst_entity_col: str
@@ -25,6 +25,18 @@ class LinkTask(BaseTask):
     task_type: TaskType
     timedelta: pd.Timedelta
     metrics: List[Callable[[NDArray, NDArray], float]]
+    num_eval_timestamps: int = 1
+
+    def __init__(
+        self,
+        dataset: Dataset,
+        cache_dir: Optional[str] = None,
+    ):
+        if self.num_eval_timestamps != 1:
+            raise NotImplementedError(
+                "LinkTask currently only supports num_eval_timestamps=1."
+            )
+        super().__init__(dataset, cache_dir)
 
     def filter_dangling_entities(self, table: Table) -> Table:
         # filter dangling destination entities from a list

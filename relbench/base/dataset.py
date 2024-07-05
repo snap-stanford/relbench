@@ -12,7 +12,6 @@ from .database import Database
 class Dataset:
     val_timestamp: pd.Timestamp
     test_timestamp: pd.Timestamp
-    max_eval_time_frames: int = 1
 
     def __init__(
         self,

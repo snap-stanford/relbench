@@ -34,7 +34,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
         ),
         cache_dir=tmp_path,
     )
-    node_to_col_names_dict = {  # TODO Expose as method in `HeteroData`.
+    node_to_col_names_dict = {
         node_type: data[node_type].tf.col_names_dict for node_type in data.node_types
     }
     encoder = HeteroEncoder(64, node_to_col_names_dict, col_stats_dict)

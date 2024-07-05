@@ -38,11 +38,13 @@ parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 # Use the same seed time across the mini-batch and share the negatives
-# TODO: fix, currently this cannot be made false
 parser.add_argument("--share_same_time", action="store_true", default=True)
+parser.add_argument(
+    "--no-share_same_time", dest="share_same_time", action="store_false"
+)
 # Whether to use shallow embedding on dst nodes or not.
-# TODO: fix, currently this cannot be made false
 parser.add_argument("--use_shallow", action="store_true", default=True)
+parser.add_argument("--no-use_shallow", dest="use_shallow", action="store_false")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)

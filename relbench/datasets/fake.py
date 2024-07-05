@@ -30,7 +30,6 @@ class FakeDataset(Dataset):
         max_timestamp = pd.Timestamp(2 * (num_reviews - 1), unit="D")
         self.val_timestamp = min_timestamp + 0.8 * (max_timestamp - min_timestamp)
         self.test_timestamp = min_timestamp + 0.9 * (max_timestamp - min_timestamp)
-        self.max_eval_time_frames = 1
         super().__init__()
 
     def make_db(self) -> Database:

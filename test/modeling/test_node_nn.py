@@ -27,7 +27,7 @@ def test_node_train_fake_product_dataset(tmp_path):
         ),
         cache_dir=tmp_path,
     )
-    node_to_col_names_dict = {  # TODO Expose as method in `HeteroData`.
+    node_to_col_names_dict = {
         node_type: data[node_type].tf.col_names_dict for node_type in data.node_types
     }
 
@@ -164,7 +164,7 @@ def test_node_train_empty_graph(tmp_path):
         ),
         cache_dir=tmp_path,
     )
-    node_to_col_names_dict = {  # TODO Expose as method in `HeteroData`.
+    node_to_col_names_dict = {
         node_type: data[node_type].tf.col_names_dict for node_type in data.node_types
     }
     loader = NeighborLoader(

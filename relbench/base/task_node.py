@@ -13,7 +13,6 @@ from .task_base import BaseTask, TaskType
 class NodeTask(BaseTask):
     r"""A link prediction task on a dataset."""
 
-    name: str
     entity_col: str
     entity_table: str
     time_col: str
@@ -21,6 +20,7 @@ class NodeTask(BaseTask):
     task_type: TaskType
     timedelta: pd.Timedelta
     metrics: List[Callable[[NDArray, NDArray], float]]
+    num_eval_timestamps: int = 1
 
     def filter_dangling_entities(self, table: Table) -> Table:
         db = self.dataset.get_db()

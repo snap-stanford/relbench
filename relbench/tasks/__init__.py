@@ -63,7 +63,7 @@ register_task("rel-amazon", "user-item-purchase", amazon.UserItemPurchaseTask)
 register_task("rel-amazon", "user-item-rate", amazon.UserItemRateTask)
 register_task("rel-amazon", "user-item-review", amazon.UserItemReviewTask)
 
-register_task("rel-avito", "ads-clicks", avito.AdsClicksTask)
+register_task("rel-avito", "ad-ctr", avito.AdCTRTask)
 register_task("rel-avito", "user-visits", avito.UserVisitsTask)
 register_task("rel-avito", "user-clicks", avito.UserClicksTask)
 register_task("rel-avito", "user-ad-visit", avito.UserAdVisitTask)

@@ -16,12 +16,11 @@ from relbench.metrics import (
 )
 
 
-class AdsClicksTask(NodeTask):
+class AdCTRTask(NodeTask):
     r"""Assuming the ad will be clicked in the next 4 days, predict the
     Click-Through-Rate (CTR) for each ad.
     """
 
-    name = "ads-clicks"
     task_type = TaskType.REGRESSION
     entity_table = "AdsInfo"
     entity_col = "AdID"
@@ -73,7 +72,6 @@ class UserVisitsTask(NodeTask):
     4 days.
     """
 
-    name = "user-visits"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_table = "UserInfo"
     entity_col = "UserID"
@@ -124,7 +122,6 @@ class UserClicksTask(NodeTask):
     the next 4 days
     """
 
-    name = "user-clicks"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_table = "UserInfo"
     entity_col = "UserID"
@@ -181,7 +178,6 @@ class UserClicksTask(NodeTask):
 class UserAdVisitTask(LinkTask):
     r"""Predict the distinct list of ads a user will visit in the next 4 days"""
 
-    name = "user-ad-visit"
     task_type = TaskType.LINK_PREDICTION
     src_entity_table = "UserInfo"
     src_entity_col = "UserID"
