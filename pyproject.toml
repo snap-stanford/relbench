@@ -22,6 +22,7 @@ dependencies=[
 	"duckdb",
 	"scikit-learn",
 	"typing-extensions",
+]
 
 [project.optional-dependencies]
 full=[
