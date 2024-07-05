@@ -108,7 +108,7 @@ train_loader = LinkNeighborLoader(
 
 eval_loaders_dict: Dict[str, Tuple[NeighborLoader, NeighborLoader]] = {}
 for split in ["val", "test"]:
-    timestamp = dataset.val_timestamp if split == "val" else task.test_timestamp
+    timestamp = dataset.val_timestamp if split == "val" else dataset.test_timestamp
     seed_time = int(timestamp.timestamp())
     target_table = task.get_table(split)
     src_node_indices = torch.from_numpy(target_table.df[task.src_entity_col].values)
