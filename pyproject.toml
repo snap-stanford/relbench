@@ -20,24 +20,21 @@ dependencies=[
 	"pyarrow",
 	"numpy",
 	"duckdb",
-	"requests",
-	"tqdm",
 	"scikit-learn",
 	"typing-extensions",
-	"matplotlib",
-	"networkx",
 ]
 
 [project.optional-dependencies]
-example=[
+full=[
 	"torch",
-	"pytorch_frame @ git+https://github.com/pyg-team/pytorch-frame", # TODO: release to pypi
+	# We rely on https://github.com/pyg-team/pytorch-frame/pull/395 for rel-amazon.
+	# TODO: use the PyPI version when it's released.
+	"pytorch_frame[full] @ git+https://github.com/pyg-team/pytorch-frame",
 	"torch_geometric",
-	"faiss-cpu",
+]
+example=[
 	"sentence-transformers",
-	# TODO: should be dependencies of torch_frame actually
-	"lightgbm",
-	"optuna",
+	"tqdm",
 ]
 test=[
 	"pytest",
