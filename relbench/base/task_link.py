@@ -6,8 +6,6 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-# TODO: remove!
-from ..modeling.utils import to_unix_time
 from .dataset import Dataset
 from .table import Table
 from .task_base import BaseTask, TaskType
@@ -89,7 +87,6 @@ class LinkTask(BaseTask):
 
         return {fn.__name__: fn(pred_isin, dst_count) for fn in metrics}
 
-    # TODO: should these be here? seed_time is confusing terminology?
     @property
     def num_src_nodes(self) -> int:
         return len(self.dataset.get_db().table_dict[self.src_entity_table])
@@ -98,15 +95,7 @@ class LinkTask(BaseTask):
     def num_dst_nodes(self) -> int:
         return len(self.dataset.get_db().table_dict[self.dst_entity_table])
 
-    @property
-    def val_seed_time(self) -> int:
-        return to_unix_time(pd.Series([self.dataset.val_timestamp]))[0]
-
-    @property
-    def test_seed_time(self) -> int:
-        return to_unix_time(pd.Series([self.dataset.test_timestamp]))[0]
-
-    def stats(self) -> dict[str, dict[str, int]]:
+    def stats(self) -> Dict[str, Dict[str, int]]:
         r"""Get train / val / test table statistics for each timestamp
         and the whole table, including number of unique source entities,
         number of unique destination entities, number of destination
@@ -177,7 +166,7 @@ class LinkTask(BaseTask):
         ] = ratio_train_test_entity_overlap
         return res
 
-    def _get_stats(self, df: pd.DataFrame) -> list[int]:
+    def _get_stats(self, df: pd.DataFrame) -> List[int]:
         num_unique_src_entities = df[self.src_entity_col].nunique()
         num_unique_dst_entities = len(
             set(value for row in df[self.dst_entity_col] for value in row)

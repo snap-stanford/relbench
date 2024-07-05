@@ -8,17 +8,15 @@ from relbench.utils import clean_datetime, unzip_processor
 
 
 class AvitoDataset(Dataset):
-    url = "https://www.kaggle.com/competitions/avito-context-ad-clicks"
-    err_msg = (
-        "{data} not found. Please download avito data from "
-        "'{url}' and move it to '{path}'."
-    )
+    """Original data source:
+    https://www.kaggle.com/competitions/avito-context-ad-clicks"""
 
     # search stream ranges from 2015-04-25 to 2015-05-20
     val_timestamp = pd.Timestamp("2015-05-08")
     test_timestamp = pd.Timestamp("2015-05-14")
 
     def make_db(self) -> Database:
+        # subsampled version of the original dataset
         # Customize path as necessary
         r"""Process the raw files into a database."""
         url = "https://relbench.stanford.edu/data/rel-avito-raw-100k.zip"
@@ -68,6 +66,8 @@ class AvitoDataset(Dataset):
             phone_requests_stream_df, "PhoneRequestDate"
         )
         visit_stream_df = clean_datetime(visit_stream_df, "ViewDate")
+
+        category_df.drop(columns=["__index_level_0__"], inplace=True)
 
         tables = {}
         tables["AdsInfo"] = Table(
