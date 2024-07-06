@@ -23,7 +23,7 @@ Relational Deep Learning is a new approach for end-to-end representation learnin
 
 Additionally, RelBench provides a first open-source implementation of a Graph Neural Network based approach to relational deep learning. This implementation uses [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) to load the data as a graph and train GNN models, and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame) to encode the various types of table columns. Finally, there is an open [leaderboard](https://huggingface.co/relbench) for tracking progress.
 
-**News July 3rd 2024: RelBench v1 is now released!**
+<!---**News July 3rd 2024: RelBench v1 is now released!**-->
 
 # Key Papers
 
