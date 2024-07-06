@@ -1,8 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
-from relbench.data.task_base import TaskType
+from relbench.base import Database, LinkTask, NodeTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
     average_precision,
@@ -11,22 +10,15 @@ from relbench.metrics import (
     link_prediction_precision,
     link_prediction_recall,
     mae,
-    multilabel_auprc_macro,
-    multilabel_auprc_micro,
-    multilabel_auroc_macro,
-    multilabel_auroc_micro,
-    multilabel_f1_macro,
-    multilabel_f1_micro,
     r2,
     rmse,
     roc_auc,
 )
 
 
-class StudyOutcomeTask(RelBenchNodeTask):
+class StudyOutcomeTask(NodeTask):
     r"""Predict if the trials in the next 1 year will achieve its primary outcome."""
 
-    name = "study-outcome"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "nct_id"
     entity_table = "studies"
@@ -85,10 +77,9 @@ class StudyOutcomeTask(RelBenchNodeTask):
         )
 
 
-class StudyAdverseTask(RelBenchNodeTask):
+class StudyAdverseTask(NodeTask):
     r"""Predict the number of affected patients with severe advsere events/death for the trial in the next 1 year."""
 
-    name = "study-adverse"
     task_type = TaskType.REGRESSION
     entity_col = "nct_id"
     entity_table = "studies"
@@ -140,109 +131,9 @@ class StudyAdverseTask(RelBenchNodeTask):
         )
 
 
-class StudyWithdrawalTask(RelBenchNodeTask):
-    r"""Predict the the set of reasons of withdrawals for each trial in the next 1 year"""
-
-    name = "study-withdrawal"
-    task_type = TaskType.MULTILABEL_CLASSIFICATION
-    entity_col = "nct_id"
-    entity_table = "studies"
-    time_col = "timestamp"
-    target_col = "withdraw_reasons"
-    timedelta = pd.Timedelta(days=365)
-    metrics = [
-        multilabel_auprc_micro,
-        multilabel_auprc_macro,
-        multilabel_auroc_micro,
-        multilabel_auroc_macro,
-    ]
-    num_labels = 15
-
-    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        drop_withdrawals = db.table_dict["drop_withdrawals"].df
-        studies = db.table_dict["studies"].df
-
-        df = duckdb.sql(
-            f"""
-            WITH TRIAL_INFO AS (
-                SELECT
-                    d.nct_id,
-                    d.reason,
-                    s.start_date,
-                    d.date
-                FROM drop_withdrawals d
-                LEFT JOIN studies s
-                ON s.nct_id = d.nct_id
-                WHERE d.reason IN ('Withdrawal by Subject', 'Adverse Event', 'Lost to Follow-up',
-               'Protocol Violation', 'Death', 'Physician Decision', 'Lack of Efficacy',
-               'Pregnancy', 'Progressive Disease', 'Disease Progression',
-               'Sponsor Decision', 'Disease progression', 'Progressive disease',
-               'Study Terminated by Sponsor', 'Non-compliance')
-            )
-
-            SELECT
-                t.timestamp,
-                tr.nct_id,
-                string_agg(tr.reason, ',') AS withdraw_reasons
-            FROM timestamp_df t
-            LEFT JOIN TRIAL_INFO tr
-            ON tr.start_date <= t.timestamp
-                and tr.date > t.timestamp
-                and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
-            GROUP BY t.timestamp, tr.nct_id;
-            """
-        ).df()
-        import numpy as np
-
-        reasons = [
-            "Withdrawal by Subject",
-            "Adverse Event",
-            "Lost to Follow-up",
-            "Protocol Violation",
-            "Death",
-            "Physician Decision",
-            "Lack of Efficacy",
-            "Pregnancy",
-            "Progressive Disease",
-            "Disease Progression",
-            "Sponsor Decision",
-            "Disease progression",
-            "Progressive disease",
-            "Study Terminated by Sponsor",
-            "Non-compliance",
-        ]
-        labels = range(len(reasons))
-        self.label2reason = dict(zip(reasons, labels))
-
-        def map_reasons(x):
-            return np.unique([self.label2reason[i] for i in x.split(",")]).tolist()
-
-        def multi_hot(x):
-            multi_hot = np.zeros(15, dtype=int)
-            multi_hot[x] = 1
-            return multi_hot
-
-        df = df[df["withdraw_reasons"].notnull()]
-        df["withdraw_reasons"] = df.withdraw_reasons.apply(
-            lambda x: multi_hot(map_reasons(x))
-        )
-
-        return Table(
-            df=df,
-            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
-            pkey_col=None,
-            time_col=self.time_col,
-        )
-
-    def get_label_meaning(self):
-        return self.label2reason
-
-
-class SiteSuccessTask(RelBenchNodeTask):
+class SiteSuccessTask(NodeTask):
     r"""Predict the success rate of a trial site in the next 1 year."""
 
-    name = "site-success"
     task_type = TaskType.REGRESSION
     entity_col = "facility_id"
     entity_table = "facilities"
@@ -298,10 +189,9 @@ class SiteSuccessTask(RelBenchNodeTask):
         )
 
 
-class ConditionSponsorRunTask(RelBenchLinkTask):
+class ConditionSponsorRunTask(LinkTask):
     r"""Predict whether this condition will have which sponsors."""
 
-    name = "condition-sponsor-run"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "condition_id"
     src_entity_table = "conditions"
@@ -343,10 +233,9 @@ class ConditionSponsorRunTask(RelBenchLinkTask):
         )
 
 
-class SiteSponsorRunTask(RelBenchLinkTask):
+class SiteSponsorRunTask(LinkTask):
     r"""Predict whether this sponsor will have a trial in a facility."""
 
-    name = "site-sponsor-run"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "facility_id"
     src_entity_table = "facilities"

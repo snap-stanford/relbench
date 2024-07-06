@@ -1,39 +1,19 @@
+import json
 import time
+from pathlib import Path
 
 import pandas as pd
 import pooch
-import pyarrow as pa
+from tqdm.auto import tqdm
 
-from relbench.data import Database, RelBenchDataset, Table
-from relbench.tasks.amazon import (
-    ItemChurnTask,
-    ItemLTVTask,
-    UserChurnTask,
-    UserItemPurchaseTask,
-    UserItemRateTask,
-    UserItemReviewTask,
-    UserLTVTask,
-)
+from relbench.base import Database, Dataset, Table
 
 
-class AmazonDataset(RelBenchDataset):
-    name = "rel-amazon"
+class AmazonDataset(Dataset):
     val_timestamp = pd.Timestamp("2015-10-01")
     test_timestamp = pd.Timestamp("2016-01-01")
-    train_start_timestamp = pd.Timestamp("2008-01-01")
 
     max_eval_time_frames = 1
-    task_cls_list = [
-        UserChurnTask,
-        UserLTVTask,
-        ItemChurnTask,
-        ItemLTVTask,
-        UserItemPurchaseTask,
-        UserItemRateTask,
-        UserItemReviewTask,
-    ]
-
-    category_list = ["books", "fashion"]
 
     url_prefix = "https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2"
     _category_to_url_key = {"books": "Books", "fashion": "AMAZON_FASHION"}
@@ -47,15 +27,11 @@ class AmazonDataset(RelBenchDataset):
         self,
         category: str = "books",
         use_5_core: bool = True,
-        *,
-        process: bool = False,
+        cache_dir: str = None,
     ):
         self.category = category
         self.use_5_core = use_5_core
-
-        # self.name = f"{self.name}-{category}{'_5_core' if use_5_core else ''}"
-
-        super().__init__(process=process)
+        super().__init__(cache_dir=cache_dir)
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
@@ -72,28 +48,32 @@ class AmazonDataset(RelBenchDataset):
         )
         print(f"reading product info from {path}...")
         tic = time.time()
-        ptable = pa.json.read_json(
-            path,
-            parse_options=pa.json.ParseOptions(
-                explicit_schema=pa.schema(
-                    [
-                        ("asin", pa.string()),
-                        ("category", pa.list_(pa.string())),
-                        ("brand", pa.string()),
-                        ("title", pa.string()),
-                        ("description", pa.list_(pa.string())),
-                        ("price", pa.string()),
-                    ]
-                ),
-                unexpected_field_behavior="ignore",
-            ),
-        )
-        toc = time.time()
-        print(f"done in {toc - tic:.2f} seconds.")
 
-        print("converting to pandas dataframe...")
-        tic = time.time()
-        pdf = ptable.to_pandas()
+        with open(path, "rb") as f, tqdm(
+            total=Path(path).stat().st_size, unit="B", unit_scale=True
+        ) as pbar:
+            rows = []
+            for line in f:
+                pbar.update(f.tell() - pbar.n)
+                line = line.decode()
+                try:
+                    raw = json.loads(line)
+                except json.JSONDecodeError:
+                    print(f"JSONDecodeError (ignoring): {line}")
+                    continue
+                row = {}
+                for key in [
+                    "asin",
+                    "category",
+                    "brand",
+                    "title",
+                    "description",
+                    "price",
+                ]:
+                    row[key] = raw.get(key, None)
+                rows.append(row)
+
+        pdf = pd.DataFrame(rows)
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
@@ -158,30 +138,34 @@ class AmazonDataset(RelBenchDataset):
         )
         print(f"reading review and customer info from {path}...")
         tic = time.time()
-        rtable = pa.json.read_json(
-            path,
-            parse_options=pa.json.ParseOptions(
-                explicit_schema=pa.schema(
-                    [
-                        ("unixReviewTime", pa.int32()),
-                        ("reviewerID", pa.string()),
-                        ("reviewerName", pa.string()),
-                        ("asin", pa.string()),
-                        ("overall", pa.float32()),
-                        ("verified", pa.bool_()),
-                        ("reviewText", pa.string()),
-                        ("summary", pa.string()),
-                    ]
-                ),
-                unexpected_field_behavior="ignore",
-            ),
-        )
-        toc = time.time()
-        print(f"done in {toc - tic:.2f} seconds.")
 
-        print("converting to pandas dataframe...")
-        tic = time.time()
-        rdf = rtable.to_pandas()
+        with open(path, "rb") as f, tqdm(
+            total=Path(path).stat().st_size, unit="B", unit_scale=True
+        ) as pbar:
+            rows = []
+            for line in f:
+                pbar.update(f.tell() - pbar.n)
+                line = line.decode()
+                try:
+                    raw = json.loads(line)
+                except json.JSONDecodeError:
+                    print(f"JSONDecodeError (ignoring): {line}")
+                    continue
+                row = {}
+                for key in [
+                    "unixReviewTime",
+                    "reviewerID",
+                    "reviewerName",
+                    "asin",
+                    "overall",
+                    "verified",
+                    "reviewText",
+                    "summary",
+                ]:
+                    row[key] = raw.get(key, None)
+                rows.append(row)
+
+        rdf = pd.DataFrame(rows)
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
@@ -224,7 +208,7 @@ class AmazonDataset(RelBenchDataset):
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
-        return Database(
+        db = Database(
             table_dict={
                 "product": Table(
                     df=pdf,
@@ -249,3 +233,7 @@ class AmazonDataset(RelBenchDataset):
                 ),
             }
         )
+
+        db = db.from_(pd.Timestamp("2008-01-01"))
+
+        return db

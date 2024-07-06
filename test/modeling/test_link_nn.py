@@ -10,17 +10,13 @@ from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.typing import NodeType
 
-from relbench.data import LinkTask
-from relbench.data.task_base import TaskType
-from relbench.datasets import FakeDataset
-from relbench.external.graph import (
-    get_link_train_table_input,
-    get_stype_proposal,
-    make_pkey_fkey_graph,
-)
-from relbench.external.loader import LinkNeighborLoader
-from relbench.external.nn import HeteroEncoder, HeteroGraphSAGE
-from relbench.external.utils import to_unix_time
+from relbench.base import LinkTask, TaskType
+from relbench.datasets.fake import FakeDataset
+from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
+from relbench.modeling.loader import LinkNeighborLoader
+from relbench.modeling.nn import HeteroEncoder, HeteroGraphSAGE
+from relbench.modeling.utils import get_stype_proposal, to_unix_time
+from relbench.tasks.amazon import UserItemPurchaseTask
 
 
 @pytest.mark.parametrize(
@@ -31,21 +27,21 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     dataset = FakeDataset()
 
     data, col_stats_dict = make_pkey_fkey_graph(
-        dataset.db,
-        get_stype_proposal(dataset.db),
+        dataset.get_db(),
+        get_stype_proposal(dataset.get_db()),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=HashTextEmbedder(8), batch_size=None
         ),
         cache_dir=tmp_path,
     )
-    node_to_col_names_dict = {  # TODO Expose as method in `HeteroData`.
+    node_to_col_names_dict = {
         node_type: data[node_type].tf.col_names_dict for node_type in data.node_types
     }
     encoder = HeteroEncoder(64, node_to_col_names_dict, col_stats_dict)
     gnn = HeteroGraphSAGE(data.node_types, data.edge_types, 64)
 
     # Ensure that neighbor loading works on train/val/test splits ############
-    task: LinkTask = dataset.get_task("user-item-purchase", process=True)
+    task: LinkTask = UserItemPurchaseTask(dataset)
     assert task.task_type == TaskType.LINK_PREDICTION
 
     # Ensure that stats computation works on train/val/test splits ###########
@@ -59,9 +55,10 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     assert len(next(iter(stats["test"].values()))) == 4
     assert len(stats["total"].values()) == 5
 
-    train_table_input = get_link_train_table_input(task.train_table, task)
+    train_table = task.get_table("train")
+    train_table_input = get_link_train_table_input(train_table, task)
     # Test get_link_train_table_input
-    for index, row in task.train_table.df.iterrows():
+    for index, row in train_table.df.iterrows():
         assert set(row[task.dst_entity_col]) == set(
             train_table_input.dst_nodes[1][index].indices()[0].numpy()
         )
@@ -103,8 +100,9 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
 
     eval_loaders_dict: Dict[str, Tuple[NeighborLoader, NeighborLoader]] = {}
     for split in ["val", "test"]:
-        seed_time = task.val_seed_time if split == "val" else task.test_seed_time
-        target_table = task.val_table if split == "val" else task.test_table
+        timestamp = dataset.val_timestamp if split == "val" else dataset.test_timestamp
+        seed_time = int(timestamp.timestamp())
+        target_table = task.get_table(split)
         src_node_indices = torch.from_numpy(target_table.df[task.src_entity_col].values)
         src_loader = NeighborLoader(
             data,
@@ -195,6 +193,6 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
             pred = torch.cat(pred_index_mat_list, dim=0).numpy()
 
         if split == "val":
-            task.evaluate(pred, task.val_table)
+            task.evaluate(pred, task.get_table("val"))
         else:
             task.evaluate(pred)

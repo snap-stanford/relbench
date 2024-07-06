@@ -6,14 +6,12 @@ from typing import Dict, Union
 import pandas as pd
 from typing_extensions import Self
 
-from relbench.data.table import Table
+from .table import Table
 
 
 class Database:
     r"""A database is a collection of named tables linked by foreign key -
     primary key connections."""
-
-    # TODO: maybe add a function to visualize schema in jupyter
 
     def __init__(self, table_dict: Dict[str, Table]) -> None:
         r"""Creates a database from a dictionary of tables."""
@@ -21,7 +19,6 @@ class Database:
         self.table_dict = table_dict
 
     def __repr__(self) -> str:
-        # TODO: add more info
         return f"{self.__class__.__name__}()"
 
     def save(self, path: Union[str, os.PathLike]) -> None:
@@ -53,15 +50,6 @@ class Database:
             if table.time_col is not None
         )
 
-    def max_timestamp(self) -> pd.Timestamp:
-        r"""Returns the latest timestamp in the database."""
-
-        return max(
-            table.max_timestamp
-            for table in self.table_dict.values()
-            if table.time_col is not None
-        )
-
     @property
     @lru_cache(maxsize=None)
     def max_timestamp(self) -> pd.Timestamp:
@@ -79,6 +67,15 @@ class Database:
         return Database(
             table_dict={
                 name: table.upto(time_stamp) for name, table in self.table_dict.items()
+            }
+        )
+
+    def from_(self, time_stamp: pd.Timestamp) -> Self:
+        r"""Returns a database with all rows from time_stamp."""
+
+        return Database(
+            table_dict={
+                name: table.from_(time_stamp) for name, table in self.table_dict.items()
             }
         )
 

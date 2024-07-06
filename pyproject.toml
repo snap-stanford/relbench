@@ -18,24 +18,23 @@ dependencies=[
 	"pandas",
 	"pooch",
 	"pyarrow",
-	"numpy==1.26.0",
+	"numpy",
 	"duckdb",
-	"requests",
-	"tqdm",
 	"scikit-learn",
 	"typing-extensions",
-	"matplotlib",
-	"networkx",
+	"tqdm",
 ]
 
 [project.optional-dependencies]
-example=[
+full=[
 	"torch",
-	"pytorch_frame>=0.2.2",
+	# We rely on https://github.com/pyg-team/pytorch-frame/pull/395 for rel-amazon.
+	# TODO: use the PyPI version when it's released.
+	"pytorch_frame[full] @ git+https://github.com/pyg-team/pytorch-frame",
 	"torch_geometric",
-	"faiss-cpu",
+]
+example=[
 	"sentence-transformers",
-	"tensorboard",
 ]
 test=[
 	"pytest",

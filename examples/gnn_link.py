@@ -1,25 +1,29 @@
 import argparse
 import copy
+import json
 import os
+import warnings
+from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-from inferred_stypes import dataset2inferred_stypes
 from model import Model
 from text_embedder import GloveTextEmbedding
 from torch import Tensor
+from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench.data import LinkTask, RelBenchDataset
-from relbench.data.task_base import TaskType
+from relbench.base import Dataset, LinkTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.external.graph import get_link_train_table_input, make_pkey_fkey_graph
-from relbench.external.loader import LinkNeighborLoader
+from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
+from relbench.modeling.loader import LinkNeighborLoader
+from relbench.modeling.utils import get_stype_proposal
+from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-hm")
@@ -31,19 +35,23 @@ parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
-parser.add_argument("--num_neighbors", type=int, default=160)
+parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 # Use the same seed time across the mini-batch and share the negatives
 parser.add_argument("--share_same_time", action="store_true", default=True)
+parser.add_argument(
+    "--no-share_same_time", dest="share_same_time", action="store_false"
+)
 # Whether to use shallow embedding on dst nodes or not.
 parser.add_argument("--use_shallow", action="store_true", default=True)
+parser.add_argument("--no-use_shallow", dest="use_shallow", action="store_false")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--cache_dir",
     type=str,
-    default=os.path.expanduser("~/.cache/relbench/materialized"),
+    default=os.path.expanduser("~/.cache/relbench_examples"),
 )
 args = parser.parse_args()
 
@@ -52,25 +60,36 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-task: LinkTask = dataset.get_task(args.task, process=True)
+dataset: Dataset = get_dataset(args.dataset, download=True)
+task: LinkTask = get_task(args.dataset, args.task, download=True)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
-col_to_stype_dict = dataset2inferred_stypes[args.dataset]
+stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
+try:
+    with open(stypes_cache_path, "r") as f:
+        col_to_stype_dict = json.load(f)
+    for table, col_to_stype in col_to_stype_dict.items():
+        for col, stype_str in col_to_stype.items():
+            col_to_stype[col] = stype(stype_str)
+except FileNotFoundError:
+    col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(stypes_cache_path, "w") as f:
+        json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 data, col_stats_dict = make_pkey_fkey_graph(
-    dataset.db,
+    dataset.get_db(),
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    cache_dir=os.path.join(args.cache_dir, args.dataset),
+    cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
 )
 
 num_neighbors = [int(args.num_neighbors // 2**i) for i in range(args.num_layers)]
 
-train_table_input = get_link_train_table_input(task.train_table, task)
+train_table_input = get_link_train_table_input(task.get_table("train"), task)
 train_loader = LinkNeighborLoader(
     data=data,
     num_neighbors=num_neighbors,
@@ -89,8 +108,9 @@ train_loader = LinkNeighborLoader(
 
 eval_loaders_dict: Dict[str, Tuple[NeighborLoader, NeighborLoader]] = {}
 for split in ["val", "test"]:
-    seed_time = task.val_seed_time if split == "val" else task.test_seed_time
-    target_table = task.val_table if split == "val" else task.test_table
+    timestamp = dataset.val_timestamp if split == "val" else dataset.test_timestamp
+    seed_time = int(timestamp.timestamp())
+    target_table = task.get_table(split)
     src_node_indices = torch.from_numpy(target_table.df[task.src_entity_col].values)
     src_loader = NeighborLoader(
         data,
@@ -172,7 +192,15 @@ def train() -> float:
         if steps > args.max_steps_per_epoch:
             break
 
-    return loss_accum / count_accum
+    if count_accum == 0:
+        warnings.warn(
+            f"Did not sample a single '{task.dst_entity_table}' "
+            f"node in any mini-batch. Try to increase the number "
+            f"of layers/hops and re-try. If you run into memory "
+            f"issues with deeper nets, decrease the batch size."
+        )
+
+    return loss_accum / count_accum if count_accum > 0 else float("nan")
 
 
 @torch.no_grad()
@@ -203,7 +231,7 @@ for epoch in range(1, args.epochs + 1):
     train_loss = train()
     if epoch % args.eval_epochs_interval == 0:
         val_pred = test(*eval_loaders_dict["val"])
-        val_metrics = task.evaluate(val_pred, task.val_table)
+        val_metrics = task.evaluate(val_pred, task.get_table("val"))
         print(
             f"Epoch: {epoch:02d}, Train loss: {train_loss}, "
             f"Val metrics: {val_metrics}"
@@ -216,7 +244,7 @@ for epoch in range(1, args.epochs + 1):
 
 model.load_state_dict(state_dict)
 val_pred = test(*eval_loaders_dict["val"])
-val_metrics = task.evaluate(val_pred, task.val_table)
+val_metrics = task.evaluate(val_pred, task.get_table("val"))
 print(f"Best Val metrics: {val_metrics}")
 
 test_pred = test(*eval_loaders_dict["test"])

@@ -27,12 +27,12 @@ jobs:
 
       - name: Install PyTorch
         run: |
-          pip install torch==2.1.0 --extra-index-url https://download.pytorch.org/whl/cpu
-          pip install --no-index pyg-lib==0.3.1 -f https://data.pyg.org/whl/torch-2.1.0+cpu.html
+          pip install torch==2.3.0 --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install --no-index pyg-lib==0.4.0 -f https://data.pyg.org/whl/torch-2.3.0+cpu.html
 
       - name: Install main package
         run: |
-          pip install .[example,test]
+          pip install .[full,test]
 
       - name: Run tests
         run: |

@@ -7,9 +7,9 @@ import torch
 from scipy.stats import mode
 from torch_geometric.seed import seed_everything
 
-from relbench.data import RelBenchDataset, Table
-from relbench.data.task_base import TaskType
+from relbench.base import Dataset, NodeTask, Table, TaskType
 from relbench.datasets import get_dataset
+from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
@@ -20,12 +20,12 @@ args = parser.parse_args()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed_everything(args.seed)
 
-dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-task = dataset.get_task(args.task, process=True)
+dataset: Dataset = get_dataset(args.dataset, download=True)
+task: NodeTask = get_task(args.dataset, args.task, download=True)
 
-train_table = task.train_table
-val_table = task.val_table
-test_table = task.test_table
+train_table = task.get_table("train")
+val_table = task.get_table("val")
+test_table = task.get_table("test")
 
 
 def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, float]:

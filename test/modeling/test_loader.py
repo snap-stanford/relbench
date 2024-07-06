@@ -4,7 +4,7 @@ from typing import Tuple
 import torch
 from torch import Tensor
 
-from relbench.external.loader import CustomLinkDataset, SparseTensor
+from relbench.modeling.loader import CustomLinkDataset, SparseTensor
 
 
 def get_lp_setup(

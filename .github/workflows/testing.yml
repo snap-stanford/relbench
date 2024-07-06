@@ -32,4 +32,4 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest test/data test/datasets
+          pytest test/base test/datasets

@@ -1,8 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.data import Database, RelBenchLinkTask, RelBenchNodeTask, Table
-from relbench.data.task_base import TaskType
+from relbench.base import Database, LinkTask, NodeTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
     average_precision,
@@ -19,10 +18,9 @@ from relbench.metrics import (
 ######## node prediction tasks ########
 
 
-class UserEngagementTask(RelBenchNodeTask):
+class UserEngagementTask(NodeTask):
     r"""Predict if a user will make any votes/posts/comments in the next 2 years."""
 
-    name = "user-engagement"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "OwnerUserId"
     entity_table = "users"
@@ -106,11 +104,10 @@ class UserEngagementTask(RelBenchNodeTask):
         )
 
 
-class PostVotesTask(RelBenchNodeTask):
+class PostVotesTask(NodeTask):
     r"""Predict the number of upvotes that an existing question will receive in
     the next 2 years."""
 
-    name = "post-votes"
     task_type = TaskType.REGRESSION
     entity_col = "PostId"
     entity_table = "posts"
@@ -162,10 +159,9 @@ class PostVotesTask(RelBenchNodeTask):
         )
 
 
-class UserBadgeTask(RelBenchNodeTask):
+class UserBadgeTask(NodeTask):
     r"""Predict if each user will receive in a new badge the next 2 years."""
 
-    name = "user-badge"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "UserId"
     entity_table = "users"
@@ -221,11 +217,10 @@ class UserBadgeTask(RelBenchNodeTask):
 ######## link prediction tasks ########
 
 
-class UserPostCommentTask(RelBenchLinkTask):
+class UserPostCommentTask(LinkTask):
     r"""Predict a list of existing posts that a user will comment in the next
     two years."""
 
-    name = "user-post-comment"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "UserId"
     src_entity_table = "users"
@@ -283,11 +278,10 @@ class UserPostCommentTask(RelBenchLinkTask):
         )
 
 
-class PostPostRelatedTask(RelBenchLinkTask):
+class PostPostRelatedTask(LinkTask):
     r"""Predict a list of existing posts that users will link a given post to in the next
     two years."""
 
-    name = "post-post-related"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "PostId"
     src_entity_table = "posts"
