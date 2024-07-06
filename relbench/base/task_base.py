@@ -218,7 +218,8 @@ class BaseTask:
         Args:
             pred: Predictions as a numpy array.
             target_table: The target table. If None, use the test table.
-            metrics: The metrics to evaluate the prediction table. If None, use the default metrics for the task.
+            metrics: The metrics to evaluate the prediction table. If None, use
+                the default metrics for the task.
 
         Implemented by NodeTask and LinkTask.
         """
