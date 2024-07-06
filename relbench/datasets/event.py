@@ -1,5 +1,4 @@
 import os
-import os.path as osp
 import shutil
 from pathlib import Path
 
@@ -22,13 +21,6 @@ class EventDataset(Dataset):
     val_timestamp = pd.Timestamp("2012-11-21")
     test_timestamp = pd.Timestamp("2012-11-29")
 
-    def __init__(
-        self,
-        *,
-        process: bool = False,
-    ):
-        super().__init__(process=process)
-
     def check_table_and_decompress_if_exists(self, table_path: str, alt_path: str = ""):
         if not os.path.exists(table_path) or (
             alt_path != "" and not os.path.exists(alt_path)
@@ -39,18 +31,19 @@ class EventDataset(Dataset):
                 self.err_msg.format(data=table_path, url=self.url, path=table_path)
 
     def make_db(self) -> Database:
-        path = osp.join(osp.dirname(osp.realpath(__file__)), "..", "data", "rel-event")
+        path = os.path.join("data", "rel-event")
+        zip_path = os.path.join(path, "event-recommendation-engine-challenge.zip")
         users = os.path.join(path, "users.csv")
         user_friends = os.path.join(path, "user_friends.csv")
         events = os.path.join(path, "events.csv")
         event_attendees = os.path.join(path, "event_attendees.csv")
         if not (os.path.exists(users)):
-            if not os.path.exists(zip):
+            if not os.path.exists(zip_path):
                 raise RuntimeError(
-                    self.err_msg.format(data="Dataset", url=self.url, path=zip)
+                    self.err_msg.format(data="Dataset", url=self.url, path=zip_path)
                 )
             else:
-                shutil.unpack_archive(zip, Path(zip).parent)
+                shutil.unpack_archive(zip_path, Path(zip_path).parent)
         self.check_table_and_decompress_if_exists(
             user_friends, os.path.join(path, "user_friends_flattened.csv")
         )

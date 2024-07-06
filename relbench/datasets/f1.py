@@ -9,10 +9,8 @@ from relbench.utils import unzip_processor
 
 
 class F1Dataset(Dataset):
-    name = "rel-f1"
     val_timestamp = pd.Timestamp("2005-01-01")
     test_timestamp = pd.Timestamp("2010-01-01")
-    max_eval_time_frames = 40
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""

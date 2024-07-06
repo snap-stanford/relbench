@@ -21,7 +21,6 @@ from relbench.metrics import (
 class UserEngagementTask(NodeTask):
     r"""Predict if a user will make any votes/posts/comments in the next 2 years."""
 
-    name = "user-engagement"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "OwnerUserId"
     entity_table = "users"
@@ -109,7 +108,6 @@ class PostVotesTask(NodeTask):
     r"""Predict the number of upvotes that an existing question will receive in
     the next 2 years."""
 
-    name = "post-votes"
     task_type = TaskType.REGRESSION
     entity_col = "PostId"
     entity_table = "posts"
@@ -164,7 +162,6 @@ class PostVotesTask(NodeTask):
 class UserBadgeTask(NodeTask):
     r"""Predict if each user will receive in a new badge the next 2 years."""
 
-    name = "user-badge"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "UserId"
     entity_table = "users"
@@ -224,7 +221,6 @@ class UserPostCommentTask(LinkTask):
     r"""Predict a list of existing posts that a user will comment in the next
     two years."""
 
-    name = "user-post-comment"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "UserId"
     src_entity_table = "users"
@@ -286,7 +282,6 @@ class PostPostRelatedTask(LinkTask):
     r"""Predict a list of existing posts that users will link a given post to in the next
     two years."""
 
-    name = "post-post-related"
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "PostId"
     src_entity_table = "posts"
