@@ -37,7 +37,7 @@ def get_dataset_names():
 def download_dataset(name: str) -> None:
     DOWNLOAD_REGISTRY.fetch(
         f"{name}/db.zip",
-        processor=pooch.Unzip(extract_dir="db"),
+        processor=pooch.Unzip(extract_dir="."),
         progressbar=True,
     )
 
