@@ -60,6 +60,15 @@ You can install RelBench using `pip`:
 pip install relbench
 ```
 
+This will allow usage of the RelBench data and task loading functionality. To additionally use the example GNN scripts in the ```examples``` directory, and the graph-related helper functions found in ```relbench/modeling``` it is also necessary to install [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame). PyTorch Frame can simply be installed with 
+
+
+```
+pip install pytorch_frame
+```
+
+and the PyTorch Geometric installation instructions can be found [here](https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html). Note that as well as ```torch_geometric```, you will also need to install the optional dependencies ```pyg_lib```, ```torch_scatter```, ```torch_sparse```.
+
 # Package Usage
 
 Here we describe key functions of RelBench. RelBench provides a collection of APIs for easy access to machine-learning-ready relational databases.
