@@ -1,5 +1,4 @@
 import os
-import os.path as osp
 import shutil
 from pathlib import Path
 
@@ -22,13 +21,6 @@ class EventDataset(Dataset):
     val_timestamp = pd.Timestamp("2012-11-21")
     test_timestamp = pd.Timestamp("2012-11-29")
 
-    def __init__(
-        self,
-        *,
-        process: bool = False,
-    ):
-        super().__init__(process=process)
-
     def check_table_and_decompress_if_exists(self, table_path: str, alt_path: str = ""):
         if not os.path.exists(table_path) or (
             alt_path != "" and not os.path.exists(alt_path)
@@ -39,18 +31,19 @@ class EventDataset(Dataset):
                 self.err_msg.format(data=table_path, url=self.url, path=table_path)
 
     def make_db(self) -> Database:
-        path = osp.join(osp.dirname(osp.realpath(__file__)), "..", "data", "rel-event")
+        path = os.path.join("data", "rel-event")
+        zip_path = os.path.join(path, "event-recommendation-engine-challenge.zip")
         users = os.path.join(path, "users.csv")
         user_friends = os.path.join(path, "user_friends.csv")
         events = os.path.join(path, "events.csv")
         event_attendees = os.path.join(path, "event_attendees.csv")
         if not (os.path.exists(users)):
-            if not os.path.exists(zip):
+            if not os.path.exists(zip_path):
                 raise RuntimeError(
-                    self.err_msg.format(data="Dataset", url=self.url, path=zip)
+                    self.err_msg.format(data="Dataset", url=self.url, path=zip_path)
                 )
             else:
-                shutil.unpack_archive(zip, Path(zip).parent)
+                shutil.unpack_archive(zip_path, Path(zip_path).parent)
         self.check_table_and_decompress_if_exists(
             user_friends, os.path.join(path, "user_friends_flattened.csv")
         )
@@ -61,7 +54,7 @@ class EventDataset(Dataset):
         users_df = pd.read_csv(users, dtype={"user_id": int}, parse_dates=["joinedAt"])
         users_df["birthyear"] = pd.to_numeric(users_df["birthyear"], errors="coerce")
         users_df["joinedAt"] = pd.to_datetime(
-            users_df["joinedAt"], errors="coerce"
+            users_df["joinedAt"], errors="coerce", format="mixed"
         ).dt.tz_localize(None)
 
         friends_df = pd.read_csv(
@@ -71,17 +64,17 @@ class EventDataset(Dataset):
             friends_df["birthyear"], errors="coerce"
         )
         friends_df["joinedAt"] = pd.to_datetime(
-            friends_df["joinedAt"], errors="coerce"
+            friends_df["joinedAt"], errors="coerce", format="mixed"
         ).dt.tz_localize(None)
         events_df = pd.read_csv(events)
         events_df["start_time"] = pd.to_datetime(
-            events_df["start_time"], errors="coerce"
+            events_df["start_time"], errors="coerce", format="mixed"
         ).dt.tz_localize(None)
 
         train = os.path.join(path, "train.csv")
         event_interest_df = pd.read_csv(train)
         event_interest_df["timestamp"] = pd.to_datetime(
-            event_interest_df["timestamp"]
+            event_interest_df["timestamp"], format="mixed"
         ).dt.tz_localize(None)
 
         if not os.path.exists(os.path.join(path, "user_friends_flattened.csv")):
@@ -138,7 +131,9 @@ class EventDataset(Dataset):
                 os.path.join(path, "event_attendees_flattened.csv")
             )
             event_attendees_flattened_df["start_time"] = pd.to_datetime(
-                event_attendees_flattened_df["start_time"], errors="coerce"
+                event_attendees_flattened_df["start_time"],
+                errors="coerce",
+                format="mixed",
             )
             event_attendees_flattened_df["start_time"] = (
                 event_attendees_flattened_df["start_time"]

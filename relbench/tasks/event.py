@@ -9,7 +9,6 @@ class UserAttendanceTask(NodeTask):
     r"""Predict the number of events a user will go to in the next seven days
     7 days."""
 
-    name = "user-attendance"
     task_type = TaskType.REGRESSION
     entity_col = "user"
     entity_table = "users"
@@ -63,7 +62,6 @@ class UserRepeatTask(NodeTask):
     next 7 days if they have already attended an event in the
     last 14 days."""
 
-    name = "user-repeat"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "user"
     entity_table = "users"
@@ -142,7 +140,6 @@ class UserIgnoreTask(NodeTask):
     r"""Predict whether a user will ignore more than 2 event invitations
     in the next 7 days."""
 
-    name = "user-ignore"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "user"
     entity_table = "users"

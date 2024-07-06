@@ -1,9 +1,10 @@
+import json
 import time
+from pathlib import Path
 
 import pandas as pd
 import pooch
-import pyarrow as pa
-import pyarrow.json
+from tqdm.auto import tqdm
 
 from relbench.base import Database, Dataset, Table
 
@@ -47,28 +48,32 @@ class AmazonDataset(Dataset):
         )
         print(f"reading product info from {path}...")
         tic = time.time()
-        ptable = pa.json.read_json(
-            path,
-            parse_options=pa.json.ParseOptions(
-                explicit_schema=pa.schema(
-                    [
-                        ("asin", pa.string()),
-                        ("category", pa.list_(pa.string())),
-                        ("brand", pa.string()),
-                        ("title", pa.string()),
-                        ("description", pa.list_(pa.string())),
-                        ("price", pa.string()),
-                    ]
-                ),
-                unexpected_field_behavior="ignore",
-            ),
-        )
-        toc = time.time()
-        print(f"done in {toc - tic:.2f} seconds.")
 
-        print("converting to pandas dataframe...")
-        tic = time.time()
-        pdf = ptable.to_pandas()
+        with open(path, "rb") as f, tqdm(
+            total=Path(path).stat().st_size, unit="B", unit_scale=True
+        ) as pbar:
+            rows = []
+            for line in f:
+                pbar.update(f.tell() - pbar.n)
+                line = line.decode()
+                try:
+                    raw = json.loads(line)
+                except json.JSONDecodeError:
+                    print(f"JSONDecodeError (ignoring): {line}")
+                    continue
+                row = {}
+                for key in [
+                    "asin",
+                    "category",
+                    "brand",
+                    "title",
+                    "description",
+                    "price",
+                ]:
+                    row[key] = raw.get(key, None)
+                rows.append(row)
+
+        pdf = pd.DataFrame(rows)
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 
@@ -133,30 +138,34 @@ class AmazonDataset(Dataset):
         )
         print(f"reading review and customer info from {path}...")
         tic = time.time()
-        rtable = pa.json.read_json(
-            path,
-            parse_options=pa.json.ParseOptions(
-                explicit_schema=pa.schema(
-                    [
-                        ("unixReviewTime", pa.int32()),
-                        ("reviewerID", pa.string()),
-                        ("reviewerName", pa.string()),
-                        ("asin", pa.string()),
-                        ("overall", pa.float32()),
-                        ("verified", pa.bool_()),
-                        ("reviewText", pa.string()),
-                        ("summary", pa.string()),
-                    ]
-                ),
-                unexpected_field_behavior="ignore",
-            ),
-        )
-        toc = time.time()
-        print(f"done in {toc - tic:.2f} seconds.")
 
-        print("converting to pandas dataframe...")
-        tic = time.time()
-        rdf = rtable.to_pandas()
+        with open(path, "rb") as f, tqdm(
+            total=Path(path).stat().st_size, unit="B", unit_scale=True
+        ) as pbar:
+            rows = []
+            for line in f:
+                pbar.update(f.tell() - pbar.n)
+                line = line.decode()
+                try:
+                    raw = json.loads(line)
+                except json.JSONDecodeError:
+                    print(f"JSONDecodeError (ignoring): {line}")
+                    continue
+                row = {}
+                for key in [
+                    "unixReviewTime",
+                    "reviewerID",
+                    "reviewerName",
+                    "asin",
+                    "overall",
+                    "verified",
+                    "reviewText",
+                    "summary",
+                ]:
+                    row[key] = raw.get(key, None)
+                rows.append(row)
+
+        rdf = pd.DataFrame(rows)
         toc = time.time()
         print(f"done in {toc - tic:.2f} seconds.")
 

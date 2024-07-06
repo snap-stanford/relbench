@@ -10,7 +10,6 @@ class DriverPositionTask(NodeTask):
     all races in the next 2 months.
     """
 
-    name = "driver-position"
     task_type = TaskType.REGRESSION
     entity_col = "driverId"
     entity_table = "drivers"
@@ -67,7 +66,6 @@ class DriverPositionTask(NodeTask):
 class DriverDNFTask(NodeTask):
     r"""Predict the if each driver will DNF (not finish) a race in the next 1 month."""
 
-    name = "driver-dnf"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "driverId"
     entity_table = "drivers"
@@ -129,7 +127,6 @@ class DriverTop3Task(NodeTask):
     a race within the next 1 month.
     """
 
-    name = "driver-top3"
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "driverId"
     entity_table = "drivers"
