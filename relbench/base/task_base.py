@@ -78,15 +78,7 @@ class BaseTask:
             )
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(\n"
-            f"dataset={self.dataset},\n"
-            # f"cache_dir={self.cache_dir},\n"
-            f"task_type={self.task_type},\n"
-            f"timedelta={self.timedelta},\n"
-            # f"num_eval_timestamps={self.num_eval_timestamps},\n"
-            # f"metrics={self.metrics},\n"
-        )
+        return f"{self.__class__.__name__}(dataset={repr(self.dataset)})"
 
     def make_table(
         self,

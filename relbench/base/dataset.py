@@ -41,13 +41,7 @@ class Dataset:
         self.cache_dir = cache_dir
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(\n"
-            f"val_timestamp={self.val_timestamp},\n"
-            f"test_timestamp={self.test_timestamp},\n"
-            # f"cache_dir={self.cache_dir},\n"
-            f")"
-        )
+        return f"{self.__class__.__name__}()"
 
     def validate_and_correct_db(self, db):
         r"""Validate and correct input db in-place.
@@ -100,7 +94,7 @@ class Dataset:
         else:
             print("Making Database object from scratch...")
             print(
-                "(You can also use `get_dataset(..., download=True)`"
+                "(You can also use `get_dataset(..., download=True)` "
                 "for datasets prepared by the RelBench team.)"
             )
             tic = time.time()
