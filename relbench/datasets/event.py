@@ -54,7 +54,7 @@ class EventDataset(Dataset):
         users_df = pd.read_csv(users, dtype={"user_id": int}, parse_dates=["joinedAt"])
         users_df["birthyear"] = pd.to_numeric(users_df["birthyear"], errors="coerce")
         users_df["joinedAt"] = pd.to_datetime(
-            users_df["joinedAt"], errors="coerce"
+            users_df["joinedAt"], errors="coerce", format="mixed"
         ).dt.tz_localize(None)
 
         friends_df = pd.read_csv(
@@ -64,17 +64,17 @@ class EventDataset(Dataset):
             friends_df["birthyear"], errors="coerce"
         )
         friends_df["joinedAt"] = pd.to_datetime(
-            friends_df["joinedAt"], errors="coerce"
+            friends_df["joinedAt"], errors="coerce", format="mixed"
         ).dt.tz_localize(None)
         events_df = pd.read_csv(events)
         events_df["start_time"] = pd.to_datetime(
-            events_df["start_time"], errors="coerce"
+            events_df["start_time"], errors="coerce", format="mixed"
         ).dt.tz_localize(None)
 
         train = os.path.join(path, "train.csv")
         event_interest_df = pd.read_csv(train)
         event_interest_df["timestamp"] = pd.to_datetime(
-            event_interest_df["timestamp"]
+            event_interest_df["timestamp"], format="mixed"
         ).dt.tz_localize(None)
 
         if not os.path.exists(os.path.join(path, "user_friends_flattened.csv")):
@@ -131,7 +131,9 @@ class EventDataset(Dataset):
                 os.path.join(path, "event_attendees_flattened.csv")
             )
             event_attendees_flattened_df["start_time"] = pd.to_datetime(
-                event_attendees_flattened_df["start_time"], errors="coerce"
+                event_attendees_flattened_df["start_time"],
+                errors="coerce",
+                format="mixed",
             )
             event_attendees_flattened_df["start_time"] = (
                 event_attendees_flattened_df["start_time"]
