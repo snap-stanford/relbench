@@ -17,6 +17,7 @@ class DriverPositionTask(NodeTask):
     target_col = "position"
     timedelta = pd.Timedelta(days=60)
     metrics = [r2, mae, rmse]
+    num_eval_timestamps = 40
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for rel-f1-position."""
@@ -73,6 +74,7 @@ class DriverDNFTask(NodeTask):
     target_col = "did_not_finish"
     timedelta = pd.Timedelta(days=30)
     metrics = [average_precision, accuracy, f1, roc_auc]
+    num_eval_timestamps = 40
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for rel-f1-dnf."""
@@ -134,6 +136,7 @@ class DriverTop3Task(NodeTask):
     target_col = "qualifying"
     timedelta = pd.Timedelta(days=30)
     metrics = [average_precision, accuracy, f1, roc_auc]
+    num_eval_timestamps = 40
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for rel-f1-qualifying."""
