@@ -99,6 +99,10 @@ class Dataset:
 
         else:
             print("Making Database object from scratch...")
+            print(
+                "(You can also use `get_dataset(..., download=True)`"
+                "for datasets prepared by the RelBench team.)"
+            )
             tic = time.time()
             db = self.make_db()
             db.reindex_pkeys_and_fkeys()

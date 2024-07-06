@@ -1,3 +1,4 @@
+import time
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
@@ -183,7 +184,16 @@ class BaseTask:
         if self.cache_dir and Path(table_path).exists():
             table = Table.load(table_path)
         else:
+            print(f"Making task table for {split} split from scratch...")
+            print(
+                "(You can also use `get_task(..., download=True)` "
+                "for tasks prepared by the RelBench team.)"
+            )
+            tic = time.time()
             table = self._get_table(split)
+            toc = time.time()
+            print(f"Done in {toc - tic:.2f} seconds.")
+
             if self.cache_dir:
                 table.save(table_path)
 
