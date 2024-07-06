@@ -12,8 +12,9 @@ from .database import Database
 class Dataset:
     r"""A dataset is a database with validation and test timestamps defined for it.
 
-    val_timestamp: Rows upto this timestamp (inclusive) can be input for validation.
-    test_timestamp: Rows upto this timestamp (inclusive) can be input for testing.
+    Attributes:
+        val_timestamp: Rows upto this timestamp (inclusive) can be input for validation.
+        test_timestamp: Rows upto this timestamp (inclusive) can be input for testing.
 
     Validation split of a task involves predicting the target variable for a
     time period after val_timestamp (exclusive) using data upto val_timestamp.
@@ -32,9 +33,9 @@ class Dataset:
 
         Args:
             cache_dir: A directory for caching the database object. If specified,
-                we will either process and cache the file (if not available) or use the cached file. If None,
-                we will not use cached file and re-process everything from scratch
-                without saving the cache.
+                we will either process and cache the file (if not available) or use
+                the cached file. If None, we will not use cached file and re-process
+                everything from scratch without saving the cache.
         """
 
         self.cache_dir = cache_dir
@@ -44,7 +45,7 @@ class Dataset:
             f"{self.__class__.__name__}(\n"
             f"val_timestamp={self.val_timestamp},\n"
             f"test_timestamp={self.test_timestamp},\n"
-            f"cache_dir={self.cache_dir},\n"
+            # f"cache_dir={self.cache_dir},\n"
             f")"
         )
 
@@ -84,6 +85,8 @@ class Dataset:
 
         Returns:
             Database: The database object.
+
+        `upto_test_timestamp` is True by default to prevent test leakage.
         """
 
         db_path = f"{self.cache_dir}/db"
