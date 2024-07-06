@@ -23,9 +23,8 @@ def make_pkey_fkey_graph(
     text_embedder_cfg: Optional[TextEmbedderConfig] = None,
     cache_dir: Optional[str] = None,
 ) -> Tuple[HeteroData, Dict[str, Dict[str, Dict[StatType, Any]]]]:
-    r"""Given a :class:`Database` object, construct a heterogeneous graph with
-    primary-foreign key relationships, together with the column stats of each
-    table.
+    r"""Given a :class:`Database` object, construct a heterogeneous graph with primary-
+    foreign key relationships, together with the column stats of each table.
 
     Args:
         db (Database): A database object containing a set of tables.
@@ -114,11 +113,12 @@ def make_pkey_fkey_graph(
 
 class AttachTargetTransform:
     r"""Adds the target label to the heterogeneous mini-batch.
-    The batch consists of disjoins subgraphs loaded via temporal sampling.
-    The same input node can occur twice with different timestamps, and thus
-    different subgraphs and labels. Hence labels cannot be stored in the graph
-    object directly, and must be attached to the batch after the batch is
-    created."""
+
+    The batch consists of disjoins subgraphs loaded via temporal sampling. The same
+    input node can occur twice with different timestamps, and thus different subgraphs
+    and labels. Hence labels cannot be stored in the graph object directly, and must be
+    attached to the batch after the batch is created.
+    """
 
     def __init__(self, entity: str, target: Tensor):
         self.entity = entity

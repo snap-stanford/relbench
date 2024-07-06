@@ -10,8 +10,8 @@ from .table import Table
 
 
 class Database:
-    r"""A database is a collection of named tables linked by foreign key -
-    primary key connections."""
+    r"""A database is a collection of named tables linked by foreign key - primary key
+    connections."""
 
     def __init__(self, table_dict: Dict[str, Table]) -> None:
         r"""Creates a database from a dictionary of tables."""
@@ -22,8 +22,10 @@ class Database:
         return f"{self.__class__.__name__}()"
 
     def save(self, path: Union[str, os.PathLike]) -> None:
-        r"""Saves the database to a directory. Simply saves each table
-        individually with the table name as base name of file."""
+        r"""Saves the database to a directory.
+
+        Simply saves each table individually with the table name as base name of file.
+        """
 
         for name, table in self.table_dict.items():
             table.save(f"{path}/{name}.parquet")
@@ -80,9 +82,8 @@ class Database:
         )
 
     def reindex_pkeys_and_fkeys(self) -> None:
-        r"""Mapping primary and foreign keys into indices according to
-        the ordering in the primary key tables.
-        """
+        r"""Mapping primary and foreign keys into indices according to the ordering in
+        the primary key tables."""
         # Get pkey to idx mapping:
         index_map_dict: Dict[str, pd.Series] = {}
         for table_name, table in self.table_dict.items():

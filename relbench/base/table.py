@@ -49,8 +49,10 @@ class Table:
         return len(self.df)
 
     def save(self, path: Union[str, os.PathLike]) -> None:
-        r"""Saves the table to a parquet file. Stores other attributes as
-        parquet metadata."""
+        r"""Saves the table to a parquet file.
+
+        Stores other attributes as parquet metadata.
+        """
         assert str(path).endswith(".parquet")
         metadata = {
             "fkey_col_to_pkey_table": self.fkey_col_to_pkey_table,

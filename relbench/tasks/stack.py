@@ -105,8 +105,8 @@ class UserEngagementTask(NodeTask):
 
 
 class PostVotesTask(NodeTask):
-    r"""Predict the number of upvotes that an existing question will receive in
-    the next 2 years."""
+    r"""Predict the number of upvotes that an existing question will receive in the next
+    2 years."""
 
     task_type = TaskType.REGRESSION
     entity_col = "PostId"
@@ -218,8 +218,8 @@ class UserBadgeTask(NodeTask):
 
 
 class UserPostCommentTask(LinkTask):
-    r"""Predict a list of existing posts that a user will comment in the next
-    two years."""
+    r"""Predict a list of existing posts that a user will comment in the next two
+    years."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "UserId"
@@ -279,8 +279,8 @@ class UserPostCommentTask(LinkTask):
 
 
 class PostPostRelatedTask(LinkTask):
-    r"""Predict a list of existing posts that users will link a given post to in the next
-    two years."""
+    r"""Predict a list of existing posts that users will link a given post to in the
+    next two years."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "PostId"

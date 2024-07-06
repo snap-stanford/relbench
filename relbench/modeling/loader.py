@@ -12,9 +12,8 @@ from torch_geometric.typing import EdgeType, NodeType, OptTensor
 
 
 def batched_arange(count: Tensor) -> Tuple[Tensor, Tensor]:
-    r"""Fast implementation of bached version of torch.arange.
-    It essentially does the following
-    >>> batch = torch.cat([torch.full((c,), i) for i, c in enumerate(count)])
+    r"""Fast implementation of bached version of torch.arange. It essentially does the
+    following >>> batch = torch.cat([torch.full((c,), i) for i, c in enumerate(count)])
     >>> arange = torch.cat([torch.arange(c) for c in count])
 
     Args:
@@ -52,7 +51,8 @@ class SparseTensor:
         self._col_indices = sparse_tensor.col_indices().to(device)
 
     def __getitem__(self, indices: Tensor) -> Tuple[Tensor, Tensor]:
-        r"""Given a tensor of row indices, return a tuple of tensors
+        r"""Given a tensor of row indices, return a tuple of tensors.
+
         - :obj:`row_batch` (Tensor): Batch offset for column indices.
         - :obj:`col_index` (Tensor): Column indices.
         Specifically, :obj:`sparse_tensor[indices[i]]` can be obtained by
@@ -124,8 +124,10 @@ class TimestampSampler(Sampler[int]):
 
 
 class CustomLinkDataset(Dataset):
-    r"""A custom link prediction dataset. Sample source nodes, time, and one
-    positive destination node."""
+    r"""A custom link prediction dataset.
+
+    Sample source nodes, time, and one positive destination node.
+    """
 
     def __init__(
         self,
@@ -143,7 +145,8 @@ class CustomLinkDataset(Dataset):
         self.src_time = src_time
 
     def __getitem__(self, index) -> Tensor:
-        r"""Returns 1-dim tensor of size 3
+        r"""Returns 1-dim tensor of size 3.
+
         - source node index
         - positive destination node index
         - source node time

@@ -96,11 +96,9 @@ class LinkTask(BaseTask):
         return len(self.dataset.get_db().table_dict[self.dst_entity_table])
 
     def stats(self) -> Dict[str, Dict[str, int]]:
-        r"""Get train / val / test table statistics for each timestamp
-        and the whole table, including number of unique source entities,
-        number of unique destination entities, number of destination
-        entities and number of rows.
-        """
+        r"""Get train / val / test table statistics for each timestamp and the whole
+        table, including number of unique source entities, number of unique destination
+        entities, number of destination entities and number of rows."""
         res = {}
         for split in ["train", "val", "test"]:
             split_stats = {}

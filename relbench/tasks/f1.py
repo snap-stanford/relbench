@@ -6,9 +6,8 @@ from relbench.metrics import accuracy, average_precision, f1, mae, r2, rmse, roc
 
 
 class DriverPositionTask(NodeTask):
-    r"""Predict the average finishing position of each driver
-    all races in the next 2 months.
-    """
+    r"""Predict the average finishing position of each driver all races in the next 2
+    months."""
 
     task_type = TaskType.REGRESSION
     entity_col = "driverId"
@@ -123,9 +122,8 @@ class DriverDNFTask(NodeTask):
 
 
 class DriverTop3Task(NodeTask):
-    r"""Predict if each driver will qualify in the top-3 for
-    a race within the next 1 month.
-    """
+    r"""Predict if each driver will qualify in the top-3 for a race within the next 1
+    month."""
 
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "driverId"
