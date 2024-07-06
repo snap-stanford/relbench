@@ -34,8 +34,12 @@ class BaseTask:
 
     Attributes:
         task_type: The type of the task.
-        timedelta: The prediction task at `timestamp` is over the time window (timestamp, timestamp + timedelta].
-        num_eval_timestamps: The number of evaluation time windows. e.g., test time windows are (test_timestamp, test_timestamp + timedelta] ... (test_timestamp + (num_eval_timestamps - 1) * timedelta, test_timestamp + num_eval_timestamps * timedelta].
+        timedelta: The prediction task at `timestamp` is over the time window
+            (timestamp, timestamp + timedelta].
+        num_eval_timestamps: The number of evaluation time windows. e.g., test
+            time windows are (test_timestamp, test_timestamp + timedelta] ...
+            (test_timestamp + (num_eval_timestamps - 1) * timedelta, test_timestamp
+            + num_eval_timestamps * timedelta].
         metrics: The metrics to evaluate this task on.
 
     Inherited by NodeTask and LinkTask.
