@@ -27,15 +27,7 @@ dependencies=[
 
 [project.optional-dependencies]
 full=[
-	"torch",
-	# We rely on https://github.com/pyg-team/pytorch-frame/pull/395 for rel-amazon.
-	# AmazonDataset.make_db() is not expected to work unless this PR is
-	# incorporated into a pytorch-frame release.
-	# Other things should work fine. Meanwhile, you may install pytorch-frame
-	# from github:
-	# "pytorch_frame @ git+https://github.com/pyg-team/pytorch-frame",
-	# TODO: make it >= 0.2.3 when new release is available
-	"pytorch_frame>=0.2.2",
+	"pytorch_frame>=0.2.3",
 	"torch_geometric",
 ]
 example=[
