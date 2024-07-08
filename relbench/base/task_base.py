@@ -93,7 +93,8 @@ class BaseTask:
             computed for a timestamp using historical data
             upto this timestamp in the database.
 
-        To be implemented by subclass.
+        To be implemented by subclass. The table rows need not be ordered
+        deterministically.
         """
 
         raise NotImplementedError
