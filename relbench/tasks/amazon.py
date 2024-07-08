@@ -17,8 +17,8 @@ from relbench.metrics import (
 
 
 class UserChurnTask(NodeTask):
-    r"""Churn for a customer is 1 if the customer does not review any product
-    in the time window, else 0."""
+    r"""Churn for a customer is 1 if the customer does not review any product in the
+    time window, else 0."""
 
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "customer_id"
@@ -73,8 +73,8 @@ class UserChurnTask(NodeTask):
 
 
 class UserLTVTask(NodeTask):
-    r"""LTV (life-time value) for a customer is the sum of prices of products
-    that the customer reviews in the time window."""
+    r"""LTV (life-time value) for a customer is the sum of prices of products that the
+    customer reviews in the time window."""
 
     task_type = TaskType.REGRESSION
     entity_col = "customer_id"
@@ -132,8 +132,8 @@ class UserLTVTask(NodeTask):
 
 
 class ItemChurnTask(NodeTask):
-    r"""Churn for a product is 1 if the product recieves at least one review
-    in the time window, else 0."""
+    r"""Churn for a product is 1 if the product recieves at least one review in the time
+    window, else 0."""
 
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "product_id"
@@ -188,8 +188,8 @@ class ItemChurnTask(NodeTask):
 
 
 class ItemLTVTask(NodeTask):
-    r"""LTV (life-time value) for a product is the numer of times the product
-    is purchased in the time window multiplied by price."""
+    r"""LTV (life-time value) for a product is the numer of times the product is
+    purchased in the time window multiplied by price."""
 
     task_type = TaskType.REGRESSION
     entity_col = "product_id"
@@ -234,8 +234,8 @@ class ItemLTVTask(NodeTask):
 
 
 class UserItemPurchaseTask(LinkTask):
-    r"""Predict the list of distinct items each customer will purchase in the
-    next two years."""
+    r"""Predict the list of distinct items each customer will purchase in the next two
+    years."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "customer_id"
@@ -285,8 +285,8 @@ class UserItemPurchaseTask(LinkTask):
 
 
 class UserItemRateTask(LinkTask):
-    r"""Predict the list of distinct items each customer will purchase and give a 5 star review in the
-    next two years."""
+    r"""Predict the list of distinct items each customer will purchase and give a 5 star
+    review in the next two years."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "customer_id"
@@ -338,8 +338,8 @@ class UserItemRateTask(LinkTask):
 
 
 class UserItemReviewTask(LinkTask):
-    r"""Predict the list of distinct items each customer will purchase and give a detailed review in the
-    next two years."""
+    r"""Predict the list of distinct items each customer will purchase and give a
+    detailed review in the next two years."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "customer_id"

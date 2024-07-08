@@ -69,8 +69,8 @@ def evaluate(
         )
         pred = np.stack(pred_ser.values)
     elif name == "global_popularity":
-        """Predict the globally most visited dst nodes and predict them across
-        the src nodes."""
+        """Predict the globally most visited dst nodes and predict them across the src
+        nodes."""
         lst_cat = []
         for lst in train_table.df[task.dst_entity_col]:
             lst_cat.extend(lst)

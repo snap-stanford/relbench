@@ -1,3 +1,4 @@
+import time
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
@@ -30,8 +31,22 @@ class TaskType(Enum):
 
 
 class BaseTask:
-    r"""A task on a dataset."""
+    r"""Base class for a task on a dataset.
 
+    Attributes:
+        task_type: The type of the task.
+        timedelta: The prediction task at `timestamp` is over the time window
+            (timestamp, timestamp + timedelta].
+        num_eval_timestamps: The number of evaluation time windows. e.g., test
+            time windows are (test_timestamp, test_timestamp + timedelta] ...
+            (test_timestamp + (num_eval_timestamps - 1) * timedelta, test_timestamp
+            + num_eval_timestamps * timedelta].
+        metrics: The metrics to evaluate this task on.
+
+    Inherited by NodeTask and LinkTask.
+    """
+
+    # To be set by subclass.
     task_type: TaskType
     timedelta: pd.Timedelta
     num_eval_timestamps: int = 1
@@ -42,6 +57,15 @@ class BaseTask:
         dataset: Dataset,
         cache_dir: Optional[str] = None,
     ):
+        r"""Create a task object.
+
+        Args:
+            dataset: The dataset object on which the task is defined.
+            cache_dir: A directory for caching the task table objects. If specified,
+                we will either process and cache the file (if not available) or use
+                the cached file. If None, we will not use cached file and re-process
+                everything from scratch without saving the cache.
+        """
         self.dataset = dataset
         self.cache_dir = cache_dir
 
@@ -54,18 +78,30 @@ class BaseTask:
             )
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(dataset={self.dataset})"
+        return f"{self.__class__.__name__}(dataset={repr(self.dataset)})"
 
     def make_table(
         self,
         db: Database,
         timestamps: "pd.Series[pd.Timestamp]",
     ) -> Table:
-        r"""To be implemented by subclass."""
+        r"""Make a table using the task definition.
+
+        Args:
+            db: The database object to use for (historical) ground truth.
+            timestamps: Collection of timestamps to compute labels for. A label can be
+            computed for a timestamp using historical data
+            upto this timestamp in the database.
+
+        To be implemented by subclass. The table rows need not be ordered
+        deterministically.
+        """
 
         raise NotImplementedError
 
     def _get_table(self, split: str) -> Table:
+        r"""Helper function to get a table for a split."""
+
         db = self.dataset.get_db(upto_test_timestamp=split != "test")
 
         if split == "train":
@@ -120,6 +156,20 @@ class BaseTask:
 
     @lru_cache(maxsize=None)
     def get_table(self, split, mask_input_cols=None):
+        r"""Get a table for a split.
+
+        Args:
+            split: The split to get the table for. One of "train", "val", or "test".
+            mask_input_cols: If True, keep only the input columns in the table. If
+                None, mask the input columns only for the test split. This helps
+                prevent data leakage.
+
+        Returns:
+            The task table for the split.
+
+        The table is cached in memory.
+        """
+
         if mask_input_cols is None:
             mask_input_cols = split == "test"
 
@@ -127,7 +177,16 @@ class BaseTask:
         if self.cache_dir and Path(table_path).exists():
             table = Table.load(table_path)
         else:
+            print(f"Making task table for {split} split from scratch...")
+            print(
+                "(You can also use `get_task(..., download=True)` "
+                "for tasks prepared by the RelBench team.)"
+            )
+            tic = time.time()
             table = self._get_table(split)
+            toc = time.time()
+            print(f"Done in {toc - tic:.2f} seconds.")
+
             if self.cache_dir:
                 table.save(table_path)
 
@@ -149,9 +208,26 @@ class BaseTask:
         )
 
     def filter_dangling_entities(self, table: Table) -> Table:
-        r"""Filter out dangling entities from a table."""
+        r"""Filter out dangling entities from a table.
+
+        Implemented by NodeTask and LinkTask.
+        """
         raise NotImplementedError
 
-    def evaluate(self):
-        r"""Evaluate a prediction table."""
+    def evaluate(
+        self,
+        pred: NDArray,
+        target_table: Optional[Table] = None,
+        metrics: Optional[List[Callable[[NDArray, NDArray], float]]] = None,
+    ):
+        r"""Evaluate predictions on the task.
+
+        Args:
+            pred: Predictions as a numpy array.
+            target_table: The target table. If None, use the test table.
+            metrics: The metrics to evaluate the prediction table. If None, use
+                the default metrics for the task.
+
+        Implemented by NodeTask and LinkTask.
+        """
         raise NotImplementedError

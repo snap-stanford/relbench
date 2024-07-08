@@ -78,7 +78,8 @@ class StudyOutcomeTask(NodeTask):
 
 
 class StudyAdverseTask(NodeTask):
-    r"""Predict the number of affected patients with severe advsere events/death for the trial in the next 1 year."""
+    r"""Predict the number of affected patients with severe advsere events/death for the
+    trial in the next 1 year."""
 
     task_type = TaskType.REGRESSION
     entity_col = "nct_id"

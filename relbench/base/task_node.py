@@ -11,7 +11,16 @@ from .task_base import BaseTask, TaskType
 
 
 class NodeTask(BaseTask):
-    r"""A link prediction task on a dataset."""
+    r"""A node prediction task on a dataset.
+
+    Attributes:
+        entity_col: The entity column.
+        entity_table: The entity table.
+        time_col: The time column.
+        target_col: The target column.
+
+    Other attributes are inherited from BaseTask.
+    """
 
     entity_col: str
     entity_table: str
@@ -53,7 +62,7 @@ class NodeTask(BaseTask):
 
         return {fn.__name__: fn(target, pred) for fn in metrics}
 
-    def stats(self) -> dict[str, dict[str, Any]]:
+    def stats(self) -> Dict[str, Dict[str, Any]]:
         r"""Get train / val / test table statistics for each timestamp
         and the whole table, including number of rows and number of entities.
         Tasks with different task types have different statistics computed:

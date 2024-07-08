@@ -23,16 +23,15 @@ def make_pkey_fkey_graph(
     text_embedder_cfg: Optional[TextEmbedderConfig] = None,
     cache_dir: Optional[str] = None,
 ) -> Tuple[HeteroData, Dict[str, Dict[str, Dict[StatType, Any]]]]:
-    r"""Given a :class:`Database` object, construct a heterogeneous graph with
-    primary-foreign key relationships, together with the column stats of each
-    table.
+    r"""Given a :class:`Database` object, construct a heterogeneous graph with primary-
+    foreign key relationships, together with the column stats of each table.
 
     Args:
-        db (Database): A database object containing a set of tables.
-        col_to_stype_dict (Dict[str, Dict[str, stype]]): Column to stype for
+        db: A database object containing a set of tables.
+        col_to_stype_dict: Column to stype for
             each table.
-        text_embedder_cfg (TextEmbedderConfig): Text embedder config.
-        cache_dir (str, optional): A directory for storing materialized tensor
+        text_embedder_cfg: Text embedder config.
+        cache_dir: A directory for storing materialized tensor
             frames. If specified, we will either cache the file or use the
             cached file. If not specified, we will not use cached file and
             re-process everything from scratch without saving the cache.
@@ -113,12 +112,13 @@ def make_pkey_fkey_graph(
 
 
 class AttachTargetTransform:
-    r"""Adds the target label to the heterogeneous mini-batch.
-    The batch consists of disjoins subgraphs loaded via temporal sampling.
-    The same input node can occur twice with different timestamps, and thus
-    different subgraphs and labels. Hence labels cannot be stored in the graph
-    object directly, and must be attached to the batch after the batch is
-    created."""
+    r"""Attach the target label to the heterogeneous mini-batch.
+
+    The batch consists of disjoins subgraphs loaded via temporal sampling. The same
+    input node can occur multiple times with different timestamps, and thus different
+    subgraphs and labels. Hence labels cannot be stored in the graph object directly,
+    and must be attached to the batch after the batch is created.
+    """
 
     def __init__(self, entity: str, target: Tensor):
         self.entity = entity
@@ -130,6 +130,14 @@ class AttachTargetTransform:
 
 
 class NodeTrainTableInput(NamedTuple):
+    r"""Trainining table input for node prediction.
+
+    - nodes is a Tensor of node indices.
+    - time is a Tensor of node timestamps.
+    - target is a Tensor of node labels.
+    - transform attaches the target to the batch.
+    """
+
     nodes: Tuple[NodeType, Tensor]
     time: Optional[Tensor]
     target: Optional[Tensor]
@@ -141,6 +149,8 @@ def get_node_train_table_input(
     task: NodeTask,
     multilabel: bool = False,
 ) -> NodeTrainTableInput:
+    r"""Get the training table input for node prediction."""
+
     nodes = torch.from_numpy(table.df[task.entity_col].astype(int).values)
 
     time: Optional[Tensor] = None
@@ -191,6 +201,8 @@ def get_link_train_table_input(
     table: Table,
     task: LinkTask,
 ) -> LinkTrainTableInput:
+    r"""Get the training table input for link prediction."""
+
     src_node_idx: Tensor = torch.from_numpy(
         table.df[task.src_entity_col].astype(int).values
     )

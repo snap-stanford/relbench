@@ -12,7 +12,18 @@ from .task_base import BaseTask, TaskType
 
 
 class LinkTask(BaseTask):
-    r"""A link prediction task on a dataset."""
+    r"""A link prediction task on a dataset.
+
+    Attributes:
+        src_entity_col: The source entity column.
+        src_entity_table: The source entity table.
+        dst_entity_col: The destination entity column.
+        dst_entity_table: The destination entity table.
+        time_col: The time column.
+        eval_k: k for eval@k metrics.
+
+    Other attributes are inherited from BaseTask.
+    """
 
     src_entity_col: str
     src_entity_table: str
@@ -96,11 +107,10 @@ class LinkTask(BaseTask):
         return len(self.dataset.get_db().table_dict[self.dst_entity_table])
 
     def stats(self) -> Dict[str, Dict[str, int]]:
-        r"""Get train / val / test table statistics for each timestamp
-        and the whole table, including number of unique source entities,
-        number of unique destination entities, number of destination
-        entities and number of rows.
-        """
+        r"""Get train / val / test table statistics for each timestamp and the whole
+        table, including number of unique source entities, number of unique destination
+        entities, number of destination entities and number of rows."""
+
         res = {}
         for split in ["train", "val", "test"]:
             split_stats = {}

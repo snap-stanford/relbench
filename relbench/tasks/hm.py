@@ -17,8 +17,8 @@ from relbench.metrics import (
 
 
 class UserItemPurchaseTask(LinkTask):
-    r"""Predict the list of articles each customer will purchase in the next
-    seven days"""
+    r"""Predict the list of articles each customer will purchase in the next seven
+    days."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "customer_id"
@@ -120,8 +120,8 @@ class UserChurnTask(NodeTask):
 
 
 class ItemSalesTask(NodeTask):
-    r"""Predict the total sales for an article (the sum of prices of the
-    associated transactions) in the next week."""
+    r"""Predict the total sales for an article (the sum of prices of the associated
+    transactions) in the next week."""
 
     task_type = TaskType.REGRESSION
     entity_col = "article_id"

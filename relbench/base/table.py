@@ -14,13 +14,12 @@ class Table:
     r"""A table in a database.
 
     Args:
-        df (pandas.DataFrame): The underlying data frame of the table.
-        fkey_col_to_pkey_table (Dict[str, str]): A dictionary mapping
+        df: The underlying data frame of the table.
+        fkey_col_to_pkey_table: A dictionary mapping
             foreign key names to table names that contain the foreign keys as
             primary keys.
-        pkey_col (str, optional): The primary key column if it exists.
-            (default: :obj:`None`)
-        time_col (str, optional): The time column. (default: :obj:`None`)
+        pkey_col: The primary key column if it exists.
+        time_col: The time column.
     """
 
     def __init__(
@@ -45,12 +44,14 @@ class Table:
         )
 
     def __len__(self) -> int:
-        r"""Returns the number of rows in the table."""
+        r"""Return the number of rows in the table."""
         return len(self.df)
 
     def save(self, path: Union[str, os.PathLike]) -> None:
-        r"""Saves the table to a parquet file. Stores other attributes as
-        parquet metadata."""
+        r"""Save the table to a parquet file.
+
+        Stores other attributes as parquet metadata.
+        """
         assert str(path).endswith(".parquet")
         metadata = {
             "fkey_col_to_pkey_table": self.fkey_col_to_pkey_table,
@@ -76,7 +77,7 @@ class Table:
 
     @classmethod
     def load(cls, path: Union[str, os.PathLike]) -> Self:
-        r"""Loads a table from a parquet file."""
+        r"""Load a table from a parquet file."""
         assert str(path).endswith(".parquet")
 
         # Read the Parquet file using pyarrow
@@ -97,27 +98,33 @@ class Table:
             time_col=metadata["time_col"],
         )
 
-    def upto(self, time_stamp: pd.Timestamp) -> Self:
-        r"""Returns a table with all rows upto time."""
+    def upto(self, timestamp: pd.Timestamp) -> Self:
+        r"""Return a table with all rows upto timestamp (inclusive).
+
+        Table without time_col are returned as is.
+        """
 
         if self.time_col is None:
             return self
 
         return Table(
-            df=self.df.query(f"{self.time_col} <= @time_stamp"),
+            df=self.df.query(f"{self.time_col} <= @timestamp"),
             fkey_col_to_pkey_table=self.fkey_col_to_pkey_table,
             pkey_col=self.pkey_col,
             time_col=self.time_col,
         )
 
-    def from_(self, time_stamp: pd.Timestamp) -> Self:
-        r"""Returns a table with all rows from time."""
+    def from_(self, timestamp: pd.Timestamp) -> Self:
+        r"""Return a table with all rows from timestamp onwards (inclusive).
+
+        Table without time_col are returned as is.
+        """
 
         if self.time_col is None:
             return self
 
         return Table(
-            df=self.df.query(f"{self.time_col} >= @time_stamp"),
+            df=self.df.query(f"{self.time_col} >= @timestamp"),
             fkey_col_to_pkey_table=self.fkey_col_to_pkey_table,
             pkey_col=self.pkey_col,
             time_col=self.time_col,
@@ -126,7 +133,7 @@ class Table:
     @property
     @lru_cache(maxsize=None)
     def min_timestamp(self) -> pd.Timestamp:
-        r"""Returns the earliest time in the table."""
+        r"""Return the earliest time in the table."""
 
         if self.time_col is None:
             raise ValueError("Table has no time column.")
@@ -136,7 +143,7 @@ class Table:
     @property
     @lru_cache(maxsize=None)
     def max_timestamp(self) -> pd.Timestamp:
-        r"""Returns the latest time in the table."""
+        r"""Return the latest time in the table."""
 
         if self.time_col is None:
             raise ValueError("Table has no time column.")

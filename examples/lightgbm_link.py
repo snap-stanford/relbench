@@ -130,8 +130,8 @@ def add_past_label_feature(
     train_table_df: pd.DataFrame,
     past_table_df: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Add past visit count and percentage of global popularity to train table
-    df used for lightGBM training, evaluation of testing.
+    """Add past visit count and percentage of global popularity to train table df used
+    for lightGBM training, evaluation of testing.
 
     Args:
         evaluate_table_df (pd.DataFrame): The dataframe used for evaluation.
@@ -244,8 +244,8 @@ for split, table in [
 def prepare_for_link_pred_eval(
     evaluate_table_df: pd.DataFrame, past_table_df: pd.DataFrame
 ) -> pd.DataFrame:
-    """Transform evaluation dataframe into the correct format for link
-    prediction metric calculation.
+    """Transform evaluation dataframe into the correct format for link prediction metric
+    calculation.
 
     Args:
         pred_table_df (pd.DataFrame): The prediction dataframe.
@@ -375,9 +375,9 @@ def evaluate(
     train_table: Table,
     task: LinkTask,
 ) -> Dict[str, float]:
-    """Given the input dataframe used for lightGBM binary link classification
-    and its output prediction scores and true labels, generate link prediction
-    evaluation metrics.
+    """Given the input dataframe used for lightGBM binary link classification and its
+    output prediction scores and true labels, generate link prediction evaluation
+    metrics.
 
     Args:
         lightgbm_output (pd.DataFrame): The lightGBM input dataframe merged
