@@ -62,7 +62,7 @@ def download_task(dataset_name: str, task_name: str) -> None:
 
     DOWNLOAD_REGISTRY.fetch(
         f"{dataset_name}/tasks/{task_name}.zip",
-        processor=pooch.Unzip(extract_dir=task_name),
+        processor=pooch.Unzip(extract_dir="."),
         progressbar=True,
     )
 
