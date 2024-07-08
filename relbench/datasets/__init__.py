@@ -74,7 +74,14 @@ def get_dataset(name: str, download=False) -> Dataset:
     Returns:
         Dataset: The dataset object.
 
-    If `download` is True, the dataset will be downloaded into the cache.
+    If `download` is True, the database comprising the dataset will be
+    downloaded into the cache from the RelBench server. If you use
+    `download=False` the first time, the database will be processed from the
+    raw files of the original source.
+
+    Once the database is cached, either because of download or processing from
+    raw files, the cache will be used. `download=True` will verify that the
+    cached database matches the RelBench version even in this case.
     """
 
     if download:

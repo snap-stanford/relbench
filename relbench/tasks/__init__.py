@@ -79,7 +79,14 @@ def get_task(dataset_name: str, task_name: str, download=False) -> BaseTask:
     Returns:
         BaseTask: The task object.
 
-    If `download` is True, the task will be downloaded into the cache.
+    If `download` is True, the task tables (train, val, test) comprising the
+    task will be downloaded into the cache from the RelBench server. If you use
+    `download=False` the first time, the task tables will be computed from
+    scratch using the database.
+
+    Once the task tables are cached, either because of download or computing from
+    scratch, the cache will be used. `download=True` will verify that the
+    cached task tables matches the RelBench version even in this case.
     """
 
     if download:
