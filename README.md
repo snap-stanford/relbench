@@ -8,10 +8,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40RelBench)](https://twitter.com/RelBench)
 
-**Get Started:** loading data &nbsp; [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/drive/1PAOktBqh_3QzgAKi53F4JbQxoOuBsUBY?usp=sharing), training model &nbsp; [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/drive/1_z0aKcs5XndEacX1eob6csDuR4DYhGQU?usp=sharing).
+<!-- **Get Started:** loading data &nbsp; [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/drive/1PAOktBqh_3QzgAKi53F4JbQxoOuBsUBY?usp=sharing), training model &nbsp; [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/drive/1_z0aKcs5XndEacX1eob6csDuR4DYhGQU?usp=sharing). -->
 
 
- [<img align="center" src="https://relbench.stanford.edu/img/favicon.png" width="20px" />  **Website**](https://relbench.stanford.edu) | [**Vision Paper**](https://relbench.stanford.edu/paper.pdf) |  [**Benchmark Paper**](https://relbench.stanford.edu/paper.pdf) | [**Mailing List**](https://groups.google.com/forum/#!forum/relbench/join)
+<!-- [<img align="center" src="https://relbench.stanford.edu/img/favicon.png" width="20px" />   -->
+[**Website**](https://relbench.stanford.edu) | [**Position Paper**](https://relbench.stanford.edu/paper.pdf) |  [**Benchmark Paper [TODO]**](https://relbench.stanford.edu/paper.pdf) | [**Mailing List**](https://groups.google.com/forum/#!forum/relbench/join)
 
 # Overview
 
@@ -19,7 +20,9 @@
 
 <!-- <p align="center"><img src="https://relbench.stanford.edu/img/relbench-fig.png" alt="pipeline" /></p> -->
 
-Relational Deep Learning is a new approach for end-to-end representation learning on data spread across multiple tables, such as in a _relational database_ (see our [vision paper](https://relbench.stanford.edu/paper.pdf)). Relational databases are the world's most widely used database management system, and are used for industrial and scientific purposes accross many domains. RelBench is a benchmark designed to facilitate efficient, robust and reproducible research in end-to-end deep learning on relational databases. RelBench contains 7 realistic, large-scale, and diverse relational databases spanning domains including medical, social networks, e-commerce and sport. Each database has multiple predictive tasks (29 in total) defined, each carefully scoped to be both challenging and of domain-specific importance. It provides full support for data downloading, task specification and standardized evaluation in an ML-framework-agnostic manner.
+Relational Deep Learning is a new approach for end-to-end representation learning on data spread across multiple tables, such as in a _relational database_ (see our [position paper](https://relbench.stanford.edu/paper.pdf)). Relational databases are the world's most widely used data management system, and are used for industrial and scientific purposes across many domains. RelBench is a benchmark designed to facilitate efficient, robust and reproducible research on end-to-end deep learning for relational databases.
+
+RelBench contains 7 realistic, large-scale, and diverse relational databases spanning domains including medical, social networks, e-commerce and sport. Each database has multiple predictive tasks (29 in total) defined, each carefully scoped to be both challenging and of domain-specific importance. It provides full support for data downloading, task specification and standardized evaluation in an ML-framework-agnostic manner.
 
 Additionally, RelBench provides a first open-source implementation of a Graph Neural Network based approach to relational deep learning. This implementation uses [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) to load the data as a graph and train GNN models, and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame) to encode the various types of table columns. Finally, there is an open [leaderboard](https://huggingface.co/relbench) for tracking progress.
 
@@ -27,13 +30,13 @@ Additionally, RelBench provides a first open-source implementation of a Graph Ne
 
 # Key Papers
 
- [**RelBench Paper**](https://relbench.stanford.edu/paper.pdf) [RelBench: A Benchmark for Deep Learning
+[**Benchmark Paper**](https://relbench.stanford.edu/paper.pdf) [RelBench: A Benchmark for Deep Learning
 on Relational Databases.]
 
 This paper details our approach to designing the RelBench benchmark. It also includes a key user study showing that relational deep learning can produce performant models with a fraction of the manual human effort required by typical data science pipelines. This paper is useful for a detailed understanding of RelBench and our initial benchmarking results. If you just want to quickly familiarize with the data and tasks, the [**website**](https://relbench.stanford.edu) is a better place to start.
 <!---Joshua Robinson*, Rishabh Ranjan*, Weihua Hu*, Kexin Huang*, Jiaqi Han, Alejandro Dobles, Matthias Fey, Jan Eric Lenssen, Yiwen Yuan, Zecheng Zhang, Xinwei He, Jure Leskovec-->
 
- [**Vision Paper**](https://relbench.stanford.edu/paper.pdf) [Relational Deep Learning: Graph Representation
+[**Position Paper (ICML 2024)**](https://relbench.stanford.edu/paper.pdf) [Relational Deep Learning: Graph Representation
 Learning on Relational Databases.]
 
 This paper outlines our proposal for how to do end-to-end deep learning on relational databases by combining graph neural networsk with deep tabular models. We reccomend reading this paper if you want to think about new methods for end-to-end deep learning on relational databases. The paper includes a section on possible directions for future research to give a snapshot of some of the research possilibities there are in this area.
@@ -45,8 +48,8 @@ This paper outlines our proposal for how to do end-to-end deep learning on relat
 <p align="center"><img src="https://relbench.stanford.edu/img/relbench-fig.png" alt="logo" width="900px" /></p>
 
 RelBench has the following main components:
-1. 7 databases, each automatically downloadable for ease of use (with the exception of H&M, for which RelBench gives other instructions)
-2. Easy 1-line loading of data, including loading the raw tables, and also code for constructing a graph from pkey-fkey links
+1. 7 databases with a total of 30 tasks; both of these automatically downloadable for ease of use
+2. Easy data loading, and graph construction from pkey-fkey links
 3. Your own model, which can use any deep learning stack since RelBench is framework-agnostic. We provide a first model implementation using PyTorch Geometric and PyTorch Frame.
 4. Standardized evaluators - all you need to do is produce a list of predictions for test samples, and RelBench computes metrics to ensure standardized evaluation
 5. A leaderboard you can upload your results to, to track SOTA progress.
@@ -55,19 +58,23 @@ RelBench has the following main components:
 # Installation
 
 You can install RelBench using `pip`:
-
-```
+```bash
 pip install relbench
 ```
 
-This will allow usage of the RelBench data and task loading functionality. To additionally use the example GNN scripts in the ```examples``` directory, and the graph-related helper functions found in ```relbench/modeling``` it is also necessary to install [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame). PyTorch Frame can simply be installed with
+This will allow usage of the core RelBench data and task loading functionality.
 
+To additionally use `relbench.modeling`, which requires [PyTorch](https://pytorch.org/), [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame), install these dependencies manually or do:
 
+```bash
+pip install relbench[full]
 ```
-pip install pytorch_frame
-```
 
-and the PyTorch Geometric installation instructions can be found [here](https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html). Note that as well as ```torch_geometric```, you will also need to install the optional dependencies ```pyg_lib```, ```torch_scatter```, ```torch_sparse```.
+
+To run the example GNN scripts in the `examples` directory, use:
+```bash
+pip install relbench[example]
+```
 
 # Package Usage
 
