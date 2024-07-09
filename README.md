@@ -20,11 +20,11 @@
 
 <!-- <p align="center"><img src="https://relbench.stanford.edu/img/relbench-fig.png" alt="pipeline" /></p> -->
 
-Relational Deep Learning is a new approach for end-to-end representation learning on data spread across multiple tables, such as in a _relational database_ (see our [position paper](https://relbench.stanford.edu/paper.pdf)). Relational databases are the world's most widely used data management system, and are used for industrial and scientific purposes across many domains. RelBench is a benchmark designed to facilitate efficient, robust and reproducible research on end-to-end deep learning for relational databases.
+Relational Deep Learning is a new approach for end-to-end representation learning on data spread across multiple tables, such as in a _relational database_ (see our [position paper](https://relbench.stanford.edu/paper.pdf)). Relational databases are the world's most widely used data management system, and are used for industrial and scientific purposes across many domains. RelBench is a benchmark designed to facilitate efficient, robust and reproducible research on end-to-end deep learning over relational databases.
 
-RelBench contains 7 realistic, large-scale, and diverse relational databases spanning domains including medical, social networks, e-commerce and sport. Each database has multiple predictive tasks (29 in total) defined, each carefully scoped to be both challenging and of domain-specific importance. It provides full support for data downloading, task specification and standardized evaluation in an ML-framework-agnostic manner.
+RelBench contains 7 realistic, large-scale, and diverse relational databases spanning domains including medical, social networks, e-commerce and sport. Each database has multiple predictive tasks (30 in total) defined, each carefully scoped to be both challenging and of domain-specific importance. It provides full support for data downloading, task specification and standardized evaluation in an ML-framework-agnostic manner.
 
-Additionally, RelBench provides a first open-source implementation of a Graph Neural Network based approach to relational deep learning. This implementation uses [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) to load the data as a graph and train GNN models, and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame) to encode the various types of table columns. Finally, there is an open [leaderboard](https://huggingface.co/relbench) for tracking progress.
+Additionally, RelBench provides a first open-source implementation of a Graph Neural Network based approach to relational deep learning. This implementation uses [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) to load the data as a graph and train GNN models, and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame) for modeling tabular data. Finally, there is an open [leaderboard](https://huggingface.co/relbench) for tracking progress.
 
 <!---**News July 3rd 2024: RelBench v1 is now released!**-->
 
@@ -76,36 +76,69 @@ To run the example GNN scripts in the `examples` directory, use:
 pip install relbench[example]
 ```
 
+
 # Package Usage
 
-Here we describe key functions of RelBench. RelBench provides a collection of APIs for easy access to machine-learning-ready relational databases.
+This section provides a brief overview of using the RelBench package. For a more in-depth coverage see the [Tutorials](#tutorials) section. For detailed documentations, please see the code directly.
 
-To see all available datasets:
+Imports:
 ```python
-from relbench.datasets import dataset_names
-print(dataset_names)
-```
-
-For a concrete example, to obtain the `rel-stack` relational database, a database of questions and answers from Stack Exchange, do:
-
-```python
+from relbench.base import Table, Database, Dataset, NodeTask
 from relbench.datasets import get_dataset
-dataset = get_dataset(name="rel-stack")
+from relbench.tasks import get_task
 ```
 
-To see the tasks available for this dataset:
+Get a dataset, e.g., `rel-amazon`:
 ```python
-print(dataset.task_names)
+dataset: Dataset = get_dataset("rel-amazon", download=True)
 ```
 
-Next, to retrieve the `posts-votes` predictive task, which is to predict the upvotes of a post it will receive in the next 2 years, simply do:
+<details>
+    <summary>Details on downloading and caching behavior.</summary>
+
+RelBench datasets (and tasks) are cached to disk (usually at `~/.cache/relbench`). If not present in cache, `download=True` downloads the data, verifies it against the known hash, and caches it. If present, `download=True` performs the verification and avoids downloading if verification succeeds. This is the recommended way.
+
+`download=False` uses the cached data without verification, if present, or processes and caches the data from scratch / raw sources otherwise.
+</details>
+
+`dataset` consists of a `Database` object and temporal splitting times `dataset.val_timestamp` and `dataset.test_timestamp`.
+
+To get the database:
+```python
+db: Database = dataset.get_db()
+```
+
+<details>
+    <summary>Preventing temporal leakage</summary>
+
+By default, rows with timestamp > `dataset.test_timestamp` are excluded to prevent accidental temporal leakage. The full database can be obtained with:
+```python
+full_db: Database = dataset.get_db(upto_test_timestamp=False)
+```
+</details>
+
+Various tasks can be defined on a dataset. For example, to get the `user-churn` task for `rel-amazon`:
+```python
+task: NodeTask = get_task("rel-amazon", "user-churn", download=True)
+```
+
+A task provides train/val/test tables:
+```python
+train_table: Table = task.get_table("train")
+val_table: Table = task.get_table("val")
+test_table: Table = task.get_table("test")
+```
+
+<details>
+    <summary>Preventing test leakage</summary>
+By default, the target labels are hidden from the test table to prevent accidental data leakage. The full test table can be obtained with:
 
 ```python
-task = dataset.get_task("post-votes")
-task.train_table, task.val_table, task.test_table # training/validation/testing tables
+full_test_table: Table = task.get_table("test", mask_input_cols=False)
 ```
+</details>
 
-The training/validation/testing tables are automatically generated using pre-defined standardized temporal split. You can then build your favorite relational deep learning model on top of it. After training and validation, you can make prediction from your model on `task.test_table`. Suppose your prediction `test_pred` is an array following the order of `task.test_table`, you can call the following to retrieve the unified evaluation metrics:
+You can build your model on top of the database and the task tables. After training and validation, you can make prediction from your model on the test table. Suppose your prediction `test_pred` is a NumPy array following the order of `task.test_table`, you can call the following to get the evaluation metrics:
 
 ```python
 task.evaluate(test_pred)
@@ -113,32 +146,34 @@ task.evaluate(test_pred)
 
 Additionally, you can evaluate validation (or training) predictions as such:
 ```python
-task.evaluate(val_pred, task.val_table)
+task.evaluate(val_pred, val_table)
 ```
 
 # Tutorials
-To get started with RelBench, we provide some helpful Colab notebook tutorials. For now these tutorials cover (i) how to load data using RelBench, focusing on providing users with the understanding of RelBench data logic needed to use RelBench data freely with any desired ML models, and (ii) training a GNN predictive model to solve any tasks in RelBench.
+To get started with RelBench, we provide some helpful Colab notebook tutorials. These tutorials cover (i) how to load data using RelBench, focusing on providing users with the understanding of RelBench data logic needed to use RelBench data freely with any desired ML models, and (ii) training a GNN predictive model to solve tasks in RelBench. Please refer to the code for more detailed documentation.
 
-| Name  | Description                                             |
-|-------|---------------------------------------------------------|
-| Loading Data &nbsp; [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/drive/1PAOktBqh_3QzgAKi53F4JbQxoOuBsUBY?usp=sharing)   | How to load and explore RelBench data
-| Training models &nbsp; [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/drive/1_z0aKcs5XndEacX1eob6csDuR4DYhGQU?usp=sharing)| Train your first GNN-based model on RelBench.                   |
+| Name  | Colab | Description                                             |
+|-------|-------|---------------------------------------------------------|
+| Loading Data | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/drive/1PAOktBqh_3QzgAKi53F4JbQxoOuBsUBY?usp=sharing)   | How to load and explore RelBench data
+| Training models | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/drive/1_z0aKcs5XndEacX1eob6csDuR4DYhGQU?usp=sharing)| Train your first GNN-based model on RelBench.                   |
 
 
 
 # Cite RelBench
 
-If you use RelBench in your work, please cite our position paper and benchmark paper:
-```
-@article{relationaldeeplearning,
-  title={Relational Deep Learning: Graph Representation Learning on Relational Tables},
-  author={Matthias Fey, Weihua Hu, Kexin Huang, Jan Eric Lenssen, Rishabh Ranjan, Joshua Robinson, Rex Ying, Jiaxuan You, Jure Leskovec},
-  journal={ICML Position Paper}
-  year={2024}
+If you use RelBench in your work, please cite our position and benchmark papers:
+
+```bibtex
+@inproceedings{rdl,
+  title={Position: Relational Deep Learning - Graph Representation Learning on Relational Databases},
+  author={Fey, Matthias and Hu, Weihua and Huang, Kexin and Lenssen, Jan Eric and Ranjan, Rishabh and Robinson, Joshua and Ying, Rex and You, Jiaxuan and Leskovec, Jure},
+  booktitle={Forty-first International Conference on Machine Learning}
 }
 ```
 
-```
+__[TODO: update with arxiv citation]__
+
+```bibtex
 @article{relbench,
   title={RelBench: A Benchmark for Deep Learning on Relational Databases},
   author={Joshua Robinson, Rishabh Ranjan, Weihua Hu, Kexin Huang, Jiaqi Han, Alejandro Dobles, Matthias Fey, Jan Eric Lenssen, Yiwen Yuan, Zecheng Zhang, Xinwei He, Jure Leskovec},
