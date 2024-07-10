@@ -22,7 +22,6 @@ dependencies=[
 	"duckdb",
 	"scikit-learn",
 	"typing-extensions",
-	"tqdm",
 ]
 
 [project.optional-dependencies]
@@ -34,6 +33,7 @@ example=[
 	"sentence-transformers",
 	"pytorch_frame[full]",
 	"torch_geometric",
+	"tqdm",
 ]
 test=[
 	"pytest",

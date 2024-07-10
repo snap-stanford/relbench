@@ -22,11 +22,11 @@
   "rel-event/tasks/user-attendance.zip": "715f46ed68d9cee6e6ba918625a201cc46a6aa8000e3582b31f50514a51edacf",
   "rel-event/tasks/user-ignore.zip": "9ce3a4a8b192c51c2861f7cfe6861f58ba4a531a4ef88631469aa84ff2a0be1f",
   "rel-event/tasks/user-repeat.zip": "f8d76dd65f77271fb32468aa6cec1fae42d623351a02973eb2df15ce5aed64e4",
-  "rel-amazon/tasks/item-churn.zip": "2fe8407723ad5cc6b94e5094b4802eae20d283d86c4df06b8c5b10ea7f8d07a4",
-  "rel-amazon/tasks/user-item-review.zip": "a247e8ae218c42f801445f2430877b0069336dd5bd96d03e30c1e35ee0498565",
-  "rel-amazon/tasks/user-item-rate.zip": "445202f03946b4e833b97cf5e3ff44927dd740822d520c8bfe4c9c1d83f86ab8",
-  "rel-amazon/tasks/user-churn.zip": "718a91e59e8af7bf753444db6429d2dbadad54de49e2cbf84903e6350303c424",
-  "rel-amazon/tasks/user-item-purchase.zip": "5caabc2d2a5cd18e48188a8f634c63d74fb906e68419c345f1f25f1fd0db2965",
-  "rel-amazon/tasks/item-ltv.zip": "90c766075976825daedd24025ce0cd78fc337a16bb70a0a46a43d22edccdb01e",
-  "rel-amazon/tasks/user-ltv.zip": "2ce8e88f987c0a80f35aaa1f8511864924ed7d1152b3ff43bbbd47de0e0c5e71"
+  "rel-amazon/tasks/item-churn.zip": "46ff6feac532ed6568a6938ad6725298057bdd970350aa6e918640e8e55bd4e1",
+  "rel-amazon/tasks/user-item-review.zip": "f4e2f2db27bcf30b148b4d00662101f42f68dce545f8ca57b970f534aef74c36",
+  "rel-amazon/tasks/user-item-rate.zip": "f7b6cc16a2601492b09aefcbcbc6c2661b1a313a4371e93306320e7a811657dc",
+  "rel-amazon/tasks/user-churn.zip": "cddd511a1f609aea286cf2e20803f489ab9b3158e18cea66e0888d174b1515f0",
+  "rel-amazon/tasks/user-item-purchase.zip": "80c9ba1ad8f91b90f318aeec31849ed765da2487bc3a377a2dc1a745ffd9b39b",
+  "rel-amazon/tasks/item-ltv.zip": "987953d1deecb9ed6925576a6f073a59d34ada03a037219919e801ec098225ea",
+  "rel-amazon/tasks/user-ltv.zip": "645d6d318e7da4f493c6953e24ab62ffdd6f4d0ba64726b5e3b36df4ba8a1a18"
 }
