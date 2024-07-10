@@ -33,6 +33,7 @@ full=[
 example=[
 	"sentence-transformers",
 	"pytorch_frame[full]",
+	"torch_geometric",
 ]
 test=[
 	"pytest",
