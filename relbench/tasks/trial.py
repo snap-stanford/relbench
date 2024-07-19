@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.base import Database, LinkTask, NodeTask, Table, TaskType
+from relbench.base import Database, NodeTask, RecommendationTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
     average_precision,
@@ -190,7 +190,7 @@ class SiteSuccessTask(NodeTask):
         )
 
 
-class ConditionSponsorRunTask(LinkTask):
+class ConditionSponsorRunTask(RecommendationTask):
     r"""Predict whether this condition will have which sponsors."""
 
     task_type = TaskType.LINK_PREDICTION
@@ -234,7 +234,7 @@ class ConditionSponsorRunTask(LinkTask):
         )
 
 
-class SiteSponsorRunTask(LinkTask):
+class SiteSponsorRunTask(RecommendationTask):
     r"""Predict whether this sponsor will have a trial in a facility."""
 
     task_type = TaskType.LINK_PREDICTION

@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.base import Database, LinkTask, NodeTask, Table, TaskType
+from relbench.base import Database, NodeTask, RecommendationTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
     average_precision,
@@ -171,7 +171,7 @@ class UserClicksTask(NodeTask):
         )
 
 
-class UserAdVisitTask(LinkTask):
+class UserAdVisitTask(RecommendationTask):
     r"""Predict the distinct list of ads a user will visit in the next 4 days."""
 
     task_type = TaskType.LINK_PREDICTION

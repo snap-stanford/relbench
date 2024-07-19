@@ -17,7 +17,7 @@ from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 
-from relbench.base import Dataset, LinkTask, Table
+from relbench.base import Dataset, RecommendationTask, Table
 from relbench.datasets import get_dataset
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 from relbench.tasks import get_task
@@ -49,7 +49,7 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 dataset: Dataset = get_dataset(args.dataset, download=True)
-task: LinkTask = get_task(args.dataset, args.task, download=True)
+task: RecommendationTask = get_task(args.dataset, args.task, download=True)
 target_col_name: str = LINK_PRED_BASELINE_TARGET_COL_NAME
 
 train_table = task.get_table("train")
@@ -373,7 +373,7 @@ def evaluate(
     eval_k: int,
     pred_score: float,
     train_table: Table,
-    task: LinkTask,
+    task: RecommendationTask,
 ) -> Dict[str, float]:
     """Given the input dataframe used for lightGBM binary link classification and its
     output prediction scores and true labels, generate link prediction evaluation
@@ -389,7 +389,7 @@ def evaluate(
             evaluation.
         pred_score (float): The binary classification prediction scores.
         train_table (Table): The train table.
-        task (LinkTask): The task.
+        task (RecommendationTask): The task.
 
     Returns:
         Dict[str, float]: The link pred metrics

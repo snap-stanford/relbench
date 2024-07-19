@@ -19,7 +19,7 @@ from torch_geometric.seed import seed_everything
 from torch_geometric.typing import NodeType
 from tqdm import tqdm
 
-from relbench.base import Dataset, LinkTask, TaskType
+from relbench.base import Dataset, RecommendationTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.loader import SparseTensor
@@ -53,7 +53,7 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 dataset: Dataset = get_dataset(args.dataset, download=True)
-task: LinkTask = get_task(args.dataset, args.task, download=True)
+task: RecommendationTask = get_task(args.dataset, args.task, download=True)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 

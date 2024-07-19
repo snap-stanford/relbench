@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.base import Database, LinkTask, NodeTask, Table, TaskType
+from relbench.base import Database, NodeTask, RecommendationTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
     average_precision,
@@ -217,7 +217,7 @@ class UserBadgeTask(NodeTask):
 ######## link prediction tasks ########
 
 
-class UserPostCommentTask(LinkTask):
+class UserPostCommentTask(RecommendationTask):
     r"""Predict a list of existing posts that a user will comment in the next two
     years."""
 
@@ -278,7 +278,7 @@ class UserPostCommentTask(LinkTask):
         )
 
 
-class PostPostRelatedTask(LinkTask):
+class PostPostRelatedTask(RecommendationTask):
     r"""Predict a list of existing posts that users will link a given post to in the
     next two years."""
 

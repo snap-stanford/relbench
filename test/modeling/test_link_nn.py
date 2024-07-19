@@ -10,7 +10,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.typing import NodeType
 
-from relbench.base import LinkTask, TaskType
+from relbench.base import RecommendationTask, TaskType
 from relbench.datasets.fake import FakeDataset
 from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.loader import LinkNeighborLoader
@@ -41,7 +41,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     gnn = HeteroGraphSAGE(data.node_types, data.edge_types, 64)
 
     # Ensure that neighbor loading works on train/val/test splits ############
-    task: LinkTask = UserItemPurchaseTask(dataset)
+    task: RecommendationTask = UserItemPurchaseTask(dataset)
     assert task.task_type == TaskType.LINK_PREDICTION
 
     # Ensure that stats computation works on train/val/test splits ###########
