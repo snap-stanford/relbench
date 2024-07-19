@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.base import Database, NodeTask, RecommendationTask, Table, TaskType
+from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
     average_precision,
@@ -16,7 +16,7 @@ from relbench.metrics import (
 )
 
 
-class StudyOutcomeTask(NodeTask):
+class StudyOutcomeTask(EntityTask):
     r"""Predict if the trials in the next 1 year will achieve its primary outcome."""
 
     task_type = TaskType.BINARY_CLASSIFICATION
@@ -77,7 +77,7 @@ class StudyOutcomeTask(NodeTask):
         )
 
 
-class StudyAdverseTask(NodeTask):
+class StudyAdverseTask(EntityTask):
     r"""Predict the number of affected patients with severe advsere events/death for the
     trial in the next 1 year."""
 
@@ -132,7 +132,7 @@ class StudyAdverseTask(NodeTask):
         )
 
 
-class SiteSuccessTask(NodeTask):
+class SiteSuccessTask(EntityTask):
     r"""Predict the success rate of a trial site in the next 1 year."""
 
     task_type = TaskType.REGRESSION

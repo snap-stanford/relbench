@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.base import Database, NodeTask, RecommendationTask, Table, TaskType
+from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
     average_precision,
@@ -18,7 +18,7 @@ from relbench.metrics import (
 ######## node prediction tasks ########
 
 
-class UserEngagementTask(NodeTask):
+class UserEngagementTask(EntityTask):
     r"""Predict if a user will make any votes/posts/comments in the next 2 years."""
 
     task_type = TaskType.BINARY_CLASSIFICATION
@@ -104,7 +104,7 @@ class UserEngagementTask(NodeTask):
         )
 
 
-class PostVotesTask(NodeTask):
+class PostVotesTask(EntityTask):
     r"""Predict the number of upvotes that an existing question will receive in the next
     2 years."""
 
@@ -159,7 +159,7 @@ class PostVotesTask(NodeTask):
         )
 
 
-class UserBadgeTask(NodeTask):
+class UserBadgeTask(EntityTask):
     r"""Predict if each user will receive in a new badge the next 2 years."""
 
     task_type = TaskType.BINARY_CLASSIFICATION
