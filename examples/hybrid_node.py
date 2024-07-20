@@ -46,7 +46,7 @@ parser.add_argument(
     "--sample_size",
     type=int,
     default=50_000,
-    help="Subsample the specified number of training data to train lightgbm model.",
+    help="Subsample the specified number of training data to train LightGBM model.",
 )
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
@@ -94,7 +94,6 @@ if task.task_type == TaskType.BINARY_CLASSIFICATION:
     loss_fn = BCEWithLogitsLoss()
     tune_metric = "roc_auc"
     higher_is_better = True
-    multilabel = False
 elif task.task_type == TaskType.REGRESSION:
     out_channels = 1
     loss_fn = L1Loss()
@@ -104,20 +103,16 @@ elif task.task_type == TaskType.REGRESSION:
     clamp_min, clamp_max = np.percentile(
         task.get_table("train").df[task.target_col].to_numpy(), [2, 98]
     )
-    multilabel = False
 elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     out_channels = task.num_labels
     loss_fn = BCEWithLogitsLoss()
     tune_metric = "multilabel_auprc_macro"
     higher_is_better = True
-    multilabel = True
 
 loader_dict: Dict[str, NeighborLoader] = {}
 for split in ["train", "val", "test"]:
     table = task.get_table(split)
-    table_input = get_node_train_table_input(
-        table=table, task=task, multilabel=multilabel
-    )
+    table_input = get_node_train_table_input(table=table, task=task)
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
         data,
