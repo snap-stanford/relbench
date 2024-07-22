@@ -11,7 +11,7 @@ from .table import Table
 from .task_base import BaseTask, TaskType
 
 
-class LinkTask(BaseTask):
+class RecommendationTask(BaseTask):
     r"""A link prediction task on a dataset.
 
     Attributes:
@@ -43,7 +43,7 @@ class LinkTask(BaseTask):
     ):
         if self.num_eval_timestamps != 1:
             raise NotImplementedError(
-                "LinkTask currently only supports num_eval_timestamps=1."
+                "RecommendationTask currently only supports num_eval_timestamps=1."
             )
         super().__init__(dataset, cache_dir)
 

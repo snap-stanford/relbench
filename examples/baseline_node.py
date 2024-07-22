@@ -7,7 +7,7 @@ import torch
 from scipy.stats import mode
 from torch_geometric.seed import seed_everything
 
-from relbench.base import Dataset, NodeTask, Table, TaskType
+from relbench.base import Dataset, EntityTask, Table, TaskType
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task
 
@@ -21,7 +21,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed_everything(args.seed)
 
 dataset: Dataset = get_dataset(args.dataset, download=True)
-task: NodeTask = get_task(args.dataset, args.task, download=True)
+task: EntityTask = get_task(args.dataset, args.task, download=True)
 
 train_table = task.get_table("train")
 val_table = task.get_table("val")

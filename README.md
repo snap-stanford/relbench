@@ -90,7 +90,7 @@ This section provides a brief overview of using the RelBench package. For a more
 
 Imports:
 ```python
-from relbench.base import Table, Database, Dataset, NodeTask
+from relbench.base import Table, Database, Dataset, EntityTask
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task
 ```
@@ -126,7 +126,7 @@ full_db: Database = dataset.get_db(upto_test_timestamp=False)
 
 Various tasks can be defined on a dataset. For example, to get the `user-churn` task for `rel-amazon`:
 ```python
-task: NodeTask = get_task("rel-amazon", "user-churn", download=True)
+task: EntityTask = get_task("rel-amazon", "user-churn", download=True)
 ```
 
 A task provides train/val/test tables:

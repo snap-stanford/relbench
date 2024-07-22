@@ -13,7 +13,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
 from torch_geometric.utils import sort_edge_index
 
-from relbench.base import Database, LinkTask, NodeTask, Table, TaskType
+from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskType
 from relbench.modeling.utils import remove_pkey_fkey, to_unix_time
 
 
@@ -146,7 +146,7 @@ class NodeTrainTableInput(NamedTuple):
 
 def get_node_train_table_input(
     table: Table,
-    task: NodeTask,
+    task: EntityTask,
 ) -> NodeTrainTableInput:
     r"""Get the training table input for node prediction."""
 
@@ -198,7 +198,7 @@ class LinkTrainTableInput(NamedTuple):
 
 def get_link_train_table_input(
     table: Table,
-    task: LinkTask,
+    task: RecommendationTask,
 ) -> LinkTrainTableInput:
     r"""Get the training table input for link prediction."""
 

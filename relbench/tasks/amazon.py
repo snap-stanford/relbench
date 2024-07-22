@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.base import Database, LinkTask, NodeTask, Table, TaskType
+from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
     average_precision,
@@ -16,7 +16,7 @@ from relbench.metrics import (
 )
 
 
-class UserChurnTask(NodeTask):
+class UserChurnTask(EntityTask):
     r"""Churn for a customer is 1 if the customer does not review any product in the
     time window, else 0."""
 
@@ -72,7 +72,7 @@ class UserChurnTask(NodeTask):
         )
 
 
-class UserLTVTask(NodeTask):
+class UserLTVTask(EntityTask):
     r"""LTV (life-time value) for a customer is the sum of prices of products that the
     customer reviews in the time window."""
 
@@ -131,7 +131,7 @@ class UserLTVTask(NodeTask):
         )
 
 
-class ItemChurnTask(NodeTask):
+class ItemChurnTask(EntityTask):
     r"""Churn for a product is 1 if the product recieves at least one review in the time
     window, else 0."""
 
@@ -187,7 +187,7 @@ class ItemChurnTask(NodeTask):
         )
 
 
-class ItemLTVTask(NodeTask):
+class ItemLTVTask(EntityTask):
     r"""LTV (life-time value) for a product is the numer of times the product is
     purchased in the time window multiplied by price."""
 
@@ -233,7 +233,7 @@ class ItemLTVTask(NodeTask):
         )
 
 
-class UserItemPurchaseTask(LinkTask):
+class UserItemPurchaseTask(RecommendationTask):
     r"""Predict the list of distinct items each customer will purchase in the next two
     years."""
 
@@ -284,7 +284,7 @@ class UserItemPurchaseTask(LinkTask):
         )
 
 
-class UserItemRateTask(LinkTask):
+class UserItemRateTask(RecommendationTask):
     r"""Predict the list of distinct items each customer will purchase and give a 5 star
     review in the next two years."""
 
@@ -337,7 +337,7 @@ class UserItemRateTask(LinkTask):
         )
 
 
-class UserItemReviewTask(LinkTask):
+class UserItemReviewTask(RecommendationTask):
     r"""Predict the list of distinct items each customer will purchase and give a
     detailed review in the next two years."""
 
