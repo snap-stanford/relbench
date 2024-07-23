@@ -152,12 +152,6 @@ class EventDataset(Dataset):
                     pkey_col="user_id",
                     time_col="joinedAt",
                 ),
-                "friends": Table(
-                    df=friends_df,
-                    fkey_col_to_pkey_table={},
-                    pkey_col="user_id",
-                    time_col="joinedAt",
-                ),
                 "events": Table(
                     df=events_df,
                     fkey_col_to_pkey_table={"user_id": "friends"},
@@ -184,7 +178,7 @@ class EventDataset(Dataset):
                     df=user_friends_flattened_df,
                     fkey_col_to_pkey_table={
                         "user": "users",
-                        "friend": "friends",
+                        "friend": "users",
                     },
                 ),
             }

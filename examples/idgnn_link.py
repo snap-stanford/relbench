@@ -21,13 +21,16 @@ from tqdm import tqdm
 
 from relbench.base import Dataset, LinkTask, TaskType
 from relbench.datasets import get_dataset
+from relbench.datasets.fake import FakeDataset
 from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.loader import SparseTensor
+from torch_frame.testing.text_embedder import HashTextEmbedder
 from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task
+from relbench.tasks.amazon import UserItemPurchaseTask
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-hm")
+parser.add_argument("--dataset", type=str, default="rel-amazon")
 parser.add_argument("--task", type=str, default="user-item-purchase")
 parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--epochs", type=int, default=20)
@@ -52,8 +55,16 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: Dataset = get_dataset(args.dataset, download=True)
-task: LinkTask = get_task(args.dataset, args.task, download=True)
+dataset = FakeDataset()
+
+db = dataset.get_db()
+data, col_stats_dict = make_pkey_fkey_graph(
+        db,
+        get_stype_proposal(db),
+        text_embedder_cfg=TextEmbedderConfig(text_embedder=HashTextEmbedder(8),
+                                             batch_size=None),
+)
+task = UserItemPurchaseTask(dataset)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
@@ -73,9 +84,8 @@ except FileNotFoundError:
 data, col_stats_dict = make_pkey_fkey_graph(
     dataset.get_db(),
     col_to_stype_dict=col_to_stype_dict,
-    text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device), batch_size=256
-    ),
+    text_embedder_cfg=TextEmbedderConfig(text_embedder=HashTextEmbedder(8),
+                                             batch_size=None),
     cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
 )
 
