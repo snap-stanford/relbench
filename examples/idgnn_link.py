@@ -14,6 +14,7 @@ from text_embedder import GloveTextEmbedding
 from torch import Tensor
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
+from torch_frame.testing.text_embedder import HashTextEmbedder
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from torch_geometric.typing import NodeType
@@ -24,7 +25,6 @@ from relbench.datasets import get_dataset
 from relbench.datasets.fake import FakeDataset
 from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.loader import SparseTensor
-from torch_frame.testing.text_embedder import HashTextEmbedder
 from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task
 from relbench.tasks.amazon import UserItemPurchaseTask
@@ -76,8 +76,9 @@ except FileNotFoundError:
 data, col_stats_dict = make_pkey_fkey_graph(
     dataset.get_db(),
     col_to_stype_dict=col_to_stype_dict,
-    text_embedder_cfg=TextEmbedderConfig(text_embedder=HashTextEmbedder(8),
-                                             batch_size=None),
+    text_embedder_cfg=TextEmbedderConfig(
+        text_embedder=HashTextEmbedder(8), batch_size=None
+    ),
     cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
 )
 
