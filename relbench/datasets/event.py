@@ -57,15 +57,6 @@ class EventDataset(Dataset):
             users_df["joinedAt"], errors="coerce", format="mixed"
         ).dt.tz_localize(None)
 
-        friends_df = pd.read_csv(
-            users, dtype={"user_id": int}, parse_dates=["joinedAt"]
-        )
-        friends_df["birthyear"] = pd.to_numeric(
-            friends_df["birthyear"], errors="coerce"
-        )
-        friends_df["joinedAt"] = pd.to_datetime(
-            friends_df["joinedAt"], errors="coerce", format="mixed"
-        ).dt.tz_localize(None)
         events_df = pd.read_csv(events)
         events_df["start_time"] = pd.to_datetime(
             events_df["start_time"], errors="coerce", format="mixed"
