@@ -17,7 +17,7 @@ from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 
-from relbench.base import Dataset, LinkTask, Table
+from relbench.base import Dataset, RecommendationTask, Table
 from relbench.datasets import get_dataset
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 from relbench.tasks import get_task
@@ -49,7 +49,7 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 dataset: Dataset = get_dataset(args.dataset, download=True)
-task: LinkTask = get_task(args.dataset, args.task, download=True)
+task: RecommendationTask = get_task(args.dataset, args.task, download=True)
 target_col_name: str = LINK_PRED_BASELINE_TARGET_COL_NAME
 
 train_table = task.get_table("train")
@@ -80,7 +80,7 @@ except FileNotFoundError:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 
-# Prepare col_to_stype dictioanry mapping between column names and stypes
+# Prepare col_to_stype dictionary mapping between column names and stypes
 # for torch_frame Dataset initialization.
 col_to_stype = {}
 src_entity_table_col_to_stype = copy.deepcopy(col_to_stype_dict[task.src_entity_table])
@@ -318,7 +318,7 @@ def prepare_for_link_pred_eval(
     return evaluate_table_df
 
 
-# Prepare val dataset for lightGBM model evalution
+# Prepare val dataset for lightGBM model evaluation
 val_df_pred_column_names = list(val_table.df.columns)
 val_df_pred_column_names.remove(dst_entity)
 val_df_pred = val_table.df[val_df_pred_column_names]
@@ -328,7 +328,7 @@ val_past_table_df.drop(columns=[train_table.time_col], inplace=True)
 val_df_pred = prepare_for_link_pred_eval(val_df_pred, val_past_table_df)
 dfs["val_pred"] = val_df_pred
 
-# Prepare test dataset for lightGBM model evalution
+# Prepare test dataset for lightGBM model evaluation
 test_df_column_names = list(test_table.df.columns)
 test_df_column_names.remove(dst_entity)
 test_df = test_table.df[test_df_column_names]
@@ -373,7 +373,7 @@ def evaluate(
     eval_k: int,
     pred_score: float,
     train_table: Table,
-    task: LinkTask,
+    task: RecommendationTask,
 ) -> Dict[str, float]:
     """Given the input dataframe used for lightGBM binary link classification and its
     output prediction scores and true labels, generate link prediction evaluation
@@ -389,7 +389,7 @@ def evaluate(
             evaluation.
         pred_score (float): The binary classification prediction scores.
         train_table (Table): The train table.
-        task (LinkTask): The task.
+        task (RecommendationTask): The task.
 
     Returns:
         Dict[str, float]: The link pred metrics
@@ -419,7 +419,7 @@ def evaluate(
     return metrics
 
 
-# NOTE: train/val metrics will be artifically high since all true links are
+# NOTE: train/val metrics will be artificially high since all true links are
 # included in the candidate set
 pred = model.predict(tf_test=tf_train).numpy()
 lightgbm_output = dfs["train"]

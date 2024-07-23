@@ -13,7 +13,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
 from torch_geometric.utils import sort_edge_index
 
-from relbench.base import Database, LinkTask, NodeTask, Table, TaskType
+from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskType
 from relbench.modeling.utils import remove_pkey_fkey, to_unix_time
 
 
@@ -130,7 +130,7 @@ class AttachTargetTransform:
 
 
 class NodeTrainTableInput(NamedTuple):
-    r"""Trainining table input for node prediction.
+    r"""Training table input for node prediction.
 
     - nodes is a Tensor of node indices.
     - time is a Tensor of node timestamps.
@@ -146,8 +146,7 @@ class NodeTrainTableInput(NamedTuple):
 
 def get_node_train_table_input(
     table: Table,
-    task: NodeTask,
-    multilabel: bool = False,
+    task: EntityTask,
 ) -> NodeTrainTableInput:
     r"""Get the training table input for node prediction."""
 
@@ -161,7 +160,7 @@ def get_node_train_table_input(
     transform: Optional[AttachTargetTransform] = None
     if task.target_col in table.df:
         target_type = float
-        if task.task_type == "multiclass_classification":
+        if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
             target_type = int
         if task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
             target = torch.from_numpy(np.stack(table.df[task.target_col].values))
@@ -180,7 +179,7 @@ def get_node_train_table_input(
 
 
 class LinkTrainTableInput(NamedTuple):
-    r"""Trainining table input for link prediction.
+    r"""Training table input for link prediction.
 
     - src_nodes is a Tensor of source node indices.
     - dst_nodes is PyTorch sparse tensor in csr format.
@@ -199,7 +198,7 @@ class LinkTrainTableInput(NamedTuple):
 
 def get_link_train_table_input(
     table: Table,
-    task: LinkTask,
+    task: RecommendationTask,
 ) -> LinkTrainTableInput:
     r"""Get the training table input for link prediction."""
 

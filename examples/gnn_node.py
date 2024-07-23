@@ -17,7 +17,7 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench.base import Dataset, NodeTask, TaskType
+from relbench.base import Dataset, EntityTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
@@ -51,7 +51,7 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 dataset: Dataset = get_dataset(args.dataset, download=True)
-task: NodeTask = get_task(args.dataset, args.task, download=True)
+task: EntityTask = get_task(args.dataset, args.task, download=True)
 
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
@@ -82,7 +82,6 @@ if task.task_type == TaskType.BINARY_CLASSIFICATION:
     loss_fn = BCEWithLogitsLoss()
     tune_metric = "roc_auc"
     higher_is_better = True
-    multilabel = False
 elif task.task_type == TaskType.REGRESSION:
     out_channels = 1
     loss_fn = L1Loss()
@@ -93,22 +92,18 @@ elif task.task_type == TaskType.REGRESSION:
     clamp_min, clamp_max = np.percentile(
         train_table.df[task.target_col].to_numpy(), [2, 98]
     )
-    multilabel = False
 elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     out_channels = task.num_labels
     loss_fn = BCEWithLogitsLoss()
     tune_metric = "multilabel_auprc_macro"
     higher_is_better = True
-    multilabel = True
 else:
     raise ValueError(f"Task type {task.task_type} is unsupported")
 
 loader_dict: Dict[str, NeighborLoader] = {}
 for split in ["train", "val", "test"]:
     table = task.get_table(split)
-    table_input = get_node_train_table_input(
-        table=table, task=task, multilabel=multilabel
-    )
+    table_input = get_node_train_table_input(table=table, task=task)
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
         data,

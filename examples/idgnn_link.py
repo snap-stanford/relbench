@@ -19,7 +19,7 @@ from torch_geometric.seed import seed_everything
 from torch_geometric.typing import NodeType
 from tqdm import tqdm
 
-from relbench.base import Dataset, LinkTask, TaskType
+from relbench.base import Dataset, RecommendationTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.datasets.fake import FakeDataset
 from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
@@ -55,16 +55,8 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset = FakeDataset()
-
-db = dataset.get_db()
-data, col_stats_dict = make_pkey_fkey_graph(
-        db,
-        get_stype_proposal(db),
-        text_embedder_cfg=TextEmbedderConfig(text_embedder=HashTextEmbedder(8),
-                                             batch_size=None),
-)
-task = UserItemPurchaseTask(dataset)
+dataset: Dataset = get_dataset(args.dataset, download=True)
+task: RecommendationTask = get_task(args.dataset, args.task, download=True)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 

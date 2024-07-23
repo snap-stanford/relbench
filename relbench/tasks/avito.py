@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.base import Database, LinkTask, NodeTask, Table, TaskType
+from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
     average_precision,
@@ -16,7 +16,7 @@ from relbench.metrics import (
 )
 
 
-class AdCTRTask(NodeTask):
+class AdCTRTask(EntityTask):
     r"""Assuming the ad will be clicked in the next 4 days, predict the Click-Through-
     Rate (CTR) for each ad."""
 
@@ -66,7 +66,7 @@ class AdCTRTask(NodeTask):
         )
 
 
-class UserVisitsTask(NodeTask):
+class UserVisitsTask(EntityTask):
     r"""Predict whether each customer will visit more than one ad in the next 4 days."""
 
     task_type = TaskType.BINARY_CLASSIFICATION
@@ -114,7 +114,7 @@ class UserVisitsTask(NodeTask):
         )
 
 
-class UserClicksTask(NodeTask):
+class UserClicksTask(EntityTask):
     r"""Predict whether the each customer will click on more than one ads in the next 4
     days."""
 
@@ -171,7 +171,7 @@ class UserClicksTask(NodeTask):
         )
 
 
-class UserAdVisitTask(LinkTask):
+class UserAdVisitTask(RecommendationTask):
     r"""Predict the distinct list of ads a user will visit in the next 4 days."""
 
     task_type = TaskType.LINK_PREDICTION

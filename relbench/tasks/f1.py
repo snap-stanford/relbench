@@ -1,11 +1,11 @@
 import duckdb
 import pandas as pd
 
-from relbench.base import Database, NodeTask, Table, TaskType
+from relbench.base import Database, EntityTask, Table, TaskType
 from relbench.metrics import accuracy, average_precision, f1, mae, r2, rmse, roc_auc
 
 
-class DriverPositionTask(NodeTask):
+class DriverPositionTask(EntityTask):
     r"""Predict the average finishing position of each driver all races in the next 2
     months."""
 
@@ -63,7 +63,7 @@ class DriverPositionTask(NodeTask):
         )
 
 
-class DriverDNFTask(NodeTask):
+class DriverDNFTask(EntityTask):
     r"""Predict the if each driver will DNF (not finish) a race in the next 1 month."""
 
     task_type = TaskType.BINARY_CLASSIFICATION
@@ -123,7 +123,7 @@ class DriverDNFTask(NodeTask):
         )
 
 
-class DriverTop3Task(NodeTask):
+class DriverTop3Task(EntityTask):
     r"""Predict if each driver will qualify in the top-3 for a race within the next 1
     month."""
 

@@ -43,7 +43,7 @@ class BaseTask:
             + num_eval_timestamps * timedelta].
         metrics: The metrics to evaluate this task on.
 
-    Inherited by NodeTask and LinkTask.
+    Inherited by EntityTask and RecommendationTask.
     """
 
     # To be set by subclass.
@@ -210,7 +210,7 @@ class BaseTask:
     def filter_dangling_entities(self, table: Table) -> Table:
         r"""Filter out dangling entities from a table.
 
-        Implemented by NodeTask and LinkTask.
+        Implemented by EntityTask and RecommendationTask.
         """
         raise NotImplementedError
 
@@ -228,6 +228,6 @@ class BaseTask:
             metrics: The metrics to evaluate the prediction table. If None, use
                 the default metrics for the task.
 
-        Implemented by NodeTask and LinkTask.
+        Implemented by EntityTask and RecommendationTask.
         """
         raise NotImplementedError

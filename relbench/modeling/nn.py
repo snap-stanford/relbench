@@ -165,7 +165,7 @@ class HeteroGraphSAGE(torch.nn.Module):
         num_sampled_nodes_dict: Optional[Dict[NodeType, List[int]]] = None,
         num_sampled_edges_dict: Optional[Dict[EdgeType, List[int]]] = None,
     ) -> Dict[NodeType, Tensor]:
-        for i, (conv, norm_dict) in enumerate(zip(self.convs, self.norms)):
+        for _, (conv, norm_dict) in enumerate(zip(self.convs, self.norms)):
             x_dict = conv(x_dict, edge_index_dict)
             x_dict = {key: norm_dict[key](x) for key, x in x_dict.items()}
             x_dict = {key: x.relu() for key, x in x_dict.items()}

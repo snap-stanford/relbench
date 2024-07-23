@@ -10,7 +10,7 @@ from .table import Table
 from .task_base import BaseTask, TaskType
 
 
-class NodeTask(BaseTask):
+class EntityTask(BaseTask):
     r"""A node prediction task on a dataset.
 
     Attributes:

@@ -90,7 +90,7 @@ This section provides a brief overview of using the RelBench package. For a more
 
 Imports:
 ```python
-from relbench.base import Table, Database, Dataset, NodeTask
+from relbench.base import Table, Database, Dataset, EntityTask
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task
 ```
@@ -126,7 +126,7 @@ full_db: Database = dataset.get_db(upto_test_timestamp=False)
 
 Various tasks can be defined on a dataset. For example, to get the `user-churn` task for `rel-amazon`:
 ```python
-task: NodeTask = get_task("rel-amazon", "user-churn", download=True)
+task: EntityTask = get_task("rel-amazon", "user-churn", download=True)
 ```
 
 A task provides train/val/test tables:
@@ -159,10 +159,10 @@ task.evaluate(val_pred, val_table)
 # Tutorials
 To get started with RelBench, we provide some helpful Colab notebook tutorials. These tutorials cover (i) how to load data using RelBench, focusing on providing users with the understanding of RelBench data logic needed to use RelBench data freely with any desired ML models, and (ii) training a GNN predictive model to solve tasks in RelBench. Please refer to the code for more detailed documentation.
 
-| Name  | Colab | Description                                             |
-|-------|-------|---------------------------------------------------------|
-| Loading Data | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/drive/1PAOktBqh_3QzgAKi53F4JbQxoOuBsUBY?usp=sharing)   | How to load and explore RelBench data
-| Training models | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/drive/1_z0aKcs5XndEacX1eob6csDuR4DYhGQU?usp=sharing)| Train your first GNN-based model on RelBench.                   |
+| Name  | Notebook | Try on Colab | Description                                             |
+|-------|----------|--------------|---------------------------------------------------------|
+| Loading Data | [load_data.ipynb](tutorials/load_data.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/load_data.ipynb)   | How to load and explore RelBench data
+| Training models | [train_model.ipynb](tutorials/train_model.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/train_model.ipynb)| Train your first GNN-based model on RelBench.                   |
 
 
 
