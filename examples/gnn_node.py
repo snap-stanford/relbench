@@ -85,8 +85,8 @@ for task_name in tasks_to_add:
         continue
     labels_table_name = f'{task_name}_labels'
     label_df = pd.concat([
-        task.get_table("train").df,
-        task.get_table("val").df
+        t.get_table("train").df,
+        t.get_table("val").df
         # test not included b/c labels are not revealed
     ])
     # time-censoring labels
