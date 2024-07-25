@@ -19,7 +19,6 @@ class UserAttendanceTask(EntityTask):
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         users = db.table_dict["users"].df
         user_friends = db.table_dict["user_friends"].df
-        friends = db.table_dict["friends"].df
         events = db.table_dict["events"].df
         event_attendees = db.table_dict["event_attendees"].df
         event_interest = db.table_dict["event_interest"].df
@@ -71,7 +70,6 @@ class UserRepeatTask(EntityTask):
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         users = db.table_dict["users"].df
         user_friends = db.table_dict["user_friends"].df
-        friends = db.table_dict["friends"].df
         events = db.table_dict["events"].df
         event_attendees = db.table_dict["event_attendees"].df
         event_interest = db.table_dict["event_interest"].df
@@ -149,7 +147,6 @@ class UserIgnoreTask(EntityTask):
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         users = db.table_dict["users"].df
         user_friends = db.table_dict["user_friends"].df
-        friends = db.table_dict["friends"].df
         events = db.table_dict["events"].df
         event_attendees = db.table_dict["event_attendees"].df
         event_interest = db.table_dict["event_interest"].df
