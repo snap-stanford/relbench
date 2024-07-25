@@ -88,7 +88,7 @@ for task_name in tasks_to_add:
         task.get_table("train").df,
         task.get_table("val").df
         # test not included b/c labels are not revealed
-    ]),
+    ])
     # time-censoring labels
     label_df[t.time_col] = label_df[t.time_col] + t.timedelta
     db.table_dict[labels_table_name] = Table(
