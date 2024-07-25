@@ -88,10 +88,7 @@ class DriverDNFTask(EntityTask):
                 SELECT
                     t.timestamp as date,
                     dri.driverId as driverId,
-                    CASE
-                        WHEN MAX(CASE WHEN re.statusId != 1 THEN 1 ELSE 0 END) = 1 THEN 0
-                        ELSE 1
-                    END AS did_not_finish
+                    MAX(CASE WHEN re.statusId != 1 THEN 1 ELSE 0 END) AS did_not_finish
                 FROM
                     timestamp_df t
                 LEFT JOIN
