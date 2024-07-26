@@ -159,12 +159,12 @@ task.evaluate(val_pred, val_table)
 # Tutorials
 To get started with RelBench, we provide some helpful Colab notebook tutorials. These tutorials cover (i) how to load data using RelBench, focusing on providing users with the understanding of RelBench data logic needed to use RelBench data freely with any desired ML models, and (ii) training a GNN predictive model to solve tasks in RelBench. Please refer to the code for more detailed documentation.
 
-| Name  | Notebook | Try on Colab | Description                                             |
-|-------|----------|--------------|---------------------------------------------------------|
-| Loading Data | [load_data.ipynb](tutorials/load_data.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/load_data.ipynb)   | Load and explore RelBench data
-| Training models | [train_model.ipynb](tutorials/train_model.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/train_model.ipynb)| Train your first GNN-based model on RelBench
-| Custom Dataset | [custom_dataset.ipynb](tutorials/custom_dataset.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/custom_dataset.ipynb)   | Use your own data in RelBench
-| Training models | [custom_task.ipynb](tutorials/custom_task.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/custom_task.ipynb)| Define your own ML tasks in RelBench
+| Notebook | Try on Colab | Description                                             |
+----------|--------------|---------------------------------------------------------|
+| [load_data.ipynb](tutorials/load_data.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/load_data.ipynb)   | Load and explore RelBench data
+| [train_model.ipynb](tutorials/train_model.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/train_model.ipynb)| Train your first GNN-based model on RelBench
+| [custom_dataset.ipynb](tutorials/custom_dataset.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/custom_dataset.ipynb)   | Use your own data in RelBench
+| [custom_task.ipynb](tutorials/custom_task.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/custom_task.ipynb)| Define your own ML tasks in RelBench
 
 
 # Cite RelBench
