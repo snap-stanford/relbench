@@ -19,7 +19,6 @@ class DriverPositionTask(EntityTask):
     num_eval_timestamps = 40
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for rel-f1-position."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         results = db.table_dict["results"].df
@@ -76,7 +75,6 @@ class DriverDNFTask(EntityTask):
     num_eval_timestamps = 40
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for rel-f1-dnf."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         results = db.table_dict["results"].df
@@ -137,7 +135,6 @@ class DriverTop3Task(EntityTask):
     num_eval_timestamps = 40
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        r"""Create Task object for rel-f1-qualifying."""
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         qualifying = db.table_dict["qualifying"].df
