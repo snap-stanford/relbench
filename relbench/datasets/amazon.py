@@ -1,6 +1,4 @@
-import json
 import time
-from pathlib import Path
 
 import pandas as pd
 import pooch
@@ -13,8 +11,6 @@ from relbench.base import Database, Dataset, Table
 class AmazonDataset(Dataset):
     val_timestamp = pd.Timestamp("2015-10-01")
     test_timestamp = pd.Timestamp("2016-01-01")
-
-    max_eval_time_frames = 1
 
     url_prefix = "https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_v2"
     _category_to_url_key = {"books": "Books", "fashion": "AMAZON_FASHION"}
