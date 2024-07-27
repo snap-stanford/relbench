@@ -38,7 +38,7 @@ sha256sum db.zip
 
 ## Contributing tasks
 
-Similar to above you can also contribute tasks to existing datasets (including community-contributed ones). To define your own tasks in RelBench, please take a look at the tutorial [tutorials/custom_dataset.ipynb](tutorials/custom_task.ipynb), also available on [Google Colab](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/custom_task.ipynb). Once you have a working task within RelBench, make a PR to get it added to RelBench. To help RelBench maintainers, please follow these conventions:
+Similar to above you can also contribute tasks to existing datasets (including community-contributed ones). To define your own tasks in RelBench, please take a look at the tutorial [tutorials/custom_task.ipynb](tutorials/custom_task.ipynb), also available on [Google Colab](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/custom_task.ipynb). Once you have a working task within RelBench, make a PR to get it added to RelBench. To help RelBench maintainers, please follow these conventions:
 
 1. The task name is `<entity_name>-<single_word>` for entity tasks and `<src_entity_name>-<dst_entity_name>-<single_word>` for recommendation tasks, e.g., `user-churn` and `user-item-review`.
 2. The task class name is the task name followed by `Task` in camel case, e.g., `UserChurnTask` and `UserItemReviewTask`.
