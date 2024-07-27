@@ -157,7 +157,6 @@ task.evaluate(val_pred, val_table)
 ```
 
 # Tutorials
-To get started with RelBench, we provide some helpful Colab notebook tutorials. These tutorials cover (i) how to load data using RelBench, focusing on providing users with the understanding of RelBench data logic needed to use RelBench data freely with any desired ML models, and (ii) training a GNN predictive model to solve tasks in RelBench. Please refer to the code for more detailed documentation.
 
 | Notebook | Try on Colab | Description                                             |
 ----------|--------------|---------------------------------------------------------|
