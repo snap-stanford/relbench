@@ -109,7 +109,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
+    cache_dir=f"{args.cache_dir}/{args.dataset}_{args.include_label_tables}/materialized",
 )
 
 clamp_min, clamp_max = None, None
