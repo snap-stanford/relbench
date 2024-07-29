@@ -30,14 +30,12 @@ Additionally, RelBench provides a first open-source implementation of a Graph Ne
 
 # Key Papers
 
-[**Benchmark Paper**](https://relbench.stanford.edu/paper.pdf) [RelBench: A Benchmark for Deep Learning
-on Relational Databases.]
+[**RelBench: A Benchmark for Deep Learning on Relational Databases**](https://relbench.stanford.edu/paper.pdf)
 
 This paper details our approach to designing the RelBench benchmark. It also includes a key user study showing that relational deep learning can produce performant models with a fraction of the manual human effort required by typical data science pipelines. This paper is useful for a detailed understanding of RelBench and our initial benchmarking results. If you just want to quickly familiarize with the data and tasks, the [**website**](https://relbench.stanford.edu) is a better place to start.
 <!---Joshua Robinson*, Rishabh Ranjan*, Weihua Hu*, Kexin Huang*, Jiaqi Han, Alejandro Dobles, Matthias Fey, Jan Eric Lenssen, Yiwen Yuan, Zecheng Zhang, Xinwei He, Jure Leskovec-->
 
-[**Position Paper (ICML 2024)**](https://relbench.stanford.edu/paper.pdf) [Relational Deep Learning: Graph Representation
-Learning on Relational Databases.]
+[**Position: Relational Deep Learning - Graph Representation Learning on Relational Databases (ICML 2024)**](https://relbench.stanford.edu/paper.pdf)
 
 This paper outlines our proposal for how to do end-to-end deep learning on relational databases by combining graph neural networsk with deep tabular models. We reccomend reading this paper if you want to think about new methods for end-to-end deep learning on relational databases. The paper includes a section on possible directions for future research to give a snapshot of some of the research possilibities there are in this area.
 
@@ -157,13 +155,18 @@ task.evaluate(val_pred, val_table)
 ```
 
 # Tutorials
-To get started with RelBench, we provide some helpful Colab notebook tutorials. These tutorials cover (i) how to load data using RelBench, focusing on providing users with the understanding of RelBench data logic needed to use RelBench data freely with any desired ML models, and (ii) training a GNN predictive model to solve tasks in RelBench. Please refer to the code for more detailed documentation.
 
-| Name  | Notebook | Try on Colab | Description                                             |
-|-------|----------|--------------|---------------------------------------------------------|
-| Loading Data | [load_data.ipynb](tutorials/load_data.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/load_data.ipynb)   | How to load and explore RelBench data
-| Training models | [train_model.ipynb](tutorials/train_model.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/train_model.ipynb)| Train your first GNN-based model on RelBench.                   |
+| Notebook | Try on Colab | Description                                             |
+----------|--------------|---------------------------------------------------------|
+| [load_data.ipynb](tutorials/load_data.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/load_data.ipynb)   | Load and explore RelBench data
+| [train_model.ipynb](tutorials/train_model.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/train_model.ipynb)| Train your first GNN-based model on RelBench
+| [custom_dataset.ipynb](tutorials/custom_dataset.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/custom_dataset.ipynb)   | Use your own data in RelBench
+| [custom_task.ipynb](tutorials/custom_task.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/custom_task.ipynb)| Define your own ML tasks in RelBench
 
+
+# Contributing
+
+Please check out [CONTRIBUTING.md](CONTRIBUTING.md) if you are interested in contributing datasets, tasks, bug fixes, etc. to RelBench.
 
 
 # Cite RelBench
