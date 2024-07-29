@@ -38,7 +38,7 @@ parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument("--include_label_tables", type=str, default="all", help="One of 'all', \
+parser.add_argument("--include_label_tables", type=str, default="none", help="One of 'all', \
                     'task_only', and 'none'.")
 parser.add_argument(
     "--cache_dir",
