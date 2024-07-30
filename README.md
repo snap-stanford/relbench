@@ -181,12 +181,14 @@ If you use RelBench in your work, please cite our position and benchmark papers:
 }
 ```
 
-__[TODO: update with arxiv citation]__
-
 ```bibtex
-@article{relbench,
-  title={RelBench: A Benchmark for Deep Learning on Relational Databases},
-  author={Joshua Robinson, Rishabh Ranjan, Weihua Hu, Kexin Huang, Jiaqi Han, Alejandro Dobles, Matthias Fey, Jan Eric Lenssen, Yiwen Yuan, Zecheng Zhang, Xinwei He, Jure Leskovec},
-  year={2024}
+@misc{relbench,
+      title={RelBench: A Benchmark for Deep Learning on Relational Databases}, 
+      author={Joshua Robinson and Rishabh Ranjan and Weihua Hu and Kexin Huang and Jiaqi Han and Alejandro Dobles and Matthias Fey and Jan E. Lenssen and Yiwen Yuan and Zecheng Zhang and Xinwei He and Jure Leskovec},
+      year={2024},
+      eprint={2407.20060},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2407.20060}, 
 }
 ```
