@@ -18,7 +18,7 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench.base import Dataset, EntityTask, TaskType, Table
+from relbench.base import Dataset, EntityTask, Table, TaskType
 from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
@@ -38,8 +38,13 @@ parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument("--include_label_tables", type=str, default="none", help="One of 'all', \
-                    'task_only', and 'none'.")
+parser.add_argument(
+    "--include_label_tables",
+    type=str,
+    default="none",
+    help="One of 'all', \
+                    'task_only', and 'none'.",
+)
 parser.add_argument(
     "--cache_dir",
     type=str,
@@ -83,19 +88,21 @@ for task_name in tasks_to_add:
     t = get_task(args.dataset, task_name)
     if not isinstance(t, EntityTask):
         continue
-    labels_table_name = f'{task_name}_labels'
-    label_df = pd.concat([
-        t.get_table("train").df,
-        t.get_table("val").df
-        # test not included b/c labels are not revealed
-    ])
+    labels_table_name = f"{task_name}_labels"
+    label_df = pd.concat(
+        [
+            t.get_table("train").df,
+            t.get_table("val").df,
+            # test not included b/c labels are not revealed
+        ]
+    )
     # time-censoring labels
     label_df[t.time_col] = label_df[t.time_col] + t.timedelta
     db.table_dict[labels_table_name] = Table(
         df=label_df,
         fkey_col_to_pkey_table={t.entity_col: t.entity_table},
         pkey_col=None,
-        time_col=t.time_col
+        time_col=t.time_col,
     )
     col_to_stype_dict[labels_table_name] = {
         t.entity_col: stype.numerical,
@@ -103,13 +110,16 @@ for task_name in tasks_to_add:
         t.target_col: stype.numerical,
     }
 
+cache_name = (
+    args.include_label_tables if args.include_label_tables != "task_only" else args.task
+)
 data, col_stats_dict = make_pkey_fkey_graph(
     db,
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    cache_dir=f"{args.cache_dir}/{args.dataset}_{args.include_label_tables}/materialized",
+    cache_dir=f"{args.cache_dir}/{args.dataset}_{cache_name}/materialized",
 )
 
 clamp_min, clamp_max = None, None
