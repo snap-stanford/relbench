@@ -12,7 +12,7 @@
 
 
 <!-- [<img align="center" src="https://relbench.stanford.edu/img/favicon.png" width="20px" />   -->
-[**Website**](https://relbench.stanford.edu) | [**Position Paper**](https://relbench.stanford.edu/paper.pdf) |  [**Benchmark Paper [TODO]**](https://relbench.stanford.edu/paper.pdf) | [**Mailing List**](https://groups.google.com/forum/#!forum/relbench/join)
+[**Website**](https://relbench.stanford.edu) | [**Position Paper**](https://relbench.stanford.edu/paper.pdf) |  [**Benchmark Paper**](https://arxiv.org/abs/2407.20060) | [**Mailing List**](https://groups.google.com/forum/#!forum/relbench/join)
 
 # Overview
 
@@ -30,7 +30,7 @@ Additionally, RelBench provides a first open-source implementation of a Graph Ne
 
 # Key Papers
 
-[**RelBench: A Benchmark for Deep Learning on Relational Databases**](https://relbench.stanford.edu/paper.pdf)
+[**RelBench: A Benchmark for Deep Learning on Relational Databases**](https://arxiv.org/abs/2407.20060)
 
 This paper details our approach to designing the RelBench benchmark. It also includes a key user study showing that relational deep learning can produce performant models with a fraction of the manual human effort required by typical data science pipelines. This paper is useful for a detailed understanding of RelBench and our initial benchmarking results. If you just want to quickly familiarize with the data and tasks, the [**website**](https://relbench.stanford.edu) is a better place to start.
 <!---Joshua Robinson*, Rishabh Ranjan*, Weihua Hu*, Kexin Huang*, Jiaqi Han, Alejandro Dobles, Matthias Fey, Jan Eric Lenssen, Yiwen Yuan, Zecheng Zhang, Xinwei He, Jure Leskovec-->
