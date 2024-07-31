@@ -37,7 +37,7 @@ This paper details our approach to designing the RelBench benchmark. It also inc
 
 [**Position: Relational Deep Learning - Graph Representation Learning on Relational Databases (ICML 2024)**](https://relbench.stanford.edu/paper.pdf)
 
-This paper outlines our proposal for how to do end-to-end deep learning on relational databases by combining graph neural networsk with deep tabular models. We reccomend reading this paper if you want to think about new methods for end-to-end deep learning on relational databases. The paper includes a section on possible directions for future research to give a snapshot of some of the research possilibities there are in this area.
+This paper outlines our proposal for how to do end-to-end deep learning on relational databases by combining graph neural networsk with deep tabular models. We reccomend reading this paper if you want to think about new methods for end-to-end deep learning on relational databases. The paper includes a section on possible directions for future research to give a snapshot of some of the research possibilities there are in this area.
 
 <!--- Matthias Fey*, Weihua Hu*, Kexin Huang*, Jan Eric Lenssen*, Rishabh Ranjan, Joshua Robinson*, Rex Ying, Jiaxuan You, Jure Leskovec.-->
 
@@ -183,12 +183,12 @@ If you use RelBench in your work, please cite our position and benchmark papers:
 
 ```bibtex
 @misc{relbench,
-      title={RelBench: A Benchmark for Deep Learning on Relational Databases}, 
+      title={RelBench: A Benchmark for Deep Learning on Relational Databases},
       author={Joshua Robinson and Rishabh Ranjan and Weihua Hu and Kexin Huang and Jiaqi Han and Alejandro Dobles and Matthias Fey and Jan E. Lenssen and Yiwen Yuan and Zecheng Zhang and Xinwei He and Jure Leskovec},
       year={2024},
       eprint={2407.20060},
       archivePrefix={arXiv},
       primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2407.20060}, 
+      url={https://arxiv.org/abs/2407.20060},
 }
 ```
