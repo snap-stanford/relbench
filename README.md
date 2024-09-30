@@ -106,6 +106,8 @@ RelBench datasets (and tasks) are cached to disk (usually at `~/.cache/relbench`
 `download=False` uses the cached data without verification, if present, or processes and caches the data from scratch / raw sources otherwise.
 </details>
 
+For faster download, please see [this](https://github.com/snap-stanford/relbench/issues/265).
+
 `dataset` consists of a `Database` object and temporal splitting times `dataset.val_timestamp` and `dataset.test_timestamp`.
 
 To get the database:
