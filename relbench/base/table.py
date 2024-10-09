@@ -33,6 +33,7 @@ class Table:
         self.fkey_col_to_pkey_table = fkey_col_to_pkey_table
         self.pkey_col = pkey_col
         self.time_col = time_col
+        self.removed_cols = None
 
     def __repr__(self) -> str:
         return (
