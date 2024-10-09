@@ -1,6 +1,7 @@
 import os
 import shutil
 from pathlib import Path
+from functools import lru_cache
 
 import pandas as pd
 
@@ -67,5 +68,37 @@ class HMDataset(Dataset):
         )
 
         db = db.from_(pd.Timestamp("2019-09-07"))
+
+        return db
+    
+class HMMinusPriceDataset(HMDataset):
+    r"""The H&M dataset without the price column in the transactions table."""
+    
+    remove_columns_dict = {"transactions": ["price"]} 
+
+    def make_db(self) -> Database:
+        db = super().make_db()
+        
+        # add transaction_id as primary key to transactions
+        db.table_dict["transactions"].df["transaction_id"] = range(len(db.table_dict["transactions"]))
+        # make transaction_id be the first column
+        db.table_dict["transactions"].df = db.table_dict["transactions"].df[["transaction_id"] + [col for col in db.table_dict["transactions"].df.columns if col != "transaction_id"]]
+        db.table_dict["transactions"].pkey_col = "transaction_id"
+        return db
+    
+    @lru_cache(maxsize=None)
+    def get_db(self, upto_test_timestamp=True) -> Database:
+        db = super().get_db(upto_test_timestamp)
+        
+        for table_name, columns in self.remove_columns_dict.items():
+            # check if any of the columns to be removed are not in the table
+            if not all(col in db.table_dict[table_name].df.columns for col in columns):
+                continue
+
+            # save the columns to be dropped
+            db.table_dict[table_name].removed_cols = db.table_dict[table_name].df[["transaction_id"] + columns]
+
+            # drop the columns
+            db.table_dict[table_name].df = db.table_dict[table_name].df.drop(columns=columns)
 
         return db

@@ -122,6 +122,8 @@ register_task("rel-hm", "user-item-purchase", hm.UserItemPurchaseTask)
 register_task("rel-hm", "user-churn", hm.UserChurnTask)
 register_task("rel-hm", "item-sales", hm.ItemSalesTask)
 
+register_task("rel-hmminusprice", "transaction-price-autocomplete", hm.PriceAutocompleteTask)
+
 register_task("rel-stack", "user-engagement", stack.UserEngagementTask)
 register_task("rel-stack", "post-votes", stack.PostVotesTask)
 register_task("rel-stack", "user-badge", stack.UserBadgeTask)

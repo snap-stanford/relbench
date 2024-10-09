@@ -164,3 +164,46 @@ class ItemSalesTask(EntityTask):
             pkey_col=None,
             time_col="timestamp",
         )
+
+class PriceAutocompleteTask(EntityTask):
+    r"""Predict the price of each transaction."""
+
+    task_type = TaskType.REGRESSION
+    entity_col = "transaction_id"
+    entity_table = "transactions"
+    time_col = "timestamp"
+    target_col = "price"
+    timedelta = pd.Timedelta(days=7)
+    metrics = [r2, mae, rmse]
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        transactions = db.table_dict["transactions"].df
+        transactions_removed_cols = db.table_dict["transactions"].removed_cols
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        df = duckdb.sql(
+            """
+            SELECT
+                t.timestamp,
+                transactions.transaction_id,
+                transactions_removed_cols.price
+            FROM
+                timestamp_df t
+            LEFT JOIN
+                transactions
+            ON
+                transactions.t_dat = t.timestamp
+            LEFT JOIN
+                transactions_removed_cols
+            ON
+                transactions.transaction_id = transactions_removed_cols.transaction_id
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.entity_col: self.entity_table,
+            },
+            pkey_col=None,
+            time_col=self.time_col,
+        )
