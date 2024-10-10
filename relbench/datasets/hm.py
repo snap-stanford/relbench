@@ -71,20 +71,13 @@ class HMDataset(Dataset):
 
         return db
     
-class HMMinusPriceDataset(HMDataset):
-    r"""The H&M dataset without the price column in the transactions table."""
-    
-    remove_columns_dict = {"transactions": ["price"]} 
+class HMMinusColumnsDataset(HMDataset):
+    r"""The H&M dataset without the price and article_id columns in the transactions table."""
 
-    def make_db(self) -> Database:
-        db = super().make_db()
-        
-        # add transaction_id as primary key to transactions
-        db.table_dict["transactions"].df["transaction_id"] = range(len(db.table_dict["transactions"]))
-        # make transaction_id be the first column
-        db.table_dict["transactions"].df = db.table_dict["transactions"].df[["transaction_id"] + [col for col in db.table_dict["transactions"].df.columns if col != "transaction_id"]]
-        db.table_dict["transactions"].pkey_col = "transaction_id"
-        return db
+    @property
+    def remove_columns_dict(self) -> dict:
+        """Property to define columns to remove. Subclasses must implement this."""
+        raise NotImplementedError
     
     @lru_cache(maxsize=None)
     def get_db(self, upto_test_timestamp=True) -> Database:
@@ -96,9 +89,50 @@ class HMMinusPriceDataset(HMDataset):
                 continue
 
             # save the columns to be dropped
-            db.table_dict[table_name].removed_cols = db.table_dict[table_name].df[["transaction_id"] + columns]
+            table_primary_key = db.table_dict[table_name].pkey_col
+            if not table_primary_key:
+                raise ValueError(f"Primary key not found for table {table_name}.")
+            db.table_dict[table_name].removed_cols = db.table_dict[table_name].df[[table_primary_key] + columns]
 
             # drop the columns
             db.table_dict[table_name].df = db.table_dict[table_name].df.drop(columns=columns)
 
+            # remove 'fkey_col_to_pkey_table' entries for the removed columns
+            for col in columns:
+                db.table_dict[table_name].fkey_col_to_pkey_table.pop(col, None)
+
+        return db
+    
+class HMMinusPriceDataset(HMMinusColumnsDataset):
+    r"""The H&M dataset without the price column in the transactions table."""
+
+    @property
+    def remove_columns_dict(self) -> dict:
+        return {"transactions": ["price"]}
+    
+    def make_db(self) -> Database:
+        db = super().make_db()
+        
+        # add transaction_id as primary key to transactions
+        db.table_dict["transactions"].df["transaction_id"] = range(len(db.table_dict["transactions"]))
+        # make transaction_id be the first column
+        db.table_dict["transactions"].df = db.table_dict["transactions"].df[["transaction_id"] + [col for col in db.table_dict["transactions"].df.columns if col != "transaction_id"]]
+        db.table_dict["transactions"].pkey_col = "transaction_id"
+        return db
+    
+class HMMinusArticleIDDataset(HMMinusColumnsDataset):
+    r"""The H&M dataset without the article_id column in the transactions table."""
+
+    @property
+    def remove_columns_dict(self) -> dict:
+        return {"transactions": ["article_id"]}
+
+    def make_db(self) -> Database:
+        db = super().make_db()
+
+        # add transaction_id as primary key to transactions
+        db.table_dict["transactions"].df["transaction_id"] = range(len(db.table_dict["transactions"]))
+        # make transaction_id be the first column
+        db.table_dict["transactions"].df = db.table_dict["transactions"].df[["transaction_id"] + [col for col in db.table_dict["transactions"].df.columns if col != "transaction_id"]]
+        db.table_dict["transactions"].pkey_col = "transaction_id"
         return db
