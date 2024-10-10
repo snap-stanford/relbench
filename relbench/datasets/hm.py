@@ -95,11 +95,11 @@ class HMMinusColumnsDataset(HMDataset):
             db.table_dict[table_name].removed_cols = db.table_dict[table_name].df[[table_primary_key] + columns]
 
             # drop the columns
-            db.table_dict[table_name].df = db.table_dict[table_name].df.drop(columns=columns)
+            # db.table_dict[table_name].df = db.table_dict[table_name].df.drop(columns=columns)
 
-            # remove 'fkey_col_to_pkey_table' entries for the removed columns
-            for col in columns:
-                db.table_dict[table_name].fkey_col_to_pkey_table.pop(col, None)
+            # # remove 'fkey_col_to_pkey_table' entries for the removed columns
+            # for col in columns:
+            #     db.table_dict[table_name].fkey_col_to_pkey_table.pop(col, None)
 
         return db
     
