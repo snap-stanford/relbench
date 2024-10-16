@@ -63,8 +63,8 @@ def download_dataset(name: str) -> None:
     )
 
 
-@lru_cache(maxsize=None)
-def get_dataset(name: str, download=False) -> Dataset:
+# @lru_cache(maxsize=None)
+def get_dataset(name: str, download=False, remove_columns_dict: dict = {}) -> Dataset:
     r"""Return a dataset object by name.
 
     Args:
@@ -87,7 +87,7 @@ def get_dataset(name: str, download=False) -> Dataset:
     if download:
         download_dataset(name)
     cls, args, kwargs = dataset_registry[name]
-    dataset = cls(*args, **kwargs)
+    dataset = cls(*args, remove_columns_dict=remove_columns_dict, **kwargs)
     return dataset
 
 
@@ -96,7 +96,5 @@ register_dataset("rel-avito", avito.AvitoDataset)
 register_dataset("rel-event", event.EventDataset)
 register_dataset("rel-f1", f1.F1Dataset)
 register_dataset("rel-hm", hm.HMDataset)
-register_dataset("rel-hmminusprice", hm.HMMinusPriceDataset)
-register_dataset("rel-hmminusarticleid", hm.HMMinusArticleIDDataset)
 register_dataset("rel-stack", stack.StackDataset)
 register_dataset("rel-trial", trial.TrialDataset)

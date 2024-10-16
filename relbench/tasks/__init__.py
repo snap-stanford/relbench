@@ -67,8 +67,8 @@ def download_task(dataset_name: str, task_name: str) -> None:
     )
 
 
-@lru_cache(maxsize=None)
-def get_task(dataset_name: str, task_name: str, download=False) -> BaseTask:
+# @lru_cache(maxsize=None)
+def get_task(dataset_name: str, task_name: str, download=False, remove_columns_dict: dict = {}) -> BaseTask:
     r"""Return a task object by name.
 
     Args:
@@ -91,7 +91,7 @@ def get_task(dataset_name: str, task_name: str, download=False) -> BaseTask:
 
     if download:
         download_task(dataset_name, task_name)
-    dataset = get_dataset(dataset_name)
+    dataset = get_dataset(dataset_name, remove_columns_dict= remove_columns_dict)
     cls, args, kwargs = task_registry[dataset_name][task_name]
     task = cls(dataset, *args, **kwargs)
     return task
@@ -122,8 +122,7 @@ register_task("rel-hm", "user-item-purchase", hm.UserItemPurchaseTask)
 register_task("rel-hm", "user-churn", hm.UserChurnTask)
 register_task("rel-hm", "item-sales", hm.ItemSalesTask)
 
-register_task("rel-hmminusprice", "transaction-price-autocomplete", hm.PriceAutocompleteTask)
-register_task("rel-hmminusarticleid", "transaction-articleid-autocomplete", hm.ArticleIDAutocompleteTask)
+register_task("rel-hm", "transaction-price-autocomplete", hm.PriceAutocompleteTask)
 
 register_task("rel-stack", "user-engagement", stack.UserEngagementTask)
 register_task("rel-stack", "post-votes", stack.PostVotesTask)
