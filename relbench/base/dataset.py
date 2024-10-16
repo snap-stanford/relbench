@@ -25,9 +25,12 @@ class Dataset:
     val_timestamp: pd.Timestamp
     test_timestamp: pd.Timestamp
 
+    
+
     def __init__(
         self,
         cache_dir: Optional[str] = None,
+        remove_columns_dict: dict = {},
     ) -> None:
         r"""Create a dataset object.
 
@@ -39,6 +42,7 @@ class Dataset:
         """
 
         self.cache_dir = cache_dir
+        self.remove_columns_dict = remove_columns_dict
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
@@ -69,7 +73,8 @@ class Dataset:
                     table.df.loc[mask, fkey_col] = None
 
     @lru_cache(maxsize=None)
-    def get_db(self, upto_test_timestamp=True) -> Database:
+    def get_db(
+        self, upto_test_timestamp=True) -> Database:
         r"""Return the database object.
 
         The returned database object is cached in memory.
@@ -114,6 +119,36 @@ class Dataset:
             db = db.upto(self.test_timestamp)
 
         self.validate_and_correct_db(db)
+
+        # Remove columns in remove_columns_dict from the database
+        for table_name, columns in self.remove_columns_dict.items():
+            # check if any of the columns to be removed are not in the table
+            for col in columns:
+                if col not in db.table_dict[table_name].df.columns:
+                    raise ValueError(f"Column {col} not found in table {table_name}.")
+                if col in db.table_dict[table_name].fkey_col_to_pkey_table.keys():
+                    raise ValueError(
+                        f"Column {col} is a foreign key in table {table_name}. Only feature columns can be removed."
+                    )
+                if col == db.table_dict[table_name].pkey_col:
+                    raise ValueError(
+                        f"Column {col} is the primary key in table {table_name}. Only feature columns can be removed."
+                    )
+
+            # save the columns to be dropped
+            id_keys = []
+            if db.table_dict[table_name].pkey_col:
+                id_keys.append(db.table_dict[table_name].pkey_col)
+            else:
+                id_keys.extend(db.table_dict[table_name].fkey_col_to_pkey_table.keys())
+
+            db.table_dict[table_name].removed_cols = db.table_dict[table_name].df[
+                id_keys + columns
+            ]
+            # drop the columns
+            db.table_dict[table_name].df = db.table_dict[table_name].df.drop(
+                columns=columns
+            )
 
         return db
 

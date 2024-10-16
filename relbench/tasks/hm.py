@@ -169,7 +169,8 @@ class PriceAutocompleteTask(EntityTask):
     r"""Predict the price of each transaction."""
 
     task_type = TaskType.REGRESSION
-    entity_col = "transaction_id"
+    entity_col = "customer_id"
+    entity_col_2 = "article_id"
     entity_table = "transactions"
     time_col = "timestamp"
     target_col = "price"
@@ -184,14 +185,16 @@ class PriceAutocompleteTask(EntityTask):
             """
             SELECT
                 transactions.t_dat as timestamp,
-                transactions.transaction_id,
+                transactions.customer_id,
+                transactions.article_id,
                 transactions_removed_cols.price
             FROM
                 transactions
             LEFT JOIN
                 transactions_removed_cols
             ON
-                transactions.transaction_id = transactions_removed_cols.transaction_id
+                transactions.customer_id = transactions_removed_cols.customer_id 
+                AND transactions.article_id = transactions_removed_cols.article_id
             """
         ).df()
 
@@ -199,101 +202,7 @@ class PriceAutocompleteTask(EntityTask):
             df=df,
             fkey_col_to_pkey_table={
                 self.entity_col: self.entity_table,
-            },
-            pkey_col=None,
-            time_col=self.time_col,
-        )
-    
-class ArticleIDAutocompleteTask2(RecommendationTask):
-    r"""Predict the article of each transaction."""
-
-    task_type = TaskType.LINK_PREDICTION
-    src_entity_col = "transaction_id"
-    src_entity_table = "transactions"
-    dst_entity_col = "article_id"
-    dst_entity_table = "article"
-    time_col = "timestamp"
-    timedelta = pd.Timedelta(days=7)
-    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
-    eval_k = 12
-
-    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        transactions = db.table_dict["transactions"].df
-        transactions_removed_cols = db.table_dict["transactions"].removed_cols
-        timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        df = duckdb.sql(
-            """
-            SELECT
-                transactions.t_dat as timestamp,
-                transactions.transaction_id,
-                LIST(DISTINCT transactions_removed_cols.article_id) as article_id
-            FROM
-                transactions
-            LEFT JOIN
-                transactions_removed_cols
-            ON
-                transactions.transaction_id = transactions_removed_cols.transaction_id
-            GROUP BY
-                timestamp,
-                transactions.transaction_id
-            """
-        ).df()
-
-        return Table(
-            df=df,
-            fkey_col_to_pkey_table={
-                self.src_entity_col: self.src_entity_table,
-                self.dst_entity_col: self.dst_entity_table,
-            },
-            pkey_col=None,
-            time_col=self.time_col,
-        )
-    
-class ArticleIDAutocompleteTask(RecommendationTask):
-    r"""Predict the article of each transaction."""
-
-    task_type = TaskType.LINK_PREDICTION
-    src_entity_col = "transaction_id"
-    src_entity_table = "transactions"
-    dst_entity_col = "article_id"
-    dst_entity_table = "article"
-    time_col = "timestamp"
-    timedelta = pd.Timedelta(days=7)
-    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
-    eval_k = 12
-
-    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        transactions = db.table_dict["transactions"].df
-        transactions_removed_cols = db.table_dict["transactions"].removed_cols
-        timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        df = duckdb.sql(
-            f"""
-            SELECT
-                timestamp,
-                transactions.transaction_id,
-                LIST(DISTINCT transactions_removed_cols.article_id) as article_id
-            FROM 
-                timestamp_df
-            LEFT JOIN
-                transactions
-            ON 
-                transactions.t_dat > timestamp AND
-                transactions.t_dat <= timestamp + INTERVAL '{self.timedelta} days'
-            LEFT JOIN
-                transactions_removed_cols
-            ON
-                transactions.transaction_id = transactions_removed_cols.transaction_id
-            GROUP BY
-                timestamp,
-                transactions.transaction_id
-            """
-        ).df()
-
-        return Table(
-            df=df,
-            fkey_col_to_pkey_table={
-                self.src_entity_col: self.src_entity_table,
-                self.dst_entity_col: self.dst_entity_table,
+                self.entity_col_2: self.entity_table,
             },
             pkey_col=None,
             time_col=self.time_col,
