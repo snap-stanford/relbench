@@ -140,7 +140,12 @@ class Dataset:
             if db.table_dict[table_name].pkey_col:
                 id_keys.append(db.table_dict[table_name].pkey_col)
             else:
-                id_keys.extend(db.table_dict[table_name].fkey_col_to_pkey_table.keys())
+                # id_keys.extend(db.table_dict[table_name].fkey_col_to_pkey_table.keys())
+                # add primary key to table_name
+                db.table_dict[table_name].df["primary_key"] = np.arange(
+                    len(db.table_dict[table_name].df)
+                )
+                id_keys.append("primary_key")
 
             db.table_dict[table_name].removed_cols = db.table_dict[table_name].df[
                 id_keys + columns
