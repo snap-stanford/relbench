@@ -169,8 +169,6 @@ class PriceAutocompleteTask(EntityTask):
     r"""Predict the price of each transaction."""
 
     task_type = TaskType.REGRESSION
-    # entity_col = "customer_id"
-    # entity_col_2 = "article_id"
     entity_col = "primary_key"
     entity_table = "transactions"
     time_col = "timestamp"
@@ -183,11 +181,11 @@ class PriceAutocompleteTask(EntityTask):
         transactions_removed_cols = db.table_dict["transactions"].removed_cols
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         df = duckdb.sql(
-            """
+        f"""
             SELECT
-                transactions.t_dat as timestamp,
-                transactions.primary_key,
-                transactions_removed_cols.price
+                transactions.t_dat as {self.time_col},
+                transactions.primary_key as {self.entity_col},
+                transactions_removed_cols.price as {self.target_col}
             FROM
                 transactions
             LEFT JOIN
@@ -201,7 +199,6 @@ class PriceAutocompleteTask(EntityTask):
             df=df,
             fkey_col_to_pkey_table={
                 self.entity_col: self.entity_table,
-                # self.entity_col_2: self.entity_table,
             },
             pkey_col=None,
             time_col=self.time_col,
