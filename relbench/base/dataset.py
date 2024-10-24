@@ -30,7 +30,7 @@ class Dataset:
     def __init__(
         self,
         cache_dir: Optional[str] = None,
-        remove_columns_dict: dict = {},
+        predict_column_task_config: dict = {},
     ) -> None:
         r"""Create a dataset object.
 
@@ -42,7 +42,7 @@ class Dataset:
         """
 
         self.cache_dir = cache_dir
-        self.remove_columns_dict = remove_columns_dict
+        self.predict_column_task_config = predict_column_task_config
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
@@ -120,40 +120,41 @@ class Dataset:
 
         self.validate_and_correct_db(db)
 
-        # Remove columns in remove_columns_dict from the database
-        for table_name, columns in self.remove_columns_dict.items():
-            # check if any of the columns to be removed are not in the table
-            for col in columns:
-                if col not in db.table_dict[table_name].df.columns:
-                    raise ValueError(f"Column {col} not found in table {table_name}.")
-                if col in db.table_dict[table_name].fkey_col_to_pkey_table.keys():
-                    raise ValueError(
-                        f"Column {col} is a foreign key in table {table_name}. Only feature columns can be removed."
-                    )
-                if col == db.table_dict[table_name].pkey_col:
-                    raise ValueError(
-                        f"Column {col} is the primary key in table {table_name}. Only feature columns can be removed."
-                    )
-
-            # save the columns to be dropped
-            id_keys = []
-            if db.table_dict[table_name].pkey_col:
-                id_keys.append(db.table_dict[table_name].pkey_col)
-            else:
-                # id_keys.extend(db.table_dict[table_name].fkey_col_to_pkey_table.keys())
-                # add primary key to table_name
-                db.table_dict[table_name].df["primary_key"] = np.arange(
-                    len(db.table_dict[table_name].df)
-                )
-                id_keys.append("primary_key")
-
-            db.table_dict[table_name].removed_cols = db.table_dict[table_name].df[
-                id_keys + columns
-            ]
-            # drop the columns
-            db.table_dict[table_name].df = db.table_dict[table_name].df.drop(
-                columns=columns
+       
+        # Remove the target column from the source entity table
+        table_name = self.predict_column_task_config["src_entity_table"]
+        col = self.predict_column_task_config["target_col"]
+        
+        if col not in db.table_dict[table_name].df.columns:
+            raise ValueError(f"Column {col} not found in table {table_name}.")
+        if col in db.table_dict[table_name].fkey_col_to_pkey_table.keys():
+            raise ValueError(
+                f"Column {col} is a foreign key in table {table_name}. Only feature columns can be removed."
             )
+        if col == db.table_dict[table_name].pkey_col:
+            raise ValueError(
+                f"Column {col} is the primary key in table {table_name}. Only feature columns can be removed."
+            )
+
+        # save the columns to be dropped
+        id_keys = []
+        if db.table_dict[table_name].pkey_col:
+            id_keys.append(db.table_dict[table_name].pkey_col)
+        else:
+            # id_keys.extend(db.table_dict[table_name].fkey_col_to_pkey_table.keys())
+            # add primary key to table_name
+            db.table_dict[table_name].df["primary_key"] = np.arange(
+                len(db.table_dict[table_name].df)
+            )
+            id_keys.append("primary_key")
+
+        db.table_dict[table_name].removed_cols = db.table_dict[table_name].df[
+            id_keys + [col]
+        ]
+        # drop the columns
+        db.table_dict[table_name].df = db.table_dict[table_name].df.drop(
+            columns=[col]
+        )
 
         return db
 
