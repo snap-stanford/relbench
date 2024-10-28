@@ -60,7 +60,7 @@ class AdCTRTask(EntityTask):
 
         return Table(
             df=df,
-            fkey_col_to_pkey_table={"AdID": "entity_table"},
+            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
             pkey_col=None,
             time_col="timestamp",
         )
@@ -108,7 +108,7 @@ class UserVisitsTask(EntityTask):
 
         return Table(
             df=df,
-            fkey_col_to_pkey_table={"UserID": "entity_table"},
+            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
             pkey_col=None,
             time_col="timestamp",
         )
@@ -165,7 +165,7 @@ class UserClicksTask(EntityTask):
 
         return Table(
             df=df,
-            fkey_col_to_pkey_table={"UserID": "entity_table"},
+            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
             pkey_col=None,
             time_col="timestamp",
         )
