@@ -26,6 +26,13 @@ from relbench.tasks import get_task
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-hm")
 parser.add_argument("--task", type=str, default="predict-column")
+
+parser.add_argument("--task_type", type=str, default="REGRESSION", choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"])
+parser.add_argument("--src_entity_table", type=str, default="transactions")
+parser.add_argument("--src_entity_col", type=str, default=None)
+parser.add_argument("--time_col", type=str, default="t_dat")
+parser.add_argument("--target_col", type=str, default="price")
+
 parser.add_argument("--lr", type=float, default=0.005)
 parser.add_argument("--epochs", type=int, default=1)
 parser.add_argument("--batch_size", type=int, default=512)
@@ -37,6 +44,7 @@ parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
+parser.add_argument("--torch_device", type=str, default="cuda")
 parser.add_argument(
     "--cache_dir",
     type=str,
@@ -45,18 +53,18 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device(args.torch_device if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
 
 predict_column_task_config = {
-    "task_type": TaskType.REGRESSION,
-    "src_entity_table" : "transactions",
-    "src_entity_col" : None,
-    "time_col" : "t_dat",
-    "target_col" : "price",
+    "task_type": TaskType[args.task_type],
+    "src_entity_table": args.src_entity_table,
+    "src_entity_col": args.src_entity_col if args.src_entity_col else None,
+    "time_col": args.time_col,
+    "target_col": args.target_col,
 }
 
 dataset: Dataset = get_dataset(args.dataset, download=False, predict_column_task_config = predict_column_task_config)
