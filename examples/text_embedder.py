@@ -15,4 +15,4 @@ class GloveTextEmbedding:
         )
 
     def __call__(self, sentences: List[str]) -> Tensor:
-        return torch.from_numpy(self.model.encode(sentences))
+        return self.model.encode(sentences, convert_to_tensor=True)

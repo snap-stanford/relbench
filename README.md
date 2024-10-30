@@ -12,7 +12,7 @@
 
 
 <!-- [<img align="center" src="https://relbench.stanford.edu/img/favicon.png" width="20px" />   -->
-[**Website**](https://relbench.stanford.edu) | [**Position Paper**](https://relbench.stanford.edu/paper.pdf) |  [**Benchmark Paper [TODO]**](https://relbench.stanford.edu/paper.pdf) | [**Mailing List**](https://groups.google.com/forum/#!forum/relbench/join)
+[**Website**](https://relbench.stanford.edu) | [**Position Paper**](https://proceedings.mlr.press/v235/fey24a.html) |  [**Benchmark Paper**](https://arxiv.org/abs/2407.20060) | [**Mailing List**](https://groups.google.com/forum/#!forum/relbench/join)
 
 # Overview
 
@@ -30,14 +30,14 @@ Additionally, RelBench provides a first open-source implementation of a Graph Ne
 
 # Key Papers
 
-[**RelBench: A Benchmark for Deep Learning on Relational Databases**](https://relbench.stanford.edu/paper.pdf)
+[**RelBench: A Benchmark for Deep Learning on Relational Databases**](https://arxiv.org/abs/2407.20060)
 
 This paper details our approach to designing the RelBench benchmark. It also includes a key user study showing that relational deep learning can produce performant models with a fraction of the manual human effort required by typical data science pipelines. This paper is useful for a detailed understanding of RelBench and our initial benchmarking results. If you just want to quickly familiarize with the data and tasks, the [**website**](https://relbench.stanford.edu) is a better place to start.
 <!---Joshua Robinson*, Rishabh Ranjan*, Weihua Hu*, Kexin Huang*, Jiaqi Han, Alejandro Dobles, Matthias Fey, Jan Eric Lenssen, Yiwen Yuan, Zecheng Zhang, Xinwei He, Jure Leskovec-->
 
-[**Position: Relational Deep Learning - Graph Representation Learning on Relational Databases (ICML 2024)**](https://relbench.stanford.edu/paper.pdf)
+[**Position: Relational Deep Learning - Graph Representation Learning on Relational Databases (ICML 2024)**](https://proceedings.mlr.press/v235/fey24a.html)
 
-This paper outlines our proposal for how to do end-to-end deep learning on relational databases by combining graph neural networsk with deep tabular models. We reccomend reading this paper if you want to think about new methods for end-to-end deep learning on relational databases. The paper includes a section on possible directions for future research to give a snapshot of some of the research possilibities there are in this area.
+This paper outlines our proposal for how to do end-to-end deep learning on relational databases by combining graph neural networsk with deep tabular models. We reccomend reading this paper if you want to think about new methods for end-to-end deep learning on relational databases. The paper includes a section on possible directions for future research to give a snapshot of some of the research possibilities there are in this area.
 
 <!--- Matthias Fey*, Weihua Hu*, Kexin Huang*, Jan Eric Lenssen*, Rishabh Ranjan, Joshua Robinson*, Rex Ying, Jiaxuan You, Jure Leskovec.-->
 
@@ -105,6 +105,8 @@ RelBench datasets (and tasks) are cached to disk (usually at `~/.cache/relbench`
 
 `download=False` uses the cached data without verification, if present, or processes and caches the data from scratch / raw sources otherwise.
 </details>
+
+For faster download, please see [this](https://github.com/snap-stanford/relbench/issues/265).
 
 `dataset` consists of a `Database` object and temporal splitting times `dataset.val_timestamp` and `dataset.test_timestamp`.
 
@@ -181,12 +183,14 @@ If you use RelBench in your work, please cite our position and benchmark papers:
 }
 ```
 
-__[TODO: update with arxiv citation]__
-
 ```bibtex
-@article{relbench,
-  title={RelBench: A Benchmark for Deep Learning on Relational Databases},
-  author={Joshua Robinson, Rishabh Ranjan, Weihua Hu, Kexin Huang, Jiaqi Han, Alejandro Dobles, Matthias Fey, Jan Eric Lenssen, Yiwen Yuan, Zecheng Zhang, Xinwei He, Jure Leskovec},
-  year={2024}
+@misc{relbench,
+      title={RelBench: A Benchmark for Deep Learning on Relational Databases},
+      author={Joshua Robinson and Rishabh Ranjan and Weihua Hu and Kexin Huang and Jiaqi Han and Alejandro Dobles and Matthias Fey and Jan E. Lenssen and Yiwen Yuan and Zecheng Zhang and Xinwei He and Jure Leskovec},
+      year={2024},
+      eprint={2407.20060},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2407.20060},
 }
 ```
