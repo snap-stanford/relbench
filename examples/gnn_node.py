@@ -42,8 +42,9 @@ parser.add_argument(
     "--include_label_tables",
     type=str,
     default="none",
-    help="One of 'all', \
-                    'task_only', and 'none'.",
+    help="Optionally include labels as autoregressive features with \
+        appropriate time censoring. One of 'all', \
+        'task_only', or 'none'.",
 )
 parser.add_argument(
     "--cache_dir",
@@ -93,10 +94,11 @@ for task_name in tasks_to_add:
         [
             t.get_table("train").df,
             t.get_table("val").df,
-            # test not included b/c labels are not revealed
+            # test set not included b/c labels are not revealed
         ]
     )
-    # time-censoring labels
+    # time-censoring labels: we add timedelta to the time column to ensure that
+    # the labels become available at the appropriate time (i.e. no leakage)
     label_df[t.time_col] = label_df[t.time_col] + t.timedelta
     db.table_dict[labels_table_name] = Table(
         df=label_df,
