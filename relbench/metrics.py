@@ -181,3 +181,33 @@ def link_prediction_map(
     precision_mat = np.cumsum(pred_isin, axis=1) / (np.arange(eval_k) + 1)
     maps = (precision_mat * pred_isin).sum(axis=1) / clipped_dst_count
     return maps.mean()
+
+def link_prediction_ndcg(
+    pred_isin: NDArray[np.int_],
+    dst_count: NDArray[np.int_],
+) -> float:
+    pred_isin, dst_count = _filter(pred_isin, dst_count)
+    eval_k = pred_isin.shape[1]
+
+    # Compute the discounted multiplier (1 / log2(i + 2) for i = 0, ..., k-1)
+    discounted_multiplier = np.concatenate((
+        np.zeros(1),
+        1 / np.log2(np.arange(1, eval_k + 1) + 1)
+    ))
+
+    # Compute Discounted Cumulative Gain (DCG)
+    discounted_cumulative_gain = (pred_isin * discounted_multiplier[1:eval_k + 1]).sum(axis=1)
+
+    # Clip dst_count to the range [0, eval_k]
+    clipped_dst_count = np.clip(dst_count, 0, eval_k)
+
+    # Compute Ideal Discounted Cumulative Gain (IDCG)
+    ideal_discounted_multiplier_cumsum = np.cumsum(discounted_multiplier)
+    ideal_discounted_cumulative_gain = ideal_discounted_multiplier_cumsum[clipped_dst_count]
+
+    # Avoid division by zero
+    ideal_discounted_cumulative_gain = np.clip(ideal_discounted_cumulative_gain, 1e-10, None)
+
+    # Compute NDCG
+    ndcg_scores = discounted_cumulative_gain / ideal_discounted_cumulative_gain
+    return ndcg_scores.mean()
