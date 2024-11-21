@@ -258,7 +258,7 @@ class LinkNeighborLoader(DataLoader):
         src_indices = index[:, 0].contiguous()
         pos_dst_indices = index[:, 1].contiguous()
         time = index[:, 2].contiguous()
-        neg_dst_indices = torch.randint(0, self.num_dst_nodes, size=(len(src_indices) if self.num_neg_dst_nodes is None else self.num_neg_dst_nodes,))
+        neg_dst_indices = torch.randint(0, self.num_dst_nodes, size=(len(src_indices) * 1 if self.num_neg_dst_nodes is None else len(src_indices) * self.num_neg_dst_nodes,))
         src_out = self.src_loader.get_neighbors(
             NodeSamplerInput(
                 input_id=src_indices,

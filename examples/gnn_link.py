@@ -47,7 +47,7 @@ parser.add_argument("--use_shallow", action="store_true", default=True)
 parser.add_argument("--no-use_shallow", dest="use_shallow", action="store_false")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
-parser.add_argument("--num_neg_dst_nodes", type=int, default=1)
+parser.add_argument("--num_neg_dst_nodes", type=int, default=1000)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--cache_dir",
