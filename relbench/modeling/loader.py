@@ -245,6 +245,7 @@ class LinkNeighborLoader(DataLoader):
             dst_nodes[0],
         )
         self.num_neg_dst_nodes = num_neg_dst_nodes
+        kwargs.pop("num_neg_dst_nodes", None)
 
         super().__init__(dataset, collate_fn=self.collate_fn, **kwargs)
 
