@@ -223,13 +223,13 @@ def train() -> float:
             print(f"done at {i}th step")
             break
 
-        end.record()
-        torch.cuda.synchronize()
-        gpu_time = start.elapsed_time(end)
-        gpu_time_in_s = gpu_time / 1_000
-        print(
-            f"model: GraphSage, ", f"total: {gpu_time_in_s} s, "
-            f"avg: {gpu_time_in_s / num_steps} s/iter, "
-            f"avg: {num_steps / gpu_time_in_s} iter/s")
+    end.record()
+    torch.cuda.synchronize()
+    gpu_time = start.elapsed_time(end)
+    gpu_time_in_s = gpu_time / 1_000
+    print(
+        f"model: GraphSage, ", f"total: {gpu_time_in_s} s, "
+        f"avg: {gpu_time_in_s / num_steps} s/iter, "
+        f"avg: {num_steps / gpu_time_in_s} iter/s")
 
 train()
