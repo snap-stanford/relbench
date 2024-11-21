@@ -214,6 +214,8 @@ class LinkNeighborLoader(DataLoader):
         self.num_dst_nodes = num_dst_nodes
         self.src_time = src_time
         self.share_same_time = share_same_time
+        self.num_neg_dst_nodes = num_neg_dst_nodes
+        kwargs.pop("num_neg_dst_nodes", None)
 
         kwargs.pop("dataset", None)
         kwargs.pop("collate_fn", None)
@@ -244,8 +246,6 @@ class LinkNeighborLoader(DataLoader):
             node_sampler,
             dst_nodes[0],
         )
-        self.num_neg_dst_nodes = num_neg_dst_nodes
-        kwargs.pop("num_neg_dst_nodes", None)
 
         super().__init__(dataset, collate_fn=self.collate_fn, **kwargs)
 
@@ -258,7 +258,7 @@ class LinkNeighborLoader(DataLoader):
         src_indices = index[:, 0].contiguous()
         pos_dst_indices = index[:, 1].contiguous()
         time = index[:, 2].contiguous()
-        neg_dst_indices = torch.randint(0, self.num_dst_nodes, size=(len(src_indices if self.num_neg_dst_nodes is None else self.num_neg_dst_nodes),))
+        neg_dst_indices = torch.randint(0, self.num_dst_nodes, size=(len(src_indices) if self.num_neg_dst_nodes is None else self.num_neg_dst_nodes,))
         src_out = self.src_loader.get_neighbors(
             NodeSamplerInput(
                 input_id=src_indices,
