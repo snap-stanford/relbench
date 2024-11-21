@@ -151,15 +151,13 @@ model = Model(
     shallow_list=[task.dst_entity_table] if args.use_shallow else [],
 ).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-
+num_steps = 1_000
 
 def train() -> float:
     model.train()
 
-    loss_accum = count_accum = 0
-    steps = 0
-    total_steps = min(len(train_loader), args.max_steps_per_epoch)
-    for batch in tqdm(train_loader, total=total_steps):
+    print("warming up")
+    for i, batch in enumerate(train_loader):
         src_batch, batch_pos_dst, batch_neg_dst = batch
         src_batch, batch_pos_dst, batch_neg_dst = (
             src_batch.to(device),
@@ -186,69 +184,52 @@ def train() -> float:
         loss = F.softplus(-diff_score).mean()
         loss.backward()
         optimizer.step()
-
-        loss_accum += float(loss) * x_src.size(0)
-        count_accum += x_src.size(0)
-
-        steps += 1
-        if steps > args.max_steps_per_epoch:
+        if i == 9:
             break
 
-    if count_accum == 0:
-        warnings.warn(
-            f"Did not sample a single '{task.dst_entity_table}' "
-            f"node in any mini-batch. Try to increase the number "
-            f"of layers/hops and re-try. If you run into memory "
-            f"issues with deeper nets, decrease the batch size."
+    print("benchmarking...")
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+    start.record()
+
+    for i, batch in enumerate(train_loader):
+        src_batch, batch_pos_dst, batch_neg_dst = batch
+        src_batch, batch_pos_dst, batch_neg_dst = (
+            src_batch.to(device),
+            batch_pos_dst.to(device),
+            batch_neg_dst.to(device),
         )
+        x_src = model(src_batch, task.src_entity_table)
+        x_pos_dst = model(batch_pos_dst, task.dst_entity_table)
+        x_neg_dst = model(batch_neg_dst, task.dst_entity_table)
 
-    return loss_accum / count_accum if count_accum > 0 else float("nan")
+        # [batch_size, ]
+        pos_score = torch.sum(x_src * x_pos_dst, dim=1)
+        if args.share_same_time:
+            # [batch_size, batch_size]
+            neg_score = x_src @ x_neg_dst.t()
+            # [batch_size, 1]
+            pos_score = pos_score.view(-1, 1)
+        else:
+            # [batch_size, ]
+            neg_score = torch.sum(x_src * x_neg_dst, dim=1)
+        optimizer.zero_grad()
+        # BPR loss
+        diff_score = pos_score - neg_score
+        loss = F.softplus(-diff_score).mean()
+        loss.backward()
+        optimizer.step()
+        if i == num_steps - 1:
+            print(f"done at {i}th step")
+            break
 
-
-@torch.no_grad()
-def test(src_loader: NeighborLoader, dst_loader: NeighborLoader) -> np.ndarray:
-    model.eval()
-
-    dst_embs: list[Tensor] = []
-    for batch in tqdm(dst_loader):
-        batch = batch.to(device)
-        emb = model(batch, task.dst_entity_table).detach()
-        dst_embs.append(emb)
-    dst_emb = torch.cat(dst_embs, dim=0)
-    del dst_embs
-
-    pred_index_mat_list: list[Tensor] = []
-    for batch in tqdm(src_loader):
-        batch = batch.to(device)
-        emb = model(batch, task.src_entity_table)
-        _, pred_index_mat = torch.topk(emb @ dst_emb.t(), k=task.eval_k, dim=1)
-        pred_index_mat_list.append(pred_index_mat.cpu())
-    pred = torch.cat(pred_index_mat_list, dim=0).numpy()
-    return pred
-
-
-state_dict = None
-best_val_metric = 0
-for epoch in range(1, args.epochs + 1):
-    train_loss = train()
-    if epoch % args.eval_epochs_interval == 0:
-        val_pred = test(*eval_loaders_dict["val"])
-        val_metrics = task.evaluate(val_pred, task.get_table("val"))
+        end.record()
+        torch.cuda.synchronize()
+        gpu_time = start.elapsed_time(end)
+        gpu_time_in_s = gpu_time / 1_000
         print(
-            f"Epoch: {epoch:02d}, Train loss: {train_loss}, "
-            f"Val metrics: {val_metrics}"
-        )
+            f"model: GraphSage, ", f"total: {gpu_time_in_s} s, "
+            f"avg: {gpu_time_in_s / num_steps} s/iter, "
+            f"avg: {num_steps / gpu_time_in_s} iter/s")
 
-        if val_metrics[tune_metric] >= best_val_metric:
-            best_val_metric = val_metrics[tune_metric]
-            state_dict = copy.deepcopy(model.state_dict())
-
-
-model.load_state_dict(state_dict)
-val_pred = test(*eval_loaders_dict["val"])
-val_metrics = task.evaluate(val_pred, task.get_table("val"))
-print(f"Best Val metrics: {val_metrics}")
-
-test_pred = test(*eval_loaders_dict["test"])
-test_metrics = task.evaluate(test_pred)
-print(f"Best test metrics: {test_metrics}")
+train()
