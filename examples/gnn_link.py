@@ -42,6 +42,9 @@ parser.add_argument("--share_same_time", action="store_true", default=True)
 parser.add_argument(
     "--no-share_same_time", dest="share_same_time", action="store_false"
 )
+parser.add_argument(
+    "--neg-ratio", type=int, default=2
+)
 # Whether to use shallow embedding on dst nodes or not.
 parser.add_argument("--use_shallow", action="store_true", default=True)
 parser.add_argument("--no-use_shallow", dest="use_shallow", action="store_false")
@@ -104,6 +107,7 @@ train_loader = LinkNeighborLoader(
     # if share_same_time is True, we use sampler, so shuffle must be set False
     shuffle=not args.share_same_time,
     num_workers=args.num_workers,
+    neg_ratio=args.neg_ratio,
 )
 
 eval_loaders_dict: Dict[str, Tuple[NeighborLoader, NeighborLoader]] = {}
@@ -118,7 +122,7 @@ for split in ["val", "test"]:
         time_attr="time",
         input_nodes=(task.src_entity_table, src_node_indices),
         input_time=torch.full(
-            size=(len(src_node_indices),), fill_value=seed_time, dtype=torch.long
+            size=(len(src_node_indices)* args.neg_ratio,), fill_value=seed_time, dtype=torch.long
         ),
         batch_size=args.batch_size,
         shuffle=False,

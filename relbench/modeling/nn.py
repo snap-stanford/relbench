@@ -105,14 +105,15 @@ class HeteroTemporalEncoder(torch.nn.Module):
 
     def forward(
         self,
-        seed_time_dict: Dict[NodeType, Tensor],
+        seed_time: Tensor,
         time_dict: Dict[NodeType, Tensor],
         batch_dict: Dict[NodeType, Tensor],
     ) -> Dict[NodeType, Tensor]:
         out_dict: Dict[NodeType, Tensor] = {}
 
         for node_type, time in time_dict.items():
-            seed_time = seed_time_dict[node_type]
+            if batch_dict[node_type].max()> len(seed_time):
+                seed_time = torch.full((batch_dict[node_type].max().item()+1, ),seed_time[0] ).to(seed_time.device)
             rel_time = seed_time[batch_dict[node_type]] - time
             rel_time = rel_time / (60 * 60 * 24)  # Convert seconds to days.
 
