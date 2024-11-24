@@ -85,9 +85,12 @@ class Model(torch.nn.Module):
     ) -> Tensor:
         seed_time = batch[entity_table].seed_time
         x_dict = self.encoder(batch.tf_dict)
+        seed_time_dict = {}
+        for node_type in batch:
+            seed_time_dict[node_type] = batch[node_type].seed_time
 
         rel_time_dict = self.temporal_encoder(
-            seed_time, batch.time_dict, batch.batch_dict
+            seed_time_dict, batch.time_dict, batch.batch_dict
         )
 
         for node_type, rel_time in rel_time_dict.items():

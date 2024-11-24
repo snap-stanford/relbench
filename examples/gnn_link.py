@@ -26,15 +26,15 @@ from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-hm")
-parser.add_argument("--task", type=str, default="user-item-purchase")
+parser.add_argument("--dataset", type=str, default="rel-trial")
+parser.add_argument("--task", type=str, default="site-sponsor-run")
 parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--epochs", type=int, default=20)
 parser.add_argument("--eval_epochs_interval", type=int, default=1)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
-parser.add_argument("--num_layers", type=int, default=2)
+parser.add_argument("--num_layers", type=int, default=4)
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 # Use the same seed time across the mini-batch and share the negatives
