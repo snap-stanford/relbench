@@ -77,7 +77,7 @@ def mse(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 
 
 def rmse(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
-    return skm.mean_squared_error(true, pred, squared=False)
+    return skm.root_mean_squared_error(true, pred)
 
 
 def r2(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
