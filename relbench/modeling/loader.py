@@ -181,6 +181,8 @@ class LinkNeighborLoader(DataLoader):
             (default: :obj:`None`)
         share_same_time (bool): Whether to share the seed time within mini-batch
             or not (default: :obj:`False`)
+        neg_ratio (float): How many negs per pos does the model sample.
+            (default: :obj:`1.0`)
     """
 
     def __init__(
@@ -195,6 +197,7 @@ class LinkNeighborLoader(DataLoader):
         subgraph_type: Union[SubgraphType, str] = "directional",
         temporal_strategy: str = "uniform",
         time_attr: Optional[str] = None,
+        neg_ratio: Optional[int] = 1,
         **kwargs,
     ):
         node_sampler = NeighborSampler(
@@ -213,9 +216,11 @@ class LinkNeighborLoader(DataLoader):
         self.num_dst_nodes = num_dst_nodes
         self.src_time = src_time
         self.share_same_time = share_same_time
+        self.neg_ratio = neg_ratio
 
         kwargs.pop("dataset", None)
         kwargs.pop("collate_fn", None)
+        kwargs.pop("neg_ratio", None)
         if share_same_time:
             kwargs.pop("sampler", None)
             kwargs["batch_sampler"] = TimestampSampler(
@@ -255,7 +260,7 @@ class LinkNeighborLoader(DataLoader):
         src_indices = index[:, 0].contiguous()
         pos_dst_indices = index[:, 1].contiguous()
         time = index[:, 2].contiguous()
-        neg_dst_indices = torch.randint(0, self.num_dst_nodes, size=(len(src_indices),))
+        neg_dst_indices = torch.randint(0, self.num_dst_nodes, size=(len(src_indices) * self.neg_ratio,))
         src_out = self.src_loader.get_neighbors(
             NodeSamplerInput(
                 input_id=src_indices,
