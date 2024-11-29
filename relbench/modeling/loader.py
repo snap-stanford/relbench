@@ -195,6 +195,7 @@ class LinkNeighborLoader(DataLoader):
         subgraph_type: Union[SubgraphType, str] = "directional",
         temporal_strategy: str = "uniform",
         time_attr: Optional[str] = None,
+        num_neg_dst_nodes: Optional[int] = None,
         **kwargs,
     ):
         node_sampler = NeighborSampler(
@@ -213,6 +214,8 @@ class LinkNeighborLoader(DataLoader):
         self.num_dst_nodes = num_dst_nodes
         self.src_time = src_time
         self.share_same_time = share_same_time
+        self.num_neg_dst_nodes = num_neg_dst_nodes
+        kwargs.pop("num_neg_dst_nodes", None)
 
         kwargs.pop("dataset", None)
         kwargs.pop("collate_fn", None)
@@ -255,7 +258,7 @@ class LinkNeighborLoader(DataLoader):
         src_indices = index[:, 0].contiguous()
         pos_dst_indices = index[:, 1].contiguous()
         time = index[:, 2].contiguous()
-        neg_dst_indices = torch.randint(0, self.num_dst_nodes, size=(len(src_indices),))
+        neg_dst_indices = torch.randint(0, self.num_dst_nodes, size=(len(src_indices) * 1 if self.num_neg_dst_nodes is None else len(src_indices) * self.num_neg_dst_nodes,))
         src_out = self.src_loader.get_neighbors(
             NodeSamplerInput(
                 input_id=src_indices,
