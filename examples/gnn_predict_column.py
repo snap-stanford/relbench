@@ -22,19 +22,25 @@ from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task
+from relbench.base.task_column import PredictColumnTask
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-hm")
+parser.add_argument("--dataset", type=str, default="rel-f1")
 parser.add_argument("--task", type=str, default="predict-column")
 
-parser.add_argument("--task_type", type=str, default="REGRESSION", choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"])
-parser.add_argument("--src_entity_table", type=str, default="transactions")
-parser.add_argument("--src_entity_col", type=str, default=None)
-parser.add_argument("--time_col", type=str, default="t_dat")
-parser.add_argument("--target_col", type=str, default="price")
+parser.add_argument(
+    "--task_type",
+    type=str,
+    default="REGRESSION",
+    choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
+)
+parser.add_argument("--entity_table", type=str, default="results")
+parser.add_argument("--entity_col", type=str, default="resultId")
+parser.add_argument("--time_col", type=str, default="date")
+parser.add_argument("--target_col", type=str, default="position")
 
 parser.add_argument("--lr", type=float, default=0.005)
-parser.add_argument("--epochs", type=int, default=1)
+parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
 parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
@@ -61,14 +67,22 @@ seed_everything(args.seed)
 
 predict_column_task_config = {
     "task_type": TaskType[args.task_type],
-    "src_entity_table": args.src_entity_table,
-    "src_entity_col": args.src_entity_col if args.src_entity_col else None,
+    "entity_table": args.entity_table,
+    "entity_col": args.entity_col if args.entity_col else None,
     "time_col": args.time_col,
     "target_col": args.target_col,
 }
 
-dataset: Dataset = get_dataset(args.dataset, download=False, predict_column_task_config = predict_column_task_config)
-task: EntityTask = get_task(args.dataset, args.task, download=False, predict_column_task_config = predict_column_task_config)
+dataset: Dataset = get_dataset(args.dataset, download=True)
+dataset.target_col = args.target_col
+dataset.entity_table = args.entity_table
+task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
+
+# task.get_table("train")
+# task.get_table("val")
+# task.get_table("test")
+
+# task.get_table("test")
 
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
@@ -85,7 +99,9 @@ except FileNotFoundError:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 data, col_stats_dict = make_pkey_fkey_graph(
-    dataset.get_db(),
+    dataset.get_db(
+        upto_test_timestamp=False,
+    ),
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256

@@ -63,8 +63,8 @@ def download_dataset(name: str) -> None:
     )
 
 
-# @lru_cache(maxsize=None)
-def get_dataset(name: str, download=False, predict_column_task_config: dict = {}) -> Dataset:
+@lru_cache(maxsize=None)
+def get_dataset(name: str, download=False) -> Dataset:
     r"""Return a dataset object by name.
 
     Args:
@@ -87,7 +87,7 @@ def get_dataset(name: str, download=False, predict_column_task_config: dict = {}
     if download:
         download_dataset(name)
     cls, args, kwargs = dataset_registry[name]
-    dataset = cls(*args, predict_column_task_config=predict_column_task_config, **kwargs)
+    dataset = cls(*args, **kwargs)
     return dataset
 
 

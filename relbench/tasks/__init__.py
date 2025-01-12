@@ -8,7 +8,7 @@ import pooch
 
 from relbench.base import BaseTask
 from relbench.datasets import get_dataset
-from relbench.tasks import amazon, avito, event, f1, hm, stack, trial, task_column
+from relbench.tasks import amazon, avito, event, f1, hm, stack, trial
 
 task_registry = defaultdict(dict)
 
@@ -67,12 +67,11 @@ def download_task(dataset_name: str, task_name: str) -> None:
     )
 
 
-# @lru_cache(maxsize=None)
+@lru_cache(maxsize=None)
 def get_task(
     dataset_name: str,
     task_name: str,
     download=False,
-    predict_column_task_config: dict = {},
 ) -> BaseTask:
     r"""Return a task object by name.
 
@@ -96,11 +95,8 @@ def get_task(
 
     if download:
         download_task(dataset_name, task_name)
-    dataset = get_dataset(
-        dataset_name, predict_column_task_config=predict_column_task_config
-    )
+    dataset = get_dataset(dataset_name)
     cls, args, kwargs = task_registry[dataset_name][task_name]
-    kwargs = {**kwargs, "predict_task_config": predict_column_task_config}
     task = cls(dataset, *args, **kwargs)
     return task
 
@@ -129,10 +125,6 @@ register_task("rel-f1", "driver-top3", f1.DriverTop3Task)
 register_task("rel-hm", "user-item-purchase", hm.UserItemPurchaseTask)
 register_task("rel-hm", "user-churn", hm.UserChurnTask)
 register_task("rel-hm", "item-sales", hm.ItemSalesTask)
-
-
-register_task("rel-hm", "predict-column", task_column.PredictColumnTask)
-register_task("rel-hm", "transaction-price-autocomplete", hm.PriceAutocompleteTask)
 
 register_task("rel-stack", "user-engagement", stack.UserEngagementTask)
 register_task("rel-stack", "post-votes", stack.PostVotesTask)

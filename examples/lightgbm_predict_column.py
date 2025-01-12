@@ -16,19 +16,35 @@ from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
+import shap
+
 from relbench.base import Dataset, EntityTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 from relbench.tasks import get_task
+from relbench.base.task_column import PredictColumnTask
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-f1")
-parser.add_argument("--task", type=str, default="driver-position")
+parser.add_argument("--dataset", type=str, default="rel-hm")
+parser.add_argument("--task", type=str, default="predict-column")
+
+parser.add_argument(
+    "--task_type",
+    type=str,
+    default="REGRESSION",
+    choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
+)
+parser.add_argument("--entity_table", type=str, default="transactions")
+parser.add_argument("--entity_col", type=str, default=None)
+parser.add_argument("--time_col", type=str, default="t_dat")
+parser.add_argument("--target_col", type=str, default="price")
+
+
 parser.add_argument("--num_trials", type=int, default=10)
 parser.add_argument(
     "--sample_size",
     type=int,
-    default=50_000,
+    default=1_00,
     help="Subsample the specified number of training data to train lightgbm model.",
 )
 parser.add_argument("--seed", type=int, default=42)
@@ -44,8 +60,21 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
+predict_column_task_config = {
+    "task_type": TaskType[args.task_type],
+    "entity_table": args.entity_table,
+    "entity_col": args.entity_col if args.entity_col else None,
+    "time_col": args.time_col,
+    "target_col": args.target_col,
+}
+
 dataset: Dataset = get_dataset(args.dataset, download=True)
-task: EntityTask = get_task(args.dataset, args.task, download=True)
+dataset.target_col = args.target_col
+dataset.entity_table = args.entity_table
+
+task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
+
+# db = self.get_modified
 
 train_table = task.get_table("train")
 val_table = task.get_table("val")
@@ -53,7 +82,7 @@ test_table = task.get_table("test")
 
 
 dfs: Dict[str, pd.DataFrame] = {}
-entity_table = dataset.get_db().table_dict[task.entity_table]
+entity_table = dataset.get_db(upto_test_timestamp=False).table_dict[task.entity_table]
 entity_df = entity_table.df
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
@@ -93,11 +122,15 @@ for split, table in [
 ]:
     left_entity = list(table.fkey_col_to_pkey_table.keys())[0]
     entity_df = entity_df.astype({entity_table.pkey_col: table.df[left_entity].dtype})
-    dfs[split] = table.df.merge(
-        entity_df,
-        how="left",
-        left_on=left_entity,
-        right_on=entity_table.pkey_col,
+    dfs[split] = (
+        table.df.merge(
+            entity_df,
+            how="left",
+            left_on=left_entity,
+            right_on=entity_table.pkey_col,
+        )
+        .drop(columns=[f"{args.time_col}_y"])
+        .rename(columns={f"{args.time_col}_x": args.time_col})
     )
 
 train_dataset = torch_frame.data.Dataset(

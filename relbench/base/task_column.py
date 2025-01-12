@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Optional
 from relbench.base.dataset import Dataset
 from relbench.base import Database, EntityTask, Table, TaskType
 
@@ -14,33 +14,53 @@ from relbench.metrics import (
 
 class PredictColumnTask(EntityTask):
 
-    timedelta = pd.Timedelta(days=1)
+    timedelta = pd.Timedelta(seconds=1)
 
     def __init__(
         self,
         dataset: Dataset,
+        task_type: TaskType,
+        entity_table: str,
+        entity_col: str,
+        time_col: str,
+        target_col: str,
         cache_dir: Optional[str] = None,
-        predict_task_config: Dict[str, str] = {},
     ):
         super().__init__(dataset, cache_dir=cache_dir)
 
-        self.task_type = predict_task_config["task_type"]
-        self.entity_table = predict_task_config["src_entity_table"]
-        self.entity_col = predict_task_config["src_entity_col"]
+        self.task_type = task_type
+        self.entity_table = entity_table
+        self.entity_col = entity_col
         if self.entity_col is None:
             self.entity_col = "primary_key"
-        self.time_col = predict_task_config["time_col"]
-        self.target_col = predict_task_config["target_col"]
+        self.time_col = time_col
+        self.target_col = target_col
 
+        self.num_eval_timestamps = (self.dataset.test_timestamp - self.dataset.val_timestamp).total_seconds()
         if self.task_type == TaskType.REGRESSION:
             self.metrics = [r2, mae, rmse]
         else:
             raise NotImplementedError(f"Task type {self.task_type} not implemented")
+        
+    def filter_dangling_entities(self, table: Table) -> Table:
+        db = self.dataset.get_db(upto_test_timestamp=False)
+        num_entities = len(db.table_dict[self.entity_table])
+        filter_mask = table.df[self.entity_col] >= num_entities
+
+        if filter_mask.any():
+            table.df = table.df[~filter_mask]
+
+        return table
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         entity_table = db.table_dict[self.entity_table].df
         entity_table_removed_cols = db.table_dict[self.entity_table].removed_cols
-        # timestamp_df = pd.DataFrame({"timestamp": timestamps})
+
+        # Calculate minimum and maximum timestamps from timestamp_df
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        min_timestamp = timestamp_df["timestamp"].min()
+        max_timestamp = timestamp_df["timestamp"].max()
+
         df = duckdb.sql(
             f"""
             SELECT
@@ -53,8 +73,14 @@ class PredictColumnTask(EntityTask):
                 entity_table_removed_cols
             ON
                 entity_table.{self.entity_col} = entity_table_removed_cols.{self.entity_col}
+            WHERE
+                entity_table.{self.time_col} > '{min_timestamp}' AND
+                entity_table.{self.time_col} <= '{max_timestamp}'
             """
         ).df()
+
+        # remove rows where self.target_col is nan
+        df = df.dropna(subset=[self.target_col])
 
         return Table(
             df=df,
