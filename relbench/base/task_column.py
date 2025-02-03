@@ -9,6 +9,10 @@ from relbench.metrics import (
     mae,
     r2,
     rmse,
+    average_precision,
+    accuracy,
+    f1,
+    roc_auc,
 )
 
 
@@ -39,6 +43,8 @@ class PredictColumnTask(EntityTask):
         self.num_eval_timestamps = (self.dataset.test_timestamp - self.dataset.val_timestamp).total_seconds()
         if self.task_type == TaskType.REGRESSION:
             self.metrics = [r2, mae, rmse]
+        elif self.task_type == TaskType.BINARY_CLASSIFICATION:
+            self.metrics = [average_precision, accuracy, f1, roc_auc]
         else:
             raise NotImplementedError(f"Task type {self.task_type} not implemented")
         
