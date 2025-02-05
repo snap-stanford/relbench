@@ -57,6 +57,53 @@ class PredictColumnTask(EntityTask):
             table.df = table.df[~filter_mask]
 
         return table
+    
+    def _get_table(self, split: str) -> Table:
+        r"""Helper function to get a table for a split."""
+
+        db = self.dataset.get_db(upto_test_timestamp=split != "test")
+
+        if split == "train":
+            start = self.dataset.val_timestamp - self.timedelta
+            end = db.min_timestamp
+            freq = -self.timedelta
+
+        elif split == "val":
+            if self.dataset.val_timestamp + self.timedelta > db.max_timestamp:
+                raise RuntimeError(
+                    "val timestamp + timedelta is larger than max timestamp! "
+                    "This would cause val labels to be generated with "
+                    "insufficient aggregation time."
+                )
+
+            start = self.dataset.test_timestamp - self.timedelta
+            end = self.dataset.val_timestamp
+            freq = -self.timedelta
+
+        elif split == "test":
+            if self.dataset.test_timestamp + self.timedelta > db.max_timestamp:
+                raise RuntimeError(
+                    "test timestamp + timedelta is larger than max timestamp! "
+                    "This would cause test labels to be generated with "
+                    "insufficient aggregation time."
+                )
+
+            start = db.max_timestamp
+            end = self.dataset.test_timestamp
+            freq = -self.timedelta
+
+        timestamps = pd.date_range(start=start, end=end, freq=freq)
+
+        if split == "train" and len(timestamps) < 3:
+            raise RuntimeError(
+                f"The number of training time frames is too few. "
+                f"({len(timestamps)} given)"
+            )
+
+        table = self.make_table(db, timestamps)
+        table = self.filter_dangling_entities(table)
+
+        return table
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         entity_table = db.table_dict[self.entity_table].df
@@ -65,6 +112,7 @@ class PredictColumnTask(EntityTask):
         # Calculate minimum and maximum timestamps from timestamp_df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         min_timestamp = timestamp_df["timestamp"].min()
+        max_timestamp = timestamp_df["timestamp"].max()
 
         df = duckdb.sql(
             f"""
@@ -79,7 +127,8 @@ class PredictColumnTask(EntityTask):
             ON
                 entity_table.{self.entity_col} = entity_table_removed_cols.{self.entity_col}
             WHERE
-                entity_table.{self.time_col} > '{min_timestamp}'
+                entity_table.{self.time_col} > '{min_timestamp}' AND 
+                entity_table.{self.time_col} <= '{max_timestamp}'
             """
         ).df()
 
