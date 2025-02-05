@@ -65,7 +65,6 @@ class PredictColumnTask(EntityTask):
         # Calculate minimum and maximum timestamps from timestamp_df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         min_timestamp = timestamp_df["timestamp"].min()
-        max_timestamp = timestamp_df["timestamp"].max()
 
         df = duckdb.sql(
             f"""
@@ -80,8 +79,7 @@ class PredictColumnTask(EntityTask):
             ON
                 entity_table.{self.entity_col} = entity_table_removed_cols.{self.entity_col}
             WHERE
-                entity_table.{self.time_col} > '{min_timestamp}' AND
-                entity_table.{self.time_col} <= '{max_timestamp}'
+                entity_table.{self.time_col} > '{min_timestamp}'
             """
         ).df()
 
