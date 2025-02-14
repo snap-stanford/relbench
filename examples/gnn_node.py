@@ -24,8 +24,8 @@ from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-f1")
-parser.add_argument("--task", type=str, default="driver-top3")
+parser.add_argument("--dataset", type=str, default="rel-event")
+parser.add_argument("--task", type=str, default="user-attendance")
 parser.add_argument("--lr", type=float, default=0.005)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
@@ -51,9 +51,8 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 dataset: Dataset = get_dataset(args.dataset, download=True)
-task: EntityTask = get_task(args.dataset, args.task, download=False)
+task: EntityTask = get_task(args.dataset, args.task, download=True)
 
-task.get_table("test")
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:

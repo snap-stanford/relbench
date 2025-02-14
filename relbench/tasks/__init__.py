@@ -68,11 +68,7 @@ def download_task(dataset_name: str, task_name: str) -> None:
 
 
 @lru_cache(maxsize=None)
-def get_task(
-    dataset_name: str,
-    task_name: str,
-    download=False,
-) -> BaseTask:
+def get_task(dataset_name: str, task_name: str, download=False) -> BaseTask:
     r"""Return a task object by name.
 
     Args:

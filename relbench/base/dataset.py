@@ -163,7 +163,7 @@ class Dataset:
             ]
             # drop the columns
             db.table_dict[table_name].df = db.table_dict[table_name].df.drop(
-                columns=[col]#, 'number', 'grid', 'laps', 'milliseconds', 'fastestLap', 'rank', 'points'
+                columns=[col]
             )
 
         return db

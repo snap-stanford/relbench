@@ -22,8 +22,8 @@ from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-f1")
-parser.add_argument("--task", type=str, default="driver-position")
+parser.add_argument("--dataset", type=str, default="rel-stack")
+parser.add_argument("--task", type=str, default="user-engage")
 parser.add_argument("--num_trials", type=int, default=10)
 parser.add_argument(
     "--sample_size",
