@@ -4,7 +4,6 @@ import pooch
 from relbench.base import Database, Dataset, Table
 
 
-
 class ArxivDataset(Dataset):
     val_timestamp = pd.Timestamp("2021-01-01")
     test_timestamp = pd.Timestamp("2022-01-01")
@@ -12,23 +11,20 @@ class ArxivDataset(Dataset):
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
 
-        url = "https://www.dropbox.com/scl/fi/tjj6r1fqikt4j0rz4qomu/db.zip?rlkey=1ykfkp8pj3hu6n4utz8g9dkx2&st=azmm56dc&dl=1"
+        url = ("https://www.dropbox.com/scl/fi/tjj6r1fqikt4j0rz4qomu/db.zip?rlkey=1ykfkp8pj3hu6n4utz8g9dkx2&st"
+               "=azmm56dc&dl=1")
 
         path = pooch.retrieve(
             url,
             known_hash="ff9e03e467e28df959d08c79c453db1f31b525f07ff3c0e0b5e571e732acc63f",
             progressbar=True,
-            processor=pooch.Unzip(),  # 自动解压
+            processor=pooch.Unzip(),
         )
 
-        print("Downloaded and extracted path:", path)  # 打印路径检查
-
-        # **修正 path**
         if isinstance(path, list):
-            # 取第一个文件的上一级目录作为解压路径
             path = os.path.dirname(path[0])
 
-        print("Final dataset directory:", path)  # 再次检查
+        print("Final dataset directory:", path)
 
         papers = pd.read_csv(os.path.join(path, "1Paper.csv"))
         categories = pd.read_csv(os.path.join(path, "2Category.csv"))
@@ -80,11 +76,3 @@ class ArxivDataset(Dataset):
         )}
 
         return Database(tables)
-
-'''
-arxiv_dataset = ArxivDataset(cache_dir="./cache/arxiv")
-
-arxiv_db = arxiv_dataset.get_db()
-print(arxiv_db.table_dict["papers"])
-print(arxiv_db.table_dict["paperAuthors"])
-'''
