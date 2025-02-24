@@ -37,6 +37,11 @@ class Dataset:
                 we will either process and cache the file (if not available) or use
                 the cached file. If None, we will not use cached file and re-process
                 everything from scratch without saving the cache.
+            predict_column_task_config: A dictionary containing the configuration for the predict column task. The keys have to be:  
+                - "entity_table": The name of the entity table.  
+                - "entity_col": The name of the entity (id) column. Can be None if the entity table has no id column.
+                - "time_col": The name of the time column by which the data is split into training and validation set.  
+                - "target_col": The name of the target column to be predicted.  
         """
 
         self.cache_dir = cache_dir
@@ -121,6 +126,7 @@ class Dataset:
         self.validate_and_correct_db(db)
 
         if self.target_col:
+            # Get the modified db with the target column removed
             db = self.get_modified_db(db)
 
         return db
@@ -128,6 +134,16 @@ class Dataset:
     def get_modified_db(
         self, db
     ) -> Database:
+        r"""Get the modified db with the target column removed.
+
+        The target columns is saved to `db.table_dict[table_name].removed_cols`
+        and the column is dropped from the table.
+        Args:
+            db: The database object.
+
+        Returns:
+            Database: The modified database object.
+        """
 
         # Remove the target column from the source entity table
         if self.target_col:
@@ -150,14 +166,14 @@ class Dataset:
             if db.table_dict[table_name].pkey_col:
                 id_keys.append(db.table_dict[table_name].pkey_col)
             else:
-                # id_keys.extend(db.table_dict[table_name].fkey_col_to_pkey_table.keys())
-                # add primary key to table_name
+                # add primary key to table_name if it doesn't have one
                 db.table_dict[table_name].df["primary_key"] = np.arange(
                     len(db.table_dict[table_name].df)
                 )
                 id_keys.append("primary_key")
                 db.table_dict[table_name].pkey_col = "primary_key"
 
+            # Save the target column to be dropped
             db.table_dict[table_name].removed_cols = db.table_dict[table_name].df[
                 id_keys + [col]
             ]

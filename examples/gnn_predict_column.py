@@ -78,12 +78,6 @@ dataset.target_col = args.target_col
 dataset.entity_table = args.entity_table
 task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
 
-# task.get_table("train")
-# task.get_table("val")
-# task.get_table("test")
-
-# task.get_table("test")
-
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:

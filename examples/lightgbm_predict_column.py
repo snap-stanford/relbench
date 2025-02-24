@@ -25,7 +25,7 @@ from relbench.tasks import get_task
 from relbench.base.task_column import PredictColumnTask
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-hm")
+parser.add_argument("--dataset", type=str, default="rel-f1")
 parser.add_argument("--task", type=str, default="predict-column")
 
 parser.add_argument(
@@ -34,10 +34,10 @@ parser.add_argument(
     default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--entity_table", type=str, default="transactions")
-parser.add_argument("--entity_col", type=str, default=None)
-parser.add_argument("--time_col", type=str, default="t_dat")
-parser.add_argument("--target_col", type=str, default="price")
+parser.add_argument("--entity_table", type=str, default="results")
+parser.add_argument("--entity_col", type=str, default="resultId")
+parser.add_argument("--time_col", type=str, default="date")
+parser.add_argument("--target_col", type=str, default="position")
 
 
 parser.add_argument("--num_trials", type=int, default=10)
@@ -73,8 +73,6 @@ dataset.target_col = args.target_col
 dataset.entity_table = args.entity_table
 
 task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
-
-# db = self.get_modified
 
 train_table = task.get_table("train")
 val_table = task.get_table("val")

@@ -17,6 +17,24 @@ from relbench.metrics import (
 
 
 class PredictColumnTask(EntityTask):
+    r"""A predict column task on a dataset.
+    Predict all values in the target column.
+
+    The task is constructed by specifying the entity table, entity column, time column, and target column.
+    The target column is removed from the entity table and saved to `db.table_dict[entity_table].removed_cols`,
+    which is used to construct the table for the predict column task.
+
+    The entity table needs to have a time column by which the data is split into training and validation set.
+
+    Args:
+        dataset: The dataset object.
+        task_type: The type of the task.
+        entity_table: The name of the entity table.
+        entity_col: The name of the entity (id) column. Can be None if the entity table has no id column.
+        time_col: The name of the time column by which the data is split into training and validation set.
+        target_col: The name of the target column to be predicted.
+        cache_dir: The directory to cache the task tables.
+    """
 
     timedelta = pd.Timedelta(seconds=1)
 
@@ -30,6 +48,7 @@ class PredictColumnTask(EntityTask):
         target_col: str,
         cache_dir: Optional[str] = None,
     ):
+
         super().__init__(dataset, cache_dir=cache_dir)
 
         self.task_type = task_type
@@ -59,7 +78,12 @@ class PredictColumnTask(EntityTask):
         return table
     
     def _get_table(self, split: str) -> Table:
-        r"""Helper function to get a table for a split."""
+        r"""Helper function to get a table for a split.
+        
+        This function overrides the `_get_table` method in `EntityTask`.
+        Because we predict all values in the target column, we only look at the min and max timestamp
+        for each split and take all rows in the table between them.        
+        """
 
         db = self.dataset.get_db(upto_test_timestamp=split != "test")
 
