@@ -35,8 +35,6 @@ parser.add_argument(
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
 parser.add_argument("--entity_table", type=str, default="results")
-parser.add_argument("--entity_col", type=str, default="resultId")
-parser.add_argument("--time_col", type=str, default="date")
 parser.add_argument("--target_col", type=str, default="position")
 
 
@@ -63,8 +61,6 @@ seed_everything(args.seed)
 predict_column_task_config = {
     "task_type": TaskType[args.task_type],
     "entity_table": args.entity_table,
-    "entity_col": args.entity_col if args.entity_col else None,
-    "time_col": args.time_col,
     "target_col": args.target_col,
 }
 
@@ -127,8 +123,8 @@ for split, table in [
             left_on=left_entity,
             right_on=entity_table.pkey_col,
         )
-        .drop(columns=[f"{args.time_col}_y"])
-        .rename(columns={f"{args.time_col}_x": args.time_col})
+        .drop(columns=[f"{entity_table.time_col}_y"])
+        .rename(columns={f"{entity_table.time_col}_x": entity_table.time_col})
     )
 
 train_dataset = torch_frame.data.Dataset(

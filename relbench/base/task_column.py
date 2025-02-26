@@ -37,14 +37,13 @@ class PredictColumnTask(EntityTask):
     """
 
     timedelta = pd.Timedelta(seconds=1)
+    entity_col: str
 
     def __init__(
         self,
         dataset: Dataset,
         task_type: TaskType,
         entity_table: str,
-        entity_col: str,
-        time_col: str,
         target_col: str,
         cache_dir: Optional[str] = None,
     ):
@@ -53,10 +52,6 @@ class PredictColumnTask(EntityTask):
 
         self.task_type = task_type
         self.entity_table = entity_table
-        self.entity_col = entity_col
-        if self.entity_col is None:
-            self.entity_col = "primary_key"
-        self.time_col = time_col
         self.target_col = target_col
 
         self.num_eval_timestamps = (self.dataset.test_timestamp - self.dataset.val_timestamp).total_seconds()
@@ -86,6 +81,9 @@ class PredictColumnTask(EntityTask):
         """
 
         db = self.dataset.get_db(upto_test_timestamp=split != "test")
+        # Set the entity column to the pkey column of the entity table since relbench needs it
+        # See ".../relbench/modeling/graph.py", task.entity_col
+        self.entity_col = db.table_dict[self.entity_table].pkey_col
 
         if split == "train":
             start = self.dataset.val_timestamp - self.timedelta
@@ -133,6 +131,9 @@ class PredictColumnTask(EntityTask):
         entity_table = db.table_dict[self.entity_table].df
         entity_table_removed_cols = db.table_dict[self.entity_table].removed_cols
 
+        time_col = db.table_dict[self.entity_table].time_col
+        entity_col = db.table_dict[self.entity_table].pkey_col
+
         # Calculate minimum and maximum timestamps from timestamp_df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         min_timestamp = timestamp_df["timestamp"].min()
@@ -141,18 +142,18 @@ class PredictColumnTask(EntityTask):
         df = duckdb.sql(
             f"""
             SELECT
-                entity_table.{self.time_col},
-                entity_table.{self.entity_col},
+                entity_table.{time_col},
+                entity_table.{entity_col},
                 entity_table_removed_cols.{self.target_col}
             FROM
                 entity_table
             LEFT JOIN
                 entity_table_removed_cols
             ON
-                entity_table.{self.entity_col} = entity_table_removed_cols.{self.entity_col}
+                entity_table.{entity_col} = entity_table_removed_cols.{entity_col}
             WHERE
-                entity_table.{self.time_col} > '{min_timestamp}' AND 
-                entity_table.{self.time_col} <= '{max_timestamp}'
+                entity_table.{time_col} > '{min_timestamp}' AND 
+                entity_table.{time_col} <= '{max_timestamp}'
             """
         ).df()
 
@@ -162,8 +163,8 @@ class PredictColumnTask(EntityTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={
-                self.entity_col: self.entity_table,
+                entity_col: self.entity_table,
             },
             pkey_col=None,
-            time_col=self.time_col,
+            time_col=time_col,
         )
