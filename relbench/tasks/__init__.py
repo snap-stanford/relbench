@@ -8,7 +8,7 @@ import pooch
 
 from relbench.base import BaseTask
 from relbench.datasets import get_dataset
-from relbench.tasks import amazon, avito, event, f1, hm, stack, trial
+from relbench.tasks import amazon, avito, event, f1, hm, stack, trial, arxiv
 
 task_registry = defaultdict(dict)
 
@@ -133,3 +133,10 @@ register_task("rel-trial", "study-adverse", trial.StudyAdverseTask)
 register_task("rel-trial", "site-success", trial.SiteSuccessTask)
 register_task("rel-trial", "condition-sponsor-run", trial.ConditionSponsorRunTask)
 register_task("rel-trial", "site-sponsor-run", trial.SiteSponsorRunTask)
+
+register_task("rel-arxiv", "author-category", arxiv.AuthorCategoryTask)
+register_task("rel-arxiv", "author-citation", arxiv.AuthorCitationTask)
+register_task("rel-arxiv", "author-publication", arxiv.AuthorPublicationTask)
+register_task("rel-arxiv", "paper-citation", arxiv.PaperCitationTask)
+register_task("rel-arxiv", "author-collaboration", arxiv.AuthorCollaborationTask)
+register_task("rel-arxiv", "co-citation", arxiv.CoCitationTask)
