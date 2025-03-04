@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
 
-from relbench.base import Database, EntityTask, Table, TaskType
+from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
     average_precision,
@@ -26,7 +26,7 @@ class AuthorCategoryTask(EntityTask):
     target_col = "primary_category"
     timedelta = pd.Timedelta(days=365)
     metrics = [average_precision, accuracy, f1, roc_auc]
-    num_eval_timestamps = 40
+    num_eval_timestamps = 1
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -93,11 +93,11 @@ class PaperCitationTask(EntityTask):
     task_type = TaskType.REGRESSION
     entity_col = "Paper_ID"
     entity_table = "papers"
-    time_col = "Submission_Date"
+    time_col = "date"
     target_col = "citation_count"
     timedelta = pd.Timedelta(days=365)
     metrics = [r2, mae, rmse]
-    num_eval_timestamps = 40
+    num_eval_timestamps = 1
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -141,7 +141,7 @@ class AuthorCitationTask(EntityTask):
     target_col = "citation_count"
     timedelta = pd.Timedelta(days=365)
     metrics = [r2, mae, rmse]
-    num_eval_timestamps = 40
+    num_eval_timestamps = 1
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -184,7 +184,7 @@ class AuthorPublicationTask(EntityTask):
     target_col = "publication_count"
     timedelta = pd.Timedelta(days=365)
     metrics = [r2, mae, rmse]
-    num_eval_timestamps = 40
+    num_eval_timestamps = 1
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -214,17 +214,19 @@ class AuthorPublicationTask(EntityTask):
         )
 
 
-class AuthorCollaborationTask(EntityTask):
+class AuthorCollaborationTask(RecommendationTask):
     r"""Predict the list of authors an author will collaborate with in the next year."""
 
     task_type = TaskType.LINK_PREDICTION
-    entity_col = "Author_ID"
-    entity_table = "authors"
+    src_entity_col = "Author_ID"
+    src_entity_table = "authors"
+    dst_entity_col = "Author_ID"
+    dst_entity_table = "authors"
     time_col = "date"
-    target_col = "collaborators"
     timedelta = pd.Timedelta(days=365)
     metrics = [link_prediction_map, link_prediction_precision, link_prediction_recall]
-    num_eval_timestamps = 40
+    num_eval_timestamps = 1
+    eval_k = 10
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -257,23 +259,28 @@ class AuthorCollaborationTask(EntityTask):
 
         return Table(
             df=df,
-            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            fkey_col_to_pkey_table={
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
+            },
             pkey_col=None,
             time_col=self.time_col,
         )
 
 
-class CoCitationTask(EntityTask):
+class CoCitationTask(RecommendationTask):
     r"""Predict which other papers will be cited together with a given paper in the next year."""
 
     task_type = TaskType.LINK_PREDICTION
-    entity_col = "Paper_ID"
-    entity_table = "papers"
+    src_entity_col = "Paper_ID"
+    src_entity_table = "papers"
+    dst_entity_col = "Paper_ID"
+    dst_entity_table = "papers"
     time_col = "date"
-    target_col = "co_cited"
     timedelta = pd.Timedelta(days=365)
     metrics = [link_prediction_map, link_prediction_precision, link_prediction_recall]
-    num_eval_timestamps = 40
+    num_eval_timestamps = 1
+    eval_k = 10
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
@@ -312,7 +319,10 @@ class CoCitationTask(EntityTask):
 
         return Table(
             df=df,
-            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            fkey_col_to_pkey_table={
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
+            },
             pkey_col=None,
             time_col=self.time_col,
         )

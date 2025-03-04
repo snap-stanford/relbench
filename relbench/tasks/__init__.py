@@ -89,8 +89,8 @@ def get_task(dataset_name: str, task_name: str, download=False) -> BaseTask:
     cached task tables matches the RelBench version even in this case.
     """
 
-    if download:
-        download_task(dataset_name, task_name)
+    # if download:
+    #     download_task(dataset_name, task_name)
     dataset = get_dataset(dataset_name)
     cls, args, kwargs = task_registry[dataset_name][task_name]
     task = cls(dataset, *args, **kwargs)

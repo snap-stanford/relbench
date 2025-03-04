@@ -84,8 +84,8 @@ def get_dataset(name: str, download=False) -> Dataset:
     cached database matches the RelBench version even in this case.
     """
 
-    if download:
-        download_dataset(name)
+    # if download:
+    #     download_dataset(name)
     cls, args, kwargs = dataset_registry[name]
     dataset = cls(*args, **kwargs)
     return dataset

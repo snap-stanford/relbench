@@ -3,6 +3,8 @@ import pandas as pd
 import pooch
 from relbench.base import Database, Dataset, Table
 
+from sklearn.preprocessing import LabelEncoder
+
 
 class ArxivDataset(Dataset):
     val_timestamp = pd.Timestamp("2021-01-01")
@@ -45,6 +47,10 @@ class ArxivDataset(Dataset):
         paperAuthors["Submission_Date"] = pd.to_datetime(
             paperAuthors["Submission_Date"], format="%Y%m%d"
         )
+
+        # Convert category strings to integers
+        category_encoder = LabelEncoder()
+        categories["Category"] = category_encoder.fit_transform(categories["Category"])
 
         # add time column to other tables
         paperCategories = paperCategories.merge(
