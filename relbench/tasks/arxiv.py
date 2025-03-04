@@ -17,14 +17,14 @@ from relbench.metrics import (
 
 
 class AuthorCategoryTask(EntityTask):
-    r"""Predict the primary research category in which an author will publish papers in the next year."""
+    r"""Predict the primary research category in which an author will publish papers in the next six months."""
 
     task_type = TaskType.MULTICLASS_CLASSIFICATION
     entity_col = "Author_ID"
     entity_table = "authors"
     time_col = "date"
     target_col = "primary_category"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 // 2)
     metrics = [average_precision, accuracy, f1, roc_auc]
     num_eval_timestamps = 1
 
@@ -88,14 +88,14 @@ class AuthorCategoryTask(EntityTask):
 
 
 class PaperCitationTask(EntityTask):
-    r"""Predict how many citations a paper will receive in the next year."""
+    r"""Predict how many citations a paper will receive in the next six months."""
 
     task_type = TaskType.REGRESSION
     entity_col = "Paper_ID"
     entity_table = "papers"
     time_col = "date"
     target_col = "citation_count"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 // 2)
     metrics = [r2, mae, rmse]
     num_eval_timestamps = 1
 
@@ -123,6 +123,7 @@ class PaperCitationTask(EntityTask):
             SELECT date, Paper_ID, citation_count FROM paper_citations;
             """
         ).df()
+
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
@@ -132,14 +133,15 @@ class PaperCitationTask(EntityTask):
 
 
 class AuthorCitationTask(EntityTask):
-    r"""Predict the total number of citations an author will receive (including both published and upcoming papers) in the next year."""
+    r"""Predict the total number of citations an author will receive (including both published and upcoming papers) in
+    the next six months."""
 
     task_type = TaskType.REGRESSION
     entity_col = "Author_ID"
     entity_table = "authors"
     time_col = "date"
     target_col = "citation_count"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 // 2)
     metrics = [r2, mae, rmse]
     num_eval_timestamps = 1
 
@@ -166,6 +168,7 @@ class AuthorCitationTask(EntityTask):
             SELECT date, Author_ID, citation_count FROM author_citations;
             """
         ).df()
+
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
@@ -175,14 +178,14 @@ class AuthorCitationTask(EntityTask):
 
 
 class AuthorPublicationTask(EntityTask):
-    r"""Predict how many papers an author will publish in the next year."""
+    r"""Predict how many papers an author will publish in the next six months."""
 
     task_type = TaskType.REGRESSION
     entity_col = "Author_ID"
     entity_table = "authors"
     time_col = "date"
     target_col = "publication_count"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 // 2)
     metrics = [r2, mae, rmse]
     num_eval_timestamps = 1
 
@@ -206,6 +209,7 @@ class AuthorPublicationTask(EntityTask):
             SELECT date, Author_ID, publication_count FROM author_pubs;
             """
         ).df()
+
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
@@ -215,7 +219,7 @@ class AuthorPublicationTask(EntityTask):
 
 
 class AuthorCollaborationTask(RecommendationTask):
-    r"""Predict the list of authors an author will collaborate with in the next year."""
+    r"""Predict the list of authors an author will collaborate with in the next six months."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "Author_ID"
@@ -223,7 +227,7 @@ class AuthorCollaborationTask(RecommendationTask):
     dst_entity_col = "Author_ID"
     dst_entity_table = "authors"
     time_col = "date"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 // 2)
     metrics = [link_prediction_map, link_prediction_precision, link_prediction_recall]
     num_eval_timestamps = 1
     eval_k = 10
@@ -269,7 +273,7 @@ class AuthorCollaborationTask(RecommendationTask):
 
 
 class CoCitationTask(RecommendationTask):
-    r"""Predict which other papers will be cited together with a given paper in the next year."""
+    r"""Predict which other papers will be cited together with a given paper in the next six months."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "Paper_ID"
@@ -277,7 +281,7 @@ class CoCitationTask(RecommendationTask):
     dst_entity_col = "Paper_ID"
     dst_entity_table = "papers"
     time_col = "date"
-    timedelta = pd.Timedelta(days=365)
+    timedelta = pd.Timedelta(days=365 // 2)
     metrics = [link_prediction_map, link_prediction_precision, link_prediction_recall]
     num_eval_timestamps = 1
     eval_k = 10
@@ -326,14 +330,3 @@ class CoCitationTask(RecommendationTask):
             pkey_col=None,
             time_col=self.time_col,
         )
-
-
-if __name__ == "__main__":
-    from relbench.datasets.arxiv import ArxivDataset
-
-    ds = ArxivDataset()
-    db = ds.make_db()
-    task_table = CoCitationTask(dataset=ds).make_table(
-        db, pd.date_range("2020-01-01", "2020-12-31", freq="1M")
-    )
-    breakpoint()

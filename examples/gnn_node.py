@@ -9,8 +9,9 @@ from typing import Dict
 import numpy as np
 import torch
 from model import Model
+from sklearn.preprocessing import LabelEncoder
 from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, L1Loss
+from torch.nn import BCEWithLogitsLoss, L1Loss, CrossEntropyLoss
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
@@ -97,12 +98,28 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     loss_fn = BCEWithLogitsLoss()
     tune_metric = "multilabel_auprc_macro"
     higher_is_better = True
+elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+    out_channels = task.num_labels
+    loss_fn = CrossEntropyLoss()
+    tune_metric = "accuracy"
 else:
     raise ValueError(f"Task type {task.task_type} is unsupported")
 
 loader_dict: Dict[str, NeighborLoader] = {}
+label_encoder = LabelEncoder()
 for split in ["train", "val", "test"]:
     table = task.get_table(split)
+
+    if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+        if hasattr(label_encoder, "classes_"):
+            table.df[task.target_col] = label_encoder.transform(
+                table.df[task.target_col]
+            )
+        else:
+            table.df[task.target_col] = label_encoder.fit_transform(
+                table.df[task.target_col]
+            )
+
     table_input = get_node_train_table_input(table=table, task=task)
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
@@ -169,6 +186,7 @@ def test(loader: NeighborLoader) -> np.ndarray:
         if task.task_type in [
             TaskType.BINARY_CLASSIFICATION,
             TaskType.MULTILABEL_CLASSIFICATION,
+            TaskType.MULTICLASS_CLASSIFICATION,
         ]:
             pred = torch.sigmoid(pred)
 

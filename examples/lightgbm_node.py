@@ -133,13 +133,13 @@ if task.task_type in [TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION]:
     model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
     model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 
-    pred = model.predict(tf_test=tf_train).numpy()
+    pred = model.predict(tf_test=tf_train).cpu().numpy()
     train_metrics = task.evaluate(pred, train_table)
 
-    pred = model.predict(tf_test=tf_val).numpy()
+    pred = model.predict(tf_test=tf_val).cpu().numpy()
     val_metrics = task.evaluate(pred, val_table)
 
-    pred = model.predict(tf_test=tf_test).numpy()
+    pred = model.predict(tf_test=tf_test).cpu().numpy()
     test_metrics = task.evaluate(pred)
 
 elif TaskType.MULTILABEL_CLASSIFICATION:
