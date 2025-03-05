@@ -1,6 +1,9 @@
 import os
+
 import pandas as pd
 import pooch
+from sklearn.preprocessing import LabelEncoder
+
 from relbench.base import Database, Dataset, Table
 
 
@@ -34,6 +37,10 @@ class ArxivDataset(Dataset):
         paperCategories = pd.read_csv(os.path.join(path, "4Paper_Category.csv"))
         authors = pd.read_csv(os.path.join(path, "5Author.csv"))
         paperAuthors = pd.read_csv(os.path.join(path, "6Paper_Author.csv"))
+
+        # Convert category column to integer
+        le = LabelEncoder()
+        categories["Category"] = le.fit_transform(categories["Category"])
 
         # Convert date column to pd.Timestamp
         papers["Submission_Date"] = pd.to_datetime(

@@ -102,24 +102,13 @@ elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
     out_channels = task.num_labels
     loss_fn = CrossEntropyLoss()
     tune_metric = "accuracy"
+    higher_is_better = True
 else:
     raise ValueError(f"Task type {task.task_type} is unsupported")
 
 loader_dict: Dict[str, NeighborLoader] = {}
-label_encoder = LabelEncoder()
 for split in ["train", "val", "test"]:
     table = task.get_table(split)
-
-    if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-        if hasattr(label_encoder, "classes_"):
-            table.df[task.target_col] = label_encoder.transform(
-                table.df[task.target_col]
-            )
-        else:
-            table.df[task.target_col] = label_encoder.fit_transform(
-                table.df[task.target_col]
-            )
-
     table_input = get_node_train_table_input(table=table, task=task)
     entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
@@ -153,7 +142,10 @@ def train() -> float:
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
 
-        loss = loss_fn(pred.float(), batch[entity_table].y.float())
+        if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+            loss = loss_fn(pred, batch[entity_table].y.long())
+        else:
+            loss = loss_fn(pred.float(), batch[entity_table].y.float())
         loss.backward()
         optimizer.step()
 

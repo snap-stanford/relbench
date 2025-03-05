@@ -72,7 +72,10 @@ except FileNotFoundError:
 col_to_stype = col_to_stype_dict[task.entity_table]
 remove_pkey_fkey(col_to_stype, entity_table)
 
-if task.task_type == TaskType.BINARY_CLASSIFICATION:
+if task.task_type in [
+    TaskType.BINARY_CLASSIFICATION,
+    TaskType.MULTICLASS_CLASSIFICATION,
+]:
     col_to_stype[task.target_col] = torch_frame.categorical
 elif task.task_type == TaskType.REGRESSION:
     col_to_stype[task.target_col] = torch_frame.numerical
@@ -126,10 +129,16 @@ if task.task_type in [
     tune_metric = Metric.ROCAUC
 elif task.task_type == TaskType.REGRESSION:
     tune_metric = Metric.MAE
+elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+    tune_metric = Metric.ACCURACY
 else:
     raise ValueError(f"Task task type is unsupported {task.task_type}")
 
-if task.task_type in [TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION]:
+if task.task_type in [
+    TaskType.BINARY_CLASSIFICATION,
+    TaskType.REGRESSION,
+    TaskType.MULTICLASS_CLASSIFICATION,
+]:
     model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
     model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 

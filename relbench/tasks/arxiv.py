@@ -4,8 +4,7 @@ import pandas as pd
 from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
-    average_precision,
-    f1,
+    log_loss,
     mae,
     r2,
     rmse,
@@ -25,8 +24,9 @@ class AuthorCategoryTask(EntityTask):
     time_col = "date"
     target_col = "primary_category"
     timedelta = pd.Timedelta(days=365 // 2)
-    metrics = [average_precision, accuracy, f1, roc_auc]
+    metrics = [accuracy, ]
     num_eval_timestamps = 1
+    num_labels = 106
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})

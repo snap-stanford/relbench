@@ -121,16 +121,6 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
 
 
 elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-    label_encoder = LabelEncoder()
-    train_table.df[task.target_col] = label_encoder.fit_transform(
-        train_table.df[task.target_col]
-    )
-    val_table.df[task.target_col] = label_encoder.transform(
-        val_table.df[task.target_col]
-    )
-    test_table.df[task.target_col] = label_encoder.transform(
-        test_table.df[task.target_col]
-    )
     eval_name_list = ["random", "majority"]
     for name in eval_name_list:
         train_metrics = evaluate(train_table, train_table, name=name)
