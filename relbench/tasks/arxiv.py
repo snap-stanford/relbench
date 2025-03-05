@@ -224,7 +224,7 @@ class AuthorCollaborationTask(RecommendationTask):
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "Author_ID"
     src_entity_table = "authors"
-    dst_entity_col = "Author_ID"
+    dst_entity_col = "collaborators"
     dst_entity_table = "authors"
     time_col = "date"
     timedelta = pd.Timedelta(days=365 // 2)
@@ -278,7 +278,7 @@ class CoCitationTask(RecommendationTask):
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "Paper_ID"
     src_entity_table = "papers"
-    dst_entity_col = "Paper_ID"
+    dst_entity_col = "co_cited"
     dst_entity_table = "papers"
     time_col = "date"
     timedelta = pd.Timedelta(days=365 // 2)

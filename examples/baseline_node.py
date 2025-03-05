@@ -121,7 +121,7 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
 
 
 elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-    eval_name_list = ["random", "majority"]
+    eval_name_list = ["random", "majority", "entity_mean", "entity_median"]
     for name in eval_name_list:
         train_metrics = evaluate(train_table, train_table, name=name)
         val_metrics = evaluate(train_table, val_table, name=name)
