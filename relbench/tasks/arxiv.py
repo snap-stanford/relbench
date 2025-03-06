@@ -4,7 +4,7 @@ import pandas as pd
 from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskType
 from relbench.metrics import (
     accuracy,
-    log_loss,
+    f1,
     mae,
     r2,
     rmse,
@@ -13,6 +13,55 @@ from relbench.metrics import (
     link_prediction_precision,
     link_prediction_recall,
 )
+
+
+class PaperCitationTask(EntityTask):
+    r"""Predict if a paper has received citations in the next 6 months."""
+
+    task_type = TaskType.BINARY_CLASSIFICATION
+    entity_col = "Paper_ID"
+    entity_table = "papers"
+    time_col = "date"
+    target_col = "cited"
+    timedelta = pd.Timedelta(days=182)  # approximately 6 months
+    metrics = [accuracy, f1, roc_auc]
+    num_eval_timestamps = 1
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        papers = db.table_dict["papers"].df
+        citations = db.table_dict["citations"].df
+
+        df = duckdb.sql(
+            f"""
+            WITH paper_citations AS (
+                SELECT
+                    t.timestamp AS date,
+                    p.Paper_ID,
+                    COUNT(c.References_Paper_ID) AS citation_count
+                FROM timestamp_df t
+                JOIN papers p 
+                    ON p.Submission_Date <= t.timestamp
+                LEFT JOIN citations c 
+                    ON c.References_Paper_ID = p.Paper_ID
+                    AND c.Submission_Date > t.timestamp
+                    AND c.Submission_Date <= t.timestamp + INTERVAL '{self.timedelta}'
+                GROUP BY t.timestamp, p.Paper_ID
+            )
+            SELECT
+                date,
+                Paper_ID,
+                CASE WHEN citation_count > 0 THEN 1 ELSE 0 END AS cited
+            FROM paper_citations;
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
 
 
 class AuthorCategoryTask(EntityTask):
@@ -24,7 +73,9 @@ class AuthorCategoryTask(EntityTask):
     time_col = "date"
     target_col = "primary_category"
     timedelta = pd.Timedelta(days=365 // 2)
-    metrics = [accuracy, ]
+    metrics = [
+        accuracy,
+    ]
     num_eval_timestamps = 1
     num_labels = 106
 
@@ -87,7 +138,7 @@ class AuthorCategoryTask(EntityTask):
         )
 
 
-class PaperCitationTask(EntityTask):
+class PaperCitationCountTask(EntityTask):
     r"""Predict how many citations a paper will receive in the next six months."""
 
     task_type = TaskType.REGRESSION
