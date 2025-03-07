@@ -8,7 +8,7 @@ import pooch
 
 from relbench.base import BaseTask
 from relbench.datasets import get_dataset
-from relbench.tasks import amazon, avito, event, f1, hm, stack, trial
+from relbench.tasks import amazon, avito, event, f1, hm, stack, trial, ratebeer
 
 task_registry = defaultdict(dict)
 
@@ -133,3 +133,10 @@ register_task("rel-trial", "study-adverse", trial.StudyAdverseTask)
 register_task("rel-trial", "site-success", trial.SiteSuccessTask)
 register_task("rel-trial", "condition-sponsor-run", trial.ConditionSponsorRunTask)
 register_task("rel-trial", "site-sponsor-run", trial.SiteSponsorRunTask)
+
+# RateBeer tasks
+register_task("rel-ratebeer", "user-beer-rating", ratebeer.UserBeerRatingTask)
+register_task("rel-ratebeer", "beer-rating", ratebeer.BeerRatingTask)
+register_task("rel-ratebeer", "beer-popularity", ratebeer.BeerPopularityTask)
+register_task("rel-ratebeer", "user-beer-recommendation", ratebeer.UserBeerRecommendationTask)
+register_task("rel-ratebeer", "user-beer-score", ratebeer.UserBeerScoreTask)

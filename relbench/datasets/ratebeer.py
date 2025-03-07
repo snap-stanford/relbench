@@ -11,17 +11,24 @@ from relbench.base import Database, Dataset, Table
 from relbench.utils import unzip_processor
 
 # Update URL to Dropbox direct download link
-DB_URL = "https://www.dropbox.com/scl/fi/exwygxep7vdvq55uiq28r/db.zip?rlkey=o7q0r8nw758p4wxx1wka9ubuj&dl=1"
+DB_URL = "https://www.dropbox.com/scl/fi/exwygxep7vdvq55uiq28r/db.zip?rlkey=o7q0r8nw758p4wxx1wka9ubuj&st=rg3gvkxg&dl=1"
+CACHE_DIR = "/lfs/madmax2/0/akhatua/relbench_cache/rel-ratebeer/testing"
 
 class RateBeerDataset(Dataset):
-    val_timestamp = pd.Timestamp("2020-01-01") # TODO: Check if this is correct
-    test_timestamp = pd.Timestamp("2022-01-01") # TODO: Check if this is correct
+    # Dataset spans approximately 2000-2024 based on analysis
+    # Using 2018 and 2020 as sensible train/val/test splits (80%/10%/10% approx)
+    val_timestamp = pd.Timestamp("2018-01-01")
+    test_timestamp = pd.Timestamp("2020-01-01")
 
-    def make_db(self) -> Database:        
+    def make_db(self) -> Database:
+        r"""Process the raw files into a database."""
+        # Create cache directory if it doesn't exist
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        
         # Set up pooch to use our cache directory
         path = pooch.retrieve(
             DB_URL,
-            known_hash="751213b061fec76644c553c1d9d9a91e000dfda9efc2185c078b50dc64810a5f",
+            known_hash="c3921164da60f8c97e6530d1f2872f7e0d307f8276348106db95c10c2df677ad",
             progressbar=True,
             processor=unzip_processor,
             path=CACHE_DIR
@@ -51,7 +58,11 @@ class RateBeerDataset(Dataset):
             },
             "beers": {
                 "pkey": "beer_id",
-                "fkeys": {"style_id": "beer_styles"},
+                "fkeys": {
+                    "style_id": "beer_styles",
+                    "brewer_id": "brewers",
+                    "contract_brewer_id": "brewers"
+                },
                 "time_col": "created_at"
             },
             "beer_aliases": {
@@ -64,7 +75,10 @@ class RateBeerDataset(Dataset):
             },
             "beer_ratings": {
                 "pkey": "rating_id",
-                "fkeys": {"beer_id": "beers"},
+                "fkeys": {
+                    "beer_id": "beers",
+                    "user_id": "users"
+                },
                 "time_col": "created_at"
             },
             "beer_upcs": {
@@ -83,12 +97,29 @@ class RateBeerDataset(Dataset):
             },
             "favorites": {
                 "pkey": "favorite_id",
-                "fkeys": {"beer_id": "beers"},
+                "fkeys": {
+                    "beer_id": "beers",
+                    "user_id": "users"
+                },
                 "time_col": "created_at"
             },
             "place_ratings": {
                 "pkey": "rating_id",
-                "fkeys": {"place_id": "places"},
+                "fkeys": {
+                    "place_id": "places",
+                    "user_id": "users"
+                },
+                "time_col": "created_at"
+            },
+            "brewers": {
+                "pkey": "brewer_id",
+                "fkeys": {"state_id": "states", "country_id": "countries"},
+                "time_col": "created_at"
+            },
+            # Users table combines information about users who rate beers and places
+            "users": {
+                "pkey": "user_id",
+                "fkeys": {},
                 "time_col": "created_at"
             }
         }
