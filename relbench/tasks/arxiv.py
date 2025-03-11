@@ -76,7 +76,7 @@ class AuthorCategoryTask(EntityTask):
     timedelta = pd.Timedelta(days=365 // 2)
     metrics = [accuracy, multiclass_f1]
     num_eval_timestamps = 1
-    num_labels = 106
+    num_classes = 106
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})

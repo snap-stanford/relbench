@@ -77,6 +77,8 @@ def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, floa
     elif name == "entity_majority_multiclass":
         # Output majority label in the train set if exists, otherwise output randomly
         pred = []
+        past_target = train_table.df[task.target_col].astype(int)
+        majority_label = int(past_target.mode().iloc[0])
         for idx, row in pred_table.df.iterrows():
             fkey = row[list(train_table.fkey_col_to_pkey_table.keys())[0]]
             if fkey in train_table.df[train_table.pkey_col]:
@@ -87,9 +89,9 @@ def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, floa
                 if len(majority_labels) > 0:
                     pred.append(majority_labels[0])
                 else:
-                    pred.append(np.random.choice(num_classes))
+                    pred.append(majority_label)
             else:
-                pred.append(np.random.choice(num_classes))
+                pred.append(majority_label)
         pred = np.array(pred)
     else:
         raise ValueError("Unknown eval name called {name}.")

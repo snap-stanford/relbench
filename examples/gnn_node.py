@@ -99,7 +99,7 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     tune_metric = "multilabel_auprc_macro"
     higher_is_better = True
 elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-    out_channels = task.num_labels
+    out_channels = task.num_classes
     loss_fn = CrossEntropyLoss()
     tune_metric = "multiclass_f1"
     higher_is_better = True
