@@ -101,7 +101,7 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
 elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
     out_channels = task.num_labels
     loss_fn = CrossEntropyLoss()
-    tune_metric = "accuracy"
+    tune_metric = "multiclass_f1"
     higher_is_better = True
 else:
     raise ValueError(f"Task type {task.task_type} is unsupported")

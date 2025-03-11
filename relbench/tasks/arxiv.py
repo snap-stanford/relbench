@@ -12,6 +12,7 @@ from relbench.metrics import (
     link_prediction_map,
     link_prediction_precision,
     link_prediction_recall,
+    multiclass_f1,
 )
 
 
@@ -73,9 +74,7 @@ class AuthorCategoryTask(EntityTask):
     time_col = "date"
     target_col = "primary_category"
     timedelta = pd.Timedelta(days=365 // 2)
-    metrics = [
-        accuracy,
-    ]
+    metrics = [accuracy, multiclass_f1]
     num_eval_timestamps = 1
     num_labels = 106
 
@@ -133,7 +132,7 @@ class AuthorCategoryTask(EntityTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
-            pkey_col=None,
+            pkey_col=self.entity_col,
             time_col=self.time_col,
         )
 

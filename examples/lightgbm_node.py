@@ -139,6 +139,7 @@ if task.task_type in [
     TaskType.REGRESSION,
     TaskType.MULTICLASS_CLASSIFICATION,
 ]:
+    breakpoint()
     model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
     model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 
