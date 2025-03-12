@@ -137,9 +137,7 @@ else:
 if task.task_type in [
     TaskType.BINARY_CLASSIFICATION,
     TaskType.REGRESSION,
-    TaskType.MULTICLASS_CLASSIFICATION,
 ]:
-    breakpoint()
     model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
     model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 
@@ -152,7 +150,7 @@ if task.task_type in [
     pred = model.predict(tf_test=tf_test).cpu().numpy()
     test_metrics = task.evaluate(pred)
 
-elif TaskType.MULTILABEL_CLASSIFICATION:
+elif task.tasktype == TaskType.MULTILABEL_CLASSIFICATION:
     y_train = tf_train.y.values.to(torch.long)
     y_val = tf_val.y.values.to(torch.long)
     pred_train_list = []

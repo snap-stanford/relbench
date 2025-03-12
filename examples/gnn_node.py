@@ -178,9 +178,11 @@ def test(loader: NeighborLoader) -> np.ndarray:
         if task.task_type in [
             TaskType.BINARY_CLASSIFICATION,
             TaskType.MULTILABEL_CLASSIFICATION,
-            TaskType.MULTICLASS_CLASSIFICATION,
         ]:
             pred = torch.sigmoid(pred)
+
+        if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+            pred = torch.softmax(pred, dim=1)
 
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         pred_list.append(pred.detach().cpu())
