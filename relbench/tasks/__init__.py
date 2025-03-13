@@ -89,8 +89,8 @@ def get_task(dataset_name: str, task_name: str, download=False) -> BaseTask:
     cached task tables matches the RelBench version even in this case.
     """
 
-    # if download:
-    #     download_task(dataset_name, task_name)
+    if download:
+        download_task(dataset_name, task_name)
     dataset = get_dataset(dataset_name)
     cls, args, kwargs = task_registry[dataset_name][task_name]
     task = cls(dataset, *args, **kwargs)
@@ -136,8 +136,5 @@ register_task("rel-trial", "site-sponsor-run", trial.SiteSponsorRunTask)
 
 register_task("rel-arxiv", "paper-citation", arxiv.PaperCitationTask)
 register_task("rel-arxiv", "author-category", arxiv.AuthorCategoryTask)
-register_task("rel-arxiv", "author-citation", arxiv.AuthorCitationTask)
 register_task("rel-arxiv", "author-publication", arxiv.AuthorPublicationTask)
-register_task("rel-arxiv", "paper-citation-count", arxiv.PaperCitationCountTask)
-register_task("rel-arxiv", "author-collaboration", arxiv.AuthorCollaborationTask)
 register_task("rel-arxiv", "co-citation", arxiv.CoCitationTask)

@@ -17,14 +17,14 @@ from relbench.metrics import (
 
 
 class PaperCitationTask(EntityTask):
-    r"""Predict if a paper has received citations in the next 6 months."""
+    r"""Predict if a paper gets cited in the next 6 months."""
 
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "Paper_ID"
     entity_table = "papers"
     time_col = "date"
     target_col = "cited"
-    timedelta = pd.Timedelta(days=182)  # approximately 6 months
+    timedelta = pd.Timedelta(days=365 // 2)  # approximately 6 months
     metrics = [accuracy, f1, roc_auc]
     num_eval_timestamps = 1
 
@@ -137,96 +137,6 @@ class AuthorCategoryTask(EntityTask):
         )
 
 
-class PaperCitationCountTask(EntityTask):
-    r"""Predict how many citations a paper will receive in the next six months."""
-
-    task_type = TaskType.REGRESSION
-    entity_col = "Paper_ID"
-    entity_table = "papers"
-    time_col = "date"
-    target_col = "citation_count"
-    timedelta = pd.Timedelta(days=365 // 2)
-    metrics = [r2, mae, rmse]
-    num_eval_timestamps = 1
-
-    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        papers = db.table_dict["papers"].df
-        citations = db.table_dict["citations"].df
-
-        df = duckdb.sql(
-            f"""
-            WITH paper_citations AS (
-                SELECT
-                    t.timestamp AS date,
-                    p.Paper_ID,
-                    COUNT(c.References_Paper_ID) AS citation_count
-                FROM timestamp_df t
-                JOIN papers p 
-                    ON p.Submission_Date <= t.timestamp
-                LEFT JOIN citations c 
-                    ON c.References_Paper_ID = p.Paper_ID
-                    AND c.Submission_Date > t.timestamp
-                    AND c.Submission_Date <= t.timestamp + INTERVAL '{self.timedelta}'
-                GROUP BY t.timestamp, p.Paper_ID
-            )
-            SELECT date, Paper_ID, citation_count FROM paper_citations;
-            """
-        ).df()
-
-        return Table(
-            df=df,
-            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
-            pkey_col=None,
-            time_col=self.time_col,
-        )
-
-
-class AuthorCitationTask(EntityTask):
-    r"""Predict the total number of citations an author will receive (including both published and upcoming papers) in
-    the next six months."""
-
-    task_type = TaskType.REGRESSION
-    entity_col = "Author_ID"
-    entity_table = "authors"
-    time_col = "date"
-    target_col = "citation_count"
-    timedelta = pd.Timedelta(days=365 // 2)
-    metrics = [r2, mae, rmse]
-    num_eval_timestamps = 1
-
-    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        paperAuthors = db.table_dict["paperAuthors"].df
-        citations = db.table_dict["citations"].df
-
-        df = duckdb.sql(
-            f"""
-            WITH author_citations AS (
-                SELECT
-                    t.timestamp AS date,
-                    pa.Author_ID,
-                    COUNT(c.References_Paper_ID) AS citation_count
-                FROM timestamp_df t
-                CROSS JOIN paperAuthors pa
-                LEFT JOIN citations c 
-                    ON c.References_Paper_ID = pa.Paper_ID
-                    AND c.Submission_Date > t.timestamp
-                    AND c.Submission_Date <= t.timestamp + INTERVAL '{self.timedelta}'
-                GROUP BY t.timestamp, pa.Author_ID
-            )
-            SELECT date, Author_ID, citation_count FROM author_citations;
-            """
-        ).df()
-
-        return Table(
-            df=df,
-            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
-            pkey_col=None,
-            time_col=self.time_col,
-        )
-
-
 class AuthorPublicationTask(EntityTask):
     r"""Predict how many papers an author will publish in the next six months."""
 
@@ -263,60 +173,6 @@ class AuthorPublicationTask(EntityTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
-            pkey_col=None,
-            time_col=self.time_col,
-        )
-
-
-class AuthorCollaborationTask(RecommendationTask):
-    r"""Predict the list of authors an author will collaborate with in the next six months."""
-
-    task_type = TaskType.LINK_PREDICTION
-    src_entity_col = "Author_ID"
-    src_entity_table = "authors"
-    dst_entity_col = "collaborators"
-    dst_entity_table = "authors"
-    time_col = "date"
-    timedelta = pd.Timedelta(days=365 // 2)
-    metrics = [link_prediction_map, link_prediction_precision, link_prediction_recall]
-    num_eval_timestamps = 1
-    eval_k = 10
-
-    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        paperAuthors = db.table_dict["paperAuthors"].df
-
-        df = duckdb.sql(
-            f"""
-            WITH collaboration AS (
-                SELECT
-                    t.timestamp AS date,
-                    pa1.Author_ID,
-                    pa2.Author_ID AS collaborator
-                FROM timestamp_df t
-                JOIN paperAuthors pa1 
-                  ON pa1.Submission_Date > t.timestamp 
-                  AND pa1.Submission_Date <= t.timestamp + INTERVAL '{self.timedelta}'
-                JOIN paperAuthors pa2 
-                  ON pa1.Paper_ID = pa2.Paper_ID
-                  AND pa1.Author_ID <> pa2.Author_ID
-            )
-            SELECT 
-                date, 
-                Author_ID, 
-                array_agg(DISTINCT collaborator) AS collaborators
-            FROM collaboration
-            GROUP BY date, Author_ID
-            ;
-            """
-        ).df()
-
-        return Table(
-            df=df,
-            fkey_col_to_pkey_table={
-                self.src_entity_col: self.src_entity_table,
-                self.dst_entity_col: self.dst_entity_table,
-            },
             pkey_col=None,
             time_col=self.time_col,
         )
