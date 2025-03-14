@@ -9,8 +9,9 @@ from typing import Dict
 import numpy as np
 import torch
 from model import Model
+from sklearn.preprocessing import LabelEncoder
 from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, L1Loss
+from torch.nn import BCEWithLogitsLoss, L1Loss, CrossEntropyLoss
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
@@ -97,6 +98,11 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     loss_fn = BCEWithLogitsLoss()
     tune_metric = "multilabel_auprc_macro"
     higher_is_better = True
+elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+    out_channels = task.num_classes
+    loss_fn = CrossEntropyLoss()
+    tune_metric = "multiclass_f1"
+    higher_is_better = True
 else:
     raise ValueError(f"Task type {task.task_type} is unsupported")
 
@@ -136,7 +142,10 @@ def train() -> float:
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
 
-        loss = loss_fn(pred.float(), batch[entity_table].y.float())
+        if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+            loss = loss_fn(pred, batch[entity_table].y.long())
+        else:
+            loss = loss_fn(pred.float(), batch[entity_table].y.float())
         loss.backward()
         optimizer.step()
 
@@ -171,6 +180,9 @@ def test(loader: NeighborLoader) -> np.ndarray:
             TaskType.MULTILABEL_CLASSIFICATION,
         ]:
             pred = torch.sigmoid(pred)
+
+        if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+            pred = torch.softmax(pred, dim=1)
 
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         pred_list.append(pred.detach().cpu())
