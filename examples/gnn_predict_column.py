@@ -88,6 +88,10 @@ except FileNotFoundError:
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
 
+# Remove the target column from the col_to_stype_dict if it exists
+if args.target_col in col_to_stype_dict[args.entity_table]:
+    del col_to_stype_dict[args.entity_table][args.target_col]
+
 data, col_stats_dict = make_pkey_fkey_graph(
     dataset.get_db(
         upto_test_timestamp=False,
