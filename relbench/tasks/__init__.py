@@ -135,8 +135,6 @@ register_task("rel-trial", "condition-sponsor-run", trial.ConditionSponsorRunTas
 register_task("rel-trial", "site-sponsor-run", trial.SiteSponsorRunTask)
 
 # RateBeer tasks
-register_task("rel-ratebeer", "user-beer-rating", ratebeer.UserBeerRatingTask)
-register_task("rel-ratebeer", "beer-rating", ratebeer.BeerRatingTask)
-register_task("rel-ratebeer", "beer-popularity", ratebeer.BeerPopularityTask)
-register_task("rel-ratebeer", "user-beer-recommendation", ratebeer.UserBeerRecommendationTask)
-register_task("rel-ratebeer", "user-beer-score", ratebeer.UserBeerScoreTask)
+register_task("rel-ratebeer", "user-beer-preference", ratebeer.UserBeerPreferenceTask)
+register_task("rel-ratebeer", "beer-availability-forecast", ratebeer.BeerAvailabilityForecastTask)
+register_task("rel-ratebeer", "beer-style-prediction", ratebeer.BeerStylePredictionTask)

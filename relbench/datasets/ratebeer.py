@@ -12,18 +12,18 @@ from relbench.utils import unzip_processor
 
 # Update URL to Dropbox direct download link
 DB_URL = "https://www.dropbox.com/scl/fi/exwygxep7vdvq55uiq28r/db.zip?rlkey=o7q0r8nw758p4wxx1wka9ubuj&st=rg3gvkxg&dl=1"
-CACHE_DIR = "/lfs/madmax2/0/akhatua/relbench_cache/rel-ratebeer/testing"
+# CACHE_DIR = "/lfs/madmax2/0/akhatua/relbench_cache/rel-ratebeer/testing"
 
 class RateBeerDataset(Dataset):
-    # Dataset spans approximately 2000-2024 based on analysis
-    # Using 2018 and 2020 as sensible train/val/test splits (80%/10%/10% approx)
-    val_timestamp = pd.Timestamp("2018-01-01")
-    test_timestamp = pd.Timestamp("2020-01-01")
+    val_timestamp = pd.Timestamp("2022-01-01")
+    test_timestamp = pd.Timestamp("2023-01-01")
+
+    name = "rel-ratebeer" 
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
         # Create cache directory if it doesn't exist
-        os.makedirs(CACHE_DIR, exist_ok=True)
+        # os.makedirs(CACHE_DIR, exist_ok=True)
         
         # Set up pooch to use our cache directory
         path = pooch.retrieve(
@@ -31,7 +31,7 @@ class RateBeerDataset(Dataset):
             known_hash="c3921164da60f8c97e6530d1f2872f7e0d307f8276348106db95c10c2df677ad",
             progressbar=True,
             processor=unzip_processor,
-            path=CACHE_DIR
+            # path=CACHE_DIR
         )
         
         print("Reading from processed database...")
@@ -66,7 +66,7 @@ class RateBeerDataset(Dataset):
                 "time_col": "created_at"
             },
             "beer_aliases": {
-                "pkey": ["root_beer_id", "alias_beer_id"],
+                "pkey": None,
                 "fkeys": {
                     "root_beer_id": "beers",
                     "alias_beer_id": "beers"
@@ -129,11 +129,37 @@ class RateBeerDataset(Dataset):
             csv_path = os.path.join(path, "db", f"{table_name}.csv")
             df = pd.read_csv(csv_path, low_memory=False)
                 
+            # === Start Modification: Handle potential duplicates in primary keys ===
+            pkey_col = config.get("pkey")
+            # Check only for single-column primary keys (strings)
+            if isinstance(pkey_col, str):
+                initial_rows = len(df)
+                if df.duplicated(subset=pkey_col).any():
+                    num_duplicates = df.duplicated(subset=pkey_col).sum()
+                    print(f"\nWarning: Found {num_duplicates} duplicate value(s) for primary key '{pkey_col}' in {table_name}.csv. Removing duplicates, keeping first occurrence.")
+                    df = df.drop_duplicates(subset=pkey_col, keep="first")
+                    print(f"Removed {initial_rows - len(df)} rows from {table_name}. New shape: {df.shape}")
+            # Note: Composite keys (lists) and pkey=None are not checked here.
+            # The base library issue with composite key re-indexing still exists,
+            # so beer_aliases pkey remains set to None in table_configs as a workaround.
+            # === End Modification ===
+
             # Convert timestamp columns if present
             if config["time_col"] is not None:
+                time_col_name = config["time_col"] # Store the time column name
                 for col in ["created_at", "updated_at", "last_edited_at", "opened_at"]:
                     if col in df.columns:
-                        df[col] = pd.to_datetime(df[col], format='mixed')
+                        # Use errors='coerce' to turn unparseable dates into NaT
+                        df[col] = pd.to_datetime(df[col], format='mixed', errors='coerce') 
+                
+                # === Start Modification: Remove rows with NaT in the designated time_col ===
+                if time_col_name in df.columns and df[time_col_name].isna().any():
+                    initial_rows = len(df)
+                    nat_count = df[time_col_name].isna().sum()
+                    print(f"\nWarning: Found {nat_count} NaT value(s) in time column '{time_col_name}' for table '{table_name}'. Removing these rows.")
+                    df = df.dropna(subset=[time_col_name])
+                    print(f"Removed {initial_rows - len(df)} rows from {table_name}. New shape: {df.shape}")
+                # === End Modification ===
                 
             tables[table_name] = Table(
                 df=df,
@@ -142,6 +168,7 @@ class RateBeerDataset(Dataset):
                 time_col=config["time_col"]
             )
             tqdm.write(f"Loaded {table_name}: {len(df):,} rows")
+
 
         print("\nAll tables loaded successfully!")
         return Database(tables)

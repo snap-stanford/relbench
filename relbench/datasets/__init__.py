@@ -7,6 +7,7 @@ import pooch
 
 from relbench.base import Dataset
 from relbench.datasets import amazon, avito, event, f1, hm, stack, trial, ratebeer
+from .ratebeer import RateBeerDataset
 
 dataset_registry = {}
 
