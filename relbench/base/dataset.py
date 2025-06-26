@@ -25,6 +25,10 @@ class Dataset:
     val_timestamp: pd.Timestamp
     test_timestamp: pd.Timestamp
 
+    # For predict column task.
+    target_col: Optional[str]
+    entity_table: Optional[str]
+
     def __init__(
         self,
         cache_dir: Optional[str] = None,

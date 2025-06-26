@@ -53,8 +53,11 @@ class PredictColumnTask(EntityTask):
         self.task_type = task_type
         self.entity_table = entity_table
         self.target_col = target_col
+        entity_col = dataset.get_db().table_dict[entity_table].pkey_col
+        self.entity_col = entity_col if entity_col is not None else "primary_key"
+        self.dataset.target_col = target_col
+        self.dataset.entity_table = entity_table
 
-        self.num_eval_timestamps = (self.dataset.test_timestamp - self.dataset.val_timestamp).total_seconds()
         if self.task_type == TaskType.REGRESSION:
             self.metrics = [r2, mae, rmse]
         elif self.task_type == TaskType.BINARY_CLASSIFICATION:
@@ -81,9 +84,6 @@ class PredictColumnTask(EntityTask):
         """
 
         db = self.dataset.get_db(upto_test_timestamp=split != "test")
-        # Set the entity column to the pkey column of the entity table since relbench needs it
-        # See ".../relbench/modeling/graph.py", task.entity_col
-        self.entity_col = db.table_dict[self.entity_table].pkey_col
 
         if split == "train":
             start = self.dataset.val_timestamp - self.timedelta
@@ -128,8 +128,8 @@ class PredictColumnTask(EntityTask):
         return table
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        entity_table = db.table_dict[self.entity_table].df
-        entity_table_removed_cols = db.table_dict[self.entity_table].removed_cols
+        entity_table = db.table_dict[self.entity_table].df # noqa: F841
+        entity_table_removed_cols = db.table_dict[self.entity_table].removed_cols # noqa: F841
 
         time_col = db.table_dict[self.entity_table].time_col
         entity_col = db.table_dict[self.entity_table].pkey_col
