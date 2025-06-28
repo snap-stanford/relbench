@@ -101,6 +101,12 @@ class SALTDataset(Dataset):
         # Drop the ADDRESSREPRESENTATIONCODE column as it is always NaN
         address = address.drop(columns=["ADDRESSREPRESENTATIONCODE"])
 
+        # Drop the "__index_level_0__" column artifacts
+        customer = customer.drop(columns=["__index_level_0__"])
+        salesdocument = salesdocument.drop(columns=["__index_level_0__"])
+        salesdocumentitem = salesdocumentitem.drop(columns=["__index_level_0__"])
+        address = address.drop(columns=["__index_level_0__"])
+
         # Collect all tables in the database as relbench.base.Table objects.
         tables = {}
         tables["salesdocumentitem"] = Table(
