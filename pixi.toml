@@ -1,0 +1,20 @@
+[workspace]
+authors = ["Rishabh Ranjan <rishabhranjan0207@gmail.com>"]
+channels = ["conda-forge"]
+name = "relbench"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+uv = ">=0.7.16,<0.8"
+python = "==3.8"
+
+[pypi-options]
+index-url = "https://pypi.org/simple"
+find-links = [{ url = "https://data.pyg.org/whl/torch-2.4.0+cu121.html" }]
+
+[pypi-dependencies]
+pyg-lib = "*"
+relbench = { path = ".", editable = true, extras = ["full", "example", "dev", "test"] }
