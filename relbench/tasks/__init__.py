@@ -244,7 +244,6 @@ register_task(
     task_type=TaskType.MULTICLASS_CLASSIFICATION,
     entity_table="salesdocumentitem",
     target_col="PLANT",
-    # num_classes=35,
     remove_columns=[
         ("salesdocument", "SALESOFFICE"),
         ("salesdocument", "SALESGROUP"),
@@ -262,7 +261,6 @@ register_task(
     task_type=TaskType.MULTICLASS_CLASSIFICATION,
     entity_table="salesdocumentitem",
     target_col="SHIPPINGPOINT",
-    # num_classes=88,
     remove_columns=[
         ("salesdocument", "SALESOFFICE"),
         ("salesdocument", "SALESGROUP"),
@@ -280,7 +278,6 @@ register_task(
     task_type=TaskType.MULTICLASS_CLASSIFICATION,
     entity_table="salesdocumentitem",
     target_col="ITEMINCOTERMSCLASSIFICATION",
-    # num_classes=14,
     remove_columns=[
         ("salesdocument", "SALESOFFICE"),
         ("salesdocument", "SALESGROUP"),
@@ -298,10 +295,43 @@ register_task(
     task_type=TaskType.MULTICLASS_CLASSIFICATION,
     entity_table="salesdocument",
     target_col="SALESOFFICE",
-    # num_classes=30,
     remove_columns=[
         ("salesdocument", "SALESGROUP"),
         ("salesdocument", "CUSTOMERPAYMENTTERMS"),
+        ("salesdocument", "SHIPPINGCONDITION"),
+        ("salesdocument", "HEADERINCOTERMSCLASSIFICATION"),
+        ("salesdocumentitem", "PLANT"),
+        ("salesdocumentitem", "SHIPPINGPOINT"),
+        ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
+    ],
+)
+register_task(
+    "rel-salt",
+    "sales-group",
+    AutoCompleteTask,
+    task_type=TaskType.MULTICLASS_CLASSIFICATION,
+    entity_table="salesdocument",
+    target_col="SALESGROUP",
+    remove_columns=[
+        ("salesdocument", "SALESOFFICE"),
+        ("salesdocument", "CUSTOMERPAYMENTTERMS"),
+        ("salesdocument", "SHIPPINGCONDITION"),
+        ("salesdocument", "HEADERINCOTERMSCLASSIFICATION"),
+        ("salesdocumentitem", "PLANT"),
+        ("salesdocumentitem", "SHIPPINGPOINT"),
+        ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
+    ],
+)
+register_task(
+    "rel-salt",
+    "sales-payterms",
+    AutoCompleteTask,
+    task_type=TaskType.MULTICLASS_CLASSIFICATION,
+    entity_table="salesdocument",
+    target_col="CUSTOMERPAYMENTTERMS",
+    remove_columns=[
+        ("salesdocument", "SALESOFFICE"),
+        ("salesdocument", "SALESGROUP"),
         ("salesdocument", "SHIPPINGCONDITION"),
         ("salesdocument", "HEADERINCOTERMSCLASSIFICATION"),
         ("salesdocumentitem", "PLANT"),
@@ -316,7 +346,6 @@ register_task(
     task_type=TaskType.MULTICLASS_CLASSIFICATION,
     entity_table="salesdocument",
     target_col="SHIPPINGCONDITION",
-    # num_classes=52,
     remove_columns=[
         ("salesdocument", "SALESOFFICE"),
         ("salesdocument", "SALESGROUP"),
@@ -334,7 +363,6 @@ register_task(
     task_type=TaskType.MULTICLASS_CLASSIFICATION,
     entity_table="salesdocument",
     target_col="HEADERINCOTERMSCLASSIFICATION",
-    # num_classes=14,
     remove_columns=[
         ("salesdocument", "SALESOFFICE"),
         ("salesdocument", "SALESGROUP"),
