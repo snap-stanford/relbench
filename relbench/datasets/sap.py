@@ -1,5 +1,6 @@
 import pandas as pd
 from datasets import load_dataset
+
 from relbench.base import Database, Dataset, Table
 
 
@@ -134,10 +135,7 @@ class SALTDataset(Dataset):
             time_col=None,
         )
         tables["address"] = Table(
-            df=address, 
-            fkey_col_to_pkey_table={}, 
-            pkey_col="ADDRESSID", 
-            time_col=None
+            df=address, fkey_col_to_pkey_table={}, pkey_col="ADDRESSID", time_col=None
         )
 
         return Database(tables)

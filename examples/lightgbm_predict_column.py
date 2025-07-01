@@ -38,7 +38,12 @@ parser.add_argument(
     default=os.path.expanduser("~/.cache/relbench_examples"),
 )
 parser.add_argument("--left_join_fkey", action="store_true", default=False)
-parser.add_argument("--download", action="store_true", default=False, help="Download the dataset if not already present.")
+parser.add_argument(
+    "--download",
+    action="store_true",
+    default=False,
+    help="Download the dataset if not already present.",
+)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -87,7 +92,7 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     col_to_stype[task.target_col] = torch_frame.embedding
 elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
     col_to_stype[task.target_col] = torch_frame.categorical
-    # task.metrics = task.metrics[:1]  # NOTE: Probabilistic multiclass predictions 
+    # task.metrics = task.metrics[:1]  # NOTE: Probabilistic multiclass predictions
     # are not supported by torch_frame LightGBM to enable probabilities:
     #  install torch_frame from https://github.com/ValterH/pytorch-frame
 else:
@@ -135,7 +140,7 @@ for split, table in [
                     elif col in dfs[split].columns:
                         dfs[split].pop(col)
                 elif col in pkey_table.fkey_col_to_pkey_table:
-                    # remove fkey columns 
+                    # remove fkey columns
                     if col in dfs[split].columns:
                         dfs[split].pop(col)
                     elif f"{col}_{pkey_table_name}" in dfs[split].columns:
@@ -143,10 +148,13 @@ for split, table in [
                 elif col not in col_to_stype:
                     # add stype for the column
                     col_to_stype[col] = stype(stype_str)
-                elif f"{col}_{pkey_table_name}" not in col_to_stype and f"{col}_{pkey_table_name}" in dfs[split].columns:
+                elif (
+                    f"{col}_{pkey_table_name}" not in col_to_stype
+                    and f"{col}_{pkey_table_name}" in dfs[split].columns
+                ):
                     # add stype for the column with suffix to avoid name collision
                     col_to_stype[f"{col}_{pkey_table_name}"] = stype(stype_str)
-                         
+
 
 train_dataset = torch_frame.data.Dataset(
     df=dfs["train"],
@@ -188,7 +196,11 @@ if task.task_type in [
         task_type=train_dataset.task_type,
         metric=tune_metric,
         probability=True,
-        num_classes=task.num_classes if task.task_type == TaskType.MULTICLASS_CLASSIFICATION else None,
+        num_classes=(
+            task.num_classes
+            if task.task_type == TaskType.MULTICLASS_CLASSIFICATION
+            else None
+        ),
     )
     model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 

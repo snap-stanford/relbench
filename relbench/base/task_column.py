@@ -4,11 +4,6 @@ import duckdb
 import pandas as pd
 from sklearn.preprocessing import OrdinalEncoder
 
-from .database import Database
-from .task_entity import EntityTask
-from .table import Table
-from .task_base import TaskType
-from .dataset import Dataset
 from relbench.metrics import (
     accuracy,
     average_precision,
@@ -21,6 +16,12 @@ from relbench.metrics import (
     rmse,
     roc_auc,
 )
+
+from .database import Database
+from .dataset import Dataset
+from .table import Table
+from .task_base import TaskType
+from .task_entity import EntityTask
 
 
 class AutoCompleteTask(EntityTask):

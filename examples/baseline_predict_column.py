@@ -14,7 +14,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-f1")
 parser.add_argument("--task", type=str, default="predict-column")
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument("--download", action="store_true", default=False, help="Download the dataset if not already present.")
+parser.add_argument(
+    "--download",
+    action="store_true",
+    default=False,
+    help="Download the dataset if not already present.",
+)
 
 args = parser.parse_args()
 
@@ -121,7 +126,8 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
         print(f"Test: {test_metrics}")
 
 elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-    task.metrics = task.metrics[:1]  # NOTE: Only keep accuracy for multiclass classification (no probabilities)
+    # NOTE: Only keep accuracy for multiclass classification (no probabilities)
+    task.metrics = task.metrics[:1]
     eval_name_list = ["random", "majority"]
     for name in eval_name_list:
         train_metrics = evaluate(train_table, train_table, name=name)
@@ -131,4 +137,3 @@ elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
         print(f"Test: {test_metrics}")
-

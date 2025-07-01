@@ -52,7 +52,12 @@ parser.add_argument(
     type=str,
     default=os.path.expanduser("~/.cache/relbench_examples"),
 )
-parser.add_argument("--download", action="store_true", default=False, help="Download the dataset if not already present.")
+parser.add_argument(
+    "--download",
+    action="store_true",
+    default=False,
+    help="Download the dataset if not already present.",
+)
 args = parser.parse_args()
 
 
