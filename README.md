@@ -78,7 +78,7 @@ Then, to run a script:
 ```bash
 git clone https://github.com/snap-stanford/relbench
 cd relbench/examples
-python gnn_node.py --dataset rel-f1 --task driver-position
+python gnn_entity.py --dataset rel-f1 --task driver-position
 ```
 
 
