@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from model import Model
 from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, L1Loss
+from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, L1Loss
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
@@ -18,15 +18,13 @@ from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
 from relbench.base import Dataset, EntityTask, TaskType
-from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task
-from relbench.base.task_column import PredictColumnTask
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-f1")
-parser.add_argument("--task", type=str, default="predict-column")
+parser.add_argument("--task", type=str, default="results-position")
 
 parser.add_argument(
     "--task_type",
@@ -54,6 +52,7 @@ parser.add_argument(
     type=str,
     default=os.path.expanduser("~/.cache/relbench_examples"),
 )
+parser.add_argument("--download", action="store_true", default=False, help="Download the dataset if not already present.")
 args = parser.parse_args()
 
 
@@ -63,19 +62,12 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 
-predict_column_task_config = {
-    "task_type": TaskType[args.task_type],
-    "entity_table": args.entity_table,
-    "target_col": args.target_col,
-}
+task: EntityTask = get_task(args.dataset, args.task, download=args.download)
+dataset: Dataset = task.dataset
 
-dataset: Dataset = get_dataset(args.dataset, download=True)
-dataset.target_col = args.target_col
-dataset.entity_table = args.entity_table
-task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
-
-
-stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
+stypes_cache_path = Path(
+    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/stypes.json"
+)
 try:
     with open(stypes_cache_path, "r") as f:
         col_to_stype_dict = json.load(f)
@@ -89,8 +81,11 @@ except FileNotFoundError:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 # Remove the target column from the col_to_stype_dict if it exists
-if args.target_col in col_to_stype_dict[args.entity_table]:
-    del col_to_stype_dict[args.entity_table][args.target_col]
+if task.target_col in col_to_stype_dict[task.entity_table]:
+    del col_to_stype_dict[task.entity_table][task.target_col]
+for col in dataset.remove_columns:
+    if col in col_to_stype_dict[task.entity_table]:
+        del col_to_stype_dict[task.entity_table][col]
 
 data, col_stats_dict = make_pkey_fkey_graph(
     dataset.get_db(
@@ -100,7 +95,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
+    cache_dir=f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized",
 )
 
 clamp_min, clamp_max = None, None
@@ -123,6 +118,11 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     out_channels = task.num_labels
     loss_fn = BCEWithLogitsLoss()
     tune_metric = "multilabel_auprc_macro"
+    higher_is_better = True
+elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+    out_channels = task.num_classes
+    loss_fn = CrossEntropyLoss()
+    tune_metric = "mrr"  # "macro_f1"
     higher_is_better = True
 else:
     raise ValueError(f"Task type {task.task_type} is unsupported")
@@ -153,7 +153,8 @@ def train() -> float:
     loss_accum = count_accum = 0
     steps = 0
     total_steps = min(len(loader_dict["train"]), args.max_steps_per_epoch)
-    for batch in tqdm(loader_dict["train"], total=total_steps):
+    pbar = tqdm(loader_dict["train"], total=total_steps)
+    for batch in pbar:
         batch = batch.to(device)
 
         optimizer.zero_grad()
@@ -162,8 +163,10 @@ def train() -> float:
             task.entity_table,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
-
-        loss = loss_fn(pred.float(), batch[entity_table].y.float())
+        if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+            loss = loss_fn(pred.float(), batch[entity_table].y)
+        else:
+            loss = loss_fn(pred.float(), batch[entity_table].y.float())
         loss.backward()
         optimizer.step()
 
@@ -171,6 +174,7 @@ def train() -> float:
         count_accum += pred.size(0)
 
         steps += 1
+        pbar.set_description(f"Loss: {loss_accum / count_accum:.4f}")
         if steps > args.max_steps_per_epoch:
             break
 
@@ -198,6 +202,8 @@ def test(loader: NeighborLoader) -> np.ndarray:
             TaskType.MULTILABEL_CLASSIFICATION,
         ]:
             pred = torch.sigmoid(pred)
+        elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+            pred = torch.softmax(pred, dim=1)
 
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         pred_list.append(pred.detach().cpu())

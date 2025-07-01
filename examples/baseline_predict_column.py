@@ -7,40 +7,23 @@ import torch
 from scipy.stats import mode
 from torch_geometric.seed import seed_everything
 
-from relbench.base import Dataset, Table, TaskType, PredictColumnTask
-from relbench.datasets import get_dataset
+from relbench.base import Dataset, EntityTask, Table, TaskType
+from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-f1")
 parser.add_argument("--task", type=str, default="predict-column")
-
-parser.add_argument(
-    "--task_type",
-    type=str,
-    default="REGRESSION",
-    choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
-)
-parser.add_argument("--entity_table", type=str, default="results")
-parser.add_argument("--target_col", type=str, default="position")
-
 parser.add_argument("--seed", type=int, default=42)
+parser.add_argument("--download", action="store_true", default=False, help="Download the dataset if not already present.")
 
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed_everything(args.seed)
 
-predict_column_task_config = {
-    "task_type": TaskType[args.task_type],
-    "entity_table": args.entity_table,
-    "target_col": args.target_col,
-}
+task: EntityTask = get_task(args.dataset, args.task, download=args.download)
+dataset: Dataset = task.dataset
 
-dataset: Dataset = get_dataset(args.dataset, download=True)
-dataset.target_col = args.target_col
-dataset.entity_table = args.entity_table
-
-task = PredictColumnTask(dataset=dataset, **predict_column_task_config)
 
 train_table = task.get_table("train")
 val_table = task.get_table("val")
@@ -136,3 +119,16 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
         print(f"Test: {test_metrics}")
+
+elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+    task.metrics = task.metrics[:1]  # NOTE: Only keep accuracy for multiclass classification (no probabilities)
+    eval_name_list = ["random", "majority"]
+    for name in eval_name_list:
+        train_metrics = evaluate(train_table, train_table, name=name)
+        val_metrics = evaluate(train_table, val_table, name=name)
+        test_metrics = evaluate(trainval_table, test_table, name=name)
+        print(f"{name}:")
+        print(f"Train: {train_metrics}")
+        print(f"Val: {val_metrics}")
+        print(f"Test: {test_metrics}")
+

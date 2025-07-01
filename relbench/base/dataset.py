@@ -28,11 +28,11 @@ class Dataset:
     # For predict column task.
     target_col: Optional[str]
     entity_table: Optional[str]
+    remove_columns: list[tuple[str, str]]
 
     def __init__(
         self,
         cache_dir: Optional[str] = None,
-        predict_column_task_config: dict = {},
     ) -> None:
         r"""Create a dataset object.
 
@@ -41,18 +41,13 @@ class Dataset:
                 we will either process and cache the file (if not available) or use
                 the cached file. If None, we will not use cached file and re-process
                 everything from scratch without saving the cache.
-            predict_column_task_config: A dictionary containing the configuration for the predict column task. The keys have to be:  
-                - "entity_table": The name of the entity table.  
-                - "entity_col": The name of the entity (id) column. Can be None if the entity table has no id column.
-                - "time_col": The name of the time column by which the data is split into training and validation set.  
-                - "target_col": The name of the target column to be predicted.  
         """
 
         self.cache_dir = cache_dir
-        self.predict_column_task_config = predict_column_task_config
 
         self.target_col = None
         self.entity_table = None
+        self.remove_columns = []
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
@@ -135,9 +130,7 @@ class Dataset:
 
         return db
 
-    def get_modified_db(
-        self, db
-    ) -> Database:
+    def get_modified_db(self, db) -> Database:
         r"""Get the modified db with the target column removed.
 
         The target columns is saved to `db.table_dict[table_name].removed_cols`
@@ -185,6 +178,18 @@ class Dataset:
             db.table_dict[table_name].df = db.table_dict[table_name].df.drop(
                 columns=[col]
             )
+
+            for table, remove_col in self.remove_columns:
+                if remove_col in db.table_dict[table].df.columns:
+                    # If the column is in the table, remove it
+                    db.table_dict[table].df = db.table_dict[table].df.drop(
+                        columns=[remove_col]
+                    )
+                else:
+                    print(
+                        f"Column {remove_col} not found in table {table}. "
+                        "Skipping removal from this table."
+                    )
 
         return db
 
