@@ -28,5 +28,10 @@
   "rel-amazon/tasks/user-churn.zip": "cddd511a1f609aea286cf2e20803f489ab9b3158e18cea66e0888d174b1515f0",
   "rel-amazon/tasks/user-item-purchase.zip": "80c9ba1ad8f91b90f318aeec31849ed765da2487bc3a377a2dc1a745ffd9b39b",
   "rel-amazon/tasks/item-ltv.zip": "987953d1deecb9ed6925576a6f073a59d34ada03a037219919e801ec098225ea",
-  "rel-amazon/tasks/user-ltv.zip": "645d6d318e7da4f493c6953e24ab62ffdd6f4d0ba64726b5e3b36df4ba8a1a18"
+  "rel-amazon/tasks/user-ltv.zip": "645d6d318e7da4f493c6953e24ab62ffdd6f4d0ba64726b5e3b36df4ba8a1a18",
+  "rel-ratebeer/tasks/user-beer-rating.zip": "f200e6eabb31448a2d0bf0db06e2ad131a44d73a079d7a24d9aec799373c5a10",
+  "rel-ratebeer/tasks/beer-rating.zip": "f771de351935cbd1e3d132994b7de66e4cf89dbb4cb034307c16b66f22dd5373",
+  "rel-ratebeer/tasks/beer-popularity.zip": "b0bc2d6a57f15c28b155b3625c111a8c37b9f40eef10a574dcdacffdca8770bf",
+  "rel-ratebeer/tasks/user-beer-recommendation.zip": "73d48c063f31c3f086f322a251a03275a4b3e3ae4f4f5188a31bd9ed286b7d14",
+  "rel-ratebeer/tasks/user-beer-score.zip": "844cdd81472c42e6854ea9c50a2b773cb6d1fed9f2c02c2f0a36ac51b11f7649"
 }
