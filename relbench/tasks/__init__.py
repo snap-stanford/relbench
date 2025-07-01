@@ -238,8 +238,8 @@ register_task("rel-trial", "condition-sponsor-run", trial.ConditionSponsorRunTas
 register_task("rel-trial", "site-sponsor-run", trial.SiteSponsorRunTask)
 
 register_task(
-    "rel-sap",
-    "plant-salt",
+    "rel-salt",
+    "item-plant",
     AutoCompleteTask,
     task_type=TaskType.MULTICLASS_CLASSIFICATION,
     entity_table="salesdocumentitem",
@@ -256,8 +256,8 @@ register_task(
     ],
 )
 register_task(
-    "rel-sap",
-    "shippingpoint-salt",
+    "rel-salt",
+    "item-shippoint",
     AutoCompleteTask,
     task_type=TaskType.MULTICLASS_CLASSIFICATION,
     entity_table="salesdocumentitem",
@@ -274,8 +274,8 @@ register_task(
     ],
 )
 register_task(
-    "rel-sap",
-    "itemincotermsclassification-salt",
+    "rel-salt",
+    "item-incoterms",
     AutoCompleteTask,
     task_type=TaskType.MULTICLASS_CLASSIFICATION,
     entity_table="salesdocumentitem",
@@ -292,8 +292,8 @@ register_task(
     ],
 )
 register_task(
-    "rel-sap",
-    "salesoffice-salt",
+    "rel-salt",
+    "sales-office",
     AutoCompleteTask,
     task_type=TaskType.MULTICLASS_CLASSIFICATION,
     entity_table="salesdocument",
@@ -310,8 +310,8 @@ register_task(
     ],
 )
 register_task(
-    "rel-sap",
-    "shippingcondition-salt",
+    "rel-salt",
+    "sales-shipcond",
     AutoCompleteTask,
     task_type=TaskType.MULTICLASS_CLASSIFICATION,
     entity_table="salesdocument",
@@ -328,8 +328,8 @@ register_task(
     ],
 )
 register_task(
-    "rel-sap",
-    "headerincotermsclassification-salt",
+    "rel-salt",
+    "sales-incoterms",
     AutoCompleteTask,
     task_type=TaskType.MULTICLASS_CLASSIFICATION,
     entity_table="salesdocument",
