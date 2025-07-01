@@ -2,9 +2,9 @@ import numpy as np
 
 from relbench.metrics import (
     link_prediction_map,
+    link_prediction_ndcg,
     link_prediction_precision,
     link_prediction_recall,
-    link_prediction_ndcg,
 )
 
 
