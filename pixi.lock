@@ -1815,7 +1815,7 @@ packages:
 - pypi: ./
   name: relbench
   version: 1.1.0
-  sha256: 91d2aff98c4da9eceaf8b2afafaee4c1be2024a4267ee80fed3b23bc552eee98
+  sha256: f8625a54e872cce34735dae2ba0e73e1062d1076f762f0043e2e769c07cbdabf
   requires_dist:
   - pandas
   - pooch
