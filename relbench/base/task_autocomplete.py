@@ -55,7 +55,6 @@ class AutoCompleteTask(EntityTask):
         cache_dir: Optional[str] = None,
         remove_columns: list[tuple[str, str]] = [],
     ):
-
         super().__init__(dataset, cache_dir=cache_dir)
 
         self.task_type = task_type
@@ -157,9 +156,9 @@ class AutoCompleteTask(EntityTask):
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         entity_table = db.table_dict[self.entity_table].df  # noqa: F841
-        entity_table_removed_cols = db.table_dict[
+        entity_table_removed_cols = db.table_dict[  # noqa: F841
             self.entity_table
-        ].removed_cols  # noqa: F841
+        ].removed_cols
 
         time_col = db.table_dict[self.entity_table].time_col
         entity_col = db.table_dict[self.entity_table].pkey_col
@@ -190,10 +189,6 @@ class AutoCompleteTask(EntityTask):
         # remove rows where self.target_col is nan
         df = df.dropna(subset=[self.target_col])
 
-        # TODO: unknown classes could be set to NaN and filtered like above
-        if self.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-            df[self.target_col] = self.transform_target(df[self.target_col])
-
         return Table(
             df=df,
             fkey_col_to_pkey_table={
@@ -209,6 +204,7 @@ class AutoCompleteTask(EntityTask):
         ).flatten()
         # replace -1 with the unknown class index
         transformed[transformed == -1] = self.num_classes - 1
+        # TODO: unknown classes could be set to NaN and filtered as in make_table
         return pd.Series(transformed, index=target_col.index, name=target_col.name)
 
     def get_table(self, split, mask_input_cols=None):
