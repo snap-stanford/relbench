@@ -114,7 +114,7 @@ def make_pkey_fkey_graph(
 class AttachTargetTransform:
     r"""Attach the target label to the heterogeneous mini-batch.
 
-    The batch consists of disjoins subgraphs loaded via temporal sampling. The same
+    The batch consists of disjoint subgraphs loaded via temporal sampling. The same
     input node can occur multiple times with different timestamps, and thus different
     subgraphs and labels. Hence labels cannot be stored in the graph object directly,
     and must be attached to the batch after the batch is created.
