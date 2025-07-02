@@ -8,12 +8,12 @@ version = "0.1.0"
 [tasks]
 
 [dependencies]
-uv = ">=0.7.16,<0.8"
-python = "==3.8"
+uv = "*"
+python = "==3.10"
 
 [pypi-options]
 index-url = "https://pypi.org/simple"
-find-links = [{ url = "https://data.pyg.org/whl/torch-2.4.0+cu121.html" }]
+find-links = [{ url = "https://data.pyg.org/whl/torch-2.7.0+cu126.html" }]
 
 [pypi-dependencies]
 pyg-lib = "*"
