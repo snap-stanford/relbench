@@ -52,12 +52,6 @@ parser.add_argument(
     type=str,
     default=os.path.expanduser("~/.cache/relbench_examples"),
 )
-parser.add_argument(
-    "--download",
-    action="store_true",
-    default=False,
-    help="Download the dataset if not already present.",
-)
 args = parser.parse_args()
 
 
@@ -67,7 +61,7 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 
-task: EntityTask = get_task(args.dataset, args.task, download=args.download)
+task: EntityTask = get_task(args.dataset, args.task)
 dataset: Dataset = task.dataset
 
 stypes_cache_path = Path(
