@@ -87,6 +87,8 @@ for col in dataset.remove_columns:
         del col_to_stype_dict[task.entity_table][col]
 
 data, col_stats_dict = make_pkey_fkey_graph(
+    # NOTE: Important!: Do not use `upto_test_timestamp=True` here, as this will
+    # cause task rows with timestamps after the test timestamp to dangle.
     dataset.get_db(
         upto_test_timestamp=False,
     ),
