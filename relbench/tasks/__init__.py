@@ -8,7 +8,7 @@ import pooch
 
 from relbench.base import AutoCompleteTask, BaseTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.tasks import amazon, avito, event, f1, hm, stack, trial,  mimic_iv
+from relbench.tasks import amazon, avito, event, f1, hm, mimic_iv, stack, trial
 
 task_registry = defaultdict(dict)
 

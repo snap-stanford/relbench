@@ -5,7 +5,7 @@ from relbench.base import TaskType
 from relbench.base.database import Database
 from relbench.base.table import Table
 from relbench.base.task_entity import EntityTask
-from relbench.metrics import average_precision, accuracy, f1, roc_auc
+from relbench.metrics import accuracy, average_precision, f1, roc_auc
 
 
 class ICULengthOfStayTask(EntityTask):
@@ -27,7 +27,9 @@ class ICULengthOfStayTask(EntityTask):
         self.val_timestamp = self.dataset.val_timestamp
 
         if self.test_timestamp is not None and self.val_timestamp is not None:
-            self.num_eval_timestamps = int((self.test_timestamp - self.val_timestamp) / self.timedelta)
+            self.num_eval_timestamps = int(
+                (self.test_timestamp - self.val_timestamp) / self.timedelta
+            )
             print(f"num_eval_timestamps: {self.num_eval_timestamps}")
             self.num_eval_timestamps = max(1, self.num_eval_timestamps)
         print(f"num_eval_timestamps: {self.num_eval_timestamps}")
@@ -37,7 +39,8 @@ class ICULengthOfStayTask(EntityTask):
         icu = db.table_dict["icustays"].df
         patients = db.table_dict["patients"].df
 
-        df = duckdb.sql(f"""
+        df = duckdb.sql(
+            f"""
             SELECT
                 t.timestamp as intime,
                 p.subject_id,
@@ -59,8 +62,8 @@ class ICULengthOfStayTask(EntityTask):
                 AND i.intime IS NOT NULL
                 AND i.los_icu IS NOT NULL
 
-        """).df()
-
+        """
+        ).df()
 
         return Table(
             df=df,
