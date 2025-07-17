@@ -136,10 +136,10 @@ for split in ["train", "val", "test"]:
     table = task.get_table(split)
     # Restrict the training split to the first `sample_size` rows.
     # Note: This approach is inefficient as it loads the full dataset before discarding unused rows.
-    # Improvement Suggestion: To optimize, modify the logic inside the `make_pkey_fkey_graph` function 
+    # Improvement Suggestion: To optimize, modify the logic inside the `make_pkey_fkey_graph` function
     # to limit the dataset size during its creation, avoiding unnecessary materialization.
     if split == "train" and args.sample_size is not None:
-        table.df = table.df.iloc[:args.sample_size].reset_index(drop=True)
+        table.df = table.df.iloc[: args.sample_size].reset_index(drop=True)
 
     table_input = get_node_train_table_input(table=table, task=task)
     # Save the entity table name for this split
