@@ -116,20 +116,6 @@ register_task(
         ("review", "summary"),
     ],
 )
-# register_task(
-#     "rel-amazon",
-#     "product-category",
-#     AutoCompleteTask,
-#     task_type=TaskType.MULTICLASS_CLASSIFICATION,
-#     entity_table="product",
-#     target_col="category",
-#     num_classes=930,
-#     remove_columns=[
-#         ("product","brand"),
-#         ("product","title"),
-#         ("product","description")
-#     ],
-# )
 register_task(
     "rel-amazon",
     "product-price",
@@ -200,7 +186,6 @@ register_task(
         ("results", "rank"),
     ],
 )
-# Needs > 10 epochs
 register_task(
     "rel-f1",
     "qualifying-position",
