@@ -129,22 +129,10 @@ else:
     raise ValueError(f"Task type {task.task_type} is unsupported")
 
 loader_dict: Dict[str, NeighborLoader] = {}
-# Create a mapping for each split's entity table
-entity_table_mapping: Dict[str, str] = {}
-
 for split in ["train", "val", "test"]:
     table = task.get_table(split)
-    # Restrict the training split to the first `sample_size` rows.
-    # Note: This approach is inefficient as it loads the full dataset before discarding unused rows.
-    # Improvement Suggestion: To optimize, modify the logic inside the `make_pkey_fkey_graph` function 
-    # to limit the dataset size during its creation, avoiding unnecessary materialization.
-    if split == "train" and args.sample_size is not None:
-        table.df = table.df.iloc[:args.sample_size].reset_index(drop=True)
-
     table_input = get_node_train_table_input(table=table, task=task)
-    # Save the entity table name for this split
-    entity_table_mapping[split] = table_input.nodes[0]
-
+    entity_table = table_input.nodes[0]
     loader_dict[split] = NeighborLoader(
         data,
         num_neighbors=[int(args.num_neighbors / 2**i) for i in range(args.num_layers)],
@@ -173,7 +161,7 @@ def train() -> float:
         optimizer.zero_grad()
         pred = model(
             batch,
-            entity_table_mapping["train"],
+            task.entity_table,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
@@ -203,7 +191,7 @@ def test(loader: NeighborLoader) -> np.ndarray:
         batch = batch.to(device)
         pred = model(
             batch,
-            entity_table_mapping["test"],
+            task.entity_table,
         )
         if task.task_type == TaskType.REGRESSION:
             assert clamp_min is not None
