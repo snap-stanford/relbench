@@ -25,6 +25,11 @@ class Dataset:
     val_timestamp: pd.Timestamp
     test_timestamp: pd.Timestamp
 
+    # For predict column task.
+    target_col: Optional[str]
+    entity_table: Optional[str]
+    remove_columns: list[tuple[str, str]]
+
     def __init__(
         self,
         cache_dir: Optional[str] = None,
@@ -39,6 +44,10 @@ class Dataset:
         """
 
         self.cache_dir = cache_dir
+
+        self.target_col = None
+        self.entity_table = None
+        self.remove_columns = []
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
@@ -114,6 +123,73 @@ class Dataset:
             db = db.upto(self.test_timestamp)
 
         self.validate_and_correct_db(db)
+
+        if self.target_col:
+            # Get the modified db with the target column removed
+            db = self.get_modified_db(db)
+
+        return db
+
+    def get_modified_db(self, db) -> Database:
+        r"""Get the modified db with the target column removed.
+
+        The target columns is saved to `db.table_dict[table_name].removed_cols`
+        and the column is dropped from the table.
+        Args:
+            db: The database object.
+
+        Returns:
+            Database: The modified database object.
+        """
+
+        # Remove the target column from the source entity table
+        if self.target_col:
+            table_name = self.entity_table
+            col = self.target_col
+
+            if col not in db.table_dict[table_name].df.columns:
+                raise ValueError(f"Column {col} not found in table {table_name}.")
+            if col in db.table_dict[table_name].fkey_col_to_pkey_table.keys():
+                raise ValueError(
+                    f"Column {col} is a foreign key in table {table_name}. Only feature columns can be removed."
+                )
+            if col == db.table_dict[table_name].pkey_col:
+                raise ValueError(
+                    f"Column {col} is the primary key in table {table_name}. Only feature columns can be removed."
+                )
+
+            # save the columns to be dropped
+            id_keys = []
+            if db.table_dict[table_name].pkey_col:
+                id_keys.append(db.table_dict[table_name].pkey_col)
+            else:
+                # add primary key to table_name if it doesn't have one
+                db.table_dict[table_name].df["primary_key"] = np.arange(
+                    len(db.table_dict[table_name].df)
+                )
+                id_keys.append("primary_key")
+                db.table_dict[table_name].pkey_col = "primary_key"
+
+            # Save the target column to be dropped
+            db.table_dict[table_name].removed_cols = db.table_dict[table_name].df[
+                id_keys + [col]
+            ]
+            # drop the columns
+            db.table_dict[table_name].df = db.table_dict[table_name].df.drop(
+                columns=[col]
+            )
+
+            for table, remove_col in self.remove_columns:
+                if remove_col in db.table_dict[table].df.columns:
+                    # If the column is in the table, remove it
+                    db.table_dict[table].df = db.table_dict[table].df.drop(
+                        columns=[remove_col]
+                    )
+                else:
+                    print(
+                        f"Column {remove_col} not found in table {table}. "
+                        "Skipping removal from this table."
+                    )
 
         return db
 

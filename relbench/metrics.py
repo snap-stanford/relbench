@@ -3,6 +3,7 @@ from typing import Tuple
 import numpy as np
 import sklearn.metrics as skm
 from numpy.typing import NDArray
+from scipy.stats import rankdata
 
 ###### classification metrics
 
@@ -51,6 +52,12 @@ def auprc(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 
 
 ### applicable to multiclass classification only
+
+
+def mrr(y: NDArray[np.float64], y_pred: NDArray[np.float64]) -> float:
+    rankings = rankdata(-y_pred, method="min", axis=1)
+    ranks = np.take_along_axis(rankings, y.reshape(-1, 1), axis=1).flatten()
+    return np.mean(1.0 / ranks).item()
 
 
 def macro_f1(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
@@ -182,6 +189,7 @@ def link_prediction_map(
     maps = (precision_mat * pred_isin).sum(axis=1) / clipped_dst_count
     return maps.mean()
 
+
 def link_prediction_ndcg(
     pred_isin: NDArray[np.int_],
     dst_count: NDArray[np.int_],
@@ -190,23 +198,28 @@ def link_prediction_ndcg(
     eval_k = pred_isin.shape[1]
 
     # Compute the discounted multiplier (1 / log2(i + 2) for i = 0, ..., k-1)
-    discounted_multiplier = np.concatenate((
-        np.zeros(1),
-        1 / np.log2(np.arange(1, eval_k + 1) + 1)
-    ))
+    discounted_multiplier = np.concatenate(
+        (np.zeros(1), 1 / np.log2(np.arange(1, eval_k + 1) + 1))
+    )
 
     # Compute Discounted Cumulative Gain (DCG)
-    discounted_cumulative_gain = (pred_isin * discounted_multiplier[1:eval_k + 1]).sum(axis=1)
+    discounted_cumulative_gain = (
+        pred_isin * discounted_multiplier[1 : eval_k + 1]
+    ).sum(axis=1)
 
     # Clip dst_count to the range [0, eval_k]
     clipped_dst_count = np.clip(dst_count, 0, eval_k)
 
     # Compute Ideal Discounted Cumulative Gain (IDCG)
     ideal_discounted_multiplier_cumsum = np.cumsum(discounted_multiplier)
-    ideal_discounted_cumulative_gain = ideal_discounted_multiplier_cumsum[clipped_dst_count]
+    ideal_discounted_cumulative_gain = ideal_discounted_multiplier_cumsum[
+        clipped_dst_count
+    ]
 
     # Avoid division by zero
-    ideal_discounted_cumulative_gain = np.clip(ideal_discounted_cumulative_gain, 1e-10, None)
+    ideal_discounted_cumulative_gain = np.clip(
+        ideal_discounted_cumulative_gain, 1e-10, None
+    )
 
     # Compute NDCG
     ndcg_scores = discounted_cumulative_gain / ideal_discounted_cumulative_gain
