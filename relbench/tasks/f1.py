@@ -22,8 +22,6 @@ class DriverPositionTask(EntityTask):
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         results = db.table_dict["results"].df
-        drivers = db.table_dict["drivers"].df
-        races = db.table_dict["races"].df
 
         df = duckdb.sql(
             f"""
@@ -74,8 +72,6 @@ class DriverDNFTask(EntityTask):
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         results = db.table_dict["results"].df
-        drivers = db.table_dict["drivers"].df
-        races = db.table_dict["races"].df
 
         df = duckdb.sql(
             f"""
@@ -127,7 +123,6 @@ class DriverTop3Task(EntityTask):
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
         qualifying = db.table_dict["qualifying"].df
-        drivers = db.table_dict["drivers"].df
 
         df = duckdb.sql(
             f"""
