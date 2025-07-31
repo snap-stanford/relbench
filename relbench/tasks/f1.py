@@ -29,7 +29,7 @@ class DriverPositionTask(EntityTask):
             f"""
                 SELECT
                     t.timestamp as date,
-                    dri.driverId as driverId,
+                    re.driverId as driverId,
                     mean(re.positionOrder) as position,
                 FROM
                     timestamp_df t
@@ -38,17 +38,13 @@ class DriverPositionTask(EntityTask):
                 ON
                     re.date <= t.timestamp + INTERVAL '{self.timedelta}'
                     and re.date  > t.timestamp
-                LEFT JOIN
-                    drivers dri
-                ON
-                    re.driverId = dri.driverId
                 WHERE
-                    dri.driverId IN (
+                    re.driverId IN (
                         SELECT DISTINCT driverId
                         FROM results
                         WHERE date > t.timestamp - INTERVAL '1 year'
                     )
-                GROUP BY t.timestamp, dri.driverId
+                GROUP BY t.timestamp, re.driverId
 
             ;
             """
@@ -85,7 +81,7 @@ class DriverDNFTask(EntityTask):
             f"""
                 SELECT
                     t.timestamp as date,
-                    dri.driverId as driverId,
+                    re.driverId as driverId,
                     MAX(CASE WHEN re.statusId != 1 THEN 1 ELSE 0 END) AS did_not_finish
                 FROM
                     timestamp_df t
@@ -94,17 +90,13 @@ class DriverDNFTask(EntityTask):
                 ON
                     re.date <= t.timestamp + INTERVAL '{self.timedelta}'
                     and re.date  > t.timestamp
-                LEFT JOIN
-                    drivers dri
-                ON
-                    re.driverId = dri.driverId
                 WHERE
-                    dri.driverId IN (
+                    re.driverId IN (
                         SELECT DISTINCT driverId
                         FROM results
                         WHERE date > t.timestamp - INTERVAL '1 year'
                     )
-                GROUP BY t.timestamp, dri.driverId
+                GROUP BY t.timestamp, re.driverId
 
             ;
             """
@@ -141,7 +133,7 @@ class DriverTop3Task(EntityTask):
             f"""
                 SELECT
                     t.timestamp as date,
-                    dri.driverId as driverId,
+                    qu.driverId as driverId,
                     CASE
                         WHEN MIN(qu.position) <= 3 THEN 1
                         ELSE 0
@@ -153,17 +145,13 @@ class DriverTop3Task(EntityTask):
                 ON
                     qu.date <= t.timestamp + INTERVAL '{self.timedelta}'
                     and qu.date > t.timestamp
-                LEFT JOIN
-                    drivers dri
-                ON
-                    qu.driverId = dri.driverId
                 WHERE
-                    dri.driverId IN (
+                    qu.driverId IN (
                         SELECT DISTINCT driverId
                         FROM qualifying
                         WHERE date > t.timestamp - INTERVAL '1 year'
                     )
-                GROUP BY t.timestamp, dri.driverId
+                GROUP BY t.timestamp, qu.driverId
 
             ;
             """
