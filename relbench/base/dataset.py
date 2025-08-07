@@ -6,6 +6,11 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+try:
+    import cudf
+except ImportError:
+    cudf = None  # cudf is optional
+
 from .database import Database
 
 
@@ -33,6 +38,7 @@ class Dataset:
     def __init__(
         self,
         cache_dir: Optional[str] = None,
+        use_cudf: bool = False,
     ) -> None:
         r"""Create a dataset object.
 
@@ -44,13 +50,15 @@ class Dataset:
         """
 
         self.cache_dir = cache_dir
+        self.use_cudf = use_cudf and cudf is not None
 
+        self.df_lib = cudf if self.use_cudf else pd
         self.target_col = None
         self.entity_table = None
         self.remove_columns = []
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}()"
+        return f"{self.__class__.__name__}(use_cudf={self.use_cudf})"
 
     def validate_and_correct_db(self, db):
         r"""Validate and correct input db in-place.
@@ -62,10 +70,12 @@ class Dataset:
         for table_name, table in db.table_dict.items():
             if table.pkey_col is not None:
                 ser = table.df[table.pkey_col]
-                if not (ser.values == np.arange(len(ser))).all():
+                # Use CPU for range comparison since cuDF Series don't support `.values == np.arange(...)` directly
+                ser_host = ser.to_pandas() if self.use_cudf else ser
+                if not (ser_host.values == np.arange(len(ser_host))).all():
                     raise RuntimeError(
                         f"The primary key column {table.pkey_col} of table "
-                        f"{table_name} is not consecutively index."
+                        f"{table_name} is not consecutively indexed."
                     )
 
         # Discard any foreign keys that are larger than primary key table as
@@ -96,7 +106,7 @@ class Dataset:
         if self.cache_dir and Path(db_path).exists() and any(Path(db_path).iterdir()):
             print(f"Loading Database object from {db_path}...")
             tic = time.time()
-            db = Database.load(db_path)
+            db = Database.load(db_path, use_cudf=self.use_cudf)
             toc = time.time()
             print(f"Done in {toc - tic:.2f} seconds.")
 
@@ -163,12 +173,11 @@ class Dataset:
             if db.table_dict[table_name].pkey_col:
                 id_keys.append(db.table_dict[table_name].pkey_col)
             else:
-                # add primary key to table_name if it doesn't have one
-                db.table_dict[table_name].df["primary_key"] = np.arange(
-                    len(db.table_dict[table_name].df)
+                db.table_dict[table_name].df["primary_key"] = self.df_lib.Series(
+                    np.arange(len(db.table_dict[table_name].df))
                 )
-                id_keys.append("primary_key")
                 db.table_dict[table_name].pkey_col = "primary_key"
+                id_keys.append("primary_key")
 
             # Save the target column to be dropped
             db.table_dict[table_name].removed_cols = db.table_dict[table_name].df[
