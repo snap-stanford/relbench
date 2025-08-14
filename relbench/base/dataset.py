@@ -193,6 +193,7 @@ class Dataset:
 
         # Clear the get_dataset cache as the dataset instance was modified.
         from relbench.datasets import get_dataset
+
         get_dataset.cache_clear()
 
         return db

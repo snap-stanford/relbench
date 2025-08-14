@@ -1,9 +1,9 @@
 import pandas as pd
 
 from relbench.base import AutoCompleteTask, TaskType
-from relbench.tasks import get_task
 from relbench.datasets import get_dataset
 from relbench.datasets.fake import FakeDataset
+from relbench.tasks import get_task
 
 
 def test_autocomplete_task():
@@ -28,7 +28,6 @@ def test_autocomplete_task():
     )
     assert task_table_full.primary_key.isin(pks).all()
 
-
     # ensure get_task can be called multiple times on the same database
     dataset = get_dataset("rel-f1")
     db = dataset.get_db()
@@ -43,4 +42,7 @@ def test_autocomplete_task():
 
     task = get_task("rel-f1", "qualifying-position")
     # ensure the results table contains all the correct columns
-    assert task.dataset.get_db().table_dict["results"].df.columns.tolist() == results_columns
+    assert (
+        task.dataset.get_db().table_dict["results"].df.columns.tolist()
+        == results_columns
+    )
