@@ -1,6 +1,8 @@
 import pandas as pd
 
 from relbench.base import AutoCompleteTask, TaskType
+from relbench.tasks import get_task
+from relbench.datasets import get_dataset
 from relbench.datasets.fake import FakeDataset
 
 
@@ -25,3 +27,23 @@ def test_autocomplete_task():
         [train_table.df, val_table.df, test_table.df], ignore_index=True
     )
     assert task_table_full.primary_key.isin(pks).all()
+
+
+    # ensure get_task can be called multiple times on the same database
+    dataset = get_dataset("rel-f1")
+    db = dataset.get_db()
+    results_columns = db.table_dict["results"].df.columns.tolist()
+
+    task = get_task("rel-f1", "results-position")
+    table = task.get_table("train")
+
+    # ensure columns are removed correctly
+    for table, column in task.dataset.remove_columns:
+        assert column not in task.dataset.get_db().table_dict[table].df.columns
+
+    task = get_task("rel-f1", "qualifying-position")
+    # ensure columns are removed correctly
+    for table, column in task.dataset.remove_columns:
+        assert column not in task.dataset.get_db().table_dict[table].df.columns
+    # ensure the results table contains all the correct columns
+    assert task.dataset.get_db().table_dict["results"].df.columns.tolist() == results_columns
