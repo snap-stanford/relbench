@@ -31,12 +31,12 @@ class Database:
             table.save(f"{path}/{name}.parquet")
 
     @classmethod
-    def load(cls, path: Union[str, os.PathLike]) -> Self:
+    def load(cls, path: Union[str, os.PathLike], use_cudf: bool) -> Self:
         r"""Load a database from a directory of tables in parquet files."""
 
         table_dict = {}
         for table_path in Path(path).glob("*.parquet"):
-            table = Table.load(table_path)
+            table = Table.load(table_path, use_cudf)
             table_dict[table_path.stem] = table
 
         return cls(table_dict)
