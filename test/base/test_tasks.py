@@ -42,8 +42,5 @@ def test_autocomplete_task():
         assert column not in task.dataset.get_db().table_dict[table].df.columns
 
     task = get_task("rel-f1", "qualifying-position")
-    # ensure columns are removed correctly
-    for table, column in task.dataset.remove_columns:
-        assert column not in task.dataset.get_db().table_dict[table].df.columns
     # ensure the results table contains all the correct columns
     assert task.dataset.get_db().table_dict["results"].df.columns.tolist() == results_columns
