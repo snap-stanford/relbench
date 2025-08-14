@@ -116,19 +116,6 @@ register_task(
         ("review", "summary"),
     ],
 )
-register_task(
-    "rel-amazon",
-    "product-price",
-    AutoCompleteTask,
-    task_type=TaskType.REGRESSION,
-    entity_table="product",
-    target_col="price",
-    remove_columns=[
-        ("product", "brand"),
-        ("product", "title"),
-        ("product", "description"),
-    ],
-)
 
 register_task("rel-avito", "ad-ctr", avito.AdCTRTask)
 register_task("rel-avito", "user-visits", avito.UserVisitsTask)

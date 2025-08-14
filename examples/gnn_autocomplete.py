@@ -32,9 +32,6 @@ parser.add_argument(
     default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--entity_table", type=str, default="results")
-parser.add_argument("--target_col", type=str, default="position")
-
 parser.add_argument("--lr", type=float, default=0.005)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
