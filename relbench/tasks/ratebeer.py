@@ -1,6 +1,6 @@
 import duckdb
-import pandas as pd
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 from scipy.stats import rankdata
 
@@ -18,9 +18,10 @@ from relbench.metrics import (
     roc_auc,
 )
 
+
 def link_prediction_mrr(
     pred_isin: NDArray[np.int_],  # shape (n_src, k)
-    dst_count: NDArray[np.int_],   # shape (n_src,)
+    dst_count: NDArray[np.int_],  # shape (n_src,)
 ) -> float:
     # 1) filter out sources without positives
     pos_mask = dst_count > 0
@@ -39,7 +40,9 @@ def link_prediction_mrr(
 
     return float(np.mean(reciprocal_ranks))
 
+
 # Entity Classification tasks
+
 
 class BeerRatingChurnTask(EntityTask):
     r"""Predict whether a beer will receive a rating in the next 90 days."""
@@ -96,7 +99,8 @@ class BeerRatingChurnTask(EntityTask):
             pkey_col=None,
             time_col=self.time_col,
         )
- 
+
+
 class UserRatingChurnTask(EntityTask):
     r"""Predict whether a user will give a beer rating in the next 90 days."""
 
@@ -153,9 +157,10 @@ class UserRatingChurnTask(EntityTask):
             time_col=self.time_col,
         )
 
+
 class BrewerDormantTask(EntityTask):
     r"""Predict whether a brewer will release zero beers in the next 365 days."""
-    
+
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "brewer_id"
     entity_table = "brewers"
@@ -181,7 +186,7 @@ class BrewerDormantTask(EntityTask):
                         WHERE
                             beers.brewer_id = brew.brewer_id
                             AND beers.created_at > t.timestamp
-                            AND beers.created_at <= t.timestamp + INTERVAL '{self.timedelta}'    
+                            AND beers.created_at <= t.timestamp + INTERVAL '{self.timedelta}'
                     ) AS INTEGER
                 ) AS dormant
             FROM
@@ -211,6 +216,7 @@ class BrewerDormantTask(EntityTask):
 
 
 # Entity Regression tasks
+
 
 class UserRatingCountTask(EntityTask):
     r"""Predict the number of beer ratings that a user will give in the next 90 days."""
@@ -260,8 +266,10 @@ class UserRatingCountTask(EntityTask):
             time_col=self.time_col,
         )
 
+
 class BrewerABVTask(EntityTask):
-    r"""Predict the average alcohol percentage of beers that a brewer will release in the next 90 days."""
+    r"""Predict the average alcohol percentage of beers that a brewer will release in
+    the next 90 days."""
 
     task_type = TaskType.REGRESSION
     entity_col = "brewer_id"
@@ -311,8 +319,10 @@ class BrewerABVTask(EntityTask):
 
 # Recommendation tasks
 
+
 class UserFavoriteBeerTask(RecommendationTask):
-    r"""Predict the list of distinct beers each active user will add to their favorites in the next 90 days."""
+    r"""Predict the list of distinct beers each active user will add to their favorites
+    in the next 90 days."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "user_id"
@@ -321,7 +331,12 @@ class UserFavoriteBeerTask(RecommendationTask):
     dst_entity_table = "beers"
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=90)
-    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map, link_prediction_mrr]
+    metrics = [
+        link_prediction_precision,
+        link_prediction_recall,
+        link_prediction_map,
+        link_prediction_mrr,
+    ]
     eval_k = 10
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -369,8 +384,10 @@ class UserFavoriteBeerTask(RecommendationTask):
             time_col=self.time_col,
         )
 
+
 class UserLikedPlaceTask(RecommendationTask):
-    r"""Predict the list of distinct places each active user rates at least 80.0 / 100.0 in the next 90 days."""
+    r"""Predict the list of distinct places each active user rates at least 80.0 / 100.0
+    in the next 90 days."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "user_id"
@@ -379,7 +396,12 @@ class UserLikedPlaceTask(RecommendationTask):
     dst_entity_table = "places"
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=90)
-    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map, link_prediction_mrr]
+    metrics = [
+        link_prediction_precision,
+        link_prediction_recall,
+        link_prediction_map,
+        link_prediction_mrr,
+    ]
     eval_k = 10
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
@@ -434,8 +456,10 @@ class UserLikedPlaceTask(RecommendationTask):
             time_col=self.time_col,
         )
 
+
 class UserLikedBeerTask(RecommendationTask):
-    r"""Predict the list of distinct beers each active user rates at least 4.0 / 5.0 in the next 90 days."""
+    r"""Predict the list of distinct beers each active user rates at least 4.0 / 5.0 in
+    the next 90 days."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "user_id"
@@ -444,7 +468,12 @@ class UserLikedBeerTask(RecommendationTask):
     dst_entity_table = "beers"
     time_col = "timestamp"
     timedelta = pd.Timedelta(days=90)
-    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map, link_prediction_mrr]
+    metrics = [
+        link_prediction_precision,
+        link_prediction_recall,
+        link_prediction_map,
+        link_prediction_mrr,
+    ]
     eval_k = 10
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
