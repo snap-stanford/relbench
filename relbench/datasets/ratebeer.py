@@ -12,7 +12,6 @@ from relbench.utils import unzip_processor
 
 # Update URL to Dropbox direct download link
 DB_URL = "https://www.dropbox.com/scl/fi/exwygxep7vdvq55uiq28r/db.zip?rlkey=o7q0r8nw758p4wxx1wka9ubuj&st=rg3gvkxg&dl=1"
-# CACHE_DIR = "/lfs/madmax2/0/akhatua/relbench_cache/rel-ratebeer/testing"
 
 
 class RateBeerDataset(Dataset):
@@ -48,16 +47,11 @@ class RateBeerDataset(Dataset):
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
-        # Create cache directory if it doesn't exist
-        # os.makedirs(CACHE_DIR, exist_ok=True)
-
-        # Set up pooch to use our cache directory
         path = pooch.retrieve(
             DB_URL,
-            known_hash="c3921164da60f8c97e6530d1f2872f7e0d307f8276348106db95c10c2df677ad",
+            known_hash="49afdf23a8b464dc0e54731a3782b51e53f3acee93dae0aa6d968cfbd9caa4be",
             progressbar=True,
             processor=unzip_processor,
-            # path=CACHE_DIR
         )
 
         print("Reading from processed database...")
