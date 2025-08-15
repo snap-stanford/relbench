@@ -6,7 +6,7 @@ from typing import List
 import pooch
 
 from relbench.base import Dataset
-from relbench.datasets import amazon, avito, event, f1, hm, salt, stack, trial
+from relbench.datasets import amazon, avito, event, f1, hm, salt, stack, trial, ratebeer
 
 dataset_registry = {}
 
@@ -99,3 +99,4 @@ register_dataset("rel-hm", hm.HMDataset)
 register_dataset("rel-stack", stack.StackDataset)
 register_dataset("rel-trial", trial.TrialDataset)
 register_dataset("rel-salt", salt.SALTDataset)
+register_dataset("rel-ratebeer", ratebeer.RateBeerDataset)

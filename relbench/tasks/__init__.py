@@ -8,7 +8,7 @@ import pooch
 
 from relbench.base import AutoCompleteTask, BaseTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.tasks import amazon, avito, event, f1, hm, stack, trial
+from relbench.tasks import amazon, avito, event, f1, hm, stack, trial, ratebeer
 
 task_registry = defaultdict(dict)
 
@@ -91,7 +91,7 @@ def get_task(dataset_name: str, task_name: str, download=False) -> BaseTask:
 
     if download:
         download_task(dataset_name, task_name)
-    dataset = get_dataset(dataset_name)
+    dataset = get_dataset(dataset_name, download=download)
     cls, args, kwargs = task_registry[dataset_name][task_name]
     task = cls(dataset, *args, **kwargs)
     return task
@@ -345,3 +345,12 @@ register_task(
         ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
     ],
 )
+
+register_task("rel-ratebeer", "beer-rating-churn", ratebeer.BeerRatingChurnTask)
+register_task("rel-ratebeer", "user-rating-churn", ratebeer.UserRatingChurnTask)
+register_task("rel-ratebeer", "brewer-dormant", ratebeer.BrewerDormantTask)
+register_task("rel-ratebeer", "user-rating-count", ratebeer.UserRatingCountTask)
+register_task("rel-ratebeer", "brewer-abv", ratebeer.BrewerABVTask)
+register_task("rel-ratebeer", "user-liked-beer", ratebeer.UserLikedBeerTask)
+register_task("rel-ratebeer", "user-liked-place", ratebeer.UserLikedPlaceTask)
+register_task("rel-ratebeer", "user-favorite-beer", ratebeer.UserFavoriteBeerTask)
