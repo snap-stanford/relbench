@@ -8,7 +8,7 @@ import pooch
 
 from relbench.base import AutoCompleteTask, BaseTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.tasks import amazon, avito, event, f1, hm, stack, trial
+from relbench.tasks import amazon, avito, event, f1, hm, mimic, stack, trial
 
 task_registry = defaultdict(dict)
 
@@ -345,3 +345,5 @@ register_task(
         ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
     ],
 )
+
+register_task("rel-mimic", "icu-length-of-stay", mimic.ICULengthOfStayTask)
