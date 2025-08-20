@@ -375,5 +375,3 @@ register_task(
 )
 
 register_task("rel-mimic", "icu-length-of-stay", mimic.ICULengthOfStayTask)
-# register_task("rel-mimic-iv", "icu-length-of-stay", mimic_iv.ICULengthOfStayTask)
-# register_task("rel-mimic-iv-bq", "icu-length-of-stay", mimic_iv.ICULengthOfStayTask)
