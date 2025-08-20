@@ -12,8 +12,9 @@ from relbench.datasets import (
     event,
     f1,
     hm,
-    mimic_iv,
-    mimic_iv_bq,
+    mimic,
+    # mimic_iv,
+    # mimic_iv_bq,
     salt,
     stack,
     trial,
@@ -66,6 +67,10 @@ def download_dataset(name: str) -> None:
     The downloaded database will be automatically picked up by the dataset object, when
     `dataset.get_db()` is called.
     """
+    if name == "rel-mimic":
+        print("Downloading Mimic dataset...")
+        from relbench.datasets.mimic import verify_mimic_access
+        verify_mimic_access()
 
     DOWNLOAD_REGISTRY.fetch(
         f"{name}/db.zip",
@@ -110,5 +115,6 @@ register_dataset("rel-hm", hm.HMDataset)
 register_dataset("rel-stack", stack.StackDataset)
 register_dataset("rel-trial", trial.TrialDataset)
 register_dataset("rel-salt", salt.SALTDataset)
-register_dataset("rel-mimic-iv", mimic_iv.MimicDataset)
-register_dataset("rel-mimic-iv-bq", mimic_iv_bq.MimicDatasetBQ)
+# register_dataset("rel-mimic-iv", mimic_iv.MimicDataset)
+# register_dataset("rel-mimic-iv-bq", mimic_iv_bq.MimicDatasetBQ)
+register_dataset("rel-mimic", mimic.MimicDataset)
