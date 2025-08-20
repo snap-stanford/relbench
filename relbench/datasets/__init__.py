@@ -6,15 +6,13 @@ from typing import List
 import pooch
 
 from relbench.base import Dataset
-from relbench.datasets import (
+from relbench.datasets import (  # mimic_iv,; mimic_iv_bq,
     amazon,
     avito,
     event,
     f1,
     hm,
     mimic,
-    # mimic_iv,
-    # mimic_iv_bq,
     salt,
     stack,
     trial,
@@ -70,6 +68,7 @@ def download_dataset(name: str) -> None:
     if name == "rel-mimic":
         print("Downloading Mimic dataset...")
         from relbench.datasets.mimic import verify_mimic_access
+
         verify_mimic_access()
 
     DOWNLOAD_REGISTRY.fetch(

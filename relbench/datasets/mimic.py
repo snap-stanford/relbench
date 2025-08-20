@@ -3,69 +3,98 @@ import time
 from pathlib import Path
 
 import pandas as pd
-from google.cloud import bigquery
 from dotenv import load_dotenv
+from google.cloud import bigquery
 
 from relbench.base import Database, Dataset, Table
 
 
 def verify_mimic_access() -> None:
-    """
-    Verify that the user has proper access to MIMIC-IV dataset through PhysioNet credentialing.
-    
+    """Verify that the user has proper access to MIMIC-IV dataset through PhysioNet
+    credentialing.
+
     This function uses an honor system to verify that users have completed the required
     PhysioNet credentialing process before accessing MIMIC-IV data.
-    
+
     Raises:
         RuntimeError: If user does not confirm completion of required steps
     """
-    
-    print("\n" + "="*70)
+
+    print("\n" + "=" * 70)
     print("MIMIC-IV ACCESS VERIFICATION")
-    print("="*70)
-    print("MIMIC-IV is a restricted dataset that requires credentialing through PhysioNet.")
+    print("=" * 70)
+    print(
+        "MIMIC-IV is a restricted dataset that requires credentialing through PhysioNet."
+    )
     print("\nBefore accessing this data, you MUST have completed:")
     print("  ✓ 1. Registered an account on PhysioNet (https://physionet.org/)")
     print("  ✓ 2. Completed the required CITI Data or Specimens Only Research training")
-    print("  ✓ 3. Signed the MIMIC-IV Credentialed Health Data License Agreement (https://physionet.org/content/mimiciv/3.1/)")
+    print(
+        "  ✓ 3. Signed the MIMIC-IV Credentialed Health Data License Agreement (https://physionet.org/content/mimiciv/3.1/)"
+    )
     print("  ✓ 4. Received approval from PhysioNet administrators")
     print("\nBy downloading this dataset, you agree to:")
     print("  • Use the data only for the approved research purposes")
     print("  • Not attempt to re-identify any individuals")
     print("  • Not redistribute the data to unauthorized parties")
     print("  • Follow all terms of the Data Use Agreement")
-    print("="*70)
-    
+    print("=" * 70)
+
     # Honor system verification with multiple confirmations
     try:
         print("\nCredentialing Verification:")
-        
+
         # Check 1: PhysioNet account and training
-        response1 = input("Have you completed CITI training and received PhysioNet approval for MIMIC-IV? (yes/no): ").lower().strip()
-        if response1 not in ['yes', 'y']:
-            print("\nYou must complete PhysioNet credentialing before accessing MIMIC-IV data.")
-            print("Visit https://physionet.org/content/mimiciv/ for credentialing instructions.")
+        response1 = (
+            input(
+                "Have you completed CITI training and received PhysioNet approval for MIMIC-IV? (yes/no): "
+            )
+            .lower()
+            .strip()
+        )
+        if response1 not in ["yes", "y"]:
+            print(
+                "\nYou must complete PhysioNet credentialing before accessing MIMIC-IV data."
+            )
+            print(
+                "Visit https://physionet.org/content/mimiciv/ for credentialing instructions."
+            )
             raise RuntimeError("PhysioNet credentialing required.")
-        
+
         # Check 2: Data Use Agreement understanding
-        response2 = input("Do you agree to use this data only for approved research purposes? (yes/no): ").lower().strip()
-        if response2 not in ['yes', 'y']:
+        response2 = (
+            input(
+                "Do you agree to use this data only for approved research purposes? (yes/no): "
+            )
+            .lower()
+            .strip()
+        )
+        if response2 not in ["yes", "y"]:
             print("\nYou must agree to the terms of use.")
             raise RuntimeError("Data Use Agreement acceptance required.")
-        
+
         # Check 3: Re-identification prohibition
-        response3 = input("Do you agree not to attempt re-identification of individuals? (yes/no): ").lower().strip()
-        if response3 not in ['yes', 'y']:
+        response3 = (
+            input(
+                "Do you agree not to attempt re-identification of individuals? (yes/no): "
+            )
+            .lower()
+            .strip()
+        )
+        if response3 not in ["yes", "y"]:
             print("\nYou must agree not to attempt re-identification.")
             raise RuntimeError("Re-identification prohibition agreement required.")
-        
+
         # Optional: Log verification attempt (for audit trail)
         import datetime
+
         timestamp = datetime.datetime.now().isoformat()
         print(f"\n✓ Access verification completed at {timestamp}")
         print("You may now proceed with downloading the MIMIC-IV dataset.")
-        print("\nIMPORTANT: Ensure you comply with all terms of the Data Use Agreement.")
-        
+        print(
+            "\nIMPORTANT: Ensure you comply with all terms of the Data Use Agreement."
+        )
+
     except KeyboardInterrupt:
         print("\n\nVerification cancelled by user.")
         raise RuntimeError("Access verification required to proceed.")
