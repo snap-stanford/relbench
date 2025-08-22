@@ -354,3 +354,22 @@ register_task("rel-ratebeer", "brewer-abv", ratebeer.BrewerABVTask)
 register_task("rel-ratebeer", "user-liked-beer", ratebeer.UserLikedBeerTask)
 register_task("rel-ratebeer", "user-liked-place", ratebeer.UserLikedPlaceTask)
 register_task("rel-ratebeer", "user-favorite-beer", ratebeer.UserFavoriteBeerTask)
+
+register_task(
+    "rel-ratebeer",
+    "user-beer-rating",
+    AutoCompleteTask,
+    task_type=TaskType.REGRESSION,
+    entity_table="beer_ratings",
+    target_col="total_score",
+    remove_columns=[
+        ("beer_ratings", "aroma"),
+        ("beer_ratings", "flavor"),
+        ("beer_ratings", "mouthfeel"),
+        ("beer_ratings", "appearance"),
+        ("beer_ratings", "overall"),
+        ("beer_ratings", "comments"),
+        ("beer_ratings", "description_score"),
+        ("beer_ratings", "style"),
+    ],
+)
