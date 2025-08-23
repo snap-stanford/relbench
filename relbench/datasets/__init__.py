@@ -6,7 +6,7 @@ from typing import List
 import pooch
 
 from relbench.base import Dataset
-from relbench.datasets import amazon, avito, event, f1, hm, stack, trial
+from relbench.datasets import amazon, avito, event, f1, hm, salt, stack, trial
 
 dataset_registry = {}
 
@@ -64,7 +64,7 @@ def download_dataset(name: str) -> None:
 
 
 @lru_cache(maxsize=None)
-def get_dataset(name: str, download=False) -> Dataset:
+def get_dataset(name: str, download=True) -> Dataset:
     r"""Return a dataset object by name.
 
     Args:
@@ -98,3 +98,4 @@ register_dataset("rel-f1", f1.F1Dataset)
 register_dataset("rel-hm", hm.HMDataset)
 register_dataset("rel-stack", stack.StackDataset)
 register_dataset("rel-trial", trial.TrialDataset)
+register_dataset("rel-salt", salt.SALTDataset)
