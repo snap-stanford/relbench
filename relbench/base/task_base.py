@@ -178,10 +178,10 @@ class BaseTask:
             table = Table.load(table_path)
         else:
             print(f"Making task table for {split} split from scratch...")
-            print(
-                "(You can also use `get_task(..., download=True)` "
-                "for tasks prepared by the RelBench team.)"
-            )
+            # print(
+            #     "(You can also use `get_task(..., download=True)` "
+            #     "for tasks prepared by the RelBench team.)"
+            # )
             tic = time.time()
             table = self._get_table(split)
             toc = time.time()

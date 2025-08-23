@@ -67,6 +67,9 @@ class FakeDataset(Dataset):
                 "rating": np.random.randint(1, 6, size=(num_reviews,)),
             }
         )
+        review_df["review"] = review_df["rating"].apply(
+            lambda x: "positive" if x > 3 else "negative"
+        )
         relations_df = pd.DataFrame(
             {
                 "customer_id": [
