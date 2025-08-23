@@ -18,7 +18,7 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench.base import Dataset, EntityTask, Table, TaskType
+from relbench.base import Dataset, EntityTask, Table, TaskType, AutoCompleteTask
 from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
@@ -87,7 +87,7 @@ db = dataset.get_db()
 # add (time-censored) labels tables to the db
 for task_name in tasks_to_add:
     t = get_task(args.dataset, task_name)
-    if not isinstance(t, EntityTask):
+    if not isinstance(t, EntityTask) or isinstance(t, AutoCompleteTask):
         continue
     labels_table_name = f"{task_name}_labels"
     label_df = pd.concat(
