@@ -267,56 +267,6 @@ class UserRatingCountTask(EntityTask):
         )
 
 
-class BrewerABVTask(EntityTask):
-    r"""Predict the average alcohol percentage of beers that a brewer will release in
-    the next 90 days."""
-
-    task_type = TaskType.REGRESSION
-    entity_col = "brewer_id"
-    entity_table = "brewers"
-    time_col = "timestamp"
-    target_col = "avg_abv"
-    timedelta = pd.Timedelta(days=90)
-    metrics = [r2, mae, rmse]
-
-    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
-        brewers = db.table_dict["brewers"].df
-        beers = db.table_dict["beers"].df
-        timestamp_df = pd.DataFrame({"timestamp": timestamps})
-
-        df = duckdb.sql(
-            f"""
-            SELECT
-                t.timestamp,
-                b.brewer_id,
-                (
-                    SELECT AVG(b.alcohol_pct)
-                    FROM beers b
-                    WHERE b.brewer_id = b.brewer_id
-                    AND b.created_at >  t.timestamp
-                    AND b.created_at <= t.timestamp + INTERVAL '{self.timedelta}'
-                ) AS avg_abv
-            FROM timestamp_df t
-            CROSS JOIN brewers b
-            WHERE
-                EXISTS (
-                    SELECT 1
-                    FROM beers AS b2
-                    WHERE b2.brewer_id = b.brewer_id
-                    AND b2.created_at > t.timestamp - INTERVAL '{self.timedelta}'
-                    AND b2.created_at <= t.timestamp
-                )
-            """
-        ).df()
-
-        return Table(
-            df=df,
-            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
-            pkey_col=None,
-            time_col=self.time_col,
-        )
-
-
 # Recommendation tasks
 
 

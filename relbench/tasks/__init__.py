@@ -370,6 +370,5 @@ register_task(
         ("beer_ratings", "overall"),
         ("beer_ratings", "comments"),
         ("beer_ratings", "description_score"),
-        ("beer_ratings", "style"),
     ],
 )
