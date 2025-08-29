@@ -49,7 +49,7 @@ class RateBeerDataset(Dataset):
         r"""Process the raw files into a database."""
         path = pooch.retrieve(
             DB_URL,
-            known_hash="49afdf23a8b464dc0e54731a3782b51e53f3acee93dae0aa6d968cfbd9caa4be",
+            known_hash="c3921164da60f8c97e6530d1f2872f7e0d307f8276348106db95c10c2df677ad",
             progressbar=True,
             processor=unzip_processor,
         )
