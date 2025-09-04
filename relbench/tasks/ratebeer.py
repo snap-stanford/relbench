@@ -477,7 +477,6 @@ tasks_dict = {
     "user-rating-churn": UserRatingChurnTask,
     "brewer-dormant": BrewerDormantTask,
     "user-rating-count": UserRatingCountTask,
-    "brewer-abv": BrewerABVTask,
     "user-favorite-beer": UserFavoriteBeerTask,
     "user-liked-place": UserLikedPlaceTask,
     "user-liked-beer": UserLikedBeerTask,
