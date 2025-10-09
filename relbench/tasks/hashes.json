@@ -28,5 +28,6 @@
   "rel-amazon/tasks/user-churn.zip": "cddd511a1f609aea286cf2e20803f489ab9b3158e18cea66e0888d174b1515f0",
   "rel-amazon/tasks/user-item-purchase.zip": "80c9ba1ad8f91b90f318aeec31849ed765da2487bc3a377a2dc1a745ffd9b39b",
   "rel-amazon/tasks/item-ltv.zip": "987953d1deecb9ed6925576a6f073a59d34ada03a037219919e801ec098225ea",
-  "rel-amazon/tasks/user-ltv.zip": "645d6d318e7da4f493c6953e24ab62ffdd6f4d0ba64726b5e3b36df4ba8a1a18"
+  "rel-amazon/tasks/user-ltv.zip": "645d6d318e7da4f493c6953e24ab62ffdd6f4d0ba64726b5e3b36df4ba8a1a18",
+  "rel-mimic/tasks/icu-length-of-stay.zip": "4d6b99548e76dd67fa175d4d798651b974d4758b3179a5ddb7919971bd83601c"
 }
