@@ -39,12 +39,12 @@ parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
-    "--include_label_tables",
+    "--include_task_tables",
     type=str,
     default="none",
     help="Optionally include labels as autoregressive features with \
         appropriate time censoring. One of 'all', \
-        'task_only', or 'none'.",
+        'current_only', or 'none'.",
 )
 parser.add_argument(
     "--cache_dir",
@@ -76,9 +76,9 @@ except FileNotFoundError:
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
 
-if args.include_label_tables == "all":
+if args.include_task_tables == "all":
     tasks_to_add = get_task_names(args.dataset)
-elif args.include_label_tables == "task_only":
+elif args.include_task_tables == "current_only":
     tasks_to_add = [args.task]
 else:
     tasks_to_add = []
@@ -113,7 +113,9 @@ for task_name in tasks_to_add:
     }
 
 cache_name = (
-    args.include_label_tables if args.include_label_tables != "task_only" else args.task
+    args.include_task_tables
+    if args.include_task_tables != "current_only"
+    else args.task
 )
 data, col_stats_dict = make_pkey_fkey_graph(
     db,
