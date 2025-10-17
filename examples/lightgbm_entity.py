@@ -110,7 +110,7 @@ train_dataset = torch_frame.data.Dataset(
     ),
 )
 path = Path(
-    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/node_train_{args.use_ar_label=}.pt"
+    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized/node_train.pt"
 )
 path.parent.mkdir(parents=True, exist_ok=True)
 train_dataset = train_dataset.materialize(path=path)
