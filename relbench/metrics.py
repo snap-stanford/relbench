@@ -144,6 +144,13 @@ def multilabel_precision_macro(true: NDArray[np.int_], pred: NDArray[np.int_]) -
     )
 
 
+####### Multiclass metrics
+def multiclass_f1(true: NDArray[np.int_], pred: NDArray[np.int_]) -> float:
+    if pred.ndim > 1:
+        pred = pred.argmax(axis=1)
+    return skm.f1_score(true, pred, average="micro")
+
+
 ####### Link prediction metrics
 """All link prediction metrics take two arguments
     - pred_isin: Numpy boolean array of size (num_src_nodes, eval_k)

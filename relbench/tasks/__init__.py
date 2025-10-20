@@ -8,7 +8,7 @@ import pooch
 
 from relbench.base import AutoCompleteTask, BaseTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.tasks import amazon, avito, event, f1, hm, ratebeer, stack, trial
+from relbench.tasks import amazon, avito, event, f1, hm, ratebeer, stack, trial, arxiv
 
 task_registry = defaultdict(dict)
 
@@ -208,6 +208,11 @@ register_task("rel-trial", "study-adverse", trial.StudyAdverseTask)
 register_task("rel-trial", "site-success", trial.SiteSuccessTask)
 register_task("rel-trial", "condition-sponsor-run", trial.ConditionSponsorRunTask)
 register_task("rel-trial", "site-sponsor-run", trial.SiteSponsorRunTask)
+
+register_task("rel-arxiv", "paper-citation", arxiv.PaperCitationTask)
+register_task("rel-arxiv", "author-category", arxiv.AuthorCategoryTask)
+register_task("rel-arxiv", "author-publication", arxiv.AuthorPublicationTask)
+register_task("rel-arxiv", "co-citation", arxiv.CoCitationTask)
 
 register_task(
     "rel-salt",
