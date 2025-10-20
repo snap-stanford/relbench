@@ -26,8 +26,8 @@ from relbench.modeling.utils import get_stype_proposal
 from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", type=str, default="rel-stackex")
-parser.add_argument("--task", type=str, default="rel-stackex-engage")
+parser.add_argument("--dataset", type=str, default="rel-stack")
+parser.add_argument("--task", type=str, default="user-engagement")
 parser.add_argument("--lr", type=float, default=0.005)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
@@ -46,7 +46,7 @@ parser.add_argument(
     "--sample_size",
     type=int,
     default=50_000,
-    help="Subsample the specified number of training data to train LightGBM model.",
+    help="Subsample the specified number of training data for training split.",
 )
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
@@ -110,10 +110,22 @@ elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
     higher_is_better = True
 
 loader_dict: Dict[str, NeighborLoader] = {}
+# Create a mapping for each split's entity table
+entity_table_mapping: Dict[str, str] = {}
+
 for split in ["train", "val", "test"]:
     table = task.get_table(split)
+    # Restrict the training split to the first `sample_size` rows.
+    # Note: This approach is inefficient as it loads the full dataset before discarding unused rows.
+    # Improvement Suggestion: To optimize, modify the logic inside the `make_pkey_fkey_graph` function
+    # to limit the dataset size during its creation, avoiding unnecessary materialization.
+    if split == "train" and args.sample_size is not None:
+        table.df = table.df.iloc[: args.sample_size].reset_index(drop=True)
+
     table_input = get_node_train_table_input(table=table, task=task)
-    entity_table = table_input.nodes[0]
+    # Save the entity table name for this split
+    entity_table_mapping[split] = table_input.nodes[0]
+
     loader_dict[split] = NeighborLoader(
         data,
         num_neighbors=[int(args.num_neighbors / 2**i) for i in range(args.num_layers)],
@@ -141,11 +153,11 @@ def train() -> float:
         optimizer.zero_grad()
         pred = model(
             batch,
-            task.entity_table,
+            entity_table_mapping["train"],
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
 
-        loss = loss_fn(pred.float(), batch[entity_table].y.float())
+        loss = loss_fn(pred.float(), batch[entity_table_mapping["train"]].y.float())
         loss.backward()
         optimizer.step()
 
@@ -168,7 +180,7 @@ def test(loader: NeighborLoader) -> np.ndarray:
         batch = batch.to(device)
         pred = model(
             batch,
-            task.entity_table,
+            entity_table_mapping["test"],
         )
         if task.task_type == TaskType.REGRESSION:
             assert clamp_min is not None
@@ -207,12 +219,12 @@ def embed(
         batch = batch.to(device)
         embed = model_embed(
             batch,
-            task.entity_table,
+            entity_table_mapping["train"],
         )
         embed_list.append(embed.detach().cpu())
 
         if not no_label:
-            y = batch[entity_table].y
+            y = batch[entity_table_mapping["train"]].y
             y_list.append(y.detach().cpu())
 
         if stop_at is not None and idx >= stop_at:
@@ -242,7 +254,7 @@ model = Model(
 ).to(device)
 
 
-STATE_DICT_PTH = "results/{args.dataset}_{args.task}_state_dict.pth"
+STATE_DICT_PTH = f"results/{args.dataset}_{args.task}_state_dict.pth"
 
 # if state dict exists, load it
 if os.path.exists(STATE_DICT_PTH) and args.attempt_load_state_dict:
@@ -338,13 +350,14 @@ relbench2torch_frame = {
     TaskType.REGRESSION: TaskTypeTorchFrame.REGRESSION,
 }
 task_type = relbench2torch_frame[task.task_type]
-model = LightGBM(task_type=task_type, metric=tune_metric)
-model.tune(tf_train, tf_val, num_trials=10)
 
+lgbm_model = LightGBM(task_type=task_type, metric=tune_metric)
+lgbm_model.tune(tf_train, tf_val, num_trials=10)
 
-pred = model.predict(tf_val).numpy()
+pred = lgbm_model.predict(tf_val).numpy()
 val_metrics = task.evaluate(pred, task.get_table("val"))
-print(f"Val: {val_metrics}")
+print(f"LightGBM Val metrics: {val_metrics}")
 
-pred = model.predict(tf_test).numpy()
-print(f"Test: {test_metrics}")
+test_pred = lgbm_model.predict(tf_test).numpy()
+test_metrics = task.evaluate(test_pred)
+print(f"LightGBM Best Test metrics: {test_metrics}")

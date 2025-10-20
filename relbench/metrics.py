@@ -3,6 +3,7 @@ from typing import Tuple
 import numpy as np
 import sklearn.metrics as skm
 from numpy.typing import NDArray
+from scipy.stats import rankdata
 
 ###### classification metrics
 
@@ -51,6 +52,12 @@ def auprc(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 
 
 ### applicable to multiclass classification only
+
+
+def mrr(y: NDArray[np.float64], y_pred: NDArray[np.float64]) -> float:
+    rankings = rankdata(-y_pred, method="min", axis=1)
+    ranks = np.take_along_axis(rankings, y.reshape(-1, 1), axis=1).flatten()
+    return np.mean(1.0 / ranks).item()
 
 
 def macro_f1(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:

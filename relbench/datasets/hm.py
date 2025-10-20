@@ -12,8 +12,7 @@ class HMDataset(Dataset):
         "https://www.kaggle.com/competitions/"
         "h-and-m-personalized-fashion-recommendations"
     )
-    # Train for the most recent 1 year out of 2 years of the original
-    # time period
+
     val_timestamp = pd.Timestamp("2020-09-07")
     test_timestamp = pd.Timestamp("2020-09-14")
 

@@ -6,11 +6,7 @@ from typing import List
 import pooch
 
 from relbench.base import Dataset
-<<<<<<< HEAD
-from relbench.datasets import amazon, avito, event, f1, hm, stack, trial, arxiv
-=======
-from relbench.datasets import amazon, avito, event, f1, hm, ratebeer, salt, stack, trial
->>>>>>> upstream/main
+from relbench.datasets import amazon, avito, event, f1, hm, ratebeer, salt, stack, trial, arxiv
 
 dataset_registry = {}
 
