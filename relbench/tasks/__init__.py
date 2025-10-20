@@ -6,9 +6,9 @@ from typing import List
 
 import pooch
 
-from relbench.base import BaseTask
+from relbench.base import AutoCompleteTask, BaseTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.tasks import amazon, avito, event, f1, hm, stack, trial, arxiv
+from relbench.tasks import amazon, avito, event, f1, hm, ratebeer, stack, trial, arxiv
 
 task_registry = defaultdict(dict)
 
@@ -91,7 +91,7 @@ def get_task(dataset_name: str, task_name: str, download=False) -> BaseTask:
 
     if download:
         download_task(dataset_name, task_name)
-    dataset = get_dataset(dataset_name)
+    dataset = get_dataset(dataset_name, download=download)
     cls, args, kwargs = task_registry[dataset_name][task_name]
     task = cls(dataset, *args, **kwargs)
     return task
@@ -104,19 +104,85 @@ register_task("rel-amazon", "item-ltv", amazon.ItemLTVTask)
 register_task("rel-amazon", "user-item-purchase", amazon.UserItemPurchaseTask)
 register_task("rel-amazon", "user-item-rate", amazon.UserItemRateTask)
 register_task("rel-amazon", "user-item-review", amazon.UserItemReviewTask)
+register_task(
+    "rel-amazon",
+    "review-rating",
+    AutoCompleteTask,
+    task_type=TaskType.REGRESSION,
+    entity_table="review",
+    target_col="rating",
+    remove_columns=[
+        ("review", "review_text"),
+        ("review", "summary"),
+    ],
+)
 
 register_task("rel-avito", "ad-ctr", avito.AdCTRTask)
 register_task("rel-avito", "user-visits", avito.UserVisitsTask)
 register_task("rel-avito", "user-clicks", avito.UserClicksTask)
 register_task("rel-avito", "user-ad-visit", avito.UserAdVisitTask)
+register_task(
+    "rel-avito",
+    "searchstream-click",
+    AutoCompleteTask,
+    task_type=TaskType.BINARY_CLASSIFICATION,
+    entity_table="SearchStream",
+    target_col="IsClick",
+)
+register_task(
+    "rel-avito",
+    "searchinfo-isuserloggedon",
+    AutoCompleteTask,
+    task_type=TaskType.BINARY_CLASSIFICATION,
+    entity_table="SearchInfo",
+    target_col="IsUserLoggedOn",
+)
 
 register_task("rel-event", "user-attendance", event.UserAttendanceTask)
 register_task("rel-event", "user-repeat", event.UserRepeatTask)
 register_task("rel-event", "user-ignore", event.UserIgnoreTask)
+register_task(
+    "rel-event",
+    "event_interest-iterested",
+    AutoCompleteTask,
+    task_type=TaskType.BINARY_CLASSIFICATION,
+    entity_table="event_interest",
+    target_col="interested",
+    remove_columns=[
+        ("event_interest", "not_interested"),
+    ],
+)
 
 register_task("rel-f1", "driver-position", f1.DriverPositionTask)
 register_task("rel-f1", "driver-dnf", f1.DriverDNFTask)
 register_task("rel-f1", "driver-top3", f1.DriverTop3Task)
+register_task(
+    "rel-f1",
+    "results-position",
+    AutoCompleteTask,
+    task_type=TaskType.REGRESSION,
+    entity_table="results",
+    target_col="position",
+    remove_columns=[
+        ("results", "statusId"),
+        ("results", "positionOrder"),
+        ("results", "points"),
+        ("results", "laps"),
+        ("results", "milliseconds"),
+        ("results", "fastestLap"),
+        ("results", "rank"),
+    ],
+)
+register_task(
+    "rel-f1",
+    "qualifying-position",
+    AutoCompleteTask,
+    task_type=TaskType.REGRESSION,
+    entity_table="qualifying",
+    target_col="position",
+    remove_columns=[],
+)
+
 
 register_task("rel-hm", "user-item-purchase", hm.UserItemPurchaseTask)
 register_task("rel-hm", "user-churn", hm.UserChurnTask)
@@ -127,6 +193,15 @@ register_task("rel-stack", "post-votes", stack.PostVotesTask)
 register_task("rel-stack", "user-badge", stack.UserBadgeTask)
 register_task("rel-stack", "user-post-comment", stack.UserPostCommentTask)
 register_task("rel-stack", "post-post-related", stack.PostPostRelatedTask)
+register_task(
+    "rel-stack",
+    "badges-class",
+    AutoCompleteTask,
+    task_type=TaskType.MULTICLASS_CLASSIFICATION,
+    entity_table="badges",
+    target_col="Class",
+    remove_columns=[("badges", "TagBased"), ("badges", "Name")],
+)
 
 register_task("rel-trial", "study-outcome", trial.StudyOutcomeTask)
 register_task("rel-trial", "study-adverse", trial.StudyAdverseTask)
@@ -138,3 +213,165 @@ register_task("rel-arxiv", "paper-citation", arxiv.PaperCitationTask)
 register_task("rel-arxiv", "author-category", arxiv.AuthorCategoryTask)
 register_task("rel-arxiv", "author-publication", arxiv.AuthorPublicationTask)
 register_task("rel-arxiv", "co-citation", arxiv.CoCitationTask)
+register_task(
+    "rel-salt",
+    "item-plant",
+    AutoCompleteTask,
+    task_type=TaskType.MULTICLASS_CLASSIFICATION,
+    entity_table="salesdocumentitem",
+    target_col="PLANT",
+    remove_columns=[
+        ("salesdocument", "SALESOFFICE"),
+        ("salesdocument", "SALESGROUP"),
+        ("salesdocument", "CUSTOMERPAYMENTTERMS"),
+        ("salesdocument", "SHIPPINGCONDITION"),
+        ("salesdocument", "HEADERINCOTERMSCLASSIFICATION"),
+        ("salesdocumentitem", "SHIPPINGPOINT"),
+        ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
+    ],
+)
+register_task(
+    "rel-salt",
+    "item-shippoint",
+    AutoCompleteTask,
+    task_type=TaskType.MULTICLASS_CLASSIFICATION,
+    entity_table="salesdocumentitem",
+    target_col="SHIPPINGPOINT",
+    remove_columns=[
+        ("salesdocument", "SALESOFFICE"),
+        ("salesdocument", "SALESGROUP"),
+        ("salesdocument", "CUSTOMERPAYMENTTERMS"),
+        ("salesdocument", "SHIPPINGCONDITION"),
+        ("salesdocument", "HEADERINCOTERMSCLASSIFICATION"),
+        ("salesdocumentitem", "PLANT"),
+        ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
+    ],
+)
+register_task(
+    "rel-salt",
+    "item-incoterms",
+    AutoCompleteTask,
+    task_type=TaskType.MULTICLASS_CLASSIFICATION,
+    entity_table="salesdocumentitem",
+    target_col="ITEMINCOTERMSCLASSIFICATION",
+    remove_columns=[
+        ("salesdocument", "SALESOFFICE"),
+        ("salesdocument", "SALESGROUP"),
+        ("salesdocument", "CUSTOMERPAYMENTTERMS"),
+        ("salesdocument", "SHIPPINGCONDITION"),
+        ("salesdocument", "HEADERINCOTERMSCLASSIFICATION"),
+        ("salesdocumentitem", "PLANT"),
+        ("salesdocumentitem", "SHIPPINGPOINT"),
+    ],
+)
+register_task(
+    "rel-salt",
+    "sales-office",
+    AutoCompleteTask,
+    task_type=TaskType.MULTICLASS_CLASSIFICATION,
+    entity_table="salesdocument",
+    target_col="SALESOFFICE",
+    remove_columns=[
+        ("salesdocument", "SALESGROUP"),
+        ("salesdocument", "CUSTOMERPAYMENTTERMS"),
+        ("salesdocument", "SHIPPINGCONDITION"),
+        ("salesdocument", "HEADERINCOTERMSCLASSIFICATION"),
+        ("salesdocumentitem", "PLANT"),
+        ("salesdocumentitem", "SHIPPINGPOINT"),
+        ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
+    ],
+)
+register_task(
+    "rel-salt",
+    "sales-group",
+    AutoCompleteTask,
+    task_type=TaskType.MULTICLASS_CLASSIFICATION,
+    entity_table="salesdocument",
+    target_col="SALESGROUP",
+    remove_columns=[
+        ("salesdocument", "SALESOFFICE"),
+        ("salesdocument", "CUSTOMERPAYMENTTERMS"),
+        ("salesdocument", "SHIPPINGCONDITION"),
+        ("salesdocument", "HEADERINCOTERMSCLASSIFICATION"),
+        ("salesdocumentitem", "PLANT"),
+        ("salesdocumentitem", "SHIPPINGPOINT"),
+        ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
+    ],
+)
+register_task(
+    "rel-salt",
+    "sales-payterms",
+    AutoCompleteTask,
+    task_type=TaskType.MULTICLASS_CLASSIFICATION,
+    entity_table="salesdocument",
+    target_col="CUSTOMERPAYMENTTERMS",
+    remove_columns=[
+        ("salesdocument", "SALESOFFICE"),
+        ("salesdocument", "SALESGROUP"),
+        ("salesdocument", "SHIPPINGCONDITION"),
+        ("salesdocument", "HEADERINCOTERMSCLASSIFICATION"),
+        ("salesdocumentitem", "PLANT"),
+        ("salesdocumentitem", "SHIPPINGPOINT"),
+        ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
+    ],
+)
+register_task(
+    "rel-salt",
+    "sales-shipcond",
+    AutoCompleteTask,
+    task_type=TaskType.MULTICLASS_CLASSIFICATION,
+    entity_table="salesdocument",
+    target_col="SHIPPINGCONDITION",
+    remove_columns=[
+        ("salesdocument", "SALESOFFICE"),
+        ("salesdocument", "SALESGROUP"),
+        ("salesdocument", "CUSTOMERPAYMENTTERMS"),
+        ("salesdocument", "HEADERINCOTERMSCLASSIFICATION"),
+        ("salesdocumentitem", "PLANT"),
+        ("salesdocumentitem", "SHIPPINGPOINT"),
+        ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
+    ],
+)
+register_task(
+    "rel-salt",
+    "sales-incoterms",
+    AutoCompleteTask,
+    task_type=TaskType.MULTICLASS_CLASSIFICATION,
+    entity_table="salesdocument",
+    target_col="HEADERINCOTERMSCLASSIFICATION",
+    remove_columns=[
+        ("salesdocument", "SALESOFFICE"),
+        ("salesdocument", "SALESGROUP"),
+        ("salesdocument", "CUSTOMERPAYMENTTERMS"),
+        ("salesdocument", "SHIPPINGCONDITION"),
+        ("salesdocumentitem", "PLANT"),
+        ("salesdocumentitem", "SHIPPINGPOINT"),
+        ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
+    ],
+)
+
+register_task("rel-ratebeer", "beer-rating-churn", ratebeer.BeerRatingChurnTask)
+register_task("rel-ratebeer", "user-rating-churn", ratebeer.UserRatingChurnTask)
+register_task("rel-ratebeer", "brewer-dormant", ratebeer.BrewerDormantTask)
+register_task("rel-ratebeer", "user-rating-count", ratebeer.UserRatingCountTask)
+register_task("rel-ratebeer", "user-liked-beer", ratebeer.UserLikedBeerTask)
+register_task("rel-ratebeer", "user-liked-place", ratebeer.UserLikedPlaceTask)
+register_task("rel-ratebeer", "user-favorite-beer", ratebeer.UserFavoriteBeerTask)
+
+register_task(
+    "rel-ratebeer",
+    "user-beer-rating",
+    AutoCompleteTask,
+    task_type=TaskType.REGRESSION,
+    entity_table="beer_ratings",
+    target_col="total_score",
+    remove_columns=[
+        ("beer_ratings", "aroma"),
+        ("beer_ratings", "flavor"),
+        ("beer_ratings", "mouthfeel"),
+        ("beer_ratings", "appearance"),
+        ("beer_ratings", "overall"),
+        ("beer_ratings", "comments"),
+        ("beer_ratings", "description_score"),
+    ],
+)
