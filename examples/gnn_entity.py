@@ -12,7 +12,7 @@ import torch
 from model import Model
 from sklearn.preprocessing import LabelEncoder
 from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, L1Loss, CrossEntropyLoss
+from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, L1Loss
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader

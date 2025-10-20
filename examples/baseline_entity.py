@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 import torch
 from scipy.stats import mode
-from torch_geometric.seed import seed_everything
 from sklearn.preprocessing import LabelEncoder
+from torch_geometric.seed import seed_everything
 
 from relbench.base import Dataset, EntityTask, Table, TaskType
 from relbench.datasets import get_dataset

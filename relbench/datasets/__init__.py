@@ -6,7 +6,18 @@ from typing import List
 import pooch
 
 from relbench.base import Dataset
-from relbench.datasets import amazon, avito, event, f1, hm, ratebeer, salt, stack, trial, arxiv
+from relbench.datasets import (
+    amazon,
+    arxiv,
+    avito,
+    event,
+    f1,
+    hm,
+    ratebeer,
+    salt,
+    stack,
+    trial,
+)
 
 dataset_registry = {}
 

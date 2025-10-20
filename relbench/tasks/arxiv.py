@@ -5,14 +5,14 @@ from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskT
 from relbench.metrics import (
     accuracy,
     f1,
-    mae,
-    r2,
-    rmse,
-    roc_auc,
     link_prediction_map,
     link_prediction_precision,
     link_prediction_recall,
+    mae,
     multiclass_f1,
+    r2,
+    rmse,
+    roc_auc,
 )
 
 
@@ -41,9 +41,9 @@ class PaperCitationTask(EntityTask):
                     p.Paper_ID,
                     COUNT(c.References_Paper_ID) AS citation_count
                 FROM timestamp_df t
-                JOIN papers p 
+                JOIN papers p
                     ON p.Submission_Date <= t.timestamp
-                LEFT JOIN citations c 
+                LEFT JOIN citations c
                     ON c.References_Paper_ID = p.Paper_ID
                     AND c.Submission_Date > t.timestamp
                     AND c.Submission_Date <= t.timestamp + INTERVAL '{self.timedelta}'
@@ -66,7 +66,8 @@ class PaperCitationTask(EntityTask):
 
 
 class AuthorCategoryTask(EntityTask):
-    r"""Predict the primary research category in which an author will publish papers in the next six months."""
+    r"""Predict the primary research category in which an author will publish papers in
+    the next six months."""
 
     task_type = TaskType.MULTICLASS_CLASSIFICATION
     entity_col = "Author_ID"
@@ -95,10 +96,10 @@ class AuthorCategoryTask(EntityTask):
                     pa.Author_ID,
                     p.Primary_Category_ID
                 FROM timestamp_df t
-                JOIN paperAuthors pa 
-                ON pa.Submission_Date > t.timestamp 
+                JOIN paperAuthors pa
+                ON pa.Submission_Date > t.timestamp
                 AND pa.Submission_Date <= t.timestamp + INTERVAL '{self.timedelta}'
-                JOIN papers p 
+                JOIN papers p
                 ON pa.Paper_ID = p.Paper_ID
             ),
             pub_counts AS (
@@ -161,7 +162,7 @@ class AuthorPublicationTask(EntityTask):
                     pa.Author_ID,
                     COUNT(pa.Paper_ID) AS publication_count
                 FROM timestamp_df t
-                JOIN paperAuthors pa 
+                JOIN paperAuthors pa
                     ON pa.Submission_Date > t.timestamp
                     AND pa.Submission_Date <= t.timestamp + INTERVAL '{self.timedelta}'
                 GROUP BY t.timestamp, pa.Author_ID
@@ -179,7 +180,8 @@ class AuthorPublicationTask(EntityTask):
 
 
 class CoCitationTask(RecommendationTask):
-    r"""Predict which other papers will be cited together with a given paper in the next six months."""
+    r"""Predict which other papers will be cited together with a given paper in the next
+    six months."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "Paper_ID"
@@ -205,21 +207,21 @@ class CoCitationTask(RecommendationTask):
                     p.Paper_ID,
                     c2.References_Paper_ID AS co_cited_paper
                 FROM timestamp_df t
-                JOIN papers p 
+                JOIN papers p
                   ON p.Submission_Date <= t.timestamp
-                JOIN citations c1 
+                JOIN citations c1
                   ON c1.References_Paper_ID = p.Paper_ID
-                  AND c1.Submission_Date > t.timestamp 
+                  AND c1.Submission_Date > t.timestamp
                   AND c1.Submission_Date <= t.timestamp + INTERVAL '{self.timedelta}'
-                JOIN citations c2 
+                JOIN citations c2
                   ON c1.Paper_ID = c2.Paper_ID
                   AND c2.References_Paper_ID <> p.Paper_ID
-                  AND c2.Submission_Date > t.timestamp 
+                  AND c2.Submission_Date > t.timestamp
                   AND c2.Submission_Date <= t.timestamp + INTERVAL '{self.timedelta}'
             )
-            SELECT 
-                date, 
-                Paper_ID, 
+            SELECT
+                date,
+                Paper_ID,
                 array_agg(DISTINCT co_cited_paper) AS co_cited
             FROM paper_co_citations
             GROUP BY date, Paper_ID
