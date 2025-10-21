@@ -191,6 +191,11 @@ class Dataset:
                         "Skipping removal from this table."
                     )
 
+        # Clear the get_dataset cache as the dataset instance was modified.
+        from relbench.datasets import get_dataset
+
+        get_dataset.cache_clear()
+
         return db
 
     def make_db(self) -> Database:

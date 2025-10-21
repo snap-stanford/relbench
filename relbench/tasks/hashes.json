@@ -29,5 +29,16 @@
   "rel-amazon/tasks/user-item-purchase.zip": "80c9ba1ad8f91b90f318aeec31849ed765da2487bc3a377a2dc1a745ffd9b39b",
   "rel-amazon/tasks/item-ltv.zip": "987953d1deecb9ed6925576a6f073a59d34ada03a037219919e801ec098225ea",
   "rel-amazon/tasks/user-ltv.zip": "645d6d318e7da4f493c6953e24ab62ffdd6f4d0ba64726b5e3b36df4ba8a1a18",
-  "rel-mimic/tasks/icu-length-of-stay.zip": "4d6b99548e76dd67fa175d4d798651b974d4758b3179a5ddb7919971bd83601c"
+  "rel-mimic/tasks/icu-length-of-stay.zip": "4d6b99548e76dd67fa175d4d798651b974d4758b3179a5ddb7919971bd83601c",
+  "rel-arxiv/tasks/author-category.zip": "23a216a0b028313b4e2d726c59f7ed2550580dfa6e19cda6be64c82db3d8d926",
+  "rel-arxiv/tasks/author-publication.zip": "2573f95da55862c1e0d47a6cdfe79ec4f3d2038399f458eaeec4c76d575244da",
+  "rel-arxiv/tasks/co-citation.zip": "9c4757c4708f29830bd12d38a5b498df7e5e77e3fce1a645a089919985d238d3",
+  "rel-arxiv/tasks/paper-citation.zip": "a8701626e5ec6a1af3486d5a605caa1020dcdffdaf38135c0e029161ef947fa3",
+  "rel-ratebeer/tasks/beer-rating-churn.zip": "6abae48a8d176119c0d110b0ca40d78f7a84f23373e9c58c80a8cf8b92f08dd8",
+  "rel-ratebeer/tasks/user-rating-churn.zip": "9d5f91907475ad2d7ea2c61dcbfe1d2b48e8a7448431727cd163712cf0dc7875",
+  "rel-ratebeer/tasks/brewer-dormant.zip": "3abf73c229c04d159ad2ec1da1e81765f33e6c40bccfe3b29d58a59dc4a3f36a",
+  "rel-ratebeer/tasks/user-rating-count.zip": "1a800f71eff5a7ef54a79bdb88596b01ce96c43cf59be526e5dc2beaf04d6d88",
+  "rel-ratebeer/tasks/user-favorite-beer.zip": "610095fff4e33d23e4e23fe3c1a80a295ef76c0648dd67b4e6e7ab0180f7fb2d",
+  "rel-ratebeer/tasks/user-liked-place.zip": "c1305b873fbf5092781674cb8d2cb623d203c1f449c9c47e333ac0346ae89c4c",
+  "rel-ratebeer/tasks/user-liked-beer.zip": "68fdee4e6297611daabe99ee3a982c3ba8ccab840a6ad0c7d690aecdba318000"
 }

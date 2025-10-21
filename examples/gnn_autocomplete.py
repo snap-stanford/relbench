@@ -32,9 +32,6 @@ parser.add_argument(
     default="REGRESSION",
     choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
 )
-parser.add_argument("--entity_table", type=str, default="results")
-parser.add_argument("--target_col", type=str, default="position")
-
 parser.add_argument("--lr", type=float, default=0.005)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
@@ -87,6 +84,8 @@ for col in dataset.remove_columns:
         del col_to_stype_dict[task.entity_table][col]
 
 data, col_stats_dict = make_pkey_fkey_graph(
+    # NOTE: Important!: Do not use `upto_test_timestamp=True` here, as this will
+    # cause task rows with timestamps after the test timestamp to dangle.
     dataset.get_db(
         upto_test_timestamp=False,
     ),

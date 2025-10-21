@@ -8,7 +8,7 @@ import pooch
 
 from relbench.base import AutoCompleteTask, BaseTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.tasks import amazon, avito, event, f1, hm, mimic, stack, trial
+from relbench.tasks import amazon, avito, event, f1, hm, mimic, ratebeer, stack, trial, arxiv
 
 task_registry = defaultdict(dict)
 
@@ -91,7 +91,7 @@ def get_task(dataset_name: str, task_name: str, download=False) -> BaseTask:
 
     if download:
         download_task(dataset_name, task_name)
-    dataset = get_dataset(dataset_name)
+    dataset = get_dataset(dataset_name, download=download)
     cls, args, kwargs = task_registry[dataset_name][task_name]
     task = cls(dataset, *args, **kwargs)
     return task
@@ -114,33 +114,6 @@ register_task(
     remove_columns=[
         ("review", "review_text"),
         ("review", "summary"),
-    ],
-)
-# register_task(
-#     "rel-amazon",
-#     "product-category",
-#     AutoCompleteTask,
-#     task_type=TaskType.MULTICLASS_CLASSIFICATION,
-#     entity_table="product",
-#     target_col="category",
-#     num_classes=930,
-#     remove_columns=[
-#         ("product","brand"),
-#         ("product","title"),
-#         ("product","description")
-#     ],
-# )
-register_task(
-    "rel-amazon",
-    "product-price",
-    AutoCompleteTask,
-    task_type=TaskType.REGRESSION,
-    entity_table="product",
-    target_col="price",
-    remove_columns=[
-        ("product", "brand"),
-        ("product", "title"),
-        ("product", "description"),
     ],
 )
 
@@ -200,7 +173,6 @@ register_task(
         ("results", "rank"),
     ],
 )
-# Needs > 10 epochs
 register_task(
     "rel-f1",
     "qualifying-position",
@@ -236,6 +208,11 @@ register_task("rel-trial", "study-adverse", trial.StudyAdverseTask)
 register_task("rel-trial", "site-success", trial.SiteSuccessTask)
 register_task("rel-trial", "condition-sponsor-run", trial.ConditionSponsorRunTask)
 register_task("rel-trial", "site-sponsor-run", trial.SiteSponsorRunTask)
+
+register_task("rel-arxiv", "paper-citation", arxiv.PaperCitationTask)
+register_task("rel-arxiv", "author-category", arxiv.AuthorCategoryTask)
+register_task("rel-arxiv", "author-publication", arxiv.AuthorPublicationTask)
+register_task("rel-arxiv", "co-citation", arxiv.CoCitationTask)
 
 register_task(
     "rel-salt",
@@ -375,3 +352,29 @@ register_task(
 )
 
 register_task("rel-mimic", "icu-length-of-stay", mimic.ICULengthOfStayTask)
+
+register_task("rel-ratebeer", "beer-rating-churn", ratebeer.BeerRatingChurnTask)
+register_task("rel-ratebeer", "user-rating-churn", ratebeer.UserRatingChurnTask)
+register_task("rel-ratebeer", "brewer-dormant", ratebeer.BrewerDormantTask)
+register_task("rel-ratebeer", "user-rating-count", ratebeer.UserRatingCountTask)
+register_task("rel-ratebeer", "user-liked-beer", ratebeer.UserLikedBeerTask)
+register_task("rel-ratebeer", "user-liked-place", ratebeer.UserLikedPlaceTask)
+register_task("rel-ratebeer", "user-favorite-beer", ratebeer.UserFavoriteBeerTask)
+
+register_task(
+    "rel-ratebeer",
+    "user-beer-rating",
+    AutoCompleteTask,
+    task_type=TaskType.REGRESSION,
+    entity_table="beer_ratings",
+    target_col="total_score",
+    remove_columns=[
+        ("beer_ratings", "aroma"),
+        ("beer_ratings", "flavor"),
+        ("beer_ratings", "mouthfeel"),
+        ("beer_ratings", "appearance"),
+        ("beer_ratings", "overall"),
+        ("beer_ratings", "comments"),
+        ("beer_ratings", "description_score"),
+    ],
+)
