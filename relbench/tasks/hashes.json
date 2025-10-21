@@ -29,6 +29,7 @@
   "rel-amazon/tasks/user-item-purchase.zip": "80c9ba1ad8f91b90f318aeec31849ed765da2487bc3a377a2dc1a745ffd9b39b",
   "rel-amazon/tasks/item-ltv.zip": "987953d1deecb9ed6925576a6f073a59d34ada03a037219919e801ec098225ea",
   "rel-amazon/tasks/user-ltv.zip": "645d6d318e7da4f493c6953e24ab62ffdd6f4d0ba64726b5e3b36df4ba8a1a18",
+  "rel-mimic/tasks/icu-length-of-stay.zip": "4d6b99548e76dd67fa175d4d798651b974d4758b3179a5ddb7919971bd83601c",
   "rel-arxiv/tasks/author-category.zip": "23a216a0b028313b4e2d726c59f7ed2550580dfa6e19cda6be64c82db3d8d926",
   "rel-arxiv/tasks/author-publication.zip": "2573f95da55862c1e0d47a6cdfe79ec4f3d2038399f458eaeec4c76d575244da",
   "rel-arxiv/tasks/co-citation.zip": "9c4757c4708f29830bd12d38a5b498df7e5e77e3fce1a645a089919985d238d3",

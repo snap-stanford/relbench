@@ -8,7 +8,18 @@ import pooch
 
 from relbench.base import AutoCompleteTask, BaseTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.tasks import amazon, avito, event, f1, hm, ratebeer, stack, trial, arxiv
+from relbench.tasks import (
+    amazon,
+    arxiv,
+    avito,
+    event,
+    f1,
+    hm,
+    mimic,
+    ratebeer,
+    stack,
+    trial,
+)
 
 task_registry = defaultdict(dict)
 
@@ -350,6 +361,8 @@ register_task(
         ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
     ],
 )
+
+register_task("rel-mimic", "icu-length-of-stay", mimic.ICULengthOfStayTask)
 
 register_task("rel-ratebeer", "beer-rating-churn", ratebeer.BeerRatingChurnTask)
 register_task("rel-ratebeer", "user-rating-churn", ratebeer.UserRatingChurnTask)

@@ -66,6 +66,11 @@ def download_dataset(name: str) -> None:
     The downloaded database will be automatically picked up by the dataset object, when
     `dataset.get_db()` is called.
     """
+    if name == "rel-mimic":
+        print("Downloading Mimic dataset...")
+        from relbench.datasets.mimic import verify_mimic_access
+
+        verify_mimic_access()
 
     DOWNLOAD_REGISTRY.fetch(
         f"{name}/db.zip",
@@ -97,7 +102,19 @@ def get_dataset(name: str, download=True) -> Dataset:
 
     if download:
         download_dataset(name)
-    cls, args, kwargs = dataset_registry[name]
+
+    # Handle lazy import for mimic dataset
+    if name == "rel-mimic":
+        from relbench.datasets import mimic
+
+        cls, args, kwargs = (
+            mimic.MimicDataset,
+            (),
+            {"cache_dir": f"{pooch.os_cache('relbench')}/{name}"},
+        )
+    else:
+        cls, args, kwargs = dataset_registry[name]
+
     dataset = cls(*args, **kwargs)
     return dataset
 
