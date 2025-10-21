@@ -102,14 +102,19 @@ def get_dataset(name: str, download=True) -> Dataset:
 
     if download:
         download_dataset(name)
-    
+
     # Handle lazy import for mimic dataset
     if name == "rel-mimic":
         from relbench.datasets import mimic
-        cls, args, kwargs = mimic.MimicDataset, (), {"cache_dir": f"{pooch.os_cache('relbench')}/{name}"}
+
+        cls, args, kwargs = (
+            mimic.MimicDataset,
+            (),
+            {"cache_dir": f"{pooch.os_cache('relbench')}/{name}"},
+        )
     else:
         cls, args, kwargs = dataset_registry[name]
-    
+
     dataset = cls(*args, **kwargs)
     return dataset
 

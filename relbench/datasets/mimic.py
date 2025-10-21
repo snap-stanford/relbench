@@ -241,6 +241,7 @@ class MimicDataset(Dataset):
         # Load environment variables from .env file (lazy import for optional dependency)
         try:
             from dotenv import load_dotenv
+
             load_dotenv()
         except ImportError:
             # dotenv is optional - if not available, env vars can still be set manually
@@ -327,7 +328,7 @@ class MimicDataset(Dataset):
 
     def make_db(self) -> Database:
         from google.cloud import bigquery
-        
+
         start_time = time.time()
         tables_df = {}
         # while MIMIC IV dataset on BigQuery does not have primary and foreign keys set up properly (at all)
@@ -615,7 +616,7 @@ class MimicDataset(Dataset):
 
     def query(self, query_string, query_params: list = []):
         from google.cloud import bigquery
-        
+
         job_config = bigquery.QueryJobConfig(query_parameters=query_params)
         df = self.client.query_and_wait(
             query_string, job_config=job_config
