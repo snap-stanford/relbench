@@ -23,6 +23,7 @@ dependencies=[
 	"scikit-learn<=1.5",
 	"typing-extensions",
 	"datasets",
+	"python-dotenv"
 ]
 
 [project.optional-dependencies]
