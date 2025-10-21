@@ -3,8 +3,6 @@ import time
 from pathlib import Path
 
 import pandas as pd
-from dotenv import load_dotenv
-from google.cloud import bigquery
 
 from relbench.base import Database, Dataset, Table
 
@@ -235,11 +233,18 @@ class MimicDataset(Dataset):
         location: str = "US",
         dataset_name: str = "physionet-data",
     ):
+        # Lazy import to avoid requiring google-cloud-bigquery for other datasets
+        from google.cloud import bigquery
 
         super().__init__(cache_dir=cache_dir)
 
-        # Load environment variables from .env file
-        load_dotenv()
+        # Load environment variables from .env file (lazy import for optional dependency)
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+        except ImportError:
+            # dotenv is optional - if not available, env vars can still be set manually
+            pass
 
         # Use environment variable if project_id not provided
         if project_id is None:
@@ -321,6 +326,8 @@ class MimicDataset(Dataset):
         self.make_db()
 
     def make_db(self) -> Database:
+        from google.cloud import bigquery
+        
         start_time = time.time()
         tables_df = {}
         # while MIMIC IV dataset on BigQuery does not have primary and foreign keys set up properly (at all)
@@ -607,6 +614,8 @@ class MimicDataset(Dataset):
         return column_names
 
     def query(self, query_string, query_params: list = []):
+        from google.cloud import bigquery
+        
         job_config = bigquery.QueryJobConfig(query_parameters=query_params)
         df = self.client.query_and_wait(
             query_string, job_config=job_config

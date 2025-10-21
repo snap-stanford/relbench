@@ -13,7 +13,6 @@ from relbench.datasets import (
     event,
     f1,
     hm,
-    mimic,
     ratebeer,
     salt,
     stack,
@@ -103,7 +102,14 @@ def get_dataset(name: str, download=True) -> Dataset:
 
     if download:
         download_dataset(name)
-    cls, args, kwargs = dataset_registry[name]
+    
+    # Handle lazy import for mimic dataset
+    if name == "rel-mimic":
+        from relbench.datasets import mimic
+        cls, args, kwargs = mimic.MimicDataset, (), {"cache_dir": f"{pooch.os_cache('relbench')}/{name}"}
+    else:
+        cls, args, kwargs = dataset_registry[name]
+    
     dataset = cls(*args, **kwargs)
     return dataset
 
@@ -117,5 +123,4 @@ register_dataset("rel-stack", stack.StackDataset)
 register_dataset("rel-trial", trial.TrialDataset)
 register_dataset("rel-arxiv", arxiv.ArxivDataset)
 register_dataset("rel-salt", salt.SALTDataset)
-register_dataset("rel-mimic", mimic.MimicDataset)
 register_dataset("rel-ratebeer", ratebeer.RateBeerDataset)
