@@ -81,7 +81,7 @@ def download_dataset(name: str) -> None:
 
 
 @lru_cache(maxsize=None)
-def get_dataset(name: str, download=False) -> Dataset:
+def get_dataset(name: str, download=True) -> Dataset:
     r"""Return a dataset object by name.
 
     Args:
