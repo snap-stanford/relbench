@@ -352,7 +352,6 @@ register_task(
 )
 
 
-
 register_task("rel-arxiv", "paper-citation", arxiv.PaperCitationTask)
 register_task("rel-arxiv", "author-category", arxiv.AuthorCategoryTask)
 register_task("rel-arxiv", "author-publication", arxiv.AuthorPublicationTask)
