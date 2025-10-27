@@ -128,6 +128,16 @@ register_task(
     ],
 )
 
+register_task(
+    "rel-amazon",
+    "review-verified",
+    AutoCompleteTask,
+    task_type=TaskType.BINARY_CLASSIFICATION,
+    entity_table="review",
+    target_col="verified",
+    remove_columns=[],
+)
+
 register_task("rel-avito", "ad-ctr", avito.AdCTRTask)
 register_task("rel-avito", "user-visits", avito.UserVisitsTask)
 register_task("rel-avito", "user-clicks", avito.UserClicksTask)
@@ -164,6 +174,28 @@ register_task(
     ],
 )
 
+register_task(
+    "rel-event",
+    "event_interest-not_interested",
+    AutoCompleteTask,
+    task_type=TaskType.BINARY_CLASSIFICATION,
+    entity_table="event_interest",
+    target_col="not_interested",
+    remove_columns=[
+        ("event_interest", "interested"),
+    ],
+)
+
+register_task(
+    "rel-event",
+    "users-birthyear",
+    AutoCompleteTask,
+    task_type=TaskType.REGRESSION,
+    entity_table="users",
+    target_col="birthyear",
+    remove_columns=[],
+)
+
 register_task("rel-f1", "driver-position", f1.DriverPositionTask)
 register_task("rel-f1", "driver-dnf", f1.DriverDNFTask)
 register_task("rel-f1", "driver-top3", f1.DriverTop3Task)
@@ -194,10 +226,42 @@ register_task(
     remove_columns=[],
 )
 
+register_task(
+    "rel-f1",
+    "constructor_results-points",
+    AutoCompleteTask,
+    task_type=TaskType.REGRESSION,
+    entity_table="constructor_results",
+    target_col="points",
+    remove_columns=[],
+)
+
+register_task(
+    "rel-f1",
+    "constructor_standings-position",
+    AutoCompleteTask,
+    task_type=TaskType.REGRESSION,
+    entity_table="constructor_standings",
+    target_col="position",
+    remove_columns=[
+        ("constructor_standings", "wins"),
+        ("constructor_standings", "points"),
+    ],
+)
 
 register_task("rel-hm", "user-item-purchase", hm.UserItemPurchaseTask)
 register_task("rel-hm", "user-churn", hm.UserChurnTask)
 register_task("rel-hm", "item-sales", hm.ItemSalesTask)
+
+register_task(
+    "rel-hm",
+    "transactions-price",
+    AutoCompleteTask,
+    task_type=TaskType.REGRESSION,
+    entity_table="transactions",
+    target_col="price",
+    remove_columns=[],
+)
 
 register_task("rel-stack", "user-engagement", stack.UserEngagementTask)
 register_task("rel-stack", "post-votes", stack.PostVotesTask)
@@ -214,11 +278,79 @@ register_task(
     remove_columns=[("badges", "TagBased"), ("badges", "Name")],
 )
 
+register_task(
+    "rel-stack",
+    "postlinks-linktypeid",
+    AutoCompleteTask,
+    task_type=TaskType.BINARY_CLASSIFICATION,
+    entity_table="postLinks",
+    target_col="LinkTypeId",
+    remove_columns=[],
+)
+
+
 register_task("rel-trial", "study-outcome", trial.StudyOutcomeTask)
 register_task("rel-trial", "study-adverse", trial.StudyAdverseTask)
 register_task("rel-trial", "site-success", trial.SiteSuccessTask)
 register_task("rel-trial", "condition-sponsor-run", trial.ConditionSponsorRunTask)
 register_task("rel-trial", "site-sponsor-run", trial.SiteSponsorRunTask)
+
+register_task(
+    "rel-trial",
+    "studies-enrollment",
+    AutoCompleteTask,
+    task_type=TaskType.REGRESSION,
+    entity_table="studies",
+    target_col="enrollment",
+    remove_columns=[],
+)
+
+register_task(
+    "rel-trial",
+    "studies-has_dmc",
+    AutoCompleteTask,
+    task_type=TaskType.BINARY_CLASSIFICATION,
+    entity_table="studies",
+    target_col="has_dmc",
+    remove_columns=[],
+)
+
+register_task(
+    "rel-trial",
+    "eligibilities-adult",
+    AutoCompleteTask,
+    task_type=TaskType.BINARY_CLASSIFICATION,
+    entity_table="eligibilities",
+    target_col="adult",
+    remove_columns=[
+        ("eligibilities", "child"),
+        ("eligibilities", "older_adult"),
+        ("eligibilities", "minimum_age"),
+        ("eligibilities", "maximum_age"),
+        ("eligibilities", "population"),
+        ("eligibilities", "criteria"),
+        ("eligibilities", "gender_description"),
+    ],
+)
+
+register_task(
+    "rel-trial",
+    "eligibilities-child",
+    AutoCompleteTask,
+    task_type=TaskType.BINARY_CLASSIFICATION,
+    entity_table="eligibilities",
+    target_col="child",
+    remove_columns=[
+        ("eligibilities", "adult"),
+        ("eligibilities", "older_adult"),
+        ("eligibilities", "minimum_age"),
+        ("eligibilities", "maximum_age"),
+        ("eligibilities", "population"),
+        ("eligibilities", "criteria"),
+        ("eligibilities", "gender_description"),
+    ],
+)
+
 
 register_task("rel-arxiv", "paper-citation", arxiv.PaperCitationTask)
 register_task("rel-arxiv", "author-category", arxiv.AuthorCategoryTask)
