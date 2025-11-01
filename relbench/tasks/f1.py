@@ -1,8 +1,8 @@
 import duckdb
 import pandas as pd
 
-from relbench.base import Database, EntityTask, Table, TaskType
-from relbench.metrics import accuracy, average_precision, f1, mae, r2, rmse, roc_auc
+from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskType
+from relbench.metrics import accuracy, average_precision, f1, link_prediction_map, link_prediction_precision, link_prediction_recall, mae, r2, rmse, roc_auc
 
 
 class DriverPositionTask(EntityTask):
@@ -157,6 +157,52 @@ class DriverTop3Task(EntityTask):
         return Table(
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+class DriverRaceCompeteTask(RecommendationTask):
+    r"""Predict in which races a driver will compete in the next 1 year."""
+
+    task_type = TaskType.LINK_PREDICTION
+    src_entity_col = "driverId"
+    src_entity_table = "drivers"
+    dst_entity_col = "raceId"
+    dst_entity_table = "races"
+    target_col = "raceId"
+    time_col = "date"
+    timedelta = pd.Timedelta(days=365)
+    metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
+    eval_k = 10
+
+    def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
+        timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        results = db.table_dict["results"].df
+
+        df = duckdb.sql(
+            f"""
+                SELECT
+                    t.timestamp as date,
+                    re.driverId as driverId,
+                    LIST(DISTINCT re.raceId) as raceId
+                FROM
+                    timestamp_df t
+                LEFT JOIN
+                    results re
+                ON
+                    re.date <= t.timestamp + INTERVAL '{self.timedelta}'
+                    and re.date > t.timestamp
+                GROUP BY t.timestamp, re.driverId
+            ;
+            """
+        ).df()
+
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={
+                self.src_entity_col: self.src_entity_table,
+                self.dst_entity_col: self.dst_entity_table,
+            },
             pkey_col=None,
             time_col=self.time_col,
         )
