@@ -2,7 +2,18 @@ import duckdb
 import pandas as pd
 
 from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskType
-from relbench.metrics import accuracy, average_precision, f1, link_prediction_map, link_prediction_precision, link_prediction_recall, mae, r2, rmse, roc_auc
+from relbench.metrics import (
+    accuracy,
+    average_precision,
+    f1,
+    link_prediction_map,
+    link_prediction_precision,
+    link_prediction_recall,
+    mae,
+    r2,
+    rmse,
+    roc_auc,
+)
 
 
 class DriverPositionTask(EntityTask):
@@ -160,6 +171,7 @@ class DriverTop3Task(EntityTask):
             pkey_col=None,
             time_col=self.time_col,
         )
+
 
 class DriverRaceCompeteTask(RecommendationTask):
     r"""Predict in which races a driver will compete in the next 1 year."""
