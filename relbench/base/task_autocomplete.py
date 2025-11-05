@@ -37,10 +37,9 @@ class AutoCompleteTask(EntityTask):
         dataset: The dataset object.
         task_type: The type of the task.
         entity_table: The name of the entity table.
-        entity_col: The name of the entity (id) column. Can be None if the entity table has no id column.
-        time_col: The name of the time column by which the data is split into training and validation set.
         target_col: The name of the target column to be predicted.
         cache_dir: The directory to cache the task tables.
+        remove_columns: List of columns, table pairs to remove from the graph.
     """
 
     timedelta = pd.Timedelta(seconds=1)
@@ -68,6 +67,7 @@ class AutoCompleteTask(EntityTask):
         db = self.dataset.get_db()
         entity_col = db.table_dict[entity_table].pkey_col
         self.entity_col = entity_col if entity_col is not None else "primary_key"
+        self.time_col = db.table_dict[self.entity_table].time_col
 
         self.num_classes = None  # FIXME HACK
         if self.task_type == TaskType.REGRESSION:
@@ -161,7 +161,6 @@ class AutoCompleteTask(EntityTask):
             self.entity_table
         ].removed_cols
 
-        time_col = db.table_dict[self.entity_table].time_col
         entity_col = db.table_dict[self.entity_table].pkey_col
 
         # Calculate minimum and maximum timestamps from timestamp_df
@@ -172,7 +171,7 @@ class AutoCompleteTask(EntityTask):
         df = duckdb.sql(
             f"""
             SELECT
-                entity_table.{time_col},
+                entity_table.{self.time_col},
                 entity_table.{entity_col},
                 entity_table_removed_cols.{self.target_col}
             FROM
@@ -182,8 +181,8 @@ class AutoCompleteTask(EntityTask):
             ON
                 entity_table.{entity_col} = entity_table_removed_cols.{entity_col}
             WHERE
-                entity_table.{time_col} > '{min_timestamp}' AND
-                entity_table.{time_col} <= '{max_timestamp}'
+                entity_table.{self.time_col} > '{min_timestamp}' AND
+                entity_table.{self.time_col} <= '{max_timestamp}'
             """
         ).df()
 
@@ -196,7 +195,7 @@ class AutoCompleteTask(EntityTask):
                 entity_col: self.entity_table,
             },
             pkey_col=None,
-            time_col=time_col,
+            time_col=self.time_col,
         )
 
     def transform_target(self, target_col: pd.Series) -> pd.Series:
