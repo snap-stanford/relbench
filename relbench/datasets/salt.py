@@ -114,8 +114,7 @@ class SALTDataset(Dataset):
             salesdocumentitem = salesdocumentitem.drop(columns=["__index_level_0__"])
             address = address.drop(columns=["__index_level_0__"])
         except DatasetNotFoundError:
-            # Fallback to pooch download if datasets cannot be loaded from the HuggingFace hub
-
+            # Fallback to download from relbench server
             paths = pooch.retrieve(
                 "https://relbench.stanford.edu/download/rel-salt/db.zip",
                 known_hash="fca91ab7d9e37646dcf1cb0007cc4229e9b23ef3c85f3c9e578d0f3fcb167001",
