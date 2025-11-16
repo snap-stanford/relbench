@@ -17,6 +17,7 @@ from relbench.datasets import (
     salt,
     stack,
     trial,
+    dbinfer,
 )
 
 dataset_registry = {}
@@ -66,6 +67,13 @@ def download_dataset(name: str) -> None:
     The downloaded database will be automatically picked up by the dataset object, when
     `dataset.get_db()` is called.
     """
+    if name.startswith("dbinfer-"):
+        print(
+            f"Dataset '{name}' is derived from 4DBInfer and must be generated "
+            "locally; skipping download."
+        )
+        return
+
     if name == "rel-mimic":
         print("Downloading Mimic dataset...")
         from relbench.datasets.mimic import verify_mimic_access
@@ -129,3 +137,11 @@ register_dataset("rel-trial", trial.TrialDataset)
 register_dataset("rel-arxiv", arxiv.ArxivDataset)
 register_dataset("rel-salt", salt.SALTDataset)
 register_dataset("rel-ratebeer", ratebeer.RateBeerDataset)
+register_dataset("dbinfer-avs", dbinfer.DBInferAVSDataset)
+register_dataset("dbinfer-mag", dbinfer.DBInferMAGDataset)
+register_dataset("dbinfer-diginetica", dbinfer.DBInferDigineticaDataset)
+register_dataset("dbinfer-retailrocket", dbinfer.DBInferRetailRocketDataset)
+register_dataset("dbinfer-seznam", dbinfer.DBInferSeznamDataset)
+register_dataset("dbinfer-amazon", dbinfer.DBInferAmazonDataset)
+register_dataset("dbinfer-stackexchange", dbinfer.DBInferStackExchangeDataset)
+register_dataset("dbinfer-outbrain-small", dbinfer.DBInferOutbrainSmallDataset)
