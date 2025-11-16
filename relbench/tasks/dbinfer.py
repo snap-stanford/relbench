@@ -5,7 +5,11 @@ import numpy as np  # Delete this once DBInfer adapter returns multiclass_f1 for
 import pandas as pd
 import pooch
 
-from relbench.base import EntityTask, Table, TaskType  # Delete TaskType once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
+from relbench.base import (  # Delete TaskType once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
+    EntityTask,
+    Table,
+    TaskType,
+)
 
 DEFAULT_DBINFER_ADAPTER_CACHE = os.path.join(
     pooch.os_cache("relbench"), "dbinfer-adapters"
@@ -51,6 +55,7 @@ class DBInferTaskBase(EntityTask):
             adapter_cache_dir = DEFAULT_DBINFER_ADAPTER_CACHE
         self._adapter_cache_dir = adapter_cache_dir
         from dbinfer_relbench_adapter.loader import load_dbinfer_data
+
         dataset_adapter, task_adapter = load_dbinfer_data(
             dataset_name=self.dbinfer_dataset_name,
             task_name=self.dbinfer_task_name,

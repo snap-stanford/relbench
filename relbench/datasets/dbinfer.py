@@ -6,7 +6,6 @@ import pooch
 
 from relbench.base import Database, Dataset, Table
 
-
 DEFAULT_DBINFER_ADAPTER_CACHE = os.path.join(
     pooch.os_cache("relbench"), "dbinfer-adapters"
 )
