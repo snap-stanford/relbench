@@ -4,10 +4,13 @@ from typing import Dict
 import numpy as np  # Delete this once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
 import pandas as pd
 import pooch
-
-from relbench.base import EntityTask, Table, TaskType  # Delete TaskType once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
 from dbinfer_relbench_adapter.loader import load_dbinfer_data
 
+from relbench.base import (  # Delete TaskType once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
+    EntityTask,
+    Table,
+    TaskType,
+)
 
 DEFAULT_DBINFER_ADAPTER_CACHE = os.path.join(
     pooch.os_cache("relbench"), "dbinfer-adapters"
@@ -207,4 +210,3 @@ class StackExchangeUpvoteTask(DBInferTaskBase):
 class OutbrainCTRTask(DBInferTaskBase):
     dbinfer_dataset_name = "outbrain-small"
     dbinfer_task_name = "ctr"
-

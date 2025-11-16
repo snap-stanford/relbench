@@ -10,6 +10,7 @@ from relbench.datasets import (
     amazon,
     arxiv,
     avito,
+    dbinfer,
     event,
     f1,
     hm,
@@ -17,7 +18,6 @@ from relbench.datasets import (
     salt,
     stack,
     trial,
-    dbinfer,
 )
 
 dataset_registry = {}

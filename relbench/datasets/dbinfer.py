@@ -3,10 +3,9 @@ from typing import Dict
 
 import pandas as pd
 import pooch
-
-from relbench.base import Database, Dataset, Table
 from dbinfer_relbench_adapter.loader import load_dbinfer_data
 
+from relbench.base import Database, Dataset, Table
 
 DEFAULT_DBINFER_ADAPTER_CACHE = os.path.join(
     pooch.os_cache("relbench"), "dbinfer-adapters"
@@ -111,4 +110,3 @@ class DBInferStackExchangeDataset(DBInferDatasetBase):
 class DBInferOutbrainSmallDataset(DBInferDatasetBase):
     dbinfer_name = "outbrain-small"
     default_task_name = "ctr"
-
