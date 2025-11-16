@@ -3,9 +3,9 @@ from typing import Dict
 
 import pandas as pd
 import pooch
-from dbinfer_relbench_adapter.loader import load_dbinfer_data
 
 from relbench.base import Database, Dataset, Table
+
 
 DEFAULT_DBINFER_ADAPTER_CACHE = os.path.join(
     pooch.os_cache("relbench"), "dbinfer-adapters"
@@ -39,6 +39,8 @@ class DBInferDatasetBase(Dataset):
         self._adapter_cache_dir = adapter_cache_dir
 
     def _load_dataset_adapter(self):
+        from dbinfer_relbench_adapter.loader import load_dbinfer_data
+
         dataset_adapter, _ = load_dbinfer_data(
             dataset_name=self.dbinfer_name,
             task_name=self.default_task_name,
