@@ -1,15 +1,11 @@
 import os
 from typing import Dict
 
-import numpy as np  # Delete this once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
+#import numpy as np  # Delete this once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
 import pandas as pd
 import pooch
 
-from relbench.base import (  # Delete TaskType once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
-    EntityTask,
-    Table,
-    TaskType,
-)
+from relbench.base import EntityTask, Table #,TaskType  # Delete TaskType once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
 
 DEFAULT_DBINFER_ADAPTER_CACHE = os.path.join(
     pooch.os_cache("relbench"), "dbinfer-adapters"
@@ -112,33 +108,33 @@ class DBInferTaskBase(EntityTask):
     def evaluate(self, pred, table=None):
         metrics = self._task_adapter.evaluate(pred, table)
 
-        # Delete this once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
-        if (
-            self.task_type == TaskType.MULTICLASS_CLASSIFICATION
-            and "multiclass_f1" not in metrics
-        ):
-            from sklearn.metrics import f1_score
+        # # Delete this once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
+        # if (
+        #     self.task_type == TaskType.MULTICLASS_CLASSIFICATION
+        #     and "multiclass_f1" not in metrics
+        # ):
+        #     from sklearn.metrics import f1_score
 
-            if table is None:
-                table = self._task_adapter.get_table("test")
+        #     if table is None:
+        #         table = self._task_adapter.get_table("test")
 
-            true_labels = table.df[self.target_col].values
-            pred_array = np.asarray(pred)
+        #     true_labels = table.df[self.target_col].values
+        #     pred_array = np.asarray(pred)
 
-            if len(pred_array) != len(true_labels):
-                min_len = min(len(pred_array), len(true_labels))
-                pred_array = pred_array[:min_len]
-                true_labels = true_labels[:min_len]
+        #     if len(pred_array) != len(true_labels):
+        #         min_len = min(len(pred_array), len(true_labels))
+        #         pred_array = pred_array[:min_len]
+        #         true_labels = true_labels[:min_len]
 
-            pred_classes = (
-                pred_array.argmax(axis=1) if pred_array.ndim > 1 else pred_array
-            )
+        #     pred_classes = (
+        #         pred_array.argmax(axis=1) if pred_array.ndim > 1 else pred_array
+        #     )
 
-            metrics = dict(metrics)
-            metrics["multiclass_f1"] = f1_score(
-                true_labels, pred_classes, average="macro"
-            )
-        # End of delete this once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
+        #     metrics = dict(metrics)
+        #     metrics["multiclass_f1"] = f1_score(
+        #         true_labels, pred_classes, average="macro"
+        #     )
+        # # End of delete this once DBInfer adapter returns multiclass_f1 for multiclass classification tasks
 
         return metrics
 
