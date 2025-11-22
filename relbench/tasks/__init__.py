@@ -1,9 +1,9 @@
 import json
+import os
 import pkgutil
 from collections import defaultdict
 from functools import lru_cache
 from typing import List
-import os
 
 import pooch
 
@@ -32,7 +32,7 @@ DOWNLOAD_REGISTRY = pooch.create(
     path=pooch.os_cache("relbench"),
     base_url="https://relbench.stanford.edu/download/",
     registry=hashes,
-    env="RELBENCH_CACHE_DIR"
+    env="RELBENCH_CACHE_DIR",
 )
 
 
