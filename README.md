@@ -101,7 +101,7 @@ dataset: Dataset = get_dataset("rel-amazon", download=True)
 <details>
     <summary>Details on downloading and caching behavior.</summary>
 
-RelBench datasets (and tasks) are cached to disk (usually at `~/.cache/relbench`). If not present in cache, `download=True` downloads the data, verifies it against the known hash, and caches it. If present, `download=True` performs the verification and avoids downloading if verification succeeds. This is the recommended way.
+RelBench datasets (and tasks) are cached to disk (usually at `~/.cache/relbench`, the location can be set using the `RELBENCH_CACHE_DIR` environment variable). If not present in cache, `download=True` downloads the data, verifies it against the known hash, and caches it. If present, `download=True` performs the verification and avoids downloading if verification succeeds. This is the recommended way.
 
 `download=False` uses the cached data without verification, if present, or processes and caches the data from scratch / raw sources otherwise.
 </details>
