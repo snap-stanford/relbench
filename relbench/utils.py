@@ -67,3 +67,7 @@ def clean_datetime(df: pd.DataFrame, col: str) -> pd.DataFrame:
         f"{percentage_removed:.2f}%"
     )
     return df
+
+
+def get_relbench_cache_dir() -> str:
+    return os.getenv("RELBENCH_CACHE_DIR") or pooch.os_cache("relbench")
