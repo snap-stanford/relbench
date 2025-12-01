@@ -17,7 +17,7 @@ keywords=[]
 dependencies=[
 	"pandas",
 	"pooch",
-	"pyarrow<=17.0.0",
+	"pyarrow",
 	"numpy",
 	"duckdb",
 	"scikit-learn<=1.6.1",
