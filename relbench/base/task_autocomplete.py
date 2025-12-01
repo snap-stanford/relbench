@@ -85,7 +85,7 @@ class AutoCompleteTask(EntityTask):
             train_targets = removed_cols.loc[
                 removed_cols[self.entity_col].isin(train_ids), self.target_col
             ].values
-            # Encode the categories found in the training set to consequtive
+            # Encode the categories found in the training set to consecutive
             # integers. Unseen categories are filtered out during evaluation.
             self.target_encoder = OrdinalEncoder(
                 unknown_value=UNKNOWN_CLASS_LABEL,
