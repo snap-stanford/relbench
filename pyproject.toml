@@ -20,7 +20,7 @@ dependencies=[
 	"pyarrow<=17.0.0",
 	"numpy",
 	"duckdb",
-	"scikit-learn<=1.5",
+	"scikit-learn<=1.6.1",
 	"typing-extensions",
 	"datasets",
 ]
