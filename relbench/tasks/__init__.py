@@ -1,4 +1,5 @@
 import json
+import os
 import pkgutil
 from collections import defaultdict
 from functools import lru_cache
@@ -20,6 +21,7 @@ from relbench.tasks import (
     stack,
     trial,
 )
+from relbench.utils import get_relbench_cache_dir
 
 task_registry = defaultdict(dict)
 
@@ -30,6 +32,7 @@ DOWNLOAD_REGISTRY = pooch.create(
     path=pooch.os_cache("relbench"),
     base_url="https://relbench.stanford.edu/download/",
     registry=hashes,
+    env="RELBENCH_CACHE_DIR",
 )
 
 
@@ -54,7 +57,7 @@ def register_task(
     can pass `cache_dir` as a keyword argument in `kwargs`.
     """
 
-    cache_dir = f"{pooch.os_cache('relbench')}/{dataset_name}/tasks/{task_name}"
+    cache_dir = f"{get_relbench_cache_dir()}/{dataset_name}/tasks/{task_name}"
     kwargs = {"cache_dir": cache_dir, **kwargs}
     task_registry[dataset_name][task_name] = (cls, args, kwargs)
 
