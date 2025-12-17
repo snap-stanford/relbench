@@ -67,7 +67,7 @@ class AutoCompleteTask(EntityTask):
         self.dataset.entity_table = entity_table
         self.dataset.remove_columns = remove_columns
         # clear the cache as we will be modifying the database
-        self.dataset.get_db.cache_clear()  
+        self.dataset.get_db.cache_clear()
         db = self.dataset.get_db()
         self.entity_col = db.table_dict[entity_table].pkey_col
         assert self.entity_col is not None

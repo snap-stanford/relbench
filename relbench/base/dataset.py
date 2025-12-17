@@ -155,7 +155,6 @@ class Dataset:
                     len(db.table_dict[table_name].df)
                 )
 
-
             if col not in db.table_dict[table_name].df.columns:
                 raise ValueError(f"Column {col} not found in table {table_name}.")
             if col in db.table_dict[table_name].fkey_col_to_pkey_table.keys():
