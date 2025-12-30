@@ -13,6 +13,7 @@ from relbench.datasets import (
     event,
     f1,
     hm,
+    mimic,
     ratebeer,
     salt,
     stack,
@@ -71,6 +72,11 @@ def download_dataset(name: str) -> None:
         from relbench.datasets.mimic import verify_mimic_access
 
         verify_mimic_access()
+    if name == "rel-mimic":
+        print("Downloading Mimic dataset...")
+        from relbench.datasets.mimic import verify_mimic_access
+
+        verify_mimic_access()
 
     DOWNLOAD_REGISTRY.fetch(
         f"{name}/db.zip",
@@ -103,18 +109,7 @@ def get_dataset(name: str, download=True) -> Dataset:
     if download:
         download_dataset(name)
 
-    # Handle lazy import for mimic dataset
-    if name == "rel-mimic":
-        from relbench.datasets import mimic
-
-        cls, args, kwargs = (
-            mimic.MimicDataset,
-            (),
-            {"cache_dir": f"{pooch.os_cache('relbench')}/{name}"},
-        )
-    else:
-        cls, args, kwargs = dataset_registry[name]
-
+    cls, args, kwargs = dataset_registry[name]
     dataset = cls(*args, **kwargs)
     return dataset
 
@@ -125,7 +120,10 @@ register_dataset("rel-event", event.EventDataset)
 register_dataset("rel-f1", f1.F1Dataset)
 register_dataset("rel-hm", hm.HMDataset)
 register_dataset("rel-stack", stack.StackDataset)
+register_dataset("rel-mimic", mimic.MimicDataset)
 register_dataset("rel-trial", trial.TrialDataset)
 register_dataset("rel-arxiv", arxiv.ArxivDataset)
+register_dataset("rel-arxiv", arxiv.ArxivDataset)
 register_dataset("rel-salt", salt.SALTDataset)
+register_dataset("rel-ratebeer", ratebeer.RateBeerDataset)
 register_dataset("rel-ratebeer", ratebeer.RateBeerDataset)

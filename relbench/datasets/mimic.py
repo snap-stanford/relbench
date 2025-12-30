@@ -9,96 +9,20 @@ from relbench.base import Database, Dataset, Table
 
 def verify_mimic_access() -> None:
     """Verify that the user has proper access to MIMIC-IV dataset through PhysioNet
-    credentialing.
-
-    This function uses an honor system to verify that users have completed the required
-    PhysioNet credentialing process before accessing MIMIC-IV data.
-
-    Raises:
-        RuntimeError: If user does not confirm completion of required steps
+    credentialing. Verification is done by attempting a small query to the dataset.
     """
-
-    print("\n" + "=" * 70)
-    print("MIMIC-IV ACCESS VERIFICATION")
-    print("=" * 70)
-    print(
-        "MIMIC-IV is a restricted dataset that requires credentialing through PhysioNet."
-    )
-    print("\nBefore accessing this data, you MUST have completed:")
-    print("  ✓ 1. Registered an account on PhysioNet (https://physionet.org/)")
-    print("  ✓ 2. Completed the required CITI Data or Specimens Only Research training")
-    print(
-        "  ✓ 3. Signed the MIMIC-IV Credentialed Health Data License Agreement (https://physionet.org/content/mimiciv/3.1/)"
-    )
-    print("  ✓ 4. Received approval from PhysioNet administrators")
-    print("\nBy downloading this dataset, you agree to:")
-    print("  • Use the data only for the approved research purposes")
-    print("  • Not attempt to re-identify any individuals")
-    print("  • Not redistribute the data to unauthorized parties")
-    print("  • Follow all terms of the Data Use Agreement")
-    print("=" * 70)
-
-    # Honor system verification with multiple confirmations
+    print("Verifying MIMIC-IV access...")
     try:
-        print("\nCredentialing Verification:")
+        from google.cloud import bigquery
 
-        # Check 1: PhysioNet account and training
-        response1 = (
-            input(
-                "Have you completed CITI training and received PhysioNet approval for MIMIC-IV? (yes/no): "
-            )
-            .lower()
-            .strip()
-        )
-        if response1 not in ["yes", "y"]:
-            print(
-                "\nYou must complete PhysioNet credentialing before accessing MIMIC-IV data."
-            )
-            print(
-                "Visit https://physionet.org/content/mimiciv/ for credentialing instructions."
-            )
-            raise RuntimeError("PhysioNet credentialing required.")
-
-        # Check 2: Data Use Agreement understanding
-        response2 = (
-            input(
-                "Do you agree to use this data only for approved research purposes? (yes/no): "
-            )
-            .lower()
-            .strip()
-        )
-        if response2 not in ["yes", "y"]:
-            print("\nYou must agree to the terms of use.")
-            raise RuntimeError("Data Use Agreement acceptance required.")
-
-        # Check 3: Re-identification prohibition
-        response3 = (
-            input(
-                "Do you agree not to attempt re-identification of individuals? (yes/no): "
-            )
-            .lower()
-            .strip()
-        )
-        if response3 not in ["yes", "y"]:
-            print("\nYou must agree not to attempt re-identification.")
-            raise RuntimeError("Re-identification prohibition agreement required.")
-
-        # Optional: Log verification attempt (for audit trail)
-        import datetime
-
-        timestamp = datetime.datetime.now().isoformat()
-        print(f"\n✓ Access verification completed at {timestamp}")
-        print("You may now proceed with downloading the MIMIC-IV dataset.")
-        print(
-            "\nIMPORTANT: Ensure you comply with all terms of the Data Use Agreement."
-        )
-
-    except KeyboardInterrupt:
-        print("\n\nVerification cancelled by user.")
-        raise RuntimeError("Access verification required to proceed.")
-    except EOFError:
-        print("\n\nUnable to get user input for verification.")
-        raise RuntimeError("Interactive verification required.")
+        table_id = "physionet-data.mimiciv_3_1_hosp.patients"
+        project = os.getenv("PROJECT_ID")
+        client = bigquery.Client(project=project)
+        client.get_table(table_id)
+        client.query("SELECT 1").result()
+        print("MIMIC-IV access verified.")
+    except Exception as e:
+        raise RuntimeError(f"\nACCESS FAILED - BigQuery credential check encountered an error: {e}")
 
 
 def find_time_col(columns):
@@ -249,7 +173,11 @@ class MimicDataset(Dataset):
 
         # Use environment variable if project_id not provided
         if project_id is None:
-            project_id = os.getenv("MIMIC_BQ_PROJECT_ID", "mimic-iv-429508")
+            try:
+                project_id = os.getenv("PROJECT_ID")
+            except:
+                raise ValueError("project_id is required: set MIMIC_BQ_PROJECT_ID environment variable (i.e. export MIMIC_BQ_PROJECT_ID='your-project_id')")
+        
 
         if drop_columns_per_table is None:
             print(f"drop_columns_per_table not provided, dropping default.")
@@ -308,6 +236,15 @@ class MimicDataset(Dataset):
 
         self.tables_limit = tables_limit
 
+        # If a cached RelBench copy exists (e.g., downloaded db.zip), reuse it and
+        # avoid hitting BigQuery.
+        cached_db_dir = Path(cache_dir) / "db" if cache_dir is not None else None
+        if cached_db_dir and cached_db_dir.exists() and any(cached_db_dir.iterdir()):
+            print(f"Found cached MIMIC database at {cached_db_dir}, skipping BigQuery build.")
+            cached_db = Database.load(cached_db_dir)
+            self._set_timestamps_from_icustays(cached_db.table_dict["icustays"].df)
+            return
+
         # Create the output directory if it doesn't exist
         current_dir = os.getcwd()
         self.out_path = Path(current_dir) / out_path / f"limit_{patients_limit}"
@@ -325,6 +262,18 @@ class MimicDataset(Dataset):
 
         print("Making database in __init__....")
         self.make_db()
+
+    def _set_timestamps_from_icustays(self, icustays_df: pd.DataFrame) -> None:
+        timestamps = (
+            pd.to_datetime(icustays_df["intime"], errors="coerce").dropna().sort_values()
+        )
+        if len(timestamps) == 0:
+            raise ValueError("Unable to set timestamps: icustays.intime is empty.")
+
+        val_idx = int(len(timestamps) * 0.7)
+        test_idx = int(len(timestamps) * 0.85)
+        self.val_timestamp = timestamps.iloc[val_idx]
+        self.test_timestamp = timestamps.iloc[test_idx]
 
     def make_db(self) -> Database:
         from google.cloud import bigquery
