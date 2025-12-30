@@ -9,7 +9,9 @@ from relbench.base import Database, Dataset, Table
 
 def verify_mimic_access() -> None:
     """Verify that the user has proper access to MIMIC-IV dataset through PhysioNet
-    credentialing. Verification is done by attempting a small query to the dataset.
+    credentialing.
+
+    Verification is done by attempting a small query to the dataset.
     """
     print("Verifying MIMIC-IV access...")
     try:
@@ -22,7 +24,9 @@ def verify_mimic_access() -> None:
         client.query("SELECT 1").result()
         print("MIMIC-IV access verified.")
     except Exception as e:
-        raise RuntimeError(f"\nACCESS FAILED - BigQuery credential check encountered an error: {e}")
+        raise RuntimeError(
+            f"\nACCESS FAILED - BigQuery credential check encountered an error: {e}"
+        )
 
 
 def find_time_col(columns):
@@ -176,8 +180,9 @@ class MimicDataset(Dataset):
             try:
                 project_id = os.getenv("PROJECT_ID")
             except:
-                raise ValueError("project_id is required: set MIMIC_BQ_PROJECT_ID environment variable (i.e. export MIMIC_BQ_PROJECT_ID='your-project_id')")
-        
+                raise ValueError(
+                    "project_id is required: set MIMIC_BQ_PROJECT_ID environment variable (i.e. export MIMIC_BQ_PROJECT_ID='your-project_id')"
+                )
 
         if drop_columns_per_table is None:
             print(f"drop_columns_per_table not provided, dropping default.")
@@ -240,7 +245,9 @@ class MimicDataset(Dataset):
         # avoid hitting BigQuery.
         cached_db_dir = Path(cache_dir) / "db" if cache_dir is not None else None
         if cached_db_dir and cached_db_dir.exists() and any(cached_db_dir.iterdir()):
-            print(f"Found cached MIMIC database at {cached_db_dir}, skipping BigQuery build.")
+            print(
+                f"Found cached MIMIC database at {cached_db_dir}, skipping BigQuery build."
+            )
             cached_db = Database.load(cached_db_dir)
             self._set_timestamps_from_icustays(cached_db.table_dict["icustays"].df)
             return
@@ -265,7 +272,9 @@ class MimicDataset(Dataset):
 
     def _set_timestamps_from_icustays(self, icustays_df: pd.DataFrame) -> None:
         timestamps = (
-            pd.to_datetime(icustays_df["intime"], errors="coerce").dropna().sort_values()
+            pd.to_datetime(icustays_df["intime"], errors="coerce")
+            .dropna()
+            .sort_values()
         )
         if len(timestamps) == 0:
             raise ValueError("Unable to set timestamps: icustays.intime is empty.")
