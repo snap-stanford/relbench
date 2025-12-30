@@ -72,11 +72,6 @@ def download_dataset(name: str) -> None:
         from relbench.datasets.mimic import verify_mimic_access
 
         verify_mimic_access()
-    if name == "rel-mimic":
-        print("Downloading Mimic dataset...")
-        from relbench.datasets.mimic import verify_mimic_access
-
-        verify_mimic_access()
 
     DOWNLOAD_REGISTRY.fetch(
         f"{name}/db.zip",
@@ -123,7 +118,5 @@ register_dataset("rel-stack", stack.StackDataset)
 register_dataset("rel-mimic", mimic.MimicDataset)
 register_dataset("rel-trial", trial.TrialDataset)
 register_dataset("rel-arxiv", arxiv.ArxivDataset)
-register_dataset("rel-arxiv", arxiv.ArxivDataset)
 register_dataset("rel-salt", salt.SALTDataset)
-register_dataset("rel-ratebeer", ratebeer.RateBeerDataset)
 register_dataset("rel-ratebeer", ratebeer.RateBeerDataset)
