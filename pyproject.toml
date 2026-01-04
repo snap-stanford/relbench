@@ -23,6 +23,7 @@ dependencies=[
 	"scikit-learn<=1.6.1",
 	"typing-extensions",
 	"datasets",
+	"dbinfer-relbench-adapter",
 ]
 
 [project.optional-dependencies]
