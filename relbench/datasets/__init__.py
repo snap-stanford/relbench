@@ -19,6 +19,7 @@ from relbench.datasets import (
     stack,
     trial,
 )
+from relbench.utils import get_relbench_cache_dir
 
 dataset_registry = {}
 
@@ -29,6 +30,7 @@ DOWNLOAD_REGISTRY = pooch.create(
     path=pooch.os_cache("relbench"),
     base_url="https://relbench.stanford.edu/download/",
     registry=hashes,
+    env="RELBENCH_CACHE_DIR",
 )
 
 
@@ -51,7 +53,7 @@ def register_dataset(
     can pass `cache_dir` as a keyword argument in `kwargs`.
     """
 
-    cache_dir = f"{pooch.os_cache('relbench')}/{name}"
+    cache_dir = f"{get_relbench_cache_dir()}/{name}"
     kwargs = {"cache_dir": cache_dir, **kwargs}
     dataset_registry[name] = (cls, args, kwargs)
 
@@ -104,7 +106,18 @@ def get_dataset(name: str, download=True) -> Dataset:
     if download:
         download_dataset(name)
 
-    cls, args, kwargs = dataset_registry[name]
+    # Handle lazy import for mimic dataset
+    if name == "rel-mimic":
+        from relbench.datasets import mimic
+
+        cls, args, kwargs = (
+            mimic.MimicDataset,
+            (),
+            {"cache_dir": f"{get_relbench_cache_dir()}/{name}"},
+        )
+    else:
+        cls, args, kwargs = dataset_registry[name]
+
     dataset = cls(*args, **kwargs)
     return dataset
 
