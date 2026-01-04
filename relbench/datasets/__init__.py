@@ -13,6 +13,7 @@ from relbench.datasets import (
     event,
     f1,
     hm,
+    mimic,
     ratebeer,
     salt,
     stack,
@@ -127,6 +128,7 @@ register_dataset("rel-event", event.EventDataset)
 register_dataset("rel-f1", f1.F1Dataset)
 register_dataset("rel-hm", hm.HMDataset)
 register_dataset("rel-stack", stack.StackDataset)
+register_dataset("rel-mimic", mimic.MimicDataset)
 register_dataset("rel-trial", trial.TrialDataset)
 register_dataset("rel-arxiv", arxiv.ArxivDataset)
 register_dataset("rel-salt", salt.SALTDataset)

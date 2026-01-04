@@ -143,9 +143,17 @@ class Dataset:
         """
 
         # Remove the target column from the source entity table
+        # Ensure the entity table has a primary key if not add one
+        # Remove any other columns marked for removal
         if self.target_col:
             table_name = self.entity_table
             col = self.target_col
+
+            if db.table_dict[table_name].pkey_col is None:
+                db.table_dict[table_name].pkey_col = "primary_key"
+                db.table_dict[table_name].df["primary_key"] = np.arange(
+                    len(db.table_dict[table_name].df)
+                )
 
             if col not in db.table_dict[table_name].df.columns:
                 raise ValueError(f"Column {col} not found in table {table_name}.")
