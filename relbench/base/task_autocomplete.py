@@ -66,10 +66,11 @@ class AutoCompleteTask(EntityTask):
         self.dataset.target_col = target_col
         self.dataset.entity_table = entity_table
         self.dataset.remove_columns = remove_columns
-        self.dataset.get_db.cache_clear()  # clear the cache as we will be modifying the database
+        # clear the cache as we will be modifying the database
+        self.dataset.get_db.cache_clear()
         db = self.dataset.get_db()
-        entity_col = db.table_dict[entity_table].pkey_col
-        self.entity_col = entity_col if entity_col is not None else "primary_key"
+        self.entity_col = db.table_dict[entity_table].pkey_col
+        assert self.entity_col is not None
         self.time_col = db.table_dict[self.entity_table].time_col
 
         if self.task_type == TaskType.REGRESSION:
