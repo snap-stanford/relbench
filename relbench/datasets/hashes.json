@@ -9,5 +9,12 @@
   "rel-salt/db.zip": "fca91ab7d9e37646dcf1cb0007cc4229e9b23ef3c85f3c9e578d0f3fcb167001",
   "rel-mimic/db.zip": "128955b2f0993cf0f53871d26b761804f8486999ee4d4b62f5f1d80212648678",
   "rel-arxiv/db.zip": "b7db1bc1aa17a6d79e0cf102fe3f258920a610f58ad8f8891169676fc120bc5c",
-  "rel-ratebeer/db.zip": "49afdf23a8b464dc0e54731a3782b51e53f3acee93dae0aa6d968cfbd9caa4be"
+  "rel-ratebeer/db.zip": "49afdf23a8b464dc0e54731a3782b51e53f3acee93dae0aa6d968cfbd9caa4be",
+  "dbinfer-amazon/db.zip": "0d9291bf880b5afa232b711a462ed7522a94a0ef5c141699ee8a2687dbbf0d08",
+  "dbinfer-avs/db.zip": "84295768a283c3c9ee0dbb25eb1c47d6d3f2c1956b523e7361f086fcf6664a93",
+  "dbinfer-diginetica/db.zip": "396e2aeb88cc616672b3b0d88a02dc13829c81b855edc3e668f7f2dbad3b96f0",
+  "dbinfer-outbrain-small/db.zip": "d186a71fc534bcac4299c616110805a997fa56fd16c15110d02e1c8eb3975210",
+  "dbinfer-retailrocket/db.zip": "6dbe83488e11c0d159b4592aa4cff57f6fa22b9f4bbf4ae38d0388d536897d75",
+  "dbinfer-seznam/db.zip": "77314bf874dc495e8a4a61f2dc5f12982bbec3c5b6b7af5555e9a2bb587154d9",
+  "dbinfer-stackexchange/db.zip": "4c8b8ac38b56d57bc2ead3c12be1237b69cae76062ed3f176fc02ad327a84d19"
 }
