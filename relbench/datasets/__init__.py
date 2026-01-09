@@ -115,7 +115,10 @@ def get_dataset(name: str, download=True) -> Dataset:
         download_dataset(name)
 
     if name.startswith("ctu-"):
-        import redelex
+        try:
+            import redelex
+        except ImportError:
+            raise ImportError("Redelex is not installed. Please install it with `pip install redelex`.")
 
     # Handle lazy import for mimic dataset
     if name == "rel-mimic":

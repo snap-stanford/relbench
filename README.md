@@ -14,6 +14,27 @@
 <!-- [<img align="center" src="https://relbench.stanford.edu/img/favicon.png" width="20px" />   -->
 [**Website**](https://relbench.stanford.edu) | [**Position Paper**](https://proceedings.mlr.press/v235/fey24a.html) |  [**Benchmark Paper**](https://arxiv.org/abs/2407.20060) | [**Mailing List**](https://groups.google.com/forum/#!forum/relbench/join)
 
+# News
+
+**January 12, 2026: RelBench v2 is now released!**
+- Introducing Autocomplete tasks: new task paradigm to predict existing columns in the database.
+- 4 new databases: [SALT](https://relbench.stanford.edu/datasets/rel-salt), [RateBeer](https://relbench.stanford.edu/datasets/rel-ratebeer), [arXiv](https://relbench.stanford.edu/datasets/rel-arxiv), and [MIMIC-IV](https://relbench.stanford.edu/datasets/rel-mimic).
+- 40 new predictive tasks, including 28 Autocomplete tasks across new and existing databases.
+- CTU integration: 70+ relational datasets from the CTU repository via [ReDeLEx](https://github.com/jakubpeleska/redelex).
+- Direct SQL database connectivity via [ReDeLEx](https://github.com/jakubpeleska/redelex).
+- 4DBInfer integration: 8 relational datasets from the [4DBInfer](https://github.com/awslabs/multi-table-benchmark) repository in RelBench format.
+- Bug fixes and performance improvements:
+    - Optionally include (time-censored) labels as features in the database. ([#327](https://github.com/snap-stanford/relbench/pull/327))
+    - Support NDCG metric for link prediction. ([#276](https://github.com/snap-stanford/relbench/pull/276"))
+    - Optimize SentenceTransformer encoding with Torch for 10-20% faster processing than default NumPy encoding. ([#261]("https://github.com/snap-stanford/relbench/pull/261"))
+    - Enable configuring RelBench cache directory via environment variable. ([#336](https://github.com/snap-stanford/relbench/pull/336"))
+    - ... and more (see commit history for details)
+
+**September 26, 2024: RelBench is accepted to the NeurIPS Datasets and Benchmarks track!**
+
+**July 3rd, 2024: RelBench v1 is now released!**
+
+
 # Overview
 
 <!-- The Relational Deep Learning Benchmark (RelBench) is a collection of realistic, large-scale, and diverse benchmark datasets for machine learning on relational databases. RelBench supports deep learning framework agnostic data loading, task specification, standardized data splitting, and transforming data into graph format. RelBench also provides standardized evaluation metric computations and a leaderboard for tracking progress. -->
@@ -22,19 +43,10 @@
 
 Relational Deep Learning is a new approach for end-to-end representation learning on data spread across multiple tables, such as in a _relational database_ (see our [position paper](https://relbench.stanford.edu/paper.pdf)). Relational databases are the world's most widely used data management system, and are used for industrial and scientific purposes across many domains. RelBench is a benchmark designed to facilitate efficient, robust and reproducible research on end-to-end deep learning over relational databases.
 
-RelBench contains 11 realistic, large-scale, and diverse relational databases spanning domains including medical, social networks, e-commerce and sport. Each database has multiple predictive tasks (70 in total) defined, each carefully scoped to be both challenging and of domain-specific importance. It provides full support for data downloading, task specification and standardized evaluation in an ML-framework-agnostic manner.
+RelBench v1 contains 7 realistic, large-scale, and diverse relational databases spanning domains including medical, social networks, e-commerce and sport. RelBench v2 adds 4 more, now totaling 11 databases. Each database has multiple predictive tasks (70 in total) defined, each carefully scoped to be both challenging and of domain-specific importance. It provides full support for data downloading, task specification and standardized evaluation in an ML-framework-agnostic manner.
 
 Additionally, RelBench provides a first open-source implementation of a Graph Neural Network based approach to relational deep learning. This implementation uses [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) to load the data as a graph and train GNN models, and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame) for modeling tabular data. Finally, there is an open [leaderboard](https://huggingface.co/relbench) for tracking progress.
 
-<!---**News July 3rd 2024: RelBench v1 is now released!**-->
-**News January 12 2026: RelBench v2 is now released!**
-- Introducing Autocomplete: new task paradigm for predicting the missing values of a specified target column.
-- 4 new databases: [SALT](https://relbench.stanford.edu/datasets/rel-salt), [RateBeer](https://relbench.stanford.edu/datasets/rel-ratebeer), [arXiv](https://relbench.stanford.edu/datasets/rel-arxiv), and [MIMIC-IV](https://relbench.stanford.edu/datasets/rel-mimic).
-- 40 new predictive tasks, including 28 Autocomplete tasks across new and existing databases.
-- CTU integration: 70+ relational datasets from the CTU repository via [ReDeLEx](https://github.com/jakubpeleska/redelex).
-- Direct SQL database connectivity via [ReDeLEx](https://github.com/jakubpeleska/redelex).
-- 4DBInfer integration: 8 relational datasets from the [4DBInfer](https://github.com/awslabs/multi-table-benchmark) repository in RelBench format.
-- Bug fixes and performance improvements.
 
 # Key Papers
 
@@ -69,6 +81,17 @@ pip install relbench
 ```
 
 This will allow usage of the core RelBench data and task loading functionality.
+
+To use datasets from the CTU repository, use:
+```bash
+pip install relbench[ctu]
+```
+
+To use datasets from the 4DBInfer repository, use:
+```bash
+pip install relbench[dbinfer]
+```
+
 
 To additionally use `relbench.modeling`, which requires [PyTorch](https://pytorch.org/), [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame), install these dependencies manually or do:
 
