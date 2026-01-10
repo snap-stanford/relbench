@@ -13,7 +13,7 @@
   "rel-stack/tasks/user-post-comment.zip": "ba934afc8833ca14035dc4bf6632dd4c64614ae4fef49ff3327909a2656ca60a",
   "rel-stack/tasks/post-post-related.zip": "922457288d446c931fbb3f524675d135b759bf9747a1f239178241a5bbb5a7ba",
   "rel-stack/tasks/user-engagement.zip": "98141d35e6471e6a4d391461c1ccf2bfb3aa363975e1c11e992223c1b2a82b2d",
-  "rel-f1/tasks/driver-dnf.zip": "58553e0ecebff60e9f8c12202ae2d1109b206b6f8a1ec0589af2540ac2982178",
+  "rel-f1/tasks/driver-dnf.zip": "bd562529a3c0016363d5cae247979fd3712d77ba948574f135dab88c036d3e2d",
   "rel-f1/tasks/driver-position.zip": "775b28a51604169539bbe712a2f0d15158c112bc6abf316cdd0995087a7ae03e",
   "rel-f1/tasks/driver-top3.zip": "1a16abf993cbe58524054cf710bada8538e7c75d6f8f388c0b137ab3575a9a47",
   "rel-f1/tasks/driver-race-compete.zip": "2485543002c31baedb4f8f6739420a508b940a58d25239f5412284bb0ff9c2cc",
@@ -41,5 +41,17 @@
   "rel-ratebeer/tasks/user-rating-count.zip": "1a800f71eff5a7ef54a79bdb88596b01ce96c43cf59be526e5dc2beaf04d6d88",
   "rel-ratebeer/tasks/user-favorite-beer.zip": "610095fff4e33d23e4e23fe3c1a80a295ef76c0648dd67b4e6e7ab0180f7fb2d",
   "rel-ratebeer/tasks/user-liked-place.zip": "c1305b873fbf5092781674cb8d2cb623d203c1f449c9c47e333ac0346ae89c4c",
-  "rel-ratebeer/tasks/user-liked-beer.zip": "68fdee4e6297611daabe99ee3a982c3ba8ccab840a6ad0c7d690aecdba318000"
+  "rel-ratebeer/tasks/user-liked-beer.zip": "68fdee4e6297611daabe99ee3a982c3ba8ccab840a6ad0c7d690aecdba318000",
+  "dbinfer-amazon/tasks/churn.zip": "f3cdefd75439660225bd2f543ac77e14fc11973a863c08186c0c732783365f5c",
+  "dbinfer-amazon/tasks/purchase.zip": "fdf4f10a48837fe751cf38db9e1101a66678ce936656954f2d92e531ee279c77",
+  "dbinfer-amazon/tasks/rating.zip": "981f7c8e701545e084de732da4e3542371763b4278b63cc19f0e41abf3618bfc",
+  "dbinfer-avs/tasks/repeater.zip": "4c1784ebed853fafe2748061181fbbf9e5931821d5a72a6a9a738b697aebd587",
+  "dbinfer-diginetica/tasks/ctr.zip": "a60b0cfe5cec5afb41575ff6be08d49d17755b47ec77f7aeb87e218969e3762e",
+  "dbinfer-diginetica/tasks/purchase.zip": "bc525b1dfa3a1b8976a3c14111281ea71fa61091179cc80882e929c41f1a8a00",
+  "dbinfer-outbrain-small/tasks/ctr.zip": "adca35527ec438c55ef28f4fb2fd7488a93403f725d2113a29fbecfe629a7c4b",
+  "dbinfer-retailrocket/tasks/cvr.zip": "7a8225566ea557d5b0b7009004c22d4cc72e0ad4b92e4d47592de7d5b15a9f33",
+  "dbinfer-seznam/tasks/charge.zip": "6e62750bcd39fe5fdd4d550325953f117517ce153cd5d84a2c5e7ded2caa1b60",
+  "dbinfer-seznam/tasks/prepay.zip": "377564195dd8f8603859771e952fb707a489a5247abf274a5f02ca1bfa3f441d",
+  "dbinfer-stackexchange/tasks/churn.zip": "d649b0a70dc8be9fca797c82e14d19ed4311637711144f4c5b74249081b107ca",
+  "dbinfer-stackexchange/tasks/upvote.zip": "af8f516422e3e19c0d76f13c00c4c0577cdc218b84468006eda369de8f9c7953"
 }
