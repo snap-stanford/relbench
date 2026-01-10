@@ -200,6 +200,7 @@ class BaseTask:
             table.time_col,
             *table.fkey_col_to_pkey_table.keys(),
         ]
+        input_cols = [col for col in input_cols if col is not None]
         return Table(
             df=table.df[input_cols],
             fkey_col_to_pkey_table=table.fkey_col_to_pkey_table,
