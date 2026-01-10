@@ -118,7 +118,9 @@ def get_dataset(name: str, download=True) -> Dataset:
         try:
             import redelex
         except ImportError:
-            raise ImportError("Redelex is not installed. Please install it with `pip install redelex`.")
+            raise ImportError(
+                "Redelex is not installed. Please install it with `pip install redelex`."
+            )
 
     # Handle lazy import for mimic dataset
     if name == "rel-mimic":
