@@ -129,12 +129,12 @@ Get a dataset, e.g., `rel-amazon`:
 dataset: Dataset = get_dataset("rel-amazon", download=True)
 ```
 
-<details>
-    <summary>Details on downloading and caching behavior.</summary>
+<details markdown="1"><summary>Details on downloading and caching behavior.</summary>
 
 RelBench datasets (and tasks) are cached to disk (usually at `~/.cache/relbench`, the location can be set using the `RELBENCH_CACHE_DIR` environment variable). If not present in cache, `download=True` downloads the data, verifies it against the known hash, and caches it. If present, `download=True` performs the verification and avoids downloading if verification succeeds. This is the recommended way.
 
 `download=False` uses the cached data without verification, if present, or processes and caches the data from scratch / raw sources otherwise.
+
 </details>
 
 For faster download, please see [this](https://github.com/snap-stanford/relbench/issues/265).
@@ -146,13 +146,14 @@ To get the database:
 db: Database = dataset.get_db()
 ```
 
-<details>
-    <summary>Preventing temporal leakage</summary>
+<details markdown="1"><summary>Preventing temporal leakage</summary>
 
 By default, rows with timestamp > `dataset.test_timestamp` are excluded to prevent accidental temporal leakage. The full database can be obtained with:
+
 ```python
 full_db: Database = dataset.get_db(upto_test_timestamp=False)
 ```
+
 </details>
 
 Various tasks can be defined on a dataset. For example, to get the `user-churn` task for `rel-amazon`:
@@ -161,19 +162,21 @@ task: EntityTask = get_task("rel-amazon", "user-churn", download=True)
 ```
 
 A task provides train/val/test tables:
+
 ```python
 train_table: Table = task.get_table("train")
 val_table: Table = task.get_table("val")
 test_table: Table = task.get_table("test")
 ```
 
-<details>
-    <summary>Preventing test leakage</summary>
+<details markdown="1"><summary>Preventing test leakage</summary>
+
 By default, the target labels are hidden from the test table to prevent accidental data leakage. The full test table can be obtained with:
 
 ```python
 full_test_table: Table = task.get_table("test", mask_input_cols=False)
 ```
+
 </details>
 
 You can build your model on top of the database and the task tables. After training and validation, you can make prediction from your model on the test table. Suppose your prediction `test_pred` is a NumPy array following the order of `task.test_table`, you can call the following to get the evaluation metrics:
