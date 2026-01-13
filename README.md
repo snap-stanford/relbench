@@ -107,7 +107,6 @@ If you use the CTU datasets in your work, please cite ReDeLEx as below:
 
 <details markdown="1"><summary>Including 4DBInfer datasets</summary>
 
-
 To use datasets from the 4DBInfer repository, use:
 ```bash
 pip install relbench[dbinfer]
@@ -124,6 +123,7 @@ If you use the 4DBInfer datasets in your work, please cite 4DBInfer as below:
 ```
 
 </details>
+<br>
 
 
 To additionally use `relbench.modeling`, which requires [PyTorch](https://pytorch.org/), [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame), install these dependencies manually or do:
