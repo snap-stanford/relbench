@@ -82,15 +82,48 @@ pip install relbench
 
 This will allow usage of the core RelBench data and task loading functionality.
 
+<details markdown="1"><summary>Including CTU datasets</summary>
+
 To use datasets from the CTU repository, use:
 ```bash
 pip install relbench[ctu]
 ```
 
+If you use the CTU datasets in your work, please cite [ReDeLEx](https://github.com/jakubpeleska/redelex) as below:
+
+```
+@misc{peleska2025redelex,
+  title={REDELEX: A Framework for Relational Deep Learning Exploration},
+  author={Jakub Peleška and Gustav Šír},
+  year={2025},
+  eprint={2506.22199},
+  archivePrefix={arXiv},
+  primaryClass={cs.LG},
+  url={https://arxiv.org/abs/2506.22199},
+}
+```
+
+</details>
+
+<details markdown="1"><summary>Including 4DBInfer datasets</summary>
+
 To use datasets from the 4DBInfer repository, use:
 ```bash
 pip install relbench[dbinfer]
 ```
+
+If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://github.com/awslabs/multi-table-benchmark) as below:
+```
+@article{dbinfer,
+  title={4DBInfer: A 4D Benchmarking Toolbox for Graph-Centric Predictive Modeling on Relational DBs},
+  author={Wang, Minjie and Gan, Quan and Wipf, David and Cai, Zhenkun and Li, Ning and Tang, Jianheng and Zhang, Yanlin and Zhang, Zizhao and Mao, Zunyao and Song, Yakun and Wang, Yanbo and Li, Jiahang and Zhang, Han and Yang, Guang and Qin, Xiao and Lei, Chuan and Zhang, Muhan and Zhang, Weinan and Faloutsos, Christos and Zhang, Zheng},
+  journal={arXiv preprint arXiv:2404.18209},
+  year={2024}
+}
+```
+
+</details>
+<br>
 
 
 To additionally use `relbench.modeling`, which requires [PyTorch](https://pytorch.org/), [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame), install these dependencies manually or do:
