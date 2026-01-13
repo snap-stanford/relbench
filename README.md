@@ -82,6 +82,8 @@ pip install relbench
 
 This will allow usage of the core RelBench data and task loading functionality.
 
+<details markdown="1"><summary>Including CTU datasets</summary>
+
 To use datasets from the CTU repository, use:
 ```bash
 pip install relbench[ctu]
@@ -101,6 +103,11 @@ If you use the CTU datasets in your work, please cite ReDeLEx as below:
 }
 ```
 
+</details>
+
+<details markdown="1"><summary>Including CTU datasets</summary>
+
+
 To use datasets from the 4DBInfer repository, use:
 ```bash
 pip install relbench[dbinfer]
@@ -115,6 +122,8 @@ If you use the 4DBInfer datasets in your work, please cite 4DBInfer as below:
   year={2024}
 }
 ```
+
+</details>
 
 
 To additionally use `relbench.modeling`, which requires [PyTorch](https://pytorch.org/), [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame), install these dependencies manually or do:
