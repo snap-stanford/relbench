@@ -107,12 +107,12 @@ If you use the CTU datasets in your work, please cite [ReDeLEx](https://github.c
 
 <details markdown="1"><summary>Including 4DBInfer datasets</summary>
 
-To use datasets from the [4DBInfer](https://github.com/awslabs/multi-table-benchmark) repository, use:
+To use datasets from the 4DBInfer repository, use:
 ```bash
 pip install relbench[dbinfer]
 ```
 
-If you use the 4DBInfer datasets in your work, please cite 4DBInfer as below:
+If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://github.com/awslabs/multi-table-benchmark) as below:
 ```
 @article{dbinfer,
   title={4DBInfer: A 4D Benchmarking Toolbox for Graph-Centric Predictive Modeling on Relational DBs},
