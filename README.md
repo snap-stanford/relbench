@@ -89,7 +89,7 @@ To use datasets from the CTU repository, use:
 pip install relbench[ctu]
 ```
 
-If you use the CTU datasets in your work, please cite ReDeLEx as below:
+If you use the CTU datasets in your work, please cite [ReDeLEx](https://github.com/jakubpeleska/redelex) as below:
 
 ```
 @misc{peleska2025redelex,
@@ -107,7 +107,7 @@ If you use the CTU datasets in your work, please cite ReDeLEx as below:
 
 <details markdown="1"><summary>Including 4DBInfer datasets</summary>
 
-To use datasets from the 4DBInfer repository, use:
+To use datasets from the [4DBInfer](https://github.com/awslabs/multi-table-benchmark) repository, use:
 ```bash
 pip install relbench[dbinfer]
 ```
