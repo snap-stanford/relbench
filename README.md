@@ -105,7 +105,7 @@ If you use the CTU datasets in your work, please cite ReDeLEx as below:
 
 </details>
 
-<details markdown="1"><summary>Including CTU datasets</summary>
+<details markdown="1"><summary>Including 4DBInfer datasets</summary>
 
 
 To use datasets from the 4DBInfer repository, use:
