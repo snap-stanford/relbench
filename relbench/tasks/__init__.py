@@ -175,7 +175,7 @@ register_task("rel-event", "user-repeat", event.UserRepeatTask)
 register_task("rel-event", "user-ignore", event.UserIgnoreTask)
 register_task(
     "rel-event",
-    "event_interest-iterested",
+    "event_interest-interested",
     AutoCompleteTask,
     task_type=TaskType.BINARY_CLASSIFICATION,
     entity_table="event_interest",
