@@ -56,7 +56,7 @@ def auprc(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
 
 def mrr(y: NDArray[np.float64], y_pred: NDArray[np.float64]) -> float:
     rankings = rankdata(-y_pred, method="min", axis=1)
-    ranks = np.take_along_axis(rankings, y.reshape(-1, 1), axis=1).flatten()
+    ranks = np.take_along_axis(rankings, y.astype(int).reshape(-1, 1), axis=1).flatten()
     return np.mean(1.0 / ranks).item()
 
 
