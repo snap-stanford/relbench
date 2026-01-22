@@ -96,20 +96,21 @@ class TGBSrcDstNextTask(RecommendationTask):
                 ev = table.df
                 mask = (ev[self.spec.event_time_col] > start) & (ev[self.spec.event_time_col] <= end)
                 if mask.any():
-                    window_frames.append(ev.loc[mask, [self.spec.src_col, self.spec.dst_col]])
+                    window_frames.append(ev.loc[mask, [self.spec.src_col, self.spec.dst_col, self.spec.event_time_col]])
 
             if not window_frames:
                 continue
 
             win = pd.concat(window_frames, axis=0, ignore_index=True)
-            grouped = (
-                win.groupby(self.spec.src_col, sort=False)[self.spec.dst_col]
-                .agg(_unique_list)
-                .reset_index()
-                .rename(columns={self.spec.src_col: self.src_entity_col, self.spec.dst_col: self.dst_entity_col})
+            # "next" semantics: pick the first destination per source in the window.
+            win = win.sort_values(self.spec.event_time_col, kind="mergesort")
+            first = win.drop_duplicates(subset=[self.spec.src_col], keep="first")
+            out = first[[self.spec.src_col, self.spec.dst_col]].rename(
+                columns={self.spec.src_col: self.src_entity_col}
             )
-            grouped[self.time_col] = start
-            rows.append(grouped[[self.time_col, self.src_entity_col, self.dst_entity_col]])
+            out[self.dst_entity_col] = out[self.spec.dst_col].apply(lambda x: [int(x)])
+            out[self.time_col] = start
+            rows.append(out[[self.time_col, self.src_entity_col, self.dst_entity_col]])
 
         if rows:
             out = pd.concat(rows, axis=0, ignore_index=True)
@@ -182,8 +183,10 @@ class TGBNodeLabelNextTask(RecommendationTask):
             if not mask.any():
                 continue
 
-            le_win = le.loc[mask, ["label_event_id", "src_id"]]
-            joined = le_win.merge(items[["label_event_id", "label_id"]], on="label_event_id", how="inner")
+            le_win = le.loc[mask, ["label_event_id", "src_id", "label_ts"]].sort_values("label_ts", kind="mergesort")
+            # "next" semantics: pick the first label_event per node in the window.
+            le_first = le_win.drop_duplicates(subset=["src_id"], keep="first")[["label_event_id", "src_id"]]
+            joined = le_first.merge(items[["label_event_id", "label_id"]], on="label_event_id", how="inner")
             grouped = (
                 joined.groupby("src_id", sort=False)["label_id"]
                 .agg(_unique_list)

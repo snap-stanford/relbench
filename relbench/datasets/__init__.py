@@ -77,12 +77,6 @@ def download_dataset(name: str) -> None:
             "locally; skipping download."
         )
         return
-    if name.startswith("rel-tgb-"):
-        print(
-            f"Dataset '{name}' is a community TGB export and must be prepared "
-            "locally (place db/*.parquet in the cache dir); skipping download."
-        )
-        return
 
     if name == "rel-mimic":
         print("Downloading Mimic dataset...")

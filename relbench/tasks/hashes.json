@@ -80,5 +80,32 @@
   "dbinfer-seznam/tasks/charge.zip": "6e62750bcd39fe5fdd4d550325953f117517ce153cd5d84a2c5e7ded2caa1b60",
   "dbinfer-seznam/tasks/prepay.zip": "377564195dd8f8603859771e952fb707a489a5247abf274a5f02ca1bfa3f441d",
   "dbinfer-stackexchange/tasks/churn.zip": "d649b0a70dc8be9fca797c82e14d19ed4311637711144f4c5b74249081b107ca",
-  "dbinfer-stackexchange/tasks/upvote.zip": "af8f516422e3e19c0d76f13c00c4c0577cdc218b84468006eda369de8f9c7953"
+  "dbinfer-stackexchange/tasks/upvote.zip": "af8f516422e3e19c0d76f13c00c4c0577cdc218b84468006eda369de8f9c7953",
+
+  "rel-tgb-tgbl-coin/tasks/src-dst-next.zip": "3e9f11e204bc0cc61f9ba07c5f32abc78e1de4f482804652b307aa231171301a",
+  "rel-tgb-tgbl-comment/tasks/src-dst-next.zip": "5cb7f475382937666237471112f225cc3aa542c5842e32b948dcb8f5002aba20",
+  "rel-tgb-tgbl-flight/tasks/src-dst-next.zip": "7e37fd976eb8a468b06fdcd0be6ba987dfca117cb06f7dcc18f6d080ab39ee21",
+  "rel-tgb-tgbl-review/tasks/src-dst-next.zip": "3c87d7c3fa7cc5f60c59882f56cf49a37a342bfc9766bd067d57ee8e637578e5",
+  "rel-tgb-tgbl-review-v2/tasks/src-dst-next.zip": "da7b52b1ce1f6505bf786adc9dc124d40c3d8876490e437465f0fb393e18e0b7",
+  "rel-tgb-tgbl-wiki/tasks/src-dst-next.zip": "29e929befbee3141b1b9c9cb53393e5091a4bfd6cbd8b9cdca47c5084b50122b",
+  "rel-tgb-tgbl-wiki-v2/tasks/src-dst-next.zip": "33fda785b98feefa76863c6fed006823ca762eb6fedeae4f3a37ba606c62f4a1",
+
+  "rel-tgb-thgl-forum/tasks/type0-type0-next.zip": "5c2c02a2692f80c5f9e0b61f640e14bd48b3d5dc191d12516d02462796636a71",
+  "rel-tgb-thgl-forum/tasks/type0-type1-next.zip": "3a95191573489f21236fdd008d12615f678266693f5b6fde3a2aba66fcf2d8eb",
+  "rel-tgb-thgl-github/tasks/type0-type1-next.zip": "de64b8a851f3a129d6142d89e67429dcd44d8e5e43aeada77dc21e560465e859",
+  "rel-tgb-thgl-github/tasks/type1-type1-next.zip": "efa5b06c2db56673e9e6d6ba3440cea52a0a3258235654ea16edb661d761a5e9",
+  "rel-tgb-thgl-github/tasks/type2-type0-next.zip": "0f53dc7f8c0307209759aae7a73f83b5f3a77125d203cb894c7456b12310078b",
+  "rel-tgb-thgl-github/tasks/type2-type1-next.zip": "b5fd82bc7f8f4cf4d423df6eb8d3ecc1ab0e87bb892872dfe6951738163b6da2",
+  "rel-tgb-thgl-github/tasks/type2-type3-next.zip": "48ea7dcd7fda0cc8057e7e507add042129fd98c6ce01b9252299028094df1bb1",
+  "rel-tgb-thgl-github/tasks/type3-type1-next.zip": "90ea060aa79e70f11a812c46cc860b618c5786924fa2a1fabd2cfe5f6d8dea7b",
+  "rel-tgb-thgl-myket/tasks/type0-type1-next.zip": "61f7fdfa03da8dbaee3143c29c16a804afc5299e58a95c3b74622bc81b244348",
+  "rel-tgb-thgl-software/tasks/type0-type1-next.zip": "370b2427c7f9b25a306e91477aaaca8fa6dcad9cb0861882b02015b1debe1e27",
+  "rel-tgb-thgl-software/tasks/type0-type3-next.zip": "c0648c2726a4c0b632b74bc39773d15423b1dd1a97b2a55f4123626f5ae3225b",
+  "rel-tgb-thgl-software/tasks/type1-type2-next.zip": "22e4e8b0578884bd4d5bf9dfb7a07407522a8e4bbd428ff9c47f6a09a2c8e0f1",
+  "rel-tgb-thgl-software/tasks/type3-type2-next.zip": "d74a1b6ba94e523865d784b7a46453ae72607ab73f79c836e64ae1017ad78d0e",
+
+  "rel-tgb-tgbn-genre/tasks/node-label-next.zip": "044fdd588ebca1830f35862aebef4e997cd9e877d51050ddf36e1d9789baff04",
+  "rel-tgb-tgbn-reddit/tasks/node-label-next.zip": "087dfc47cd122b8ba3d696998bd3725a94d9cc78217c8451b9c667d93a72ddfe",
+  "rel-tgb-tgbn-token/tasks/node-label-next.zip": "0e3c3fb43d17b4a46b8ed82135118f8b572952ce0b9efd86d18e6ad580f7587d",
+  "rel-tgb-tgbn-trade/tasks/node-label-next.zip": "105cc706f346848df2a290e9ddbdca1797d0bd3b3fe0fa1e6af2d3a6234f470f"
 }

@@ -83,12 +83,6 @@ def download_task(dataset_name: str, task_name: str) -> None:
             "generated locally; skipping download."
         )
         return
-    if dataset_name.startswith("rel-tgb-"):
-        print(
-            f"Task '{dataset_name}/{task_name}' is a community TGB task and must be "
-            "generated locally; skipping download."
-        )
-        return
 
     DOWNLOAD_REGISTRY.fetch(
         f"{dataset_name}/tasks/{task_name}.zip",
@@ -584,7 +578,7 @@ register_task(
     "src-dst-next",
     tgb.TGBSrcDstNextTask,
     spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes", dst_entity_table="nodes"),
-    timedelta=pd.Timedelta(days=30),
+    timedelta=pd.Timedelta(days=180),
     eval_k=10,
 )
 register_task(
@@ -592,7 +586,7 @@ register_task(
     "src-dst-next",
     tgb.TGBSrcDstNextTask,
     spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes", dst_entity_table="nodes"),
-    timedelta=pd.Timedelta(days=30),
+    timedelta=pd.Timedelta(days=180),
     eval_k=10,
 )
 register_task(
@@ -600,7 +594,7 @@ register_task(
     "src-dst-next",
     tgb.TGBSrcDstNextTask,
     spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes", dst_entity_table="nodes"),
-    timedelta=pd.Timedelta(days=7),
+    timedelta=pd.Timedelta(days=14),
     eval_k=10,
 )
 register_task(
@@ -608,7 +602,7 @@ register_task(
     "src-dst-next",
     tgb.TGBSrcDstNextTask,
     spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes", dst_entity_table="nodes"),
-    timedelta=pd.Timedelta(days=7),
+    timedelta=pd.Timedelta(days=56),
     eval_k=10,
 )
 register_task(
@@ -616,7 +610,7 @@ register_task(
     "src-dst-next",
     tgb.TGBSrcDstNextTask,
     spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes", dst_entity_table="nodes"),
-    timedelta=pd.Timedelta(days=30),
+    timedelta=pd.Timedelta(days=90),
     eval_k=10,
 )
 
@@ -665,25 +659,41 @@ register_task(
 )
 register_task(
     "rel-tgb-thgl-github",
-    "type0-type3-next",
+    "type1-type1-next",
     tgb.TGBSrcDstNextTask,
-    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_0", dst_entity_table="nodes_type_3"),
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_1", dst_entity_table="nodes_type_1"),
     timedelta=pd.Timedelta(days=1),
     eval_k=10,
 )
 register_task(
     "rel-tgb-thgl-github",
-    "type1-type2-next",
+    "type2-type0-next",
     tgb.TGBSrcDstNextTask,
-    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_1", dst_entity_table="nodes_type_2"),
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_2", dst_entity_table="nodes_type_0"),
     timedelta=pd.Timedelta(days=1),
     eval_k=10,
 )
 register_task(
     "rel-tgb-thgl-github",
-    "type3-type2-next",
+    "type2-type1-next",
     tgb.TGBSrcDstNextTask,
-    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_3", dst_entity_table="nodes_type_2"),
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_2", dst_entity_table="nodes_type_1"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-thgl-github",
+    "type2-type3-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_2", dst_entity_table="nodes_type_3"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-thgl-github",
+    "type3-type1-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_3", dst_entity_table="nodes_type_1"),
     timedelta=pd.Timedelta(days=1),
     eval_k=10,
 )
