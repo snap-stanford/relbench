@@ -5,6 +5,7 @@ from collections import defaultdict
 from functools import lru_cache
 from typing import List
 
+import pandas as pd
 import pooch
 
 from relbench.base import AutoCompleteTask, BaseTask, TaskType
@@ -20,6 +21,7 @@ from relbench.tasks import (
     mimic,
     ratebeer,
     stack,
+    tgb,
     trial,
 )
 from relbench.utils import get_relbench_cache_dir
@@ -78,6 +80,12 @@ def download_task(dataset_name: str, task_name: str) -> None:
     if dataset_name.startswith("dbinfer-"):
         print(
             f"Task '{dataset_name}/{task_name}' is derived from 4DBInfer and must be "
+            "generated locally; skipping download."
+        )
+        return
+    if dataset_name.startswith("rel-tgb-"):
+        print(
+            f"Task '{dataset_name}/{task_name}' is a community TGB task and must be "
             "generated locally; skipping download."
         )
         return
@@ -547,3 +555,191 @@ register_task("dbinfer-amazon", "churn", dbinfer.AmazonChurnTask)
 register_task("dbinfer-stackexchange", "churn", dbinfer.StackExchangeChurnTask)
 register_task("dbinfer-stackexchange", "upvote", dbinfer.StackExchangeUpvoteTask)
 register_task("dbinfer-outbrain-small", "ctr", dbinfer.OutbrainCTRTask)
+
+# Community task family: Temporal Graph Benchmark (TGB)
+#
+# Task naming follows:
+# - recommendation tasks: <src_entity>-<dst_entity>-<single_word>
+# We use "next" as the single-word suffix for all TGB link-style tasks.
+
+# tgbl-* (link prediction)
+register_task(
+    "rel-tgb-tgbl-wiki",
+    "src-dst-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="src_nodes", dst_entity_table="dst_nodes"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-tgbl-wiki-v2",
+    "src-dst-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="src_nodes", dst_entity_table="dst_nodes"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-tgbl-review",
+    "src-dst-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes", dst_entity_table="nodes"),
+    timedelta=pd.Timedelta(days=30),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-tgbl-review-v2",
+    "src-dst-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes", dst_entity_table="nodes"),
+    timedelta=pd.Timedelta(days=30),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-tgbl-coin",
+    "src-dst-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes", dst_entity_table="nodes"),
+    timedelta=pd.Timedelta(days=7),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-tgbl-comment",
+    "src-dst-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes", dst_entity_table="nodes"),
+    timedelta=pd.Timedelta(days=7),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-tgbl-flight",
+    "src-dst-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes", dst_entity_table="nodes"),
+    timedelta=pd.Timedelta(days=30),
+    eval_k=10,
+)
+
+# thgl-* (heterogeneous link prediction) – expose type-pair tasks using
+# node-type table names from the exports.
+register_task(
+    "rel-tgb-thgl-software",
+    "type0-type1-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_0", dst_entity_table="nodes_type_1"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-thgl-software",
+    "type0-type3-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_0", dst_entity_table="nodes_type_3"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-thgl-software",
+    "type1-type2-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_1", dst_entity_table="nodes_type_2"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-thgl-software",
+    "type3-type2-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_3", dst_entity_table="nodes_type_2"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+
+register_task(
+    "rel-tgb-thgl-github",
+    "type0-type1-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_0", dst_entity_table="nodes_type_1"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-thgl-github",
+    "type0-type3-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_0", dst_entity_table="nodes_type_3"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-thgl-github",
+    "type1-type2-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_1", dst_entity_table="nodes_type_2"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-thgl-github",
+    "type3-type2-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_3", dst_entity_table="nodes_type_2"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+
+register_task(
+    "rel-tgb-thgl-forum",
+    "type0-type0-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_0", dst_entity_table="nodes_type_0"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-thgl-forum",
+    "type0-type1-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_0", dst_entity_table="nodes_type_1"),
+    timedelta=pd.Timedelta(days=1),
+    eval_k=10,
+)
+
+register_task(
+    "rel-tgb-thgl-myket",
+    "type0-type1-next",
+    tgb.TGBSrcDstNextTask,
+    spec=tgb.TGBAggregatedEventsSpec(src_entity_table="nodes_type_0", dst_entity_table="nodes_type_1"),
+    timedelta=pd.Timedelta(days=7),
+    eval_k=10,
+)
+
+# tgbn-* (node property prediction as node→label recommendation)
+register_task(
+    "rel-tgb-tgbn-trade",
+    "node-label-next",
+    tgb.TGBNodeLabelNextTask,
+    timedelta=pd.Timedelta(days=365),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-tgbn-genre",
+    "node-label-next",
+    tgb.TGBNodeLabelNextTask,
+    timedelta=pd.Timedelta(days=7),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-tgbn-reddit",
+    "node-label-next",
+    tgb.TGBNodeLabelNextTask,
+    timedelta=pd.Timedelta(days=7),
+    eval_k=10,
+)
+register_task(
+    "rel-tgb-tgbn-token",
+    "node-label-next",
+    tgb.TGBNodeLabelNextTask,
+    timedelta=pd.Timedelta(days=7),
+    eval_k=10,
+)

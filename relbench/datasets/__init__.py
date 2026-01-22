@@ -18,6 +18,7 @@ from relbench.datasets import (
     ratebeer,
     salt,
     stack,
+    tgb,
     trial,
 )
 from relbench.utils import get_relbench_cache_dir
@@ -74,6 +75,12 @@ def download_dataset(name: str) -> None:
         print(
             f"Dataset '{name}' is derived from 4DBInfer and must be generated "
             "locally; skipping download."
+        )
+        return
+    if name.startswith("rel-tgb-"):
+        print(
+            f"Dataset '{name}' is a community TGB export and must be prepared "
+            "locally (place db/*.parquet in the cache dir); skipping download."
         )
         return
 
@@ -157,3 +164,24 @@ register_dataset("dbinfer-seznam", dbinfer.DBInferSeznamDataset)
 register_dataset("dbinfer-amazon", dbinfer.DBInferAmazonDataset)
 register_dataset("dbinfer-stackexchange", dbinfer.DBInferStackExchangeDataset)
 register_dataset("dbinfer-outbrain-small", dbinfer.DBInferOutbrainSmallDataset)
+
+# Community dataset family: Temporal Graph Benchmark (TGB)
+# Names follow the convention `rel-<dataset_name>-<qualifier>` where
+# dataset_name = "tgb" and qualifier is the original TGB dataset id.
+register_dataset("rel-tgb-tgbl-wiki", tgb.TGBDataset, tgb_name="tgbl-wiki")
+register_dataset("rel-tgb-tgbl-wiki-v2", tgb.TGBDataset, tgb_name="tgbl-wiki-v2")
+register_dataset("rel-tgb-tgbl-review", tgb.TGBDataset, tgb_name="tgbl-review")
+register_dataset("rel-tgb-tgbl-review-v2", tgb.TGBDataset, tgb_name="tgbl-review-v2")
+register_dataset("rel-tgb-tgbl-coin", tgb.TGBDataset, tgb_name="tgbl-coin")
+register_dataset("rel-tgb-tgbl-comment", tgb.TGBDataset, tgb_name="tgbl-comment")
+register_dataset("rel-tgb-tgbl-flight", tgb.TGBDataset, tgb_name="tgbl-flight")
+
+register_dataset("rel-tgb-thgl-software", tgb.TGBDataset, tgb_name="thgl-software")
+register_dataset("rel-tgb-thgl-forum", tgb.TGBDataset, tgb_name="thgl-forum")
+register_dataset("rel-tgb-thgl-github", tgb.TGBDataset, tgb_name="thgl-github")
+register_dataset("rel-tgb-thgl-myket", tgb.TGBDataset, tgb_name="thgl-myket")
+
+register_dataset("rel-tgb-tgbn-trade", tgb.TGBDataset, tgb_name="tgbn-trade")
+register_dataset("rel-tgb-tgbn-genre", tgb.TGBDataset, tgb_name="tgbn-genre")
+register_dataset("rel-tgb-tgbn-reddit", tgb.TGBDataset, tgb_name="tgbn-reddit")
+register_dataset("rel-tgb-tgbn-token", tgb.TGBDataset, tgb_name="tgbn-token")
