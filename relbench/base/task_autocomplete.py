@@ -1,6 +1,7 @@
 from typing import Optional
 
 import duckdb
+import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OrdinalEncoder
 
@@ -22,6 +23,8 @@ from .dataset import Dataset
 from .table import Table
 from .task_base import TaskType
 from .task_entity import EntityTask
+
+UNKNOWN_CLASS_LABEL = -1
 
 
 class AutoCompleteTask(EntityTask):
@@ -63,17 +66,18 @@ class AutoCompleteTask(EntityTask):
         self.dataset.target_col = target_col
         self.dataset.entity_table = entity_table
         self.dataset.remove_columns = remove_columns
-        self.dataset.get_db.cache_clear()  # clear the cache as we will be modifying the database
+        # clear the cache as we will be modifying the database
+        self.dataset.get_db.cache_clear()
         db = self.dataset.get_db()
-        entity_col = db.table_dict[entity_table].pkey_col
-        self.entity_col = entity_col if entity_col is not None else "primary_key"
+        self.entity_col = db.table_dict[entity_table].pkey_col
+        assert self.entity_col is not None
         self.time_col = db.table_dict[self.entity_table].time_col
 
-        self.num_classes = None  # FIXME HACK
         if self.task_type == TaskType.REGRESSION:
             self.metrics = [r2, mae, rmse]
         elif self.task_type == TaskType.BINARY_CLASSIFICATION:
             self.metrics = [average_precision, accuracy, f1, roc_auc]
+            self.num_classes = 2
         elif self.task_type == TaskType.MULTICLASS_CLASSIFICATION:
             self.metrics = [accuracy, macro_f1, micro_f1, mrr]
             removed_cols = db.table_dict[self.entity_table].removed_cols
@@ -82,14 +86,15 @@ class AutoCompleteTask(EntityTask):
             train_targets = removed_cols.loc[
                 removed_cols[self.entity_col].isin(train_ids), self.target_col
             ].values
+            # Encode the categories found in the training set to consecutive
+            # integers. Unseen categories are filtered out during evaluation.
             self.target_encoder = OrdinalEncoder(
-                unknown_value=-1, handle_unknown="use_encoded_value", dtype="int64"
+                unknown_value=UNKNOWN_CLASS_LABEL,
+                handle_unknown="use_encoded_value",
+                dtype="int64",
             )
             self.target_encoder.fit(train_targets.reshape(-1, 1))
-            num_classes = (
-                self.target_encoder.categories_[0].shape[0] + 1
-            )  # +1 for unknown class
-            self.num_classes = num_classes
+            self.num_classes = self.target_encoder.categories_[0].shape[0]
         else:
             raise NotImplementedError(f"Task type {self.task_type} not implemented")
 
@@ -186,6 +191,9 @@ class AutoCompleteTask(EntityTask):
             """
         ).df()
 
+        if self.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+            df[self.target_col] = self.transform_target(df[self.target_col])
+
         # remove rows where self.target_col is nan
         df = df.dropna(subset=[self.target_col])
 
@@ -202,16 +210,7 @@ class AutoCompleteTask(EntityTask):
         transformed = self.target_encoder.transform(
             target_col.values.reshape(-1, 1)
         ).flatten()
-        # replace -1 with the unknown class index
-        transformed[transformed == -1] = self.num_classes - 1
-        # TODO: unknown classes could be set to NaN and filtered as in make_table
-        return pd.Series(transformed, index=target_col.index, name=target_col.name)
-
-    def get_table(self, split, mask_input_cols=None):
-        table = super().get_table(split, mask_input_cols=mask_input_cols)
-        if self.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-            if self.target_col in table.df:
-                table.df[self.target_col] = self.transform_target(
-                    table.df[self.target_col]
-                )
-        return table
+        transformed_target = pd.Series(transformed, index=target_col.index)
+        # set unknown labels to NaN to filter them out during evaluation
+        transformed_target[transformed == UNKNOWN_CLASS_LABEL] = np.nan
+        return transformed_target

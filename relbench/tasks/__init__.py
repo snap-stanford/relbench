@@ -1,4 +1,5 @@
 import json
+import os
 import pkgutil
 from collections import defaultdict
 from functools import lru_cache
@@ -13,6 +14,7 @@ from relbench.tasks import (
     amazon,
     arxiv,
     avito,
+    dbinfer,
     event,
     f1,
     hm,
@@ -32,7 +34,7 @@ DOWNLOAD_REGISTRY = pooch.create(
     path=pooch.os_cache("relbench"),
     base_url="https://relbench.stanford.edu/download/",
     registry=hashes,
-    env="RELBENCH_CACHE_DIR"
+    env="RELBENCH_CACHE_DIR",
 )
 
 
@@ -73,6 +75,13 @@ def download_task(dataset_name: str, task_name: str) -> None:
     The downloaded task tables will be automatically picked up by the task object, when
     `task.get_table(split)` is called.
     """
+
+    if dataset_name.startswith("dbinfer-"):
+        print(
+            f"Task '{dataset_name}/{task_name}' is derived from 4DBInfer and must be "
+            "generated locally; skipping download."
+        )
+        return
 
     DOWNLOAD_REGISTRY.fetch(
         f"{dataset_name}/tasks/{task_name}.zip",
@@ -167,7 +176,7 @@ register_task("rel-event", "user-repeat", event.UserRepeatTask)
 register_task("rel-event", "user-ignore", event.UserIgnoreTask)
 register_task(
     "rel-event",
-    "event_interest-iterested",
+    "event_interest-interested",
     AutoCompleteTask,
     task_type=TaskType.BINARY_CLASSIFICATION,
     entity_table="event_interest",
@@ -525,3 +534,17 @@ register_task(
         ("beer_ratings", "description_score"),
     ],
 )
+register_task("dbinfer-avs", "repeater", dbinfer.AVSRepeaterTask)
+register_task("dbinfer-mag", "cite", dbinfer.MAGCiteTask)
+register_task("dbinfer-mag", "venue", dbinfer.MAGVenueTask)
+register_task("dbinfer-diginetica", "ctr", dbinfer.DigineticaCTRTask)
+register_task("dbinfer-diginetica", "purchase", dbinfer.DigineticaPurchaseTask)
+register_task("dbinfer-retailrocket", "cvr", dbinfer.RetailRocketCVRTask)
+register_task("dbinfer-seznam", "charge", dbinfer.SeznamChargeTask)
+register_task("dbinfer-seznam", "prepay", dbinfer.SeznamPrepayTask)
+register_task("dbinfer-amazon", "rating", dbinfer.AmazonRatingTask)
+register_task("dbinfer-amazon", "purchase", dbinfer.AmazonPurchaseTask)
+register_task("dbinfer-amazon", "churn", dbinfer.AmazonChurnTask)
+register_task("dbinfer-stackexchange", "churn", dbinfer.StackExchangeChurnTask)
+register_task("dbinfer-stackexchange", "upvote", dbinfer.StackExchangeUpvoteTask)
+register_task("dbinfer-outbrain-small", "ctr", dbinfer.OutbrainCTRTask)

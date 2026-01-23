@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "relbench"
-version = "1.1.0_dev_20251121"
+version = "2.0.2"
 description = "RelBench: Relational Deep Learning Benchmark"
 authors = [{name = "RelBench Team", email = "relbench@cs.stanford.edu"}]
 readme = "README.md"
@@ -20,7 +20,7 @@ dependencies=[
 	"pyarrow",
 	"numpy",
 	"duckdb",
-	"scikit-learn<=1.5",
+	"scikit-learn<=1.6.1",
 	"typing-extensions",
 	"datasets",
 ]
@@ -41,6 +41,12 @@ test=[
 ]
 dev=[
 	"pre-commit",
+]
+dbinfer=[
+	"dbinfer-relbench-adapter",
+]
+ctu=[
+	"redelex",
 ]
 
 [project.urls]

@@ -14,6 +14,27 @@
 <!-- [<img align="center" src="https://relbench.stanford.edu/img/favicon.png" width="20px" />   -->
 [**Website**](https://relbench.stanford.edu) | [**Position Paper**](https://proceedings.mlr.press/v235/fey24a.html) |  [**Benchmark Paper**](https://arxiv.org/abs/2407.20060) | [**Mailing List**](https://groups.google.com/forum/#!forum/relbench/join)
 
+# News
+
+**January 12, 2026: RelBench v2 is now released!**
+- Introducing Autocomplete tasks: new task paradigm to predict existing columns in the database.
+- 4 new databases: [SALT](https://relbench.stanford.edu/datasets/rel-salt), [RateBeer](https://relbench.stanford.edu/datasets/rel-ratebeer), [arXiv](https://relbench.stanford.edu/datasets/rel-arxiv), and [MIMIC-IV](https://relbench.stanford.edu/datasets/rel-mimic).
+- 40 new predictive tasks, including 28 Autocomplete tasks across new and existing databases.
+- CTU integration: 70+ relational datasets from the CTU repository via [ReDeLEx](https://github.com/jakubpeleska/redelex).
+- Direct SQL database connectivity via [ReDeLEx](https://github.com/jakubpeleska/redelex).
+- 4DBInfer integration: 7 relational datasets from the [4DBInfer](https://github.com/awslabs/multi-table-benchmark) repository in RelBench format.
+- Bug fixes and performance improvements:
+    - Optionally include (time-censored) labels as features in the database. ([#327](https://github.com/snap-stanford/relbench/pull/327))
+    - Support NDCG metric for link prediction. ([#276](https://github.com/snap-stanford/relbench/pull/276"))
+    - Optimize SentenceTransformer encoding with Torch for 10-20% faster processing than default NumPy encoding. ([#261](https://github.com/snap-stanford/relbench/pull/261"))
+    - Enable configuring RelBench cache directory via environment variable. ([#336](https://github.com/snap-stanford/relbench/pull/336"))
+    - ... and more (see commit history for details)
+
+**September 26, 2024: RelBench is accepted to the NeurIPS Datasets and Benchmarks track!**
+
+**July 3rd, 2024: RelBench v1 is now released!**
+
+
 # Overview
 
 <!-- The Relational Deep Learning Benchmark (RelBench) is a collection of realistic, large-scale, and diverse benchmark datasets for machine learning on relational databases. RelBench supports deep learning framework agnostic data loading, task specification, standardized data splitting, and transforming data into graph format. RelBench also provides standardized evaluation metric computations and a leaderboard for tracking progress. -->
@@ -22,11 +43,10 @@
 
 Relational Deep Learning is a new approach for end-to-end representation learning on data spread across multiple tables, such as in a _relational database_ (see our [position paper](https://relbench.stanford.edu/paper.pdf)). Relational databases are the world's most widely used data management system, and are used for industrial and scientific purposes across many domains. RelBench is a benchmark designed to facilitate efficient, robust and reproducible research on end-to-end deep learning over relational databases.
 
-RelBench contains 7 realistic, large-scale, and diverse relational databases spanning domains including medical, social networks, e-commerce and sport. Each database has multiple predictive tasks (30 in total) defined, each carefully scoped to be both challenging and of domain-specific importance. It provides full support for data downloading, task specification and standardized evaluation in an ML-framework-agnostic manner.
+RelBench v1 contains 7 realistic, large-scale, and diverse relational databases spanning domains including medical, social networks, e-commerce and sport. RelBench v2 adds 4 more, now totaling 11 databases. Each database has multiple predictive tasks (70 in total) defined, each carefully scoped to be both challenging and of domain-specific importance. It provides full support for data downloading, task specification and standardized evaluation in an ML-framework-agnostic manner.
 
 Additionally, RelBench provides a first open-source implementation of a Graph Neural Network based approach to relational deep learning. This implementation uses [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) to load the data as a graph and train GNN models, and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame) for modeling tabular data. Finally, there is an open [leaderboard](https://huggingface.co/relbench) for tracking progress.
 
-<!---**News July 3rd 2024: RelBench v1 is now released!**-->
 
 # Key Papers
 
@@ -46,7 +66,7 @@ This paper outlines our proposal for how to do end-to-end deep learning on relat
 <p align="center"><img src="https://relbench.stanford.edu/img/relbench-fig.png" alt="logo" width="900px" /></p>
 
 RelBench has the following main components:
-1. 7 databases with a total of 30 tasks; both of these automatically downloadable for ease of use
+1. 11 databases with a total of 70 tasks; both of these automatically downloadable for ease of use
 2. Easy data loading, and graph construction from pkey-fkey links
 3. Your own model, which can use any deep learning stack since RelBench is framework-agnostic. We provide a first model implementation using PyTorch Geometric and PyTorch Frame.
 4. Standardized evaluators - all you need to do is produce a list of predictions for test samples, and RelBench computes metrics to ensure standardized evaluation
@@ -61,6 +81,50 @@ pip install relbench
 ```
 
 This will allow usage of the core RelBench data and task loading functionality.
+
+<details markdown="1"><summary>Including CTU datasets</summary>
+
+To use datasets from the CTU repository, use:
+```bash
+pip install relbench[ctu]
+```
+
+If you use the CTU datasets in your work, please cite [ReDeLEx](https://github.com/jakubpeleska/redelex) as below:
+
+```
+@misc{peleska2025redelex,
+  title={REDELEX: A Framework for Relational Deep Learning Exploration},
+  author={Jakub Peleška and Gustav Šír},
+  year={2025},
+  eprint={2506.22199},
+  archivePrefix={arXiv},
+  primaryClass={cs.LG},
+  url={https://arxiv.org/abs/2506.22199},
+}
+```
+
+</details>
+
+<details markdown="1"><summary>Including 4DBInfer datasets</summary>
+
+To use datasets from the 4DBInfer repository, use:
+```bash
+pip install relbench[dbinfer]
+```
+
+If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://github.com/awslabs/multi-table-benchmark) as below:
+```
+@article{dbinfer,
+  title={4DBInfer: A 4D Benchmarking Toolbox for Graph-Centric Predictive Modeling on Relational DBs},
+  author={Wang, Minjie and Gan, Quan and Wipf, David and Cai, Zhenkun and Li, Ning and Tang, Jianheng and Zhang, Yanlin and Zhang, Zizhao and Mao, Zunyao and Song, Yakun and Wang, Yanbo and Li, Jiahang and Zhang, Han and Yang, Guang and Qin, Xiao and Lei, Chuan and Zhang, Muhan and Zhang, Weinan and Faloutsos, Christos and Zhang, Zheng},
+  journal={arXiv preprint arXiv:2404.18209},
+  year={2024}
+}
+```
+
+</details>
+<br>
+
 
 To additionally use `relbench.modeling`, which requires [PyTorch](https://pytorch.org/), [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame), install these dependencies manually or do:
 
@@ -98,12 +162,12 @@ Get a dataset, e.g., `rel-amazon`:
 dataset: Dataset = get_dataset("rel-amazon", download=True)
 ```
 
-<details>
-    <summary>Details on downloading and caching behavior.</summary>
+<details markdown="1"><summary>Details on downloading and caching behavior.</summary>
 
 RelBench datasets (and tasks) are cached to disk (usually at `~/.cache/relbench`, the location can be set using the `RELBENCH_CACHE_DIR` environment variable). If not present in cache, `download=True` downloads the data, verifies it against the known hash, and caches it. If present, `download=True` performs the verification and avoids downloading if verification succeeds. This is the recommended way.
 
 `download=False` uses the cached data without verification, if present, or processes and caches the data from scratch / raw sources otherwise.
+
 </details>
 
 For faster download, please see [this](https://github.com/snap-stanford/relbench/issues/265).
@@ -115,13 +179,14 @@ To get the database:
 db: Database = dataset.get_db()
 ```
 
-<details>
-    <summary>Preventing temporal leakage</summary>
+<details markdown="1"><summary>Preventing temporal leakage</summary>
 
 By default, rows with timestamp > `dataset.test_timestamp` are excluded to prevent accidental temporal leakage. The full database can be obtained with:
+
 ```python
 full_db: Database = dataset.get_db(upto_test_timestamp=False)
 ```
+
 </details>
 
 Various tasks can be defined on a dataset. For example, to get the `user-churn` task for `rel-amazon`:
@@ -130,19 +195,21 @@ task: EntityTask = get_task("rel-amazon", "user-churn", download=True)
 ```
 
 A task provides train/val/test tables:
+
 ```python
 train_table: Table = task.get_table("train")
 val_table: Table = task.get_table("val")
 test_table: Table = task.get_table("test")
 ```
 
-<details>
-    <summary>Preventing test leakage</summary>
+<details markdown="1"><summary>Preventing test leakage</summary>
+
 By default, the target labels are hidden from the test table to prevent accidental data leakage. The full test table can be obtained with:
 
 ```python
 full_test_table: Table = task.get_table("test", mask_input_cols=False)
 ```
+
 </details>
 
 You can build your model on top of the database and the task tables. After training and validation, you can make prediction from your model on the test table. Suppose your prediction `test_pred` is a NumPy array following the order of `task.test_table`, you can call the following to get the evaluation metrics:
