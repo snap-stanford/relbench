@@ -881,7 +881,7 @@ def main():
     print(f"Val timestamp: {dataset.val_timestamp}")
     print(f"Test timestamp: {dataset.test_timestamp}")
     
-    db = dataset.get_db()
+    db = dataset.get_db(upto_test_timestamp=False)
     print(f"\nDatabase tables: {list(db.table_dict.keys())}")
     for table_name, table in db.table_dict.items():
         print(f"  {table_name}: {len(table.df)} rows")
@@ -941,7 +941,7 @@ def main_arxiv():
     print(f"Val timestamp: {dataset.val_timestamp}")
     print(f"Test timestamp: {dataset.test_timestamp}")
     
-    db = dataset.get_db()
+    db = dataset.get_db(upto_test_timestamp=False)
     print(f"\nDatabase tables: {list(db.table_dict.keys())}")
     for table_name, table in db.table_dict.items():
         print(f"  {table_name}: {len(table.df)} rows")

@@ -58,7 +58,7 @@ def load_dataset_tables(
     """
     print(f"Loading {dataset_name} dataset...")
     dataset = get_dataset(dataset_name, download=True)
-    db = dataset.get_db()
+    db = dataset.get_db(upto_test_timestamp=False)
     
     # Determine which tables to load
     if table_names is None:
