@@ -8,8 +8,8 @@ from torch_frame.data.stats import StatType
 
 
 class UniversalTextEncoder:
-    r"""A universal text encoder that uses a pre-trained SentenceTransformer
-    to encode text columns into a shared semantic space.
+    r"""A universal text encoder that uses a pre-trained SentenceTransformer to encode
+    text columns into a shared semantic space.
 
     Args:
         model_name (str): Name of the SentenceTransformer model to use.
@@ -26,7 +26,9 @@ class UniversalTextEncoder:
     ):
         self.model_name = model_name
         self.batch_size = batch_size
-        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device or torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
         self.model = SentenceTransformer(model_name, device=str(self.device))
 
     def __call__(self, sentences: List[str]) -> Tensor:
@@ -53,15 +55,16 @@ class UniversalTextEncoder:
 
 class TransferHeteroEncoder(torch.nn.Module):
     r"""A heterogeneous encoder designed for transfer learning.
-    
+
     It assumes that text features are already encoded by UniversalTextEncoder
     and provides a shared embedding space for categorical features.
-    
+
     Args:
         node_to_col_names_dict: Mapping from node type to Stype-wise column names.
         col_stats: Statistics for the columns (needed for initialization).
         channels (int): Output embedding dimension.
     """
+
     def __init__(
         self,
         node_to_col_names_dict,
@@ -70,10 +73,10 @@ class TransferHeteroEncoder(torch.nn.Module):
         # We can add more args to match HeteroEncoder if needed
     ):
         super().__init__()
-        
+
         from relbench.modeling.nn import HeteroEncoder
-        
-        # We wrap the standard HeteroEncoder. 
+
+        # We wrap the standard HeteroEncoder.
         # Future extensions can implement shared categorical embeddings here.
         self.encoder = HeteroEncoder(
             channels=channels,
@@ -81,9 +84,9 @@ class TransferHeteroEncoder(torch.nn.Module):
             node_to_col_stats=node_to_col_stats,
             torch_frame_model_kwargs={
                 "channels": channels,
-                "num_layers": 2, 
-            }
+                "num_layers": 2,
+            },
         )
-        
+
     def forward(self, tf_dict):
         return self.encoder(tf_dict)
