@@ -103,6 +103,7 @@ def create_interactive_plot(
     dataset_name: str,
     val_timestamp: pd.Timestamp,
     test_timestamp: pd.Timestamp,
+    nbins: int = 150,
 ) -> go.Figure:
     """Create an interactive histogram of record timestamps for a table.
     
@@ -114,18 +115,49 @@ def create_interactive_plot(
         dataset_name: Name of the dataset for the title
         val_timestamp: Validation split timestamp cutoff
         test_timestamp: Test split timestamp cutoff
+        nbins: Number of bins for the histogram
     """
     # Format dataset name for display (e.g., 'rel-f1' -> 'F1')
     dataset_display = dataset_name.replace("rel-", "").upper()
     
-    fig = px.histogram(
-        df,
-        x=time_col,
-        nbins=150,
-        labels={
-            time_col: "Date",
-            "count": "Number of Records",
-        },
+    # Pre-compute histogram bins to get min/max timestamps per bin
+    timestamps = df[time_col].dropna()
+    bin_edges = pd.cut(timestamps, bins=nbins, retbins=True)[1]
+    df_binned = df[[time_col]].copy()
+    df_binned["bin"] = pd.cut(df[time_col], bins=bin_edges)
+    
+    # Aggregate statistics per bin
+    bin_stats = df_binned.groupby("bin", observed=True)[time_col].agg(
+        count="count",
+        min_timestamp="min",
+        max_timestamp="max",
+    ).reset_index()
+    
+    # Extract bin centers for x-axis positioning
+    bin_stats["bin_center"] = bin_stats["bin"].apply(lambda x: x.mid)
+    # Convert timedelta width to milliseconds (Plotly's datetime unit)
+    bin_stats["bin_width_ms"] = bin_stats["bin"].apply(
+        lambda x: x.length.total_seconds() * 1000
+    )
+    
+    # Create bar chart with custom hover template
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=bin_stats["bin_center"],
+        y=bin_stats["count"],
+        width=bin_stats["bin_width_ms"],
+        customdata=bin_stats[["min_timestamp", "max_timestamp"]].values,
+        hovertemplate=(
+            "<b>Date Range:</b> %{x|%Y-%m-%d}<br>"
+            "<b>Count:</b> %{y:,}<br>"
+            "<b>Min Timestamp:</b> %{customdata[0]|%Y-%m-%d %H:%M:%S}<br>"
+            "<b>Max Timestamp:</b> %{customdata[1]|%Y-%m-%d %H:%M:%S}"
+            "<extra></extra>"
+        ),
+        marker_color="#636EFA",  # Default plotly blue
+    ))
+    
+    fig.update_layout(
         title=f"{dataset_display} {display_name}: Distribution Over Time",
     )
     
