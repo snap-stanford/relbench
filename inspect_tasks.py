@@ -12,12 +12,16 @@ Tasks inspected:
 - rel-arxiv / co-citation: RecommendationTask (link prediction) - predicts which papers are co-cited together
 """
 
+import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
 from relbench.tasks import get_task
 from relbench.datasets import get_dataset
+
+
+AVAILABLE_DATASETS = ["rel-f1", "rel-arxiv"]
 
 
 def print_separator(title: str, char: str = "=") -> None:
@@ -978,14 +982,55 @@ def main_arxiv():
     return dataset, db, results
 
 
+def parse_args():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Interactive inspection of relbench tasks.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python inspect_tasks.py                    # Inspect all datasets (default)
+  python inspect_tasks.py rel-f1             # Inspect only rel-f1 tasks
+  python inspect_tasks.py rel-arxiv          # Inspect only rel-arxiv tasks
+  python inspect_tasks.py rel-f1 rel-arxiv   # Inspect both datasets
+        """,
+    )
+    parser.add_argument(
+        "datasets",
+        nargs="*",
+        choices=AVAILABLE_DATASETS + [[]],
+        help=f"Dataset(s) to inspect. Choices: {AVAILABLE_DATASETS}. Default: all datasets.",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    # Run arxiv inspection by default (change to main() for F1 inspection)
-    dataset, db, results = main_arxiv()
+    args = parse_args()
+    # Use all datasets when none specified (nargs="*" returns [] not default)
+    datasets_to_inspect = args.datasets if args.datasets else AVAILABLE_DATASETS
     
-    # The variables are available for interactive exploration
+    all_results = {}
+    
+    if "rel-f1" in datasets_to_inspect:
+        dataset_f1, db_f1, results_f1 = main()
+        all_results["rel-f1"] = {
+            "dataset": dataset_f1,
+            "db": db_f1,
+            "results": results_f1,
+        }
+    
+    if "rel-arxiv" in datasets_to_inspect:
+        dataset_arxiv, db_arxiv, results_arxiv = main_arxiv()
+        all_results["rel-arxiv"] = {
+            "dataset": dataset_arxiv,
+            "db": db_arxiv,
+            "results": results_arxiv,
+        }
+    
+    # Print available variables for interactive exploration
     print("\n" + "=" * 70)
     print(" Variables available for interactive exploration:")
-    print("   - dataset: The ArxivDataset object")
-    print("   - db: The database with all entity tables")
-    print("   - results['co_citation']: task, train, val, test, checks")
+    print("   - all_results: Dict with results for each inspected dataset")
+    for dataset_name in datasets_to_inspect:
+        print(f"   - all_results['{dataset_name}']: dataset, db, results")
     print("=" * 70)
