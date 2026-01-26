@@ -12,6 +12,9 @@ Tasks inspected:
 """
 
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import numpy as np
 from relbench.tasks import get_task
 from relbench.datasets import get_dataset
 
@@ -240,12 +243,173 @@ def print_check_result(result: dict) -> None:
             print(f"  {key}: {value}")
 
 
+def plot_timestamp_histogram(
+    train_table,
+    val_table,
+    test_table,
+    task_name: str,
+    time_col: str = "date",
+    num_bins: int = 150,
+    save_path: str | None = None,
+) -> None:
+    """Plot a stacked histogram of timestamps showing train/val/test distribution.
+    
+    Args:
+        train_table: The training split table
+        val_table: The validation split table
+        test_table: The test split table
+        task_name: Name of the task for the plot title
+        time_col: Name of the time column in the tables
+        num_bins: Number of bins for the histogram
+        save_path: Optional path to save the plot (if None, displays interactively)
+    """
+    train_timestamps = train_table.df[time_col]
+    val_timestamps = val_table.df[time_col]
+    test_timestamps = test_table.df[time_col]
+    
+    # Combine all timestamps to determine bin edges
+    all_timestamps = pd.concat([train_timestamps, val_timestamps, test_timestamps])
+    min_time = all_timestamps.min()
+    max_time = all_timestamps.max()
+    
+    # Create bin edges based on all data
+    bin_edges = pd.date_range(start=min_time, end=max_time, periods=num_bins + 1)
+    
+    # Compute histogram counts for each split
+    train_counts, _ = np.histogram(train_timestamps, bins=bin_edges)
+    val_counts, _ = np.histogram(val_timestamps, bins=bin_edges)
+    test_counts, _ = np.histogram(test_timestamps, bins=bin_edges)
+    
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(14, 6))
+    
+    # Calculate bin centers for plotting (as matplotlib date numbers)
+    bin_centers = bin_edges[:-1] + (bin_edges[1] - bin_edges[0]) / 2
+    bin_centers_mpl = mdates.date2num(bin_centers.to_pydatetime())
+    
+    # Calculate bar width in matplotlib date units
+    bar_width_mpl = mdates.date2num(bin_edges[1].to_pydatetime()) - mdates.date2num(bin_edges[0].to_pydatetime())
+    bar_width_mpl *= 0.9  # Slightly smaller for visual separation
+    
+    # Plot stacked bars
+    colors = {
+        "train": "#3498db",  # Blue
+        "val": "#f39c12",    # Orange
+        "test": "#e74c3c",   # Red
+    }
+    
+    ax.bar(
+        bin_centers_mpl,
+        train_counts,
+        width=bar_width_mpl,
+        label=f"Train ({len(train_timestamps):,} rows)",
+        color=colors["train"],
+        alpha=0.8,
+    )
+    ax.bar(
+        bin_centers_mpl,
+        val_counts,
+        width=bar_width_mpl,
+        bottom=train_counts,
+        label=f"Val ({len(val_timestamps):,} rows)",
+        color=colors["val"],
+        alpha=0.8,
+    )
+    ax.bar(
+        bin_centers_mpl,
+        test_counts,
+        width=bar_width_mpl,
+        bottom=train_counts + val_counts,
+        label=f"Test ({len(test_timestamps):,} rows)",
+        color=colors["test"],
+        alpha=0.8,
+    )
+    
+    # Plot vertical lines for all unique timestamps in each split
+    unique_train_timestamps = train_timestamps.unique()
+    unique_val_timestamps = val_timestamps.unique()
+    unique_test_timestamps = test_timestamps.unique()
+    
+    print(f"Unique timestamps - Train: {len(unique_train_timestamps)}, Val: {len(unique_val_timestamps)}, Test: {len(unique_test_timestamps)}")
+    
+    line_alpha = 0.4
+    line_width = 0.5
+    
+    # Train timestamps - dashed lines
+    for ts in unique_train_timestamps:
+        ax.axvline(
+            x=mdates.date2num(pd.Timestamp(ts).to_pydatetime()),
+            color=colors["train"],
+            linestyle="--",
+            linewidth=line_width,
+            alpha=line_alpha,
+        )
+    
+    # Validation timestamps - dashed lines
+    for ts in unique_val_timestamps:
+        ax.axvline(
+            x=mdates.date2num(pd.Timestamp(ts).to_pydatetime()),
+            color=colors["val"],
+            linestyle="--",
+            linewidth=line_width,
+            alpha=line_alpha,
+        )
+    
+    # Test timestamps - dashed lines
+    for ts in unique_test_timestamps:
+        ax.axvline(
+            x=mdates.date2num(pd.Timestamp(ts).to_pydatetime()),
+            color=colors["test"],
+            linestyle="--",
+            linewidth=line_width,
+            alpha=line_alpha,
+        )
+    
+    # Format the x-axis as dates
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    
+    # Rotate x-axis labels for readability
+    plt.xticks(rotation=45, ha="right")
+    
+    # Labels and title
+    ax.set_xlabel("Time", fontsize=12)
+    ax.set_ylabel("Number of Rows", fontsize=12)
+    ax.set_title(f"Timestamp Distribution by Split: {task_name}", fontsize=14, fontweight="bold")
+    
+    # Legend with vertical line indicators
+    from matplotlib.lines import Line2D
+    custom_handles = [
+        plt.Rectangle((0, 0), 1, 1, fc=colors["train"], alpha=0.8, label=f"Train ({len(train_timestamps):,} rows)"),
+        plt.Rectangle((0, 0), 1, 1, fc=colors["val"], alpha=0.8, label=f"Val ({len(val_timestamps):,} rows)"),
+        plt.Rectangle((0, 0), 1, 1, fc=colors["test"], alpha=0.8, label=f"Test ({len(test_timestamps):,} rows)"),
+        Line2D([0], [0], color=colors["train"], linestyle="--", linewidth=1, alpha=0.7, label=f"Train timestamps ({len(unique_train_timestamps)})"),
+        Line2D([0], [0], color=colors["val"], linestyle="--", linewidth=1, alpha=0.7, label=f"Val timestamps ({len(unique_val_timestamps)})"),
+        Line2D([0], [0], color=colors["test"], linestyle="--", linewidth=1, alpha=0.7, label=f"Test timestamps ({len(unique_test_timestamps)})"),
+    ]
+    ax.legend(handles=custom_handles, loc="upper left", fontsize=9)
+    
+    # Grid for readability
+    ax.grid(axis="y", alpha=0.3)
+    
+    # Tight layout to prevent label cutoff
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
+        print(f"\nPlot saved to: {save_path}")
+    else:
+        plt.show()
+    
+    plt.close(fig)
+
+
 def inspect_driver_top3(dataset, db):
     """Inspect the driver-top3 EntityTask."""
     print_separator("DRIVER-TOP3 TASK (EntityTask - Binary Classification)")
     
-    print("\nLoading task...")
-    task = get_task("rel-f1", "driver-top3", download=True)
+    print("\nLoading task... (download=False)")
+    task = get_task("rel-f1", "driver-top3", download=False)
     
     print(f"Task: {task}")
     print(f"Task type: {task.task_type}")
@@ -317,6 +481,17 @@ def inspect_driver_top3(dataset, db):
     print_separator("TASK STATISTICS", "-")
     print_entity_task_statistics(task, train_table, val_table, test_table)
     
+    # Plot timestamp histogram
+    print_separator("TIMESTAMP DISTRIBUTION PLOT", "-")
+    plot_timestamp_histogram(
+        train_table,
+        val_table,
+        test_table,
+        task_name="driver-top3",
+        time_col=task.time_col,
+        save_path="driver_top3_timestamp_histogram.png",
+    )
+    
     return task, train_table, val_table, test_table, all_checks
 
 
@@ -324,8 +499,8 @@ def inspect_driver_race_compete(dataset, db):
     """Inspect the driver-race-compete RecommendationTask."""
     print_separator("DRIVER-RACE-COMPETE TASK (RecommendationTask - Link Prediction)")
     
-    print("\nLoading task...")
-    task = get_task("rel-f1", "driver-race-compete", download=True)
+    print("\nLoading task... (download=False)")
+    task = get_task("rel-f1", "driver-race-compete", download=False)
     
     print(f"Task: {task}")
     print(f"Task type: {task.task_type}")
@@ -398,6 +573,17 @@ def inspect_driver_race_compete(dataset, db):
     print_separator("TASK STATISTICS", "-")
     print_recommendation_task_statistics(task, train_table, val_table, test_table)
     
+    # Plot timestamp histogram
+    print_separator("TIMESTAMP DISTRIBUTION PLOT", "-")
+    plot_timestamp_histogram(
+        train_table,
+        val_table,
+        test_table,
+        task_name="driver-race-compete",
+        time_col=task.time_col,
+        save_path="driver_race_compete_timestamp_histogram.png",
+    )
+    
     return task, train_table, val_table, test_table, all_checks
 
 
@@ -466,7 +652,7 @@ def print_recommendation_task_statistics(task, train_table, val_table, test_tabl
         unique_races = len(set(race for race_list in df["raceId"] for race in race_list))
         print(f"  Total race entries: {total_races}")
         print(f"  Unique races: {unique_races}")
-        print(f"  Avg races per driver-timestamp: {total_races / len(df):.2f}")
+        print(f"  Avg races per driver-timestamp: {round(total_races / len(df), 2) if len(df) > 0 else 0}")
     
     # Driver overlap analysis
     print("\nDriver overlap analysis:")
@@ -503,7 +689,7 @@ def main():
     """Main function to load dataset and inspect both tasks."""
     print_separator("LOADING REL-F1 DATASET")
     
-    print("Loading dataset...")
+    print("Loading dataset... (download=True)")
     dataset = get_dataset("rel-f1", download=True)
     
     print(f"Dataset: {dataset}")
