@@ -13,22 +13,78 @@ Tasks inspected:
 """
 
 import argparse
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import numpy as np
-from relbench.tasks import get_task
-from relbench.datasets import get_dataset
+import logging
+from datetime import datetime
+from pathlib import Path
 
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+from relbench.datasets import get_dataset
+from relbench.tasks import get_task
 
 AVAILABLE_DATASETS = ["rel-f1", "rel-arxiv"]
+
+# Global variable to store log file path
+LOG_FILE_PATH: Path | None = None
+
+
+def setup_logging(output_dir: str | Path = ".") -> Path:
+    """Configure logging to output to both console and file.
+    
+    Args:
+        output_dir: Directory to save the log file.
+        
+    Returns:
+        Path to the log file.
+    """
+    global LOG_FILE_PATH
+    
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_filename = f"inspect_tasks_{timestamp}.log"
+    log_file_path = output_dir / log_filename
+    
+    # Create logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    
+    # Clear any existing handlers
+    logger.handlers.clear()
+    
+    # Create formatters
+    # Console formatter without timestamp (cleaner output)
+    console_formatter = logging.Formatter("%(message)s")
+    # File formatter with timestamp for traceability
+    file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(console_formatter)
+    
+    # File handler
+    file_handler = logging.FileHandler(log_file_path, mode="w", encoding="utf-8")
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(file_formatter)
+    
+    # Add handlers to logger
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+    
+    LOG_FILE_PATH = log_file_path
+    return log_file_path
 
 
 def print_separator(title: str, char: str = "=") -> None:
     """Print a visual separator with a title."""
-    print("\n" + char * 70)
-    print(f" {title}")
-    print(char * 70)
+    logging.info("\n" + char * 70)
+    logging.info(f" {title}")
+    logging.info(char * 70)
 
 
 def display_table_head(table, split_name: str, n_rows: int = 10) -> None:
@@ -42,19 +98,19 @@ def display_table_head(table, split_name: str, n_rows: int = 10) -> None:
     print_separator(f"{split_name.upper()} TABLE", "-")
     
     df = table.df
-    print(f"Shape: {df.shape}")
-    print(f"Columns: {df.columns.tolist()}")
-    print(f"\nForeign key mappings: {table.fkey_col_to_pkey_table}")
-    print(f"Primary key column: {table.pkey_col}")
-    print(f"Time column: {table.time_col}")
+    logging.info(f"Shape: {df.shape}")
+    logging.info(f"Columns: {df.columns.tolist()}")
+    logging.info(f"\nForeign key mappings: {table.fkey_col_to_pkey_table}")
+    logging.info(f"Primary key column: {table.pkey_col}")
+    logging.info(f"Time column: {table.time_col}")
     
-    print(f"\nFirst {n_rows} rows:")
-    print(df.head(n_rows).to_string())
+    logging.info(f"\nFirst {n_rows} rows:")
+    logging.info(df.head(n_rows).to_string())
     
     # Show date range
     if table.time_col and table.time_col in df.columns:
-        print(f"\nDate range: {df[table.time_col].min()} to {df[table.time_col].max()}")
-        print(f"Unique timestamps: {df[table.time_col].nunique()}")
+        logging.info(f"\nDate range: {df[table.time_col].min()} to {df[table.time_col].max()}")
+        logging.info(f"Unique timestamps: {df[table.time_col].nunique()}")
 
 
 def check_driver_id_validity(
@@ -106,6 +162,36 @@ def check_race_id_validity(
         "missing_count": len(missing_races),
         "missing_ids": list(missing_races)[:10] if missing_races else [],
         "passed": len(missing_races) == 0,
+    }
+
+
+def check_circuit_id_validity(
+    task_df: pd.DataFrame,
+    circuits_df: pd.DataFrame,
+    split_name: str,
+) -> dict:
+    """Check that all circuitIds in the task table exist in the circuits table.
+    
+    For RecommendationTask, circuitId is a list column.
+    """
+    valid_circuit_ids = set(circuits_df["circuitId"].unique())
+    
+    # Flatten the list column to get all circuit IDs
+    all_circuit_ids = set()
+    for circuit_list in task_df["circuitId"]:
+        if isinstance(circuit_list, list):
+            all_circuit_ids.update(circuit_list)
+    
+    missing_circuits = all_circuit_ids - valid_circuit_ids
+    
+    return {
+        "split": split_name,
+        "entity": "circuitId",
+        "total_unique": len(all_circuit_ids),
+        "valid_count": len(all_circuit_ids - missing_circuits),
+        "missing_count": len(missing_circuits),
+        "missing_ids": list(missing_circuits)[:10] if missing_circuits else [],
+        "passed": len(missing_circuits) == 0,
     }
 
 
@@ -291,11 +377,11 @@ def print_check_result(result: dict) -> None:
     reset_code = "\033[0m"
     
     check_name = result.get("entity", result.get("check", "unknown"))
-    print(f"\n{color_code}[{status}]{reset_code} {result.get('split', 'N/A').upper()} - {check_name}")
+    logging.info(f"\n{color_code}[{status}]{reset_code} {result.get('split', 'N/A').upper()} - {check_name}")
     
     for key, value in result.items():
         if key not in ("passed", "split", "entity", "check"):
-            print(f"  {key}: {value}")
+            logging.info(f"  {key}: {value}")
 
 
 def plot_timestamp_histogram(
@@ -385,7 +471,7 @@ def plot_timestamp_histogram(
     unique_val_timestamps = val_timestamps.unique()
     unique_test_timestamps = test_timestamps.unique()
     
-    print(f"Unique timestamps - Train: {len(unique_train_timestamps)}, Val: {len(unique_val_timestamps)}, Test: {len(unique_test_timestamps)}")
+    logging.info(f"Unique timestamps - Train: {len(unique_train_timestamps)}, Val: {len(unique_val_timestamps)}, Test: {len(unique_test_timestamps)}")
     
     line_alpha = 0.4
     line_width = 0.5
@@ -452,7 +538,7 @@ def plot_timestamp_histogram(
     
     if save_path:
         plt.savefig(save_path, dpi=150, bbox_inches="tight")
-        print(f"\nPlot saved to: {save_path}")
+        logging.info(f"\nPlot saved to: {save_path}")
     else:
         plt.show()
     
@@ -463,27 +549,27 @@ def inspect_driver_top3(dataset, db):
     """Inspect the driver-top3 EntityTask."""
     print_separator("DRIVER-TOP3 TASK (EntityTask - Binary Classification)")
     
-    print("\nLoading task... (download=False)")
+    logging.info("\nLoading task... (download=False)")
     task = get_task("rel-f1", "driver-top3", download=False)
     
-    print(f"Task: {task}")
-    print(f"Task type: {task.task_type}")
-    print(f"Entity column: {task.entity_col}")
-    print(f"Entity table: {task.entity_table}")
-    print(f"Target column: {task.target_col}")
-    print(f"Time column: {task.time_col}")
-    print(f"Time delta: {task.timedelta}")
-    print(f"Num eval timestamps: {task.num_eval_timestamps}")
-    print(f"Metrics: {[m.__name__ for m in task.metrics]}")
+    logging.info(f"Task: {task}")
+    logging.info(f"Task type: {task.task_type}")
+    logging.info(f"Entity column: {task.entity_col}")
+    logging.info(f"Entity table: {task.entity_table}")
+    logging.info(f"Target column: {task.target_col}")
+    logging.info(f"Time column: {task.time_col}")
+    logging.info(f"Time delta: {task.timedelta}")
+    logging.info(f"Num eval timestamps: {task.num_eval_timestamps}")
+    logging.info(f"Metrics: {[m.__name__ for m in task.metrics]}")
     
     drivers_df = db.table_dict["drivers"].df
     qualifying_df = db.table_dict["qualifying"].df
     
-    print(f"\nDrivers table: {len(drivers_df)} rows")
-    print(f"Qualifying table: {len(qualifying_df)} rows")
+    logging.info(f"\nDrivers table: {len(drivers_df)} rows")
+    logging.info(f"Qualifying table: {len(qualifying_df)} rows")
     
     # Load all splits
-    print("\nLoading train/val/test tables...")
+    logging.info("\nLoading train/val/test tables...")
     train_table = task.get_table("train", mask_input_cols=False)
     val_table = task.get_table("val", mask_input_cols=False)
     test_table = task.get_table("test", mask_input_cols=False)
@@ -554,28 +640,28 @@ def inspect_driver_race_compete(dataset, db):
     """Inspect the driver-race-compete RecommendationTask."""
     print_separator("DRIVER-RACE-COMPETE TASK (RecommendationTask - Link Prediction)")
     
-    print("\nLoading task... (download=False)")
+    logging.info("\nLoading task... (download=False)")
     task = get_task("rel-f1", "driver-race-compete", download=False)
     
-    print(f"Task: {task}")
-    print(f"Task type: {task.task_type}")
-    print(f"Source entity: {task.src_entity_col} -> {task.src_entity_table}")
-    print(f"Destination entity: {task.dst_entity_col} -> {task.dst_entity_table}")
-    print(f"Time column: {task.time_col}")
-    print(f"Time delta: {task.timedelta}")
-    print(f"Eval k: {task.eval_k}")
-    print(f"Metrics: {[m.__name__ for m in task.metrics]}")
+    logging.info(f"Task: {task}")
+    logging.info(f"Task type: {task.task_type}")
+    logging.info(f"Source entity: {task.src_entity_col} -> {task.src_entity_table}")
+    logging.info(f"Destination entity: {task.dst_entity_col} -> {task.dst_entity_table}")
+    logging.info(f"Time column: {task.time_col}")
+    logging.info(f"Time delta: {task.timedelta}")
+    logging.info(f"Eval k: {task.eval_k}")
+    logging.info(f"Metrics: {[m.__name__ for m in task.metrics]}")
     
     drivers_df = db.table_dict["drivers"].df
     races_df = db.table_dict["races"].df
     qualifying_df = db.table_dict["qualifying"].df
     
-    print(f"\nDrivers table: {len(drivers_df)} rows")
-    print(f"Races table: {len(races_df)} rows")
-    print(f"Qualifying table: {len(qualifying_df)} rows")
+    logging.info(f"\nDrivers table: {len(drivers_df)} rows")
+    logging.info(f"Races table: {len(races_df)} rows")
+    logging.info(f"Qualifying table: {len(qualifying_df)} rows")
     
     # Load all splits
-    print("\nLoading train/val/test tables...")
+    logging.info("\nLoading train/val/test tables...")
     train_table = task.get_table("train", mask_input_cols=False)
     val_table = task.get_table("val", mask_input_cols=False)
     test_table = task.get_table("test", mask_input_cols=False)
@@ -642,177 +728,342 @@ def inspect_driver_race_compete(dataset, db):
     return task, train_table, val_table, test_table, all_checks
 
 
+def inspect_driver_circuit_compete(dataset, db):
+    """Inspect the driver-circuit-compete RecommendationTask."""
+    print_separator("DRIVER-CIRCUIT-COMPETE TASK (RecommendationTask - Link Prediction)")
+    
+    logging.info("\nLoading task... (download=False)")
+    task = get_task("rel-f1", "driver-circuit-compete", download=False)
+    
+    logging.info(f"Task: {task}")
+    logging.info(f"Task type: {task.task_type}")
+    logging.info(f"Source entity: {task.src_entity_col} -> {task.src_entity_table}")
+    logging.info(f"Destination entity: {task.dst_entity_col} -> {task.dst_entity_table}")
+    logging.info(f"Time column: {task.time_col}")
+    logging.info(f"Time delta: {task.timedelta}")
+    logging.info(f"Eval k: {task.eval_k}")
+    logging.info(f"Metrics: {[m.__name__ for m in task.metrics]}")
+    
+    drivers_df = db.table_dict["drivers"].df
+    circuits_df = db.table_dict["circuits"].df
+    races_df = db.table_dict["races"].df
+    results_df = db.table_dict["results"].df
+    
+    logging.info(f"\nDrivers table: {len(drivers_df)} rows")
+    logging.info(f"Circuits table: {len(circuits_df)} rows")
+    logging.info(f"Races table: {len(races_df)} rows")
+    logging.info(f"Results table: {len(results_df)} rows")
+    
+    # Load all splits
+    logging.info("\nLoading train/val/test tables...")
+    train_table = task.get_table("train", mask_input_cols=False)
+    val_table = task.get_table("val", mask_input_cols=False)
+    test_table = task.get_table("test", mask_input_cols=False)
+    
+    # Display table heads
+    display_table_head(train_table, "train")
+    display_table_head(val_table, "val")
+    display_table_head(test_table, "test")
+    
+    # Run validation checks
+    print_separator("VALIDATION CHECKS", "-")
+    
+    all_checks = []
+    
+    for split_name, table in [("train", train_table), ("val", val_table), ("test", test_table)]:
+        df = table.df
+        
+        # Check driver ID validity
+        driver_check = check_driver_id_validity(df, drivers_df, split_name)
+        all_checks.append(driver_check)
+        print_check_result(driver_check)
+        
+        # Check circuit ID validity (list column)
+        circuit_check = check_circuit_id_validity(df, circuits_df, split_name)
+        all_checks.append(circuit_check)
+        print_check_result(circuit_check)
+        
+        # Check temporal constraints
+        temporal_check = check_temporal_constraints(
+            df, split_name, dataset.val_timestamp, dataset.test_timestamp
+        )
+        all_checks.append(temporal_check)
+        print_check_result(temporal_check)
+        
+        # Check list column structure
+        list_check = check_list_column_structure(df, split_name, task.dst_entity_col)
+        all_checks.append(list_check)
+        print_check_result(list_check)
+    
+    # Summary
+    print_separator("VALIDATION SUMMARY", "-")
+    print_validation_summary(all_checks)
+    
+    # Statistics
+    print_separator("TASK STATISTICS", "-")
+    print_circuit_compete_task_statistics(task, train_table, val_table, test_table, circuits_df)
+    
+    # Plot timestamp histogram
+    print_separator("TIMESTAMP DISTRIBUTION PLOT", "-")
+    plot_timestamp_histogram(
+        train_table,
+        val_table,
+        test_table,
+        task_name="driver-circuit-compete",
+        time_col=task.time_col,
+        save_path="driver_circuit_compete_timestamp_histogram.png",
+    )
+    
+    return task, train_table, val_table, test_table, all_checks
+
+
 def print_validation_summary(all_checks: list) -> None:
     """Print summary of validation checks."""
     passed_count = sum(1 for check in all_checks if check.get("passed"))
     total_count = len(all_checks)
     
-    print(f"Total checks: {total_count}")
-    print(f"Passed: {passed_count}")
-    print(f"Failed: {total_count - passed_count}")
+    logging.info(f"Total checks: {total_count}")
+    logging.info(f"Passed: {passed_count}")
+    logging.info(f"Failed: {total_count - passed_count}")
     
     if passed_count == total_count:
-        print("\n\033[92mAll validation checks passed!\033[0m")
+        logging.info("\n\033[92mAll validation checks passed!\033[0m")
     else:
-        print("\n\033[91mSome validation checks failed. Review the details above.\033[0m")
-        print("\nFailed checks:")
+        logging.info("\n\033[91mSome validation checks failed. Review the details above.\033[0m")
+        logging.info("\nFailed checks:")
         for check in all_checks:
             if not check.get("passed"):
                 split = check.get("split", "N/A")
                 check_name = check.get("entity", check.get("check", "unknown"))
-                print(f"  - {split.upper()}: {check_name}")
+                logging.info(f"  - {split.upper()}: {check_name}")
 
 
 def print_entity_task_statistics(task, train_table, val_table, test_table) -> None:
     """Print statistics for an EntityTask."""
-    print("\nPer-split statistics:")
+    logging.info("\nPer-split statistics:")
     for split_name, table in [("train", train_table), ("val", val_table), ("test", test_table)]:
         df = table.df
-        print(f"\n{split_name.upper()}:")
-        print(f"  Rows: {len(df)}")
-        print(f"  Unique drivers: {df['driverId'].nunique()}")
-        print(f"  Unique timestamps: {df['date'].nunique()}")
-        print(f"  Positives (top-3): {(df[task.target_col] == 1).sum()}")
-        print(f"  Negatives: {(df[task.target_col] == 0).sum()}")
-        print(f"  Positive rate: {(df[task.target_col] == 1).mean() * 100:.2f}%")
+        logging.info(f"\n{split_name.upper()}:")
+        logging.info(f"  Rows: {len(df)}")
+        logging.info(f"  Unique drivers: {df['driverId'].nunique()}")
+        logging.info(f"  Unique timestamps: {df['date'].nunique()}")
+        logging.info(f"  Positives (top-3): {(df[task.target_col] == 1).sum()}")
+        logging.info(f"  Negatives: {(df[task.target_col] == 0).sum()}")
+        logging.info(f"  Positive rate: {(df[task.target_col] == 1).mean() * 100:.2f}%")
     
     # Driver overlap analysis
-    print("\nDriver overlap analysis:")
+    logging.info("\nDriver overlap analysis:")
     train_drivers = set(train_table.df["driverId"].unique())
     val_drivers = set(val_table.df["driverId"].unique())
     test_drivers = set(test_table.df["driverId"].unique())
     
-    print(f"  Train drivers: {len(train_drivers)}")
-    print(f"  Val drivers: {len(val_drivers)}")
-    print(f"  Test drivers: {len(test_drivers)}")
-    print(f"  Train ∩ Val: {len(train_drivers & val_drivers)}")
-    print(f"  Train ∩ Test: {len(train_drivers & test_drivers)}")
-    print(f"  Val ∩ Test: {len(val_drivers & test_drivers)}")
+    logging.info(f"  Train drivers: {len(train_drivers)}")
+    logging.info(f"  Val drivers: {len(val_drivers)}")
+    logging.info(f"  Test drivers: {len(test_drivers)}")
+    logging.info(f"  Train ∩ Val: {len(train_drivers & val_drivers)}")
+    logging.info(f"  Train ∩ Test: {len(train_drivers & test_drivers)}")
+    logging.info(f"  Val ∩ Test: {len(val_drivers & test_drivers)}")
     
     test_only = test_drivers - train_drivers - val_drivers
-    print(f"  Test-only (cold-start): {len(test_only)}")
+    logging.info(f"  Test-only (cold-start): {len(test_only)}")
 
 
 def print_recommendation_task_statistics(task, train_table, val_table, test_table) -> None:
     """Print statistics for a RecommendationTask."""
-    print("\nPer-split statistics:")
+    logging.info("\nPer-split statistics:")
     for split_name, table in [("train", train_table), ("val", val_table), ("test", test_table)]:
         df = table.df
-        print(f"\n{split_name.upper()}:")
-        print(f"  Rows: {len(df)}")
-        print(f"  Unique drivers: {df['driverId'].nunique()}")
-        print(f"  Unique timestamps: {df['date'].nunique()}")
+        logging.info(f"\n{split_name.upper()}:")
+        logging.info(f"  Rows: {len(df)}")
+        logging.info(f"  Unique drivers: {df['driverId'].nunique()}")
+        logging.info(f"  Unique timestamps: {df['date'].nunique()}")
         
         total_races = sum(len(race_list) for race_list in df["raceId"])
         unique_races = len(set(race for race_list in df["raceId"] for race in race_list))
-        print(f"  Total race entries: {total_races}")
-        print(f"  Unique races: {unique_races}")
-        print(f"  Avg races per driver-timestamp: {round(total_races / len(df), 2) if len(df) > 0 else 0}")
+        logging.info(f"  Total race entries: {total_races}")
+        logging.info(f"  Unique races: {unique_races}")
+        logging.info(f"  Avg races per driver-timestamp: {round(total_races / len(df), 2) if len(df) > 0 else 0}")
     
     # Driver overlap analysis
-    print("\nDriver overlap analysis:")
+    logging.info("\nDriver overlap analysis:")
     train_drivers = set(train_table.df["driverId"].unique())
     val_drivers = set(val_table.df["driverId"].unique())
     test_drivers = set(test_table.df["driverId"].unique())
     
-    print(f"  Train drivers: {len(train_drivers)}")
-    print(f"  Val drivers: {len(val_drivers)}")
-    print(f"  Test drivers: {len(test_drivers)}")
-    print(f"  Train ∩ Val: {len(train_drivers & val_drivers)}")
-    print(f"  Train ∩ Test: {len(train_drivers & test_drivers)}")
-    print(f"  Val ∩ Test: {len(val_drivers & test_drivers)}")
+    logging.info(f"  Train drivers: {len(train_drivers)}")
+    logging.info(f"  Val drivers: {len(val_drivers)}")
+    logging.info(f"  Test drivers: {len(test_drivers)}")
+    logging.info(f"  Train ∩ Val: {len(train_drivers & val_drivers)}")
+    logging.info(f"  Train ∩ Test: {len(train_drivers & test_drivers)}")
+    logging.info(f"  Val ∩ Test: {len(val_drivers & test_drivers)}")
     
     test_only = test_drivers - train_drivers - val_drivers
-    print(f"  Test-only (cold-start): {len(test_only)}")
+    logging.info(f"  Test-only (cold-start): {len(test_only)}")
     
     # Race overlap analysis
-    print("\nRace overlap analysis:")
+    logging.info("\nRace overlap analysis:")
     train_races = set(race for race_list in train_table.df["raceId"] for race in race_list)
     val_races = set(race for race_list in val_table.df["raceId"] for race in race_list)
     test_races = set(race for race_list in test_table.df["raceId"] for race in race_list)
     
-    print(f"  Train races: {len(train_races)}")
-    print(f"  Val races: {len(val_races)}")
-    print(f"  Test races: {len(test_races)}")
-    print(f"  Train ∩ Test: {len(train_races & test_races)}")
+    logging.info(f"  Train races: {len(train_races)}")
+    logging.info(f"  Val races: {len(val_races)}")
+    logging.info(f"  Test races: {len(test_races)}")
+    logging.info(f"  Train ∩ Test: {len(train_races & test_races)}")
     
     test_only_races = test_races - train_races - val_races
-    print(f"  Test-only races (unseen): {len(test_only_races)}")
+    logging.info(f"  Test-only races (unseen): {len(test_only_races)}")
+
+
+def print_circuit_compete_task_statistics(task, train_table, val_table, test_table, circuits_df) -> None:
+    """Print statistics for the driver-circuit-compete RecommendationTask with link balance analysis."""
+    total_circuits_in_db = len(circuits_df)
+    
+    logging.info("\nPer-split statistics:")
+    for split_name, table in [("train", train_table), ("val", val_table), ("test", test_table)]:
+        df = table.df
+        logging.info(f"\n{split_name.upper()}:")
+        logging.info(f"  Rows: {len(df)}")
+        logging.info(f"  Unique drivers: {df['driverId'].nunique()}")
+        logging.info(f"  Unique timestamps: {df['date'].nunique()}")
+        
+        total_circuits = sum(len(circuit_list) for circuit_list in df["circuitId"])
+        unique_circuits = len(set(circuit for circuit_list in df["circuitId"] for circuit in circuit_list))
+        list_lengths = [len(circuit_list) for circuit_list in df["circuitId"]]
+        logging.info(f"  Total circuit entries (positive links): {total_circuits}")
+        logging.info(f"  Unique circuits: {unique_circuits}")
+        logging.info(f"  Avg circuits per driver-timestamp: {round(total_circuits / len(df), 2) if len(df) > 0 else 0}")
+        logging.info(f"  Min/Max circuits per driver-timestamp: {min(list_lengths)}/{max(list_lengths)}")
+    
+    # Driver overlap analysis
+    logging.info("\nDriver overlap analysis:")
+    train_drivers = set(train_table.df["driverId"].unique())
+    val_drivers = set(val_table.df["driverId"].unique())
+    test_drivers = set(test_table.df["driverId"].unique())
+    
+    logging.info(f"  Train drivers: {len(train_drivers)}")
+    logging.info(f"  Val drivers: {len(val_drivers)}")
+    logging.info(f"  Test drivers: {len(test_drivers)}")
+    logging.info(f"  Train ∩ Val: {len(train_drivers & val_drivers)}")
+    logging.info(f"  Train ∩ Test: {len(train_drivers & test_drivers)}")
+    logging.info(f"  Val ∩ Test: {len(val_drivers & test_drivers)}")
+    
+    test_only = test_drivers - train_drivers - val_drivers
+    logging.info(f"  Test-only (cold-start): {len(test_only)}")
+    
+    # Circuit overlap analysis
+    logging.info("\nCircuit overlap analysis:")
+    train_circuits = set(circuit for circuit_list in train_table.df["circuitId"] for circuit in circuit_list)
+    val_circuits = set(circuit for circuit_list in val_table.df["circuitId"] for circuit in circuit_list)
+    test_circuits = set(circuit for circuit_list in test_table.df["circuitId"] for circuit in circuit_list)
+    
+    logging.info(f"  Total circuits in database: {total_circuits_in_db}")
+    logging.info(f"  Train circuits: {len(train_circuits)}")
+    logging.info(f"  Val circuits: {len(val_circuits)}")
+    logging.info(f"  Test circuits: {len(test_circuits)}")
+    logging.info(f"  Train ∩ Val: {len(train_circuits & val_circuits)}")
+    logging.info(f"  Train ∩ Test: {len(train_circuits & test_circuits)}")
+    logging.info(f"  Val ∩ Test: {len(val_circuits & test_circuits)}")
+    
+    test_only_circuits = test_circuits - train_circuits - val_circuits
+    logging.info(f"  Test-only circuits (unseen): {len(test_only_circuits)}")
+    
+    # Link balance analysis
+    logging.info("\nLink balance analysis (positive vs potential links):")
+    for split_name, table in [("train", train_table), ("val", val_table), ("test", test_table)]:
+        df = table.df
+        num_drivers = df["driverId"].nunique()
+        unique_circuits = len(set(circuit for circuit_list in df["circuitId"] for circuit in circuit_list))
+        total_positive_links = sum(len(circuit_list) for circuit_list in df["circuitId"])
+        
+        # Potential links = num_drivers * num_circuits (for each timestamp)
+        # But since we're looking at per-driver basis, it's simpler to look at coverage
+        potential_links_per_driver = total_circuits_in_db
+        avg_positive_per_driver = total_positive_links / num_drivers if num_drivers > 0 else 0
+        coverage_ratio = avg_positive_per_driver / potential_links_per_driver if potential_links_per_driver > 0 else 0
+        
+        logging.info(f"\n  {split_name.upper()}:")
+        logging.info(f"    Total positive links: {total_positive_links}")
+        logging.info(f"    Unique drivers: {num_drivers}")
+        logging.info(f"    Unique circuits in split: {unique_circuits}")
+        logging.info(f"    Avg positive links per driver: {round(avg_positive_per_driver, 2)}")
+        logging.info(f"    Potential circuits per driver: {potential_links_per_driver}")
+        logging.info(f"    Coverage ratio (pos/potential): {round(coverage_ratio * 100, 2)}%")
 
 
 def print_co_citation_task_statistics(task, train_table, val_table, test_table) -> None:
     """Print statistics for the co-citation RecommendationTask."""
-    print("\nPer-split statistics:")
+    logging.info("\nPer-split statistics:")
     for split_name, table in [("train", train_table), ("val", val_table), ("test", test_table)]:
         df = table.df
-        print(f"\n{split_name.upper()}:")
-        print(f"  Rows: {len(df)}")
-        print(f"  Unique source papers: {df['Paper_ID'].nunique()}")
-        print(f"  Unique timestamps: {df['date'].nunique()}")
+        logging.info(f"\n{split_name.upper()}:")
+        logging.info(f"  Rows: {len(df)}")
+        logging.info(f"  Unique source papers: {df['Paper_ID'].nunique()}")
+        logging.info(f"  Unique timestamps: {df['date'].nunique()}")
         
         total_co_cited = sum(len(paper_list) for paper_list in df["co_cited"])
         unique_co_cited = len(set(paper for paper_list in df["co_cited"] for paper in paper_list))
         list_lengths = [len(paper_list) for paper_list in df["co_cited"]]
-        print(f"  Total co-cited entries: {total_co_cited}")
-        print(f"  Unique co-cited papers: {unique_co_cited}")
-        print(f"  Avg co-cited per paper-timestamp: {round(total_co_cited / len(df), 2) if len(df) > 0 else 0}")
-        print(f"  Min/Max co-cited list length: {min(list_lengths)}/{max(list_lengths)}")
+        logging.info(f"  Total co-cited entries: {total_co_cited}")
+        logging.info(f"  Unique co-cited papers: {unique_co_cited}")
+        logging.info(f"  Avg co-cited per paper-timestamp: {round(total_co_cited / len(df), 2) if len(df) > 0 else 0}")
+        logging.info(f"  Min/Max co-cited list length: {min(list_lengths)}/{max(list_lengths)}")
     
     # Paper overlap analysis
-    print("\nSource paper overlap analysis:")
+    logging.info("\nSource paper overlap analysis:")
     train_papers = set(train_table.df["Paper_ID"].unique())
     val_papers = set(val_table.df["Paper_ID"].unique())
     test_papers = set(test_table.df["Paper_ID"].unique())
     
-    print(f"  Train papers: {len(train_papers)}")
-    print(f"  Val papers: {len(val_papers)}")
-    print(f"  Test papers: {len(test_papers)}")
-    print(f"  Train ∩ Val: {len(train_papers & val_papers)}")
-    print(f"  Train ∩ Test: {len(train_papers & test_papers)}")
-    print(f"  Val ∩ Test: {len(val_papers & test_papers)}")
+    logging.info(f"  Train papers: {len(train_papers)}")
+    logging.info(f"  Val papers: {len(val_papers)}")
+    logging.info(f"  Test papers: {len(test_papers)}")
+    logging.info(f"  Train ∩ Val: {len(train_papers & val_papers)}")
+    logging.info(f"  Train ∩ Test: {len(train_papers & test_papers)}")
+    logging.info(f"  Val ∩ Test: {len(val_papers & test_papers)}")
     
     test_only = test_papers - train_papers - val_papers
-    print(f"  Test-only (cold-start): {len(test_only)}")
+    logging.info(f"  Test-only (cold-start): {len(test_only)}")
     
     # Co-cited paper overlap analysis
-    print("\nCo-cited paper overlap analysis:")
+    logging.info("\nCo-cited paper overlap analysis:")
     train_co_cited = set(paper for paper_list in train_table.df["co_cited"] for paper in paper_list)
     val_co_cited = set(paper for paper_list in val_table.df["co_cited"] for paper in paper_list)
     test_co_cited = set(paper for paper_list in test_table.df["co_cited"] for paper in paper_list)
     
-    print(f"  Train co-cited papers: {len(train_co_cited)}")
-    print(f"  Val co-cited papers: {len(val_co_cited)}")
-    print(f"  Test co-cited papers: {len(test_co_cited)}")
-    print(f"  Train ∩ Test: {len(train_co_cited & test_co_cited)}")
+    logging.info(f"  Train co-cited papers: {len(train_co_cited)}")
+    logging.info(f"  Val co-cited papers: {len(val_co_cited)}")
+    logging.info(f"  Test co-cited papers: {len(test_co_cited)}")
+    logging.info(f"  Train ∩ Test: {len(train_co_cited & test_co_cited)}")
     
     test_only_co_cited = test_co_cited - train_co_cited - val_co_cited
-    print(f"  Test-only co-cited (unseen): {len(test_only_co_cited)}")
+    logging.info(f"  Test-only co-cited (unseen): {len(test_only_co_cited)}")
 
 
 def inspect_co_citation(dataset, db):
     """Inspect the co-citation RecommendationTask from rel-arxiv."""
     print_separator("CO-CITATION TASK (RecommendationTask - Link Prediction)")
     
-    print("\nLoading task... (download=False)")
+    logging.info("\nLoading task... (download=False)")
     task = get_task("rel-arxiv", "co-citation", download=False)
     
-    print(f"Task: {task}")
-    print(f"Task type: {task.task_type}")
-    print(f"Source entity: {task.src_entity_col} -> {task.src_entity_table}")
-    print(f"Destination entity: {task.dst_entity_col} -> {task.dst_entity_table}")
-    print(f"Time column: {task.time_col}")
-    print(f"Time delta: {task.timedelta}")
-    print(f"Eval k: {task.eval_k}")
-    print(f"Metrics: {[m.__name__ for m in task.metrics]}")
+    logging.info(f"Task: {task}")
+    logging.info(f"Task type: {task.task_type}")
+    logging.info(f"Source entity: {task.src_entity_col} -> {task.src_entity_table}")
+    logging.info(f"Destination entity: {task.dst_entity_col} -> {task.dst_entity_table}")
+    logging.info(f"Time column: {task.time_col}")
+    logging.info(f"Time delta: {task.timedelta}")
+    logging.info(f"Eval k: {task.eval_k}")
+    logging.info(f"Metrics: {[m.__name__ for m in task.metrics]}")
     
     papers_df = db.table_dict["papers"].df
     citations_df = db.table_dict["citations"].df
     
-    print(f"\nPapers table: {len(papers_df)} rows")
-    print(f"Citations table: {len(citations_df)} rows")
+    logging.info(f"\nPapers table: {len(papers_df)} rows")
+    logging.info(f"Citations table: {len(citations_df)} rows")
     
     # Load all splits
-    print("\nLoading train/val/test tables...")
+    logging.info("\nLoading train/val/test tables...")
     train_table = task.get_table("train", mask_input_cols=False)
     val_table = task.get_table("val", mask_input_cols=False)
     test_table = task.get_table("test", mask_input_cols=False)
@@ -878,23 +1129,23 @@ def main():
     """Main function to load dataset and inspect both tasks."""
     print_separator("LOADING REL-F1 DATASET")
     
-    print("Loading dataset... (download=True)")
+    logging.info("Loading dataset... (download=True)")
     dataset = get_dataset("rel-f1", download=True)
     
-    print(f"Dataset: {dataset}")
-    print(f"Val timestamp: {dataset.val_timestamp}")
-    print(f"Test timestamp: {dataset.test_timestamp}")
+    logging.info(f"Dataset: {dataset}")
+    logging.info(f"Val timestamp: {dataset.val_timestamp}")
+    logging.info(f"Test timestamp: {dataset.test_timestamp}")
     
     db = dataset.get_db(upto_test_timestamp=False)
-    print(f"\nDatabase tables: {list(db.table_dict.keys())}")
+    logging.info(f"\nDatabase tables: {list(db.table_dict.keys())}")
     for table_name, table in db.table_dict.items():
-        print(f"  {table_name}: {len(table.df)} rows")
+        logging.info(f"  {table_name}: {len(table.df)} rows")
     
     # Store results for interactive exploration
     results = {}
     
     # Inspect driver-top3 task
-    print("\n")
+    logging.info("\n")
     task1, train1, val1, test1, checks1 = inspect_driver_top3(dataset, db)
     results["driver_top3"] = {
         "task": task1,
@@ -905,7 +1156,7 @@ def main():
     }
     
     # Inspect driver-race-compete task
-    print("\n")
+    logging.info("\n")
     task2, train2, val2, test2, checks2 = inspect_driver_race_compete(dataset, db)
     results["driver_race_compete"] = {
         "task": task2,
@@ -915,21 +1166,32 @@ def main():
         "checks": checks2,
     }
     
+    # Inspect driver-circuit-compete task
+    logging.info("\n")
+    task3, train3, val3, test3, checks3 = inspect_driver_circuit_compete(dataset, db)
+    results["driver_circuit_compete"] = {
+        "task": task3,
+        "train": train3,
+        "val": val3,
+        "test": test3,
+        "checks": checks3,
+    }
+    
     # Final summary
     print_separator("FINAL SUMMARY")
     
-    all_checks = checks1 + checks2
+    all_checks = checks1 + checks2 + checks3
     passed = sum(1 for c in all_checks if c.get("passed"))
     total = len(all_checks)
     
-    print(f"Total checks across both tasks: {total}")
-    print(f"Passed: {passed}")
-    print(f"Failed: {total - passed}")
+    logging.info(f"Total checks across all tasks: {total}")
+    logging.info(f"Passed: {passed}")
+    logging.info(f"Failed: {total - passed}")
     
     if passed == total:
-        print("\n\033[92mAll validation checks passed for both tasks!\033[0m")
+        logging.info("\n\033[92mAll validation checks passed for all tasks!\033[0m")
     else:
-        print("\n\033[91mSome checks failed. Review details above.\033[0m")
+        logging.info("\n\033[91mSome checks failed. Review details above.\033[0m")
     
     return dataset, db, results
 
@@ -938,23 +1200,23 @@ def main_arxiv():
     """Main function to load arxiv dataset and inspect co-citation task."""
     print_separator("LOADING REL-ARXIV DATASET")
     
-    print("Loading dataset... (download=True)")
+    logging.info("Loading dataset... (download=True)")
     dataset = get_dataset("rel-arxiv", download=True)
     
-    print(f"Dataset: {dataset}")
-    print(f"Val timestamp: {dataset.val_timestamp}")
-    print(f"Test timestamp: {dataset.test_timestamp}")
+    logging.info(f"Dataset: {dataset}")
+    logging.info(f"Val timestamp: {dataset.val_timestamp}")
+    logging.info(f"Test timestamp: {dataset.test_timestamp}")
     
     db = dataset.get_db(upto_test_timestamp=False)
-    print(f"\nDatabase tables: {list(db.table_dict.keys())}")
+    logging.info(f"\nDatabase tables: {list(db.table_dict.keys())}")
     for table_name, table in db.table_dict.items():
-        print(f"  {table_name}: {len(table.df)} rows")
+        logging.info(f"  {table_name}: {len(table.df)} rows")
     
     # Store results for interactive exploration
     results = {}
     
     # Inspect co-citation task
-    print("\n")
+    logging.info("\n")
     task, train, val, test, checks = inspect_co_citation(dataset, db)
     results["co_citation"] = {
         "task": task,
@@ -970,14 +1232,14 @@ def main_arxiv():
     passed = sum(1 for c in checks if c.get("passed"))
     total = len(checks)
     
-    print(f"Total checks: {total}")
-    print(f"Passed: {passed}")
-    print(f"Failed: {total - passed}")
+    logging.info(f"Total checks: {total}")
+    logging.info(f"Passed: {passed}")
+    logging.info(f"Failed: {total - passed}")
     
     if passed == total:
-        print("\n\033[92mAll validation checks passed!\033[0m")
+        logging.info("\n\033[92mAll validation checks passed!\033[0m")
     else:
-        print("\n\033[91mSome checks failed. Review details above.\033[0m")
+        logging.info("\n\033[91mSome checks failed. Review details above.\033[0m")
     
     return dataset, db, results
 
@@ -1009,6 +1271,10 @@ if __name__ == "__main__":
     # Use all datasets when none specified (nargs="*" returns [] not default)
     datasets_to_inspect = args.datasets if args.datasets else AVAILABLE_DATASETS
     
+    # Set up logging to both console and file
+    log_file_path = setup_logging(output_dir=".")
+    logging.info(f"Logging to: {log_file_path.resolve()}")
+    
     all_results = {}
     
     if "rel-f1" in datasets_to_inspect:
@@ -1028,9 +1294,15 @@ if __name__ == "__main__":
         }
     
     # Print available variables for interactive exploration
-    print("\n" + "=" * 70)
-    print(" Variables available for interactive exploration:")
-    print("   - all_results: Dict with results for each inspected dataset")
+    logging.info("\n" + "=" * 70)
+    logging.info(" Variables available for interactive exploration:")
+    logging.info("   - all_results: Dict with results for each inspected dataset")
     for dataset_name in datasets_to_inspect:
-        print(f"   - all_results['{dataset_name}']: dataset, db, results")
-    print("=" * 70)
+        logging.info(f"   - all_results['{dataset_name}']: dataset, db, results")
+    logging.info("=" * 70)
+    
+    # Print log file location at the end
+    logging.info("\n" + "=" * 70)
+    logging.info(" LOG FILE SAVED")
+    logging.info(f"   Output log: {log_file_path.resolve()}")
+    logging.info("=" * 70)
