@@ -57,10 +57,8 @@ def setup_logging(output_dir: str | Path = ".") -> Path:
     logger.handlers.clear()
     
     # Create formatters
-    # Console formatter without timestamp (cleaner output)
     console_formatter = logging.Formatter("%(message)s")
-    # File formatter with timestamp for traceability
-    file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    file_formatter = logging.Formatter("%(message)s")
     
     # Console handler
     console_handler = logging.StreamHandler()
@@ -545,6 +543,195 @@ def plot_timestamp_histogram(
     plt.close(fig)
 
 
+def plot_destination_count_histogram(
+    train_table,
+    val_table,
+    test_table,
+    task_name: str,
+    time_col: str = "date",
+    dst_col: str = "raceId",
+    num_bins: int = 150,
+    save_path: str | None = None,
+) -> None:
+    """Plot a stacked histogram of timestamps showing destination entity counts.
+    
+    Instead of counting source nodes (rows) per timestamp bin, this function
+    sums the number of destination entities for all source nodes in each bin.
+    
+    Args:
+        train_table: The training split table
+        val_table: The validation split table
+        test_table: The test split table
+        task_name: Name of the task for the plot title
+        time_col: Name of the time column in the tables
+        dst_col: Name of the destination entity list column
+        num_bins: Number of bins for the histogram
+        save_path: Optional path to save the plot (if None, displays interactively)
+    """
+    # Extract timestamps and destination counts
+    train_timestamps = train_table.df[time_col]
+    val_timestamps = val_table.df[time_col]
+    test_timestamps = test_table.df[time_col]
+    
+    # Calculate destination counts per row
+    train_dst_counts = train_table.df[dst_col].apply(lambda x: len(x) if isinstance(x, list) else 0)
+    val_dst_counts = val_table.df[dst_col].apply(lambda x: len(x) if isinstance(x, list) else 0)
+    test_dst_counts = test_table.df[dst_col].apply(lambda x: len(x) if isinstance(x, list) else 0)
+    
+    # Combine all timestamps to determine bin edges
+    all_timestamps = pd.concat([train_timestamps, val_timestamps, test_timestamps])
+    min_time = all_timestamps.min()
+    max_time = all_timestamps.max()
+    
+    # Create bin edges based on all data
+    bin_edges = pd.date_range(start=min_time, end=max_time, periods=num_bins + 1)
+    
+    # For weighted histogram, we need to manually compute bin sums
+    # Convert bin edges to numeric for digitize (datetime not directly supported)
+    bin_edges_numeric = bin_edges.astype(np.int64)
+    
+    def compute_weighted_histogram(timestamps, weights, bin_edges_numeric):
+        """Compute histogram where each entry contributes its weight instead of 1."""
+        counts = np.zeros(len(bin_edges_numeric) - 1)
+        # Convert timestamps to numeric (same scale as bin_edges)
+        timestamps_numeric = pd.to_datetime(timestamps).astype(np.int64)
+        bin_indices = np.digitize(timestamps_numeric, bin_edges_numeric) - 1
+        for idx, weight in zip(bin_indices, weights):
+            if 0 <= idx < len(counts):
+                counts[idx] += weight
+        return counts
+    
+    train_counts = compute_weighted_histogram(train_timestamps, train_dst_counts, bin_edges_numeric)
+    val_counts = compute_weighted_histogram(val_timestamps, val_dst_counts, bin_edges_numeric)
+    test_counts = compute_weighted_histogram(test_timestamps, test_dst_counts, bin_edges_numeric)
+    
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(14, 6))
+    
+    # Calculate bin centers for plotting (as matplotlib date numbers)
+    bin_centers = bin_edges[:-1] + (bin_edges[1] - bin_edges[0]) / 2
+    bin_centers_mpl = mdates.date2num(bin_centers.to_pydatetime())
+    
+    # Calculate bar width in matplotlib date units
+    bar_width_mpl = mdates.date2num(bin_edges[1].to_pydatetime()) - mdates.date2num(bin_edges[0].to_pydatetime())
+    bar_width_mpl *= 0.9  # Slightly smaller for visual separation
+    
+    # Calculate total destination counts for labels
+    total_train_dst = int(train_dst_counts.sum())
+    total_val_dst = int(val_dst_counts.sum())
+    total_test_dst = int(test_dst_counts.sum())
+    
+    # Plot stacked bars
+    colors = {
+        "train": "#3498db",  # Blue
+        "val": "#f39c12",    # Orange
+        "test": "#e74c3c",   # Red
+    }
+    
+    ax.bar(
+        bin_centers_mpl,
+        train_counts,
+        width=bar_width_mpl,
+        label=f"Train ({total_train_dst:,} {dst_col}s)",
+        color=colors["train"],
+        alpha=0.8,
+    )
+    ax.bar(
+        bin_centers_mpl,
+        val_counts,
+        width=bar_width_mpl,
+        bottom=train_counts,
+        label=f"Val ({total_val_dst:,} {dst_col}s)",
+        color=colors["val"],
+        alpha=0.8,
+    )
+    ax.bar(
+        bin_centers_mpl,
+        test_counts,
+        width=bar_width_mpl,
+        bottom=train_counts + val_counts,
+        label=f"Test ({total_test_dst:,} {dst_col}s)",
+        color=colors["test"],
+        alpha=0.8,
+    )
+    
+    # Plot vertical lines for all unique timestamps in each split
+    unique_train_timestamps = train_timestamps.unique()
+    unique_val_timestamps = val_timestamps.unique()
+    unique_test_timestamps = test_timestamps.unique()
+    
+    line_alpha = 0.4
+    line_width = 0.5
+    
+    # Train timestamps - dashed lines
+    for ts in unique_train_timestamps:
+        ax.axvline(
+            x=mdates.date2num(pd.Timestamp(ts).to_pydatetime()),
+            color=colors["train"],
+            linestyle="--",
+            linewidth=line_width,
+            alpha=line_alpha,
+        )
+    
+    # Validation timestamps - dashed lines
+    for ts in unique_val_timestamps:
+        ax.axvline(
+            x=mdates.date2num(pd.Timestamp(ts).to_pydatetime()),
+            color=colors["val"],
+            linestyle="--",
+            linewidth=line_width,
+            alpha=line_alpha,
+        )
+    
+    # Test timestamps - dashed lines
+    for ts in unique_test_timestamps:
+        ax.axvline(
+            x=mdates.date2num(pd.Timestamp(ts).to_pydatetime()),
+            color=colors["test"],
+            linestyle="--",
+            linewidth=line_width,
+            alpha=line_alpha,
+        )
+    
+    # Format the x-axis as dates
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    
+    # Rotate x-axis labels for readability
+    plt.xticks(rotation=45, ha="right")
+    
+    # Labels and title
+    ax.set_xlabel("Time", fontsize=12)
+    ax.set_ylabel(f"Number of Destination Entities ({dst_col})", fontsize=12)
+    ax.set_title(f"Destination Entity Distribution by Split: {task_name}", fontsize=14, fontweight="bold")
+    
+    # Legend with vertical line indicators
+    from matplotlib.lines import Line2D
+    custom_handles = [
+        plt.Rectangle((0, 0), 1, 1, fc=colors["train"], alpha=0.8, label=f"Train ({total_train_dst:,} {dst_col}s)"),
+        plt.Rectangle((0, 0), 1, 1, fc=colors["val"], alpha=0.8, label=f"Val ({total_val_dst:,} {dst_col}s)"),
+        plt.Rectangle((0, 0), 1, 1, fc=colors["test"], alpha=0.8, label=f"Test ({total_test_dst:,} {dst_col}s)"),
+        Line2D([0], [0], color=colors["train"], linestyle="--", linewidth=1, alpha=0.7, label=f"Train timestamps ({len(unique_train_timestamps)})"),
+        Line2D([0], [0], color=colors["val"], linestyle="--", linewidth=1, alpha=0.7, label=f"Val timestamps ({len(unique_val_timestamps)})"),
+        Line2D([0], [0], color=colors["test"], linestyle="--", linewidth=1, alpha=0.7, label=f"Test timestamps ({len(unique_test_timestamps)})"),
+    ]
+    ax.legend(handles=custom_handles, loc="upper left", fontsize=9)
+    
+    # Grid for readability
+    ax.grid(axis="y", alpha=0.3)
+    
+    # Tight layout to prevent label cutoff
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
+        logging.info(f"\nPlot saved to: {save_path}")
+    else:
+        plt.show()
+    
+    plt.close(fig)
+
+
 def inspect_driver_top3(dataset, db):
     """Inspect the driver-top3 EntityTask."""
     print_separator("DRIVER-TOP3 TASK (EntityTask - Binary Classification)")
@@ -714,8 +901,8 @@ def inspect_driver_race_compete(dataset, db):
     print_separator("TASK STATISTICS", "-")
     print_recommendation_task_statistics(task, train_table, val_table, test_table)
     
-    # Plot timestamp histogram
-    print_separator("TIMESTAMP DISTRIBUTION PLOT", "-")
+    # Plot timestamp histogram (source nodes)
+    print_separator("TIMESTAMP DISTRIBUTION PLOT (Source Nodes)", "-")
     plot_timestamp_histogram(
         train_table,
         val_table,
@@ -723,6 +910,18 @@ def inspect_driver_race_compete(dataset, db):
         task_name="driver-race-compete",
         time_col=task.time_col,
         save_path="driver_race_compete_timestamp_histogram.png",
+    )
+    
+    # Plot destination count histogram
+    print_separator("TIMESTAMP DISTRIBUTION PLOT (Destination Nodes)", "-")
+    plot_destination_count_histogram(
+        train_table,
+        val_table,
+        test_table,
+        task_name="driver-race-compete",
+        time_col=task.time_col,
+        dst_col=task.dst_entity_col,
+        save_path="driver_race_compete_destination_histogram.png",
     )
     
     return task, train_table, val_table, test_table, all_checks
@@ -803,8 +1002,8 @@ def inspect_driver_circuit_compete(dataset, db):
     print_separator("TASK STATISTICS", "-")
     print_circuit_compete_task_statistics(task, train_table, val_table, test_table, circuits_df)
     
-    # Plot timestamp histogram
-    print_separator("TIMESTAMP DISTRIBUTION PLOT", "-")
+    # Plot timestamp histogram (source nodes)
+    print_separator("TIMESTAMP DISTRIBUTION PLOT (Source Nodes)", "-")
     plot_timestamp_histogram(
         train_table,
         val_table,
@@ -812,6 +1011,18 @@ def inspect_driver_circuit_compete(dataset, db):
         task_name="driver-circuit-compete",
         time_col=task.time_col,
         save_path="driver_circuit_compete_timestamp_histogram.png",
+    )
+    
+    # Plot destination count histogram
+    print_separator("TIMESTAMP DISTRIBUTION PLOT (Destination Nodes)", "-")
+    plot_destination_count_histogram(
+        train_table,
+        val_table,
+        test_table,
+        task_name="driver-circuit-compete",
+        time_col=task.time_col,
+        dst_col=task.dst_entity_col,
+        save_path="driver_circuit_compete_destination_histogram.png",
     )
     
     return task, train_table, val_table, test_table, all_checks
@@ -1111,8 +1322,8 @@ def inspect_co_citation(dataset, db):
     print_separator("TASK STATISTICS", "-")
     print_co_citation_task_statistics(task, train_table, val_table, test_table)
     
-    # Plot timestamp histogram
-    print_separator("TIMESTAMP DISTRIBUTION PLOT", "-")
+    # Plot timestamp histogram (source nodes)
+    print_separator("TIMESTAMP DISTRIBUTION PLOT (Source Nodes)", "-")
     plot_timestamp_histogram(
         train_table,
         val_table,
@@ -1120,6 +1331,18 @@ def inspect_co_citation(dataset, db):
         task_name="co-citation",
         time_col=task.time_col,
         save_path="co_citation_timestamp_histogram.png",
+    )
+    
+    # Plot destination count histogram
+    print_separator("TIMESTAMP DISTRIBUTION PLOT (Destination Nodes)", "-")
+    plot_destination_count_histogram(
+        train_table,
+        val_table,
+        test_table,
+        task_name="co-citation",
+        time_col=task.time_col,
+        dst_col=task.dst_entity_col,
+        save_path="co_citation_destination_histogram.png",
     )
     
     return task, train_table, val_table, test_table, all_checks
