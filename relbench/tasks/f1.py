@@ -173,15 +173,15 @@ class DriverTop3Task(EntityTask):
         )
 
 
-class DriverRaceCompeteTask(RecommendationTask):
-    r"""Predict in which races a driver will compete in the next 1 year."""
+class DriverCircuitCompeteTask(RecommendationTask):
+    r"""Predict on which circuits a driver will compete in the next 1 year."""
 
     task_type = TaskType.LINK_PREDICTION
     src_entity_col = "driverId"
     src_entity_table = "drivers"
-    dst_entity_col = "raceId"
-    dst_entity_table = "races"
-    target_col = "raceId"
+    dst_entity_col = "circuitId"
+    dst_entity_table = "circuits"
+    target_col = "circuitId"
     time_col = "date"
     timedelta = pd.Timedelta(days=365)
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
@@ -189,21 +189,29 @@ class DriverRaceCompeteTask(RecommendationTask):
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
+        
+        # Note: results table has raceId and date (merged during preprocessing)
+        # We need races table to get circuitId for each race
         results = db.table_dict["results"].df
+        races = db.table_dict["races"].df
 
         df = duckdb.sql(
             f"""
                 SELECT
                     t.timestamp as date,
                     re.driverId as driverId,
-                    LIST(DISTINCT re.raceId) as raceId
+                    LIST(DISTINCT race.circuitId) as circuitId
                 FROM
                     timestamp_df t
                 LEFT JOIN
+                    races race
+                ON
+                    race.date <= t.timestamp + INTERVAL '{self.timedelta}'
+                    and race.date > t.timestamp
+                LEFT JOIN
                     results re
                 ON
-                    re.date <= t.timestamp + INTERVAL '{self.timedelta}'
-                    and re.date > t.timestamp
+                    re.raceId = race.raceId
                 GROUP BY t.timestamp, re.driverId
             ;
             """
