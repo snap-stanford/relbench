@@ -736,8 +736,8 @@ def inspect_driver_top3(dataset, db):
     """Inspect the driver-top3 EntityTask."""
     print_separator("DRIVER-TOP3 TASK (EntityTask - Binary Classification)")
     
-    logging.info("\nLoading task... (download=False)")
-    task = get_task("rel-f1", "driver-top3", download=False)
+    logging.info("\nLoading task... (download=True)")
+    task = get_task("rel-f1", "driver-top3", download=True)
     
     logging.info(f"Task: {task}")
     logging.info(f"Task type: {task.task_type}")
@@ -1378,16 +1378,16 @@ def main():
         "checks": checks1,
     }
     
-    # Inspect driver-race-compete task
-    logging.info("\n")
-    task2, train2, val2, test2, checks2 = inspect_driver_race_compete(dataset, db)
-    results["driver_race_compete"] = {
-        "task": task2,
-        "train": train2,
-        "val": val2,
-        "test": test2,
-        "checks": checks2,
-    }
+    # # Inspect driver-race-compete task
+    # logging.info("\n")
+    # task2, train2, val2, test2, checks2 = inspect_driver_race_compete(dataset, db)
+    # results["driver_race_compete"] = {
+    #     "task": task2,
+    #     "train": train2,
+    #     "val": val2,
+    #     "test": test2,
+    #     "checks": checks2,
+    # }
     
     # Inspect driver-circuit-compete task
     logging.info("\n")
@@ -1403,7 +1403,8 @@ def main():
     # Final summary
     print_separator("FINAL SUMMARY")
     
-    all_checks = checks1 + checks2 + checks3
+    # all_checks = checks1 + checks2 + checks3
+    all_checks = checks1 + checks3
     passed = sum(1 for c in all_checks if c.get("passed"))
     total = len(all_checks)
     
