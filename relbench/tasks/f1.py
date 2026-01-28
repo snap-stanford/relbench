@@ -189,7 +189,7 @@ class DriverCircuitCompeteTask(RecommendationTask):
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        
+
         # Note: results table has raceId and date (merged during preprocessing)
         # We need races table to get circuitId for each race
         results = db.table_dict["results"].df
