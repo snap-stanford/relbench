@@ -16,10 +16,6 @@ class TGBCutoffs:
 
 
 _TGB_CUTOFFS: dict[str, TGBCutoffs] = {
-    # Dynamic link property prediction (tgbl-*)
-    # NOTE: These cutoffs match the pre-built RelBench exports used in our
-    # conversion pipeline. They are expected to be consistent with the
-    # official TGB temporal split (70/15/15).
     "tgbl-wiki": TGBCutoffs(val_timestamp_s=1862653, test_timestamp_s=2218300),
     "tgbl-wiki-v2": TGBCutoffs(val_timestamp_s=1862653, test_timestamp_s=2218300),
     "tgbl-review": TGBCutoffs(val_timestamp_s=1464912000, test_timestamp_s=1488844800),
@@ -27,14 +23,10 @@ _TGB_CUTOFFS: dict[str, TGBCutoffs] = {
     "tgbl-coin": TGBCutoffs(val_timestamp_s=1662096249, test_timestamp_s=1664482319),
     "tgbl-comment": TGBCutoffs(val_timestamp_s=1282869285, test_timestamp_s=1288838725),
     "tgbl-flight": TGBCutoffs(val_timestamp_s=1638162000, test_timestamp_s=1653796800),
-    # Temporal heterogeneous link prediction (thgl-*)
     "thgl-software": TGBCutoffs(val_timestamp_s=1706003880, test_timestamp_s=1706315669),
     "thgl-forum": TGBCutoffs(val_timestamp_s=1390426563, test_timestamp_s=1390838358),
     "thgl-github": TGBCutoffs(val_timestamp_s=1711075987, test_timestamp_s=1711482874),
     "thgl-myket": TGBCutoffs(val_timestamp_s=1603724860, test_timestamp_s=1606341312),
-    # Dynamic node property prediction (tgbn-*)
-    # Nodeprop timestamps may be stored as years in the raw sources; our export
-    # normalizes timestamps to UNIX seconds.
     "tgbn-trade": TGBCutoffs(val_timestamp_s=1262304000, test_timestamp_s=1388534400),
     "tgbn-genre": TGBCutoffs(val_timestamp_s=1216427762, test_timestamp_s=1230448684),
     "tgbn-reddit": TGBCutoffs(val_timestamp_s=1279485233, test_timestamp_s=1286653871),
@@ -43,22 +35,7 @@ _TGB_CUTOFFS: dict[str, TGBCutoffs] = {
 
 
 class TGBDataset(Dataset):
-    r"""Community dataset family: Temporal Graph Benchmark (TGB) exports.
-
-    This dataset class expects a pre-built RelBench database at:
-    `cache_dir/db/*.parquet`.
-
-    The recommended workflow for contributions (see CONTRIBUTING.md):
-    1) Materialize `db/` (Parquet) for each dataset.
-    2) Zip it as `db.zip` and publish it.
-    3) Add the sha256 hash to `relbench/datasets/hashes.json`.
-
-    Notes:
-    - Primary/foreign keys are stored as int64 (DBML: `bigint`) to avoid 32-bit
-      overflow and to match PyArrow's default integer type.
-    - We store only the relational schema + timestamps; "splits" are derived
-      from cutoffs (val/test timestamps).
-    """
+    r"""Temporal Graph Benchmark (TGB) datasets exported to RelBench format."""
 
     url = "https://tgb.complexdatalab.com/"
 
@@ -70,8 +47,6 @@ class TGBDataset(Dataset):
         self.tgb_name = str(tgb_name)
 
         cutoffs = _TGB_CUTOFFS[self.tgb_name]
-        # TGB exports store timestamps as timezone-aware UTC (timestamp[ns, UTC]).
-        # Keep dataset cutoffs in UTC as well to avoid tz-mismatch in task builders.
         self.val_timestamp = pd.to_datetime(int(cutoffs.val_timestamp_s), unit="s", utc=True)
         self.test_timestamp = pd.to_datetime(int(cutoffs.test_timestamp_s), unit="s", utc=True)
 
@@ -90,4 +65,3 @@ class TGBDataset(Dataset):
             "This dataset is distributed as a pre-built RelBench database (db.zip). "
             "Please run `download_dataset(...)` or place `db/*.parquet` in the cache directory."
         )
-

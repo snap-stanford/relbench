@@ -9,21 +9,17 @@ from relbench.base import Database, Table
 
 
 def to_unix_time(ser: pd.Series) -> np.ndarray:
-    r"""Converts a :class:`pandas.Timestamp` series to UNIX timestamp (in seconds)."""
-    # Accept tz-aware timestamps and normalize to UTC.
-    # Many external parquet exports use `datetime64[ns, UTC]`.
+    r"""Convert a timestamp-like series to UNIX seconds."""
     if pd.api.types.is_datetime64_any_dtype(ser.dtype) or pd.api.types.is_datetime64tz_dtype(ser.dtype):
         ts = pd.to_datetime(ser, utc=True)
         unix_ns = ts.astype("int64").to_numpy(copy=False)
         return (unix_ns // 1_000_000_000).astype(np.int64, copy=False)
 
-    # Allow integer/float timestamps that are already in seconds.
     if pd.api.types.is_integer_dtype(ser.dtype):
         return ser.astype("int64").to_numpy(copy=False)
     if pd.api.types.is_float_dtype(ser.dtype):
         return ser.astype("int64").to_numpy(copy=False)
 
-    # Fallback: parse strings/objects as datetimes.
     ts = pd.to_datetime(ser, utc=True)
     unix_ns = ts.astype("int64").to_numpy(copy=False)
     return (unix_ns // 1_000_000_000).astype(np.int64, copy=False)

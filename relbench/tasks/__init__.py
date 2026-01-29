@@ -549,13 +549,7 @@ register_task("dbinfer-stackexchange", "churn", dbinfer.StackExchangeChurnTask)
 register_task("dbinfer-stackexchange", "upvote", dbinfer.StackExchangeUpvoteTask)
 register_task("dbinfer-outbrain-small", "ctr", dbinfer.OutbrainCTRTask)
 
-# Community task family: Temporal Graph Benchmark (TGB)
-#
-# TGB official evaluation for link prediction is one-vs-many with pre-generated
-# negatives and reports MRR/Hits@k. For heterogeneous datasets, this is done
-# per edge type; we therefore expose one task per `events_edge_type_*` table.
-
-# tgbl-* (link prediction; single event table)
+# Temporal Graph Benchmark (TGB)
 for dataset_name in [
     "rel-tgb-tgbl-wiki",
     "rel-tgb-tgbl-wiki-v2",
@@ -590,7 +584,6 @@ _register_thgl_edge_type_tasks("rel-tgb-thgl-github", list(range(14)))
 _register_thgl_edge_type_tasks("rel-tgb-thgl-forum", [0, 1])
 _register_thgl_edge_type_tasks("rel-tgb-thgl-myket", [0, 1])
 
-# tgbn-* (node property prediction; NDCG@10 over label distributions)
 for dataset_name in [
     "rel-tgb-tgbn-trade",
     "rel-tgb-tgbn-genre",

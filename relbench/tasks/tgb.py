@@ -20,7 +20,6 @@ from relbench.metrics import (
 
 def _to_unix_seconds(ts: pd.Series) -> np.ndarray:
     ts = pd.to_datetime(ts, utc=True)
-    # Timestamp[ns] -> seconds
     return (ts.astype("int64").to_numpy(copy=False) // 1_000_000_000).astype(np.int64, copy=False)
 
 
@@ -30,13 +29,7 @@ def _tgb_eval_hits_and_mrr(
     *,
     k_value: int,
 ) -> dict[str, float]:
-    r"""Match TGB's link prediction evaluator for one-vs-many ranking.
-
-    This mirrors `tgb.linkproppred.evaluate.Evaluator._eval_hits_and_mrr`:
-    - optimistic rank counts negatives strictly greater than positive
-    - pessimistic rank counts negatives greater-or-equal to positive
-    - final rank is the average of the two (plus 1)
-    """
+    r"""Compute one-vs-many Hits@k and MRR with tie-aware ranking."""
 
     y_pred_pos = np.asarray(y_pred_pos).reshape(-1, 1)
     y_pred_neg = np.asarray(y_pred_neg)
@@ -62,28 +55,13 @@ class TGBLinkPredSpec:
     event_table: str
     src_col: str = "src_id"
     dst_col: str = "dst_id"
-    # Matches the exporter convention (`*_exports/**/db/events*.parquet`).
     time_col: str = "event_ts"
 
 
 class TGBOneVsManyLinkPredTask(BaseTask):
-    r"""TGB-style link prediction task with official one-vs-many MRR/Hits@k evaluation.
-
-    Important: Exact parity with TGB requires:
-    - task tables (`train/val/test.parquet`) listing the *exact* positive edges
-      for each split (matching TGB masks, not just timestamp cutoffs), and
-    - the TGB-provided pre-generated negative samples placed at:
-      `<dataset.cache_dir>/negatives/val_ns.pkl` and `.../test_ns.pkl`.
-
-    For heterogeneous `thgl-*` datasets, TGB negative samples are keyed by
-    `(timestamp_s, src_global_id, edge_type_id)`, which requires the dataset to
-    ship mapping files that relate RelBench's per-type local node ids back to
-    the original TGB global node ids.
-    """
+    r"""TGB link prediction with official one-vs-many MRR/Hits@k evaluation."""
 
     task_type = TaskType.LINK_PREDICTION
-    # BaseTask enforces `dataset.test_timestamp - dataset.val_timestamp >= timedelta`.
-    # We override table construction, so we just need a non-negative timedelta.
     timedelta = pd.Timedelta(seconds=1)
     metrics = []
     num_eval_timestamps = 1
@@ -103,7 +81,6 @@ class TGBOneVsManyLinkPredTask(BaseTask):
         self.src_entity_col = spec.src_col
         self.dst_entity_col = spec.dst_col
 
-        # Infer FK target tables + (optional) edge_type id from the exported database.
         db = dataset.get_db()
         if spec.event_table not in db.table_dict:
             raise ValueError(
@@ -131,7 +108,6 @@ class TGBOneVsManyLinkPredTask(BaseTask):
         )
 
     def filter_dangling_entities(self, table: Table) -> Table:
-        # Keep parity with TGB negatives by dropping rows with invalid ids.
         if self.src_entity_table:
             table.df = table.df[table.df[self.src_entity_col] < len(self.dataset.get_db().table_dict[self.src_entity_table])]
         if self.dst_entity_table:
@@ -140,7 +116,6 @@ class TGBOneVsManyLinkPredTask(BaseTask):
         return table
 
     def _get_table(self, split: str) -> Table:
-        # Load cached task tables rather than generating by timestamps.
         if split not in ["train", "val", "test"]:
             raise ValueError(f"Unknown split '{split}'.")
         table_path = f"{self.cache_dir}/{split}.parquet"
@@ -160,8 +135,6 @@ class TGBOneVsManyLinkPredTask(BaseTask):
             raise RuntimeError("Dataset has no cache_dir; cannot locate TGB negatives.")
         return Path(self.dataset.cache_dir) / "negatives" / f"{split}_ns.pkl"
 
-    # Large datasets ship multi-GB negative dictionaries. Keep at most one split
-    # in memory at a time to reduce peak RAM usage.
     @lru_cache(maxsize=1)
     def _load_negatives(self, split: str) -> dict[Any, Any]:
         path = self._negatives_path(split)
@@ -215,9 +188,6 @@ class TGBOneVsManyLinkPredTask(BaseTask):
         return int(m.group(1)) if m else None
 
     def _bipartite_offset(self) -> Optional[int]:
-        # Export convention for bipartite tgbl-wiki*: src ids are 0..num_src-1,
-        # dst ids are 0..num_dst-1 in RelBench, but TGB negatives use a single
-        # global id space with dst shifted by `num_src`.
         if self.src_entity_table == "src_nodes" and self.dst_entity_table == "dst_nodes":
             return len(self.dataset.get_db().table_dict["src_nodes"])
         return None
@@ -225,7 +195,6 @@ class TGBOneVsManyLinkPredTask(BaseTask):
     def _src_local_to_global(self, src_local: np.ndarray) -> np.ndarray:
         src_type = self._node_type_id_from_table(self.src_entity_table)
         if src_type is None:
-            # homogeneous/bipartite case: local ids are global ids
             return src_local.astype(np.int64, copy=False)
         globals_ = self._load_local_to_global(src_type)
         return globals_[src_local.astype(np.int64, copy=False)]
@@ -267,7 +236,6 @@ class TGBOneVsManyLinkPredTask(BaseTask):
 
         negs_local: list[np.ndarray] = []
         if self.edge_type_id is None:
-            # tgbl-* negatives are keyed by (src, dst, t)
             dst_local = df[self.dst_entity_col].astype("int64").to_numpy()
             offset = self._bipartite_offset()
             if offset is None:
@@ -278,7 +246,6 @@ class TGBOneVsManyLinkPredTask(BaseTask):
                 negs_g = np.asarray(neg_dict[(s, d, t)], dtype=np.int64)
                 negs_local.append(self._dst_global_to_local(negs_g))
         else:
-            # thgl-* negatives are keyed by (t, src, edge_type)
             et = int(self.edge_type_id)
             for t, s in zip(ts_s.tolist(), src_global.tolist()):
                 negs_g = np.asarray(neg_dict[(t, s, et)], dtype=np.int64)
@@ -338,8 +305,6 @@ class TGBNextLinkPredTask(RecommendationTask):
     """
 
     task_type = TaskType.LINK_PREDICTION
-    # BaseTask enforces `dataset.test_timestamp - dataset.val_timestamp >= timedelta`.
-    # We only need a non-negative timedelta since we rely on cached tables.
     timedelta = pd.Timedelta(seconds=1)
     num_eval_timestamps = 1
     metrics = [link_prediction_precision, link_prediction_recall, link_prediction_map]
@@ -357,12 +322,10 @@ class TGBNextLinkPredTask(RecommendationTask):
     ) -> None:
         self.eval_k = int(eval_k)
 
-        # Column conventions of exported task tables.
         self.time_col = str(time_col)
         self.src_entity_col = str(src_entity_col)
         self.dst_entity_col = str(dst_entity_col)
 
-        # Infer src/dst entity tables from the cached task table metadata if present.
         src_table = None
         dst_table = None
         if cache_dir is not None:
@@ -376,9 +339,6 @@ class TGBNextLinkPredTask(RecommendationTask):
                     break
 
         if src_table is None or dst_table is None:
-            # Fallback to inferring from task naming conventions:
-            # - `src-dst-next` for tgbl-* exports (bipartite or homogeneous)
-            # - `typeX-typeY-next` for thgl-* exports (per node type)
             task_name = str(tgb_task_name)
             m = re.fullmatch(r"type(\d+)-type(\d+)-next", task_name)
             if m is not None:
@@ -393,7 +353,6 @@ class TGBNextLinkPredTask(RecommendationTask):
                     src_table = "nodes"
                     dst_table = "nodes"
             elif task_name == "node-label-next":
-                # tgbn-* exports: predict labels for a node.
                 src_table = "nodes"
                 dst_table = "labels"
             else:
@@ -405,7 +364,6 @@ class TGBNextLinkPredTask(RecommendationTask):
         self.src_entity_table = str(src_table)
         self.dst_entity_table = str(dst_table)
 
-        # Validate that entity tables exist without materializing the full DB.
         if dataset.cache_dir is None:
             raise RuntimeError("TGBNextLinkPredTask requires dataset.cache_dir to validate entity tables.")
         db_dir = Path(dataset.cache_dir) / "db"
@@ -447,12 +405,7 @@ def _tgb_nodeprop_ndcg_at_k(
     true_label_w: list[np.ndarray],
     k: int,
 ) -> float:
-    """Compute NDCG@k with the same (exponential) gain convention as sklearn.ndcg_score.
-
-    TGB's nodeproppred evaluator uses `sklearn.metrics.ndcg_score(y_true, y_pred, k=10)`.
-    For sparse ground truth, we compute the equivalent quantity using only the top-k
-    predicted labels and the top-k true labels.
-    """
+    """Compute NDCG@k with the same gain convention as sklearn.ndcg_score."""
     k = int(k)
     if topk_label_ids.ndim != 2 or topk_scores.ndim != 2:
         raise ValueError("topk_label_ids/topk_scores must be 2D arrays (N,K).")
@@ -473,7 +426,6 @@ def _tgb_nodeprop_ndcg_at_k(
             ndcgs.append(0.0)
             continue
 
-        # Ideal DCG: sort true relevances and take top-k.
         rel_sorted = np.sort(rel)[::-1]
         rel_top = rel_sorted[:k]
         idcg = ((np.exp2(rel_top) - 1.0) * discounts[: rel_top.shape[0]]).sum()
@@ -481,7 +433,6 @@ def _tgb_nodeprop_ndcg_at_k(
             ndcgs.append(0.0)
             continue
 
-        # DCG: lookup true relevance for predicted top-k labels.
         rel_map = {int(l): float(w) for l, w in zip(ids.tolist(), rel.tolist())}
         pred_ids = topk_label_ids[i, :k]
         gains = np.fromiter((np.exp2(rel_map.get(int(l), 0.0)) - 1.0 for l in pred_ids.tolist()), dtype=np.float64)
@@ -548,7 +499,6 @@ class TGBNodePropNDCGTask(BaseTask):
         )
 
     def filter_dangling_entities(self, table: Table) -> Table:
-        # Drop rows with invalid node ids.
         db = self.dataset.get_db()
         num_nodes = len(db.table_dict[self.entity_table])
         bad = table.df[self.entity_col] >= num_nodes
@@ -608,7 +558,6 @@ class TGBNodePropNDCGTask(BaseTask):
         if y_pred.shape[0] != len(target_table):
             raise ValueError(f"Prediction rows {y_pred.shape[0]} != target rows {len(target_table)}.")
 
-        # Extract top-k label ids per row.
         k = int(self.k)
         topk = np.argpartition(-y_pred, kth=min(k - 1, y_pred.shape[1] - 1), axis=1)[:, :k]
         topk_scores = np.take_along_axis(y_pred, topk, axis=1)

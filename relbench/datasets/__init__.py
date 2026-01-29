@@ -159,9 +159,7 @@ register_dataset("dbinfer-amazon", dbinfer.DBInferAmazonDataset)
 register_dataset("dbinfer-stackexchange", dbinfer.DBInferStackExchangeDataset)
 register_dataset("dbinfer-outbrain-small", dbinfer.DBInferOutbrainSmallDataset)
 
-# Community dataset family: Temporal Graph Benchmark (TGB)
-# Names follow the convention `rel-<dataset_name>-<qualifier>` where
-# dataset_name = "tgb" and qualifier is the original TGB dataset id.
+# Temporal Graph Benchmark (TGB)
 register_dataset("rel-tgb-tgbl-wiki", tgb.TGBDataset, tgb_name="tgbl-wiki")
 register_dataset("rel-tgb-tgbl-wiki-v2", tgb.TGBDataset, tgb_name="tgbl-wiki-v2")
 register_dataset("rel-tgb-tgbl-review", tgb.TGBDataset, tgb_name="tgbl-review")
