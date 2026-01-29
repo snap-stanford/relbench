@@ -11,9 +11,10 @@ from relbench.base import Database, Table
 def to_unix_time(ser: pd.Series) -> np.ndarray:
     r"""Converts a :class:`pandas.Timestamp` series to UNIX timestamp (in seconds)."""
     assert ser.dtype in [np.dtype("datetime64[s]"), np.dtype("datetime64[ns]")]
-    unix_time = ser.astype("int64").values
+    # NOTE: Pandas may return a read-only view; avoid in-place ops on it.
+    unix_time = ser.astype("int64").to_numpy(copy=True)
     if ser.dtype == np.dtype("datetime64[ns]"):
-        unix_time //= 10**9
+        unix_time = unix_time // 10**9
     return unix_time
 
 

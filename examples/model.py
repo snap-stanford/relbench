@@ -8,7 +8,7 @@ from torch_geometric.data import HeteroData
 from torch_geometric.nn import MLP
 from torch_geometric.typing import NodeType
 
-from relbench.modeling.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
+from relbench.modeling.nn import HeteroEncoder, HeteroGAT, HeteroGraphSAGE, HeteroTemporalEncoder
 
 
 class Model(torch.nn.Module):
@@ -26,6 +26,9 @@ class Model(torch.nn.Module):
         shallow_list: List[NodeType] = [],
         # ID awareness
         id_awareness: bool = False,
+        gnn: str = "sage",
+        gat_heads: int = 4,
+        gat_dropout: float = 0.0,
     ):
         super().__init__()
 
@@ -43,13 +46,26 @@ class Model(torch.nn.Module):
             ],
             channels=channels,
         )
-        self.gnn = HeteroGraphSAGE(
-            node_types=data.node_types,
-            edge_types=data.edge_types,
-            channels=channels,
-            aggr=aggr,
-            num_layers=num_layers,
-        )
+        gnn = str(gnn).lower()
+        if gnn == "sage":
+            self.gnn = HeteroGraphSAGE(
+                node_types=data.node_types,
+                edge_types=data.edge_types,
+                channels=channels,
+                aggr=aggr,
+                num_layers=num_layers,
+            )
+        elif gnn == "gat":
+            self.gnn = HeteroGAT(
+                node_types=data.node_types,
+                edge_types=data.edge_types,
+                channels=channels,
+                heads=gat_heads,
+                num_layers=num_layers,
+                dropout=gat_dropout,
+            )
+        else:
+            raise ValueError(f"Unknown gnn={gnn!r}. Expected 'sage' or 'gat'.")
         self.head = MLP(
             channels,
             out_channels=out_channels,
