@@ -9,13 +9,20 @@ from relbench.base import Database, Table
 
 
 def to_unix_time(ser: pd.Series) -> np.ndarray:
-    r"""Converts a :class:`pandas.Timestamp` series to UNIX timestamp (in seconds)."""
-    assert ser.dtype in [np.dtype("datetime64[s]"), np.dtype("datetime64[ns]")]
-    # NOTE: Pandas may return a read-only view; avoid in-place ops on it.
-    unix_time = ser.astype("int64").to_numpy(copy=True)
-    if ser.dtype == np.dtype("datetime64[ns]"):
-        unix_time = unix_time // 10**9
-    return unix_time
+    r"""Convert a timestamp-like series to UNIX seconds."""
+    if pd.api.types.is_datetime64_any_dtype(ser.dtype) or pd.api.types.is_datetime64tz_dtype(ser.dtype):
+        ts = pd.to_datetime(ser, utc=True)
+        unix_ns = ts.astype("int64").to_numpy(copy=False)
+        return (unix_ns // 1_000_000_000).astype(np.int64, copy=False)
+
+    if pd.api.types.is_integer_dtype(ser.dtype):
+        return ser.astype("int64").to_numpy(copy=False)
+    if pd.api.types.is_float_dtype(ser.dtype):
+        return ser.astype("int64").to_numpy(copy=False)
+
+    ts = pd.to_datetime(ser, utc=True)
+    unix_ns = ts.astype("int64").to_numpy(copy=False)
+    return (unix_ns // 1_000_000_000).astype(np.int64, copy=False)
 
 
 def remove_pkey_fkey(col_to_stype: Dict[str, Any], table: Table) -> dict:
