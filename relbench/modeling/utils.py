@@ -10,11 +10,23 @@ from relbench.base import Database, Table
 
 def to_unix_time(ser: pd.Series) -> np.ndarray:
     r"""Converts a :class:`pandas.Timestamp` series to UNIX timestamp (in seconds)."""
-    assert ser.dtype in [np.dtype("datetime64[s]"), np.dtype("datetime64[ns]")]
-    unix_time = ser.astype("int64").values
-    if ser.dtype == np.dtype("datetime64[ns]"):
-        unix_time //= 10**9
-    return unix_time
+    # Accept tz-aware timestamps and normalize to UTC.
+    # Many external parquet exports use `datetime64[ns, UTC]`.
+    if pd.api.types.is_datetime64_any_dtype(ser.dtype) or pd.api.types.is_datetime64tz_dtype(ser.dtype):
+        ts = pd.to_datetime(ser, utc=True)
+        unix_ns = ts.astype("int64").to_numpy(copy=False)
+        return (unix_ns // 1_000_000_000).astype(np.int64, copy=False)
+
+    # Allow integer/float timestamps that are already in seconds.
+    if pd.api.types.is_integer_dtype(ser.dtype):
+        return ser.astype("int64").to_numpy(copy=False)
+    if pd.api.types.is_float_dtype(ser.dtype):
+        return ser.astype("int64").to_numpy(copy=False)
+
+    # Fallback: parse strings/objects as datetimes.
+    ts = pd.to_datetime(ser, utc=True)
+    unix_ns = ts.astype("int64").to_numpy(copy=False)
+    return (unix_ns // 1_000_000_000).astype(np.int64, copy=False)
 
 
 def remove_pkey_fkey(col_to_stype: Dict[str, Any], table: Table) -> dict:

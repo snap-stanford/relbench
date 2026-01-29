@@ -18,21 +18,21 @@
   "dbinfer-seznam/db.zip": "77314bf874dc495e8a4a61f2dc5f12982bbec3c5b6b7af5555e9a2bb587154d9",
   "dbinfer-stackexchange/db.zip": "4c8b8ac38b56d57bc2ead3c12be1237b69cae76062ed3f176fc02ad327a84d19",
 
-  "rel-tgb-tgbl-coin/db.zip": "058917b0b5ac29cadf0c12c07516ff6cc14c4a5eea0a027902425c9e05bf2690",
-  "rel-tgb-tgbl-comment/db.zip": "3d2ec40a8fb32969615db31fb8fa81a45d4b9a91a8d40e5f8ee7358ea1c8402a",
-  "rel-tgb-tgbl-flight/db.zip": "eabc26da95efcad0dd2661eb683470a962355bf7229e8490df653cd990dd3627",
-  "rel-tgb-tgbl-review/db.zip": "274a21fe7aac039b032f75aeba3efbcaf8af5531ea2c106a61b15651440d694e",
-  "rel-tgb-tgbl-review-v2/db.zip": "a5719eb25505d3500c910c022a68ff886ad9e6b1687035d0f95263f1f2874deb",
-  "rel-tgb-tgbl-wiki/db.zip": "f32ad5382de5deccb55ecd465e969fae3d8e49168de0731c7ff7ae8f04754dbd",
-  "rel-tgb-tgbl-wiki-v2/db.zip": "6d620c982a7209e109d052ca964d5c8f8cbae8575f883c65d9ce377343a6a597",
+  "rel-tgb-tgbl-coin/db.zip": "6de3b62bcfc59bb18ff8de0614ce5cbcf21179ad56cb58920d25ade32ec43e00",
+  "rel-tgb-tgbl-comment/db.zip": "4eb41776954efa2cb06cdb64e093b182335b8683e60236a6645cf4bcd83597be",
+  "rel-tgb-tgbl-flight/db.zip": "e82646893a45be6c5312e5dc1a774c08d929ecb9eb309c0ad9fdec6dae3b156a",
+  "rel-tgb-tgbl-review/db.zip": "63b405aafd8092cbda297694e649329ca806ccc3c49c8e6f53eb4a3c19075091",
+  "rel-tgb-tgbl-review-v2/db.zip": "a5f1a7a9661a700ebb1a3b43df74037853ad3bd6ed54c74342045d2dc8448bc2",
+  "rel-tgb-tgbl-wiki/db.zip": "ad7b55d1d7b7125c06588db0b8cbebe87c629a95a6c9a911369f89aca9dffdc9",
+  "rel-tgb-tgbl-wiki-v2/db.zip": "5eb56f8e459405e3b554ce56585903c80038d84a99ca4333b00ce32c8c7a38f1",
 
   "rel-tgb-tgbn-genre/db.zip": "e46aecc28315ca9872117817ce65bc1f4d00ed261ab6d35038a84bcf0ebab7bf",
   "rel-tgb-tgbn-reddit/db.zip": "bc444f5cbaf7004ef7c6c8f98ae12ae72e8427ccc9710e96e46b0fc156cc952e",
   "rel-tgb-tgbn-token/db.zip": "44a0f90a62642b8054ef1fbee35c862a67e5d0cec92f08b8fd44c503e0986be8",
   "rel-tgb-tgbn-trade/db.zip": "8a983ae6281ea058dc8d84f6ce339d2dacf0ae9bb98bb82cca3fed54ec3fe370",
 
-  "rel-tgb-thgl-forum/db.zip": "ef3185fd1558711c51306524d07dddb9356d3108eb0af28727ac75c1f73d3c3f",
-  "rel-tgb-thgl-github/db.zip": "88105bcfc3d1409f5408c3108a6a300c0782bf85264a1e7153bcc01828368078",
-  "rel-tgb-thgl-myket/db.zip": "4dce093d60c3009b0c85ac0e93da7a6df9b9a1904c6dafd8cf730d0878e0a5aa",
-  "rel-tgb-thgl-software/db.zip": "9fe3316bf11908065f1eda28f14ef3cbab64e5166bf0ebf7e359315c0528b99d"
+  "rel-tgb-thgl-forum/db.zip": "fdb20c1afc542e8026b85df850b5e8a539694c182eb4530924fad65964461256",
+  "rel-tgb-thgl-github/db.zip": "f69c1d49779a4dbead101e7325447854c8890982d254efb2b722117819ba8304",
+  "rel-tgb-thgl-myket/db.zip": "67a3af25553ceabe8a7eff8906c2213bd82e932cdaeb48ffa326b39d30e0f0cf",
+  "rel-tgb-thgl-software/db.zip": "35816ef6a07be2291349f081814e18b498a2e46e006ed21be36fdb1a8a0eb90d"
 }
