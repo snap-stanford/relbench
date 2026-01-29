@@ -554,11 +554,6 @@ register_task("dbinfer-outbrain-small", "ctr", dbinfer.OutbrainCTRTask)
 # TGB official evaluation for link prediction is one-vs-many with pre-generated
 # negatives and reports MRR/Hits@k. For heterogeneous datasets, this is done
 # per edge type; we therefore expose one task per `events_edge_type_*` table.
-#
-# In addition, we expose exporter-defined "next interaction" recommendation
-# tasks (`*-next`) to validate RelBench recommendation baselines on the same
-# exported schema. These tasks use standard RelBench top-k metrics
-# (precision/recall/MAP).
 
 # tgbl-* (link prediction; single event table)
 for dataset_name in [
@@ -570,13 +565,6 @@ for dataset_name in [
     "rel-tgb-tgbl-comment",
     "rel-tgb-tgbl-flight",
 ]:
-    register_task(
-        dataset_name,
-        "src-dst-next",
-        tgb.TGBNextLinkPredTask,
-        tgb_task_name="src-dst-next",
-        eval_k=10,
-    )
     register_task(
         dataset_name,
         "src-dst-mrr",
@@ -597,55 +585,10 @@ def _register_thgl_edge_type_tasks(dataset_name: str, edge_types: list[int]) -> 
         )
 
 
-def _register_thgl_next_tasks(dataset_name: str, next_tasks: list[str]) -> None:
-    for name in next_tasks:
-        register_task(
-            dataset_name,
-            name,
-            tgb.TGBNextLinkPredTask,
-            tgb_task_name=name,
-            eval_k=10,
-        )
-
-
 _register_thgl_edge_type_tasks("rel-tgb-thgl-software", list(range(14)))
 _register_thgl_edge_type_tasks("rel-tgb-thgl-github", list(range(14)))
 _register_thgl_edge_type_tasks("rel-tgb-thgl-forum", [0, 1])
 _register_thgl_edge_type_tasks("rel-tgb-thgl-myket", [0, 1])
-
-_register_thgl_next_tasks(
-    "rel-tgb-thgl-software",
-    [
-        "type0-type1-next",
-        "type0-type3-next",
-        "type1-type2-next",
-        "type3-type2-next",
-    ],
-)
-_register_thgl_next_tasks(
-    "rel-tgb-thgl-github",
-    [
-        "type0-type1-next",
-        "type1-type1-next",
-        "type2-type0-next",
-        "type2-type1-next",
-        "type2-type3-next",
-        "type3-type1-next",
-    ],
-)
-_register_thgl_next_tasks(
-    "rel-tgb-thgl-forum",
-    [
-        "type0-type0-next",
-        "type0-type1-next",
-    ],
-)
-_register_thgl_next_tasks(
-    "rel-tgb-thgl-myket",
-    [
-        "type0-type1-next",
-    ],
-)
 
 # tgbn-* (node property prediction; NDCG@10 over label distributions)
 for dataset_name in [
@@ -654,14 +597,6 @@ for dataset_name in [
     "rel-tgb-tgbn-reddit",
     "rel-tgb-tgbn-token",
 ]:
-    register_task(
-        dataset_name,
-        "node-label-next",
-        tgb.TGBNextLinkPredTask,
-        tgb_task_name="node-label-next",
-        dst_entity_col="label_id",
-        eval_k=10,
-    )
     register_task(
         dataset_name,
         "node-label-ndcg",
