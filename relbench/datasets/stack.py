@@ -51,6 +51,7 @@ class StackDataset(Dataset):
                 "Score",
                 "LastEditorDisplayName",
                 "LastEditorUserId",
+                "AcceptedAnswerId",
             ],
             inplace=True,
         )
@@ -123,7 +124,6 @@ class StackDataset(Dataset):
             fkey_col_to_pkey_table={
                 "OwnerUserId": "users",
                 "ParentId": "posts",  # notice the self-reference
-                "AcceptedAnswerId": "posts",
             },
             pkey_col="Id",
             time_col="CreationDate",
