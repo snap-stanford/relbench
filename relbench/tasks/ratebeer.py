@@ -473,11 +473,11 @@ class UserLikedBeerTask(RecommendationTask):
 
 # Mapping of task names to their corresponding task classes.
 tasks_dict = {
-    "beer-rating-churn": BeerRatingChurnTask,
-    "user-rating-churn": UserRatingChurnTask,
+    "beer-churn": BeerRatingChurnTask,
+    "user-churn": UserRatingChurnTask,
     "brewer-dormant": BrewerDormantTask,
-    "user-rating-count": UserRatingCountTask,
-    "user-favorite-beer": UserFavoriteBeerTask,
-    "user-liked-place": UserLikedPlaceTask,
-    "user-liked-beer": UserLikedBeerTask,
+    "user-count": UserRatingCountTask,
+    "user-beer-favorite": UserFavoriteBeerTask,
+    "user-place-liked": UserLikedPlaceTask,
+    "user-beer-liked": UserLikedBeerTask,
 }

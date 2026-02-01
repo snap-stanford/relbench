@@ -367,7 +367,7 @@ register_task(
 register_task("rel-arxiv", "paper-citation", arxiv.PaperCitationTask)
 register_task("rel-arxiv", "author-category", arxiv.AuthorCategoryTask)
 register_task("rel-arxiv", "author-publication", arxiv.AuthorPublicationTask)
-register_task("rel-arxiv", "co-citation", arxiv.CoCitationTask)
+register_task("rel-arxiv", "paper-paper-cocitation", arxiv.CoCitationTask)
 
 register_task(
     "rel-salt",
@@ -506,15 +506,15 @@ register_task(
     ],
 )
 
-register_task("rel-mimic", "icu-length-of-stay", mimic.ICULengthOfStayTask)
+register_task("rel-mimic", "patient-iculengthofstay", mimic.ICULengthOfStayTask)
 
-register_task("rel-ratebeer", "beer-rating-churn", ratebeer.BeerRatingChurnTask)
-register_task("rel-ratebeer", "user-rating-churn", ratebeer.UserRatingChurnTask)
+register_task("rel-ratebeer", "beer-churn", ratebeer.BeerRatingChurnTask)
+register_task("rel-ratebeer", "user-churn", ratebeer.UserRatingChurnTask)
 register_task("rel-ratebeer", "brewer-dormant", ratebeer.BrewerDormantTask)
-register_task("rel-ratebeer", "user-rating-count", ratebeer.UserRatingCountTask)
-register_task("rel-ratebeer", "user-liked-beer", ratebeer.UserLikedBeerTask)
-register_task("rel-ratebeer", "user-liked-place", ratebeer.UserLikedPlaceTask)
-register_task("rel-ratebeer", "user-favorite-beer", ratebeer.UserFavoriteBeerTask)
+register_task("rel-ratebeer", "user-count", ratebeer.UserRatingCountTask)
+register_task("rel-ratebeer", "user-beer-liked", ratebeer.UserLikedBeerTask)
+register_task("rel-ratebeer", "user-place-liked", ratebeer.UserLikedPlaceTask)
+register_task("rel-ratebeer", "user-beer-favorite", ratebeer.UserFavoriteBeerTask)
 
 register_task(
     "rel-ratebeer",

@@ -151,9 +151,6 @@ class UserIgnoreTask(EntityTask):
         event_attendees = db.table_dict["event_attendees"].df
         event_interest = db.table_dict["event_interest"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        if len(timestamp_df) == 1:
-            new_row = pd.DataFrame({"timestamp": [timestamps[0] - self.timedelta]})
-            timestamp_df = pd.concat([new_row, timestamp_df], ignore_index=True)
 
         df = duckdb.sql(
             f"""SELECT
