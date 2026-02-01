@@ -1836,8 +1836,8 @@ packages:
   requires_python: '>=3.9'
 - pypi: ./
   name: relbench
-  version: 1.1.0.dev20250721
-  sha256: fc195c69314ae8bf8d6bc00c188585372ada47e6040e27bba1b3d861e7a2544b
+  version: 2.0.2
+  sha256: c81f2e334dfd8d1ec4413bd5be9d3273886a909d2a5d212b0146a3301a2549e1
   requires_dist:
   - pandas
   - pooch
@@ -1855,6 +1855,8 @@ packages:
   - tqdm ; extra == 'example'
   - pytest ; extra == 'test'
   - pre-commit ; extra == 'dev'
+  - dbinfer-relbench-adapter ; extra == 'dbinfer'
+  - redelex ; extra == 'ctu'
   requires_python: '>=3.10'
   editable: true
 - pypi: https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl

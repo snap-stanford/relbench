@@ -210,7 +210,7 @@ register_task(
 register_task("rel-f1", "driver-position", f1.DriverPositionTask)
 register_task("rel-f1", "driver-dnf", f1.DriverDNFTask)
 register_task("rel-f1", "driver-top3", f1.DriverTop3Task)
-register_task("rel-f1", "driver-race-compete", f1.DriverRaceCompeteTask)
+register_task("rel-f1", "driver-circuit-compete", f1.DriverCircuitCompeteTask)
 register_task(
     "rel-f1",
     "results-position",
