@@ -157,6 +157,22 @@ from relbench.datasets import get_dataset
 from relbench.tasks import get_task
 ```
 
+## Community Datasets: Temporal Graph Benchmark (TGB)
+
+RelBench supports artifact-backed community datasets exported from the Temporal Graph Benchmark (TGB):
+- Dynamic link prediction: `rel-tgb-tgbl-*` (task: `src-dst-mrr`)
+- Temporal heterogeneous link prediction: `rel-tgb-thgl-*` (tasks: `edge-type-<id>-mrr`)
+- Dynamic node property prediction: `rel-tgb-tgbn-*` (task: `node-label-ndcg`)
+
+These datasets/tasks are distributed as pre-built `db.zip` and task-table zip artifacts (not raw-source processing in RelBench).
+
+Example:
+```python
+dataset = get_dataset("rel-tgb-tgbl-wiki-v2", download=True)
+task = get_task("rel-tgb-tgbl-wiki-v2", "src-dst-mrr", download=True)
+val_table = task.get_table("val", mask_input_cols=False)
+```
+
 Get a dataset, e.g., `rel-amazon`:
 ```python
 dataset: Dataset = get_dataset("rel-amazon", download=True)
