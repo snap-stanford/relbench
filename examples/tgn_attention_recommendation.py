@@ -59,7 +59,9 @@ class IdentityMessage(torch.nn.Module):
         super().__init__()
         self.out_channels = int(raw_msg_dim + 2 * memory_dim + time_dim)
 
-    def forward(self, z_src: Tensor, z_dst: Tensor, raw_msg: Tensor, t_enc: Tensor) -> Tensor:
+    def forward(
+        self, z_src: Tensor, z_dst: Tensor, raw_msg: Tensor, t_enc: Tensor
+    ) -> Tensor:
         return torch.cat([z_src, z_dst, raw_msg, t_enc], dim=-1)
 
 
@@ -82,9 +84,13 @@ class LastAggregator(torch.nn.Module):
 class LastNeighborLoader:
     """Keeps the last K neighbors per node (undirected)."""
 
-    def __init__(self, num_nodes: int, size: int, *, device: Optional[torch.device] = None):
+    def __init__(
+        self, num_nodes: int, size: int, *, device: Optional[torch.device] = None
+    ):
         self.size = int(size)
-        self.neighbors = torch.empty((num_nodes, self.size), dtype=torch.long, device=device)
+        self.neighbors = torch.empty(
+            (num_nodes, self.size), dtype=torch.long, device=device
+        )
         self.e_id = torch.empty((num_nodes, self.size), dtype=torch.long, device=device)
         self._assoc = torch.empty(num_nodes, dtype=torch.long, device=device)
         self.reset_state()
@@ -109,7 +115,9 @@ class LastNeighborLoader:
     def insert(self, src: Tensor, dst: Tensor) -> None:
         neighbors = torch.cat([src, dst], dim=0)
         nodes = torch.cat([dst, src], dim=0)
-        e_id = torch.arange(self.cur_e_id, self.cur_e_id + src.size(0), device=src.device).repeat(2)
+        e_id = torch.arange(
+            self.cur_e_id, self.cur_e_id + src.size(0), device=src.device
+        ).repeat(2)
         self.cur_e_id += src.numel()
 
         nodes, perm = nodes.sort()
@@ -130,7 +138,9 @@ class LastNeighborLoader:
         dense_neighbors = dense_neighbors.view(-1, self.size)
 
         e_id = torch.cat([self.e_id[n_id, : self.size], dense_e_id], dim=-1)
-        neighbors = torch.cat([self.neighbors[n_id, : self.size], dense_neighbors], dim=-1)
+        neighbors = torch.cat(
+            [self.neighbors[n_id, : self.size], dense_neighbors], dim=-1
+        )
 
         e_id, perm = e_id.topk(self.size, dim=-1)
         self.e_id[n_id] = e_id
@@ -178,7 +188,9 @@ class TGNMemory(torch.nn.Module):
     def forward(self, n_id: Tensor) -> tuple[Tensor, Tensor]:
         return self.memory[n_id], self.last_update[n_id]
 
-    def update_state(self, src: Tensor, dst: Tensor, t: Tensor, raw_msg: Tensor) -> None:
+    def update_state(
+        self, src: Tensor, dst: Tensor, t: Tensor, raw_msg: Tensor
+    ) -> None:
         # Stream update both endpoints per interaction (undirected view).
         if src.numel() == 0:
             return
@@ -199,12 +211,16 @@ class TGNMemory(torch.nn.Module):
 
 
 class GraphAttentionEmbedding(torch.nn.Module):
-    def __init__(self, in_channels: int, out_channels: int, msg_dim: int, time_enc: TimeEncoder):
+    def __init__(
+        self, in_channels: int, out_channels: int, msg_dim: int, time_enc: TimeEncoder
+    ):
         super().__init__()
         self.time_enc = time_enc
         edge_dim = int(msg_dim + time_enc.out_channels)
         if out_channels % 2 != 0:
-            raise ValueError("out_channels must be divisible by 2 (TransformerConv heads=2).")
+            raise ValueError(
+                "out_channels must be divisible by 2 (TransformerConv heads=2)."
+            )
         self.conv = TransformerConv(
             in_channels,
             out_channels // 2,
@@ -213,7 +229,9 @@ class GraphAttentionEmbedding(torch.nn.Module):
             edge_dim=edge_dim,
         )
 
-    def forward(self, x: Tensor, last_update: Tensor, edge_index: Tensor, t: Tensor, msg: Tensor) -> Tensor:
+    def forward(
+        self, x: Tensor, last_update: Tensor, edge_index: Tensor, t: Tensor, msg: Tensor
+    ) -> Tensor:
         rel_t = last_update[edge_index[0]] - t
         rel_t_enc = self.time_enc(rel_t.to(x.dtype))
         edge_attr = torch.cat([rel_t_enc, msg], dim=-1)
@@ -248,7 +266,12 @@ def _infer_event_spec(
             if not src_cols or not dst_cols:
                 continue
             candidates.append(
-                _EventSpec(table=name, src_col=src_cols[0], dst_col=dst_cols[0], time_col=table.time_col)
+                _EventSpec(
+                    table=name,
+                    src_col=src_cols[0],
+                    dst_col=dst_cols[0],
+                    time_col=table.time_col,
+                )
             )
         else:
             # If src/dst entity tables are the same (homogeneous recommendation),
@@ -259,10 +282,24 @@ def _infer_event_spec(
 
             # Prefer canonical naming if present.
             if "src_id" in cols and "dst_id" in cols:
-                candidates.append(_EventSpec(table=name, src_col="src_id", dst_col="dst_id", time_col=table.time_col))
+                candidates.append(
+                    _EventSpec(
+                        table=name,
+                        src_col="src_id",
+                        dst_col="dst_id",
+                        time_col=table.time_col,
+                    )
+                )
                 continue
             if "dst_id" in cols and "src_id" in cols:
-                candidates.append(_EventSpec(table=name, src_col="src_id", dst_col="dst_id", time_col=table.time_col))
+                candidates.append(
+                    _EventSpec(
+                        table=name,
+                        src_col="src_id",
+                        dst_col="dst_id",
+                        time_col=table.time_col,
+                    )
+                )
                 continue
 
             # Otherwise, pick a stable pair based on name hints.
@@ -277,7 +314,14 @@ def _infer_event_spec(
             dst_col = next((c for c in cols_sorted[1:] if c != src_col), None)
             if dst_col is None:
                 continue
-            candidates.append(_EventSpec(table=name, src_col=src_col, dst_col=dst_col, time_col=table.time_col))
+            candidates.append(
+                _EventSpec(
+                    table=name,
+                    src_col=src_col,
+                    dst_col=dst_col,
+                    time_col=table.time_col,
+                )
+            )
 
     if not candidates:
         raise RuntimeError(
@@ -349,13 +393,27 @@ def _infer_event_spec_from_cache(
             dst_cols = [c for c, t in fkeys.items() if t == task.dst_entity_table]
             if not src_cols or not dst_cols:
                 continue
-            candidates.append(_EventSpec(table=name, src_col=src_cols[0], dst_col=dst_cols[0], time_col=time_col))
+            candidates.append(
+                _EventSpec(
+                    table=name,
+                    src_col=src_cols[0],
+                    dst_col=dst_cols[0],
+                    time_col=time_col,
+                )
+            )
         else:
             cols = [c for c, t in fkeys.items() if t == task.src_entity_table]
             if len(cols) < 2:
                 continue
             if "src_id" in cols and "dst_id" in cols:
-                candidates.append(_EventSpec(table=name, src_col="src_id", dst_col="dst_id", time_col=time_col))
+                candidates.append(
+                    _EventSpec(
+                        table=name,
+                        src_col="src_id",
+                        dst_col="dst_id",
+                        time_col=time_col,
+                    )
+                )
                 continue
 
             def _col_score(col: str) -> tuple[int, int]:
@@ -369,7 +427,11 @@ def _infer_event_spec_from_cache(
             dst_col = next((c for c in cols_sorted[1:] if c != src_col), None)
             if dst_col is None:
                 continue
-            candidates.append(_EventSpec(table=name, src_col=src_col, dst_col=dst_col, time_col=time_col))
+            candidates.append(
+                _EventSpec(
+                    table=name, src_col=src_col, dst_col=dst_col, time_col=time_col
+                )
+            )
 
     if not candidates:
         raise RuntimeError(
@@ -449,15 +511,25 @@ def _load_last_events_before(
             try:
                 col_meta = pf.metadata.row_group(rg).column(time_idx)
                 stats = col_meta.statistics
-                min_s = _stat_to_unix_seconds(getattr(stats, "min", None)) if stats is not None else None
-                max_s = _stat_to_unix_seconds(getattr(stats, "max", None)) if stats is not None else None
+                min_s = (
+                    _stat_to_unix_seconds(getattr(stats, "min", None))
+                    if stats is not None
+                    else None
+                )
+                max_s = (
+                    _stat_to_unix_seconds(getattr(stats, "max", None))
+                    if stats is not None
+                    else None
+                )
                 if min_s is not None and min_s >= cutoff_s:
                     continue
                 take_all = max_s is not None and max_s < cutoff_s
             except Exception:
                 take_all = False
 
-        tbl = pf.read_row_group(rg, columns=[src_col, dst_col, time_col], use_threads=True).to_pandas()
+        tbl = pf.read_row_group(
+            rg, columns=[src_col, dst_col, time_col], use_threads=True
+        ).to_pandas()
         tbl = tbl.dropna()
         if tbl.shape[0] == 0:
             continue
@@ -481,7 +553,11 @@ def _load_last_events_before(
             break
 
     if total == 0:
-        return (np.empty((0,), dtype=np.int64), np.empty((0,), dtype=np.int64), np.empty((0,), dtype=np.int64))
+        return (
+            np.empty((0,), dtype=np.int64),
+            np.empty((0,), dtype=np.int64),
+            np.empty((0,), dtype=np.int64),
+        )
 
     src_np = np.concatenate(src_chunks[::-1], axis=0)
     dst_np = np.concatenate(dst_chunks[::-1], axis=0)
@@ -522,7 +598,11 @@ def _load_last_joined_label_events_before(
     le_t = _to_unix_seconds(le_df[spec.time_col])
 
     if le_ids.size == 0:
-        return (np.empty((0,), dtype=np.int64), np.empty((0,), dtype=np.int64), np.empty((0,), dtype=np.int64))
+        return (
+            np.empty((0,), dtype=np.int64),
+            np.empty((0,), dtype=np.int64),
+            np.empty((0,), dtype=np.int64),
+        )
 
     if (le_ids == np.arange(le_ids.size)).all():
         idx = None
@@ -538,11 +618,15 @@ def _load_last_joined_label_events_before(
     total = 0
 
     for rg in range(pf.num_row_groups - 1, -1, -1):
-        items = pf.read_row_group(rg, columns=[spec.label_event_id_col, spec.dst_col], use_threads=True).to_pandas()
+        items = pf.read_row_group(
+            rg, columns=[spec.label_event_id_col, spec.dst_col], use_threads=True
+        ).to_pandas()
         items = items.dropna()
         if items.shape[0] == 0:
             continue
-        item_le_ids = items[spec.label_event_id_col].astype("int64").to_numpy(copy=False)
+        item_le_ids = (
+            items[spec.label_event_id_col].astype("int64").to_numpy(copy=False)
+        )
         item_dst = items[spec.dst_col].astype("int64").to_numpy(copy=False)
 
         if idx is None:
@@ -577,7 +661,11 @@ def _load_last_joined_label_events_before(
             break
 
     if total == 0:
-        return (np.empty((0,), dtype=np.int64), np.empty((0,), dtype=np.int64), np.empty((0,), dtype=np.int64))
+        return (
+            np.empty((0,), dtype=np.int64),
+            np.empty((0,), dtype=np.int64),
+            np.empty((0,), dtype=np.int64),
+        )
 
     src_np = np.concatenate(src_chunks[::-1], axis=0)
     dst_np = np.concatenate(dst_chunks[::-1], axis=0)
@@ -596,7 +684,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, default="rel-f1")
     parser.add_argument("--task", type=str, default="driver-race-compete")
-    parser.add_argument("--download", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument(
+        "--download", action=argparse.BooleanOptionalAction, default=True
+    )
     parser.add_argument("--event_table", type=str, default=None)
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=2000)
@@ -607,14 +697,43 @@ def main() -> None:
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--num_neg_train", type=int, default=50)
     parser.add_argument("--eval_dst_block_size", type=int, default=50000)
-    parser.add_argument("--max_train_events", type=int, default=0, help="Cap number of training events before val cutoff (0 disables).")
-    parser.add_argument("--max_history_events", type=int, default=0, help="Cap history events used to build memory for eval (0 disables).")
-    parser.add_argument("--max_val_rows", type=int, default=0, help="Cap number of val rows evaluated (0 disables).")
-    parser.add_argument("--max_test_rows", type=int, default=0, help="Cap number of test rows evaluated (0 disables).")
-    parser.add_argument("--run_dir", type=str, default=None, help="Optional directory to save checkpoints/metrics.")
-    parser.add_argument("--save_every_epoch", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument(
+        "--max_train_events",
+        type=int,
+        default=0,
+        help="Cap number of training events before val cutoff (0 disables).",
+    )
+    parser.add_argument(
+        "--max_history_events",
+        type=int,
+        default=0,
+        help="Cap history events used to build memory for eval (0 disables).",
+    )
+    parser.add_argument(
+        "--max_val_rows",
+        type=int,
+        default=0,
+        help="Cap number of val rows evaluated (0 disables).",
+    )
+    parser.add_argument(
+        "--max_test_rows",
+        type=int,
+        default=0,
+        help="Cap number of test rows evaluated (0 disables).",
+    )
+    parser.add_argument(
+        "--run_dir",
+        type=str,
+        default=None,
+        help="Optional directory to save checkpoints/metrics.",
+    )
+    parser.add_argument(
+        "--save_every_epoch", action=argparse.BooleanOptionalAction, default=False
+    )
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda"])
+    parser.add_argument(
+        "--device", type=str, default="auto", choices=["auto", "cpu", "cuda"]
+    )
     args = parser.parse_args()
 
     seed_everything(args.seed)
@@ -627,9 +746,13 @@ def main() -> None:
         torch.set_num_threads(1)
 
     dataset: Dataset = get_dataset(args.dataset, download=bool(args.download))
-    task: RecommendationTask = get_task(args.dataset, args.task, download=bool(args.download))
+    task: RecommendationTask = get_task(
+        args.dataset, args.task, download=bool(args.download)
+    )
     if task.task_type != TaskType.LINK_PREDICTION:
-        raise ValueError(f"Task {args.dataset}/{args.task} is not a link prediction task.")
+        raise ValueError(
+            f"Task {args.dataset}/{args.task} is not a link prediction task."
+        )
 
     val_ts = int(pd.to_datetime(dataset.val_timestamp, utc=True).timestamp())
     test_ts = int(pd.to_datetime(dataset.test_timestamp, utc=True).timestamp())
@@ -650,14 +773,16 @@ def main() -> None:
 
     joined_spec = _JoinedLabelEventSpec()
     db_dir = Path(str(dataset.cache_dir)) / "db"
-    has_label_tables = (db_dir / f"{joined_spec.label_events_table}.parquet").exists() and (
-        db_dir / f"{joined_spec.label_event_items_table}.parquet"
-    ).exists()
+    has_label_tables = (
+        db_dir / f"{joined_spec.label_events_table}.parquet"
+    ).exists() and (db_dir / f"{joined_spec.label_event_items_table}.parquet").exists()
 
     direct_spec: Optional[_EventSpec] = None
     use_joined = False
     try:
-        direct_spec = _infer_event_spec_from_cache(dataset, task, task_name=args.task, event_table=args.event_table)
+        direct_spec = _infer_event_spec_from_cache(
+            dataset, task, task_name=args.task, event_table=args.event_table
+        )
     except RuntimeError:
         if has_label_tables and args.event_table is None:
             use_joined = True
@@ -666,7 +791,11 @@ def main() -> None:
 
     if use_joined:
         if cap_val <= 0:
-            cap_val = int(pq.ParquetFile(db_dir / f"{joined_spec.label_event_items_table}.parquet").metadata.num_rows)
+            cap_val = int(
+                pq.ParquetFile(
+                    db_dir / f"{joined_spec.label_event_items_table}.parquet"
+                ).metadata.num_rows
+            )
         if cap_test <= 0:
             cap_test = cap_val
 
@@ -694,15 +823,31 @@ def main() -> None:
             )
         else:
             path = db_dir / f"{direct_spec.table}.parquet"
-            df = pq.read_table(path, columns=[direct_spec.src_col, direct_spec.dst_col, direct_spec.time_col], use_threads=True).to_pandas()
+            df = pq.read_table(
+                path,
+                columns=[
+                    direct_spec.src_col,
+                    direct_spec.dst_col,
+                    direct_spec.time_col,
+                ],
+                use_threads=True,
+            ).to_pandas()
             df = df.dropna()
             src_val_np = df[direct_spec.src_col].astype("int64").to_numpy()
             dst_val_np = df[direct_spec.dst_col].astype("int64").to_numpy()
             t_val_np = _to_unix_seconds(df[direct_spec.time_col])
             order = np.argsort(t_val_np, kind="mergesort")
-            src_val_np, dst_val_np, t_val_np = src_val_np[order], dst_val_np[order], t_val_np[order]
+            src_val_np, dst_val_np, t_val_np = (
+                src_val_np[order],
+                dst_val_np[order],
+                t_val_np[order],
+            )
             mask = t_val_np < int(val_ts)
-            src_val_np, dst_val_np, t_val_np = src_val_np[mask], dst_val_np[mask], t_val_np[mask]
+            src_val_np, dst_val_np, t_val_np = (
+                src_val_np[mask],
+                dst_val_np[mask],
+                t_val_np[mask],
+            )
 
         if cap_test > 0:
             src_test_np, dst_test_np, t_test_np = _load_last_events_before(
@@ -755,13 +900,17 @@ def main() -> None:
             time_col=table.time_col,
         )
 
-    def build_pred_at(timestamp_s: int, *, split: str, max_rows: int) -> tuple[np.ndarray, Table]:
+    def build_pred_at(
+        timestamp_s: int, *, split: str, max_rows: int
+    ) -> tuple[np.ndarray, Table]:
         target_table = task.get_table(split, mask_input_cols=False)
         if len(target_table.df) == 0:
             return np.empty((0, int(task.eval_k)), dtype=np.int64), target_table
 
         target_table = _subset_table(target_table, max_rows=max_rows)
-        target_ts = int(pd.to_datetime(target_table.df[task.time_col].iloc[0], utc=True).timestamp())
+        target_ts = int(
+            pd.to_datetime(target_table.df[task.time_col].iloc[0], utc=True).timestamp()
+        )
         if target_ts != timestamp_s:
             raise RuntimeError("This example assumes a single timestamp per split.")
 
@@ -770,7 +919,9 @@ def main() -> None:
         elif timestamp_s == test_ts:
             src, dst, t, msg = test_stream
         else:
-            raise RuntimeError("This example only supports the val/test split timestamps.")
+            raise RuntimeError(
+                "This example only supports the val/test split timestamps."
+            )
 
         memory.eval()
         gnn.eval()
@@ -791,14 +942,18 @@ def main() -> None:
             neighbor_loader.insert(src_b, dst_b)
 
         with torch.no_grad():
-            src_ids = torch.from_numpy(target_table.df[task.src_entity_col].astype("int64").to_numpy()).to(device)
+            src_ids = torch.from_numpy(
+                target_table.df[task.src_entity_col].astype("int64").to_numpy()
+            ).to(device)
             k = int(task.eval_k)
             block = int(args.eval_dst_block_size)
 
             if num_dst <= block:
                 # Small/medium destination space: embed all dst nodes at once.
                 if task.src_entity_table != task.dst_entity_table:
-                    dst_ids = torch.arange(num_dst, device=device, dtype=torch.long) + num_src
+                    dst_ids = (
+                        torch.arange(num_dst, device=device, dtype=torch.long) + num_src
+                    )
                 else:
                     dst_ids = torch.arange(num_dst, device=device, dtype=torch.long)
 
@@ -813,12 +968,16 @@ def main() -> None:
                 dst_emb = z[assoc[dst_ids]]
 
                 topk_scores = src_emb.new_full((src_emb.size(0), k), float("-inf"))
-                topk_idx = torch.full((src_emb.size(0), k), -1, device=device, dtype=torch.long)
+                topk_idx = torch.full(
+                    (src_emb.size(0), k), -1, device=device, dtype=torch.long
+                )
 
                 for start in range(0, dst_emb.size(0), block):
                     end = min(start + block, dst_emb.size(0))
                     scores = src_emb @ dst_emb[start:end].t()  # [B, block]
-                    cand_scores, cand_idx = torch.topk(scores, k=min(k, end - start), dim=1)
+                    cand_scores, cand_idx = torch.topk(
+                        scores, k=min(k, end - start), dim=1
+                    )
                     cand_idx = cand_idx + start
 
                     merged_scores = torch.cat([topk_scores, cand_scores], dim=1)
@@ -836,23 +995,34 @@ def main() -> None:
                 src_emb = z_s[assoc[src_ids]]
 
                 topk_scores = src_emb.new_full((src_emb.size(0), k), float("-inf"))
-                topk_idx = torch.full((src_emb.size(0), k), -1, device=device, dtype=torch.long)
+                topk_idx = torch.full(
+                    (src_emb.size(0), k), -1, device=device, dtype=torch.long
+                )
 
                 for start in range(0, num_dst, block):
                     end = min(start + block, num_dst)
                     if task.src_entity_table != task.dst_entity_table:
-                        dst_block_ids = torch.arange(start, end, device=device, dtype=torch.long) + num_src
+                        dst_block_ids = (
+                            torch.arange(start, end, device=device, dtype=torch.long)
+                            + num_src
+                        )
                     else:
-                        dst_block_ids = torch.arange(start, end, device=device, dtype=torch.long)
+                        dst_block_ids = torch.arange(
+                            start, end, device=device, dtype=torch.long
+                        )
 
                     n_id_d, edge_index_d, e_id_d = neighbor_loader(dst_block_ids)
                     assoc[n_id_d] = torch.arange(n_id_d.size(0), device=device)
                     z_d, last_update_d = memory(n_id_d)
-                    z_d = gnn(z_d, last_update_d, edge_index_d, t_h[e_id_d], msg_h[e_id_d])
+                    z_d = gnn(
+                        z_d, last_update_d, edge_index_d, t_h[e_id_d], msg_h[e_id_d]
+                    )
                     dst_emb = z_d[assoc[dst_block_ids]]
 
                     scores = src_emb @ dst_emb.t()  # [B, block]
-                    cand_scores, cand_idx = torch.topk(scores, k=min(k, end - start), dim=1)
+                    cand_scores, cand_idx = torch.topk(
+                        scores, k=min(k, end - start), dim=1
+                    )
                     cand_idx = cand_idx + start
 
                     merged_scores = torch.cat([topk_scores, cand_scores], dim=1)
@@ -877,7 +1047,9 @@ def main() -> None:
         time_enc=memory.time_enc,
     ).to(device)
 
-    neighbor_loader = LastNeighborLoader(num_nodes, size=args.num_neighbors, device=device)
+    neighbor_loader = LastNeighborLoader(
+        num_nodes, size=args.num_neighbors, device=device
+    )
     optimizer = torch.optim.Adam(
         list(memory.parameters()) + list(gnn.parameters()),
         lr=args.lr,
@@ -898,16 +1070,29 @@ def main() -> None:
         t_tr = t_all[-max_train:] if max_train > 0 else t_all
         msg_tr = msg_all[-max_train:] if max_train > 0 else msg_all
 
-        for start in tqdm(range(0, t_tr.numel(), args.batch_size), desc="train", leave=False):
+        for start in tqdm(
+            range(0, t_tr.numel(), args.batch_size), desc="train", leave=False
+        ):
             end = min(start + args.batch_size, t_tr.numel())
-            src_b, pos_dst_b, t_b = src_tr[start:end], dst_tr[start:end], t_tr[start:end]
+            src_b, pos_dst_b, t_b = (
+                src_tr[start:end],
+                dst_tr[start:end],
+                t_tr[start:end],
+            )
             msg_b = msg_tr[start:end]
 
             # negatives are sampled from dst-type only
             if task.src_entity_table != task.dst_entity_table:
-                neg_dst_b = torch.randint(num_src, num_src + num_dst, (pos_dst_b.size(0), args.num_neg_train), device=device)
+                neg_dst_b = torch.randint(
+                    num_src,
+                    num_src + num_dst,
+                    (pos_dst_b.size(0), args.num_neg_train),
+                    device=device,
+                )
             else:
-                neg_dst_b = torch.randint(0, num_dst, (pos_dst_b.size(0), args.num_neg_train), device=device)
+                neg_dst_b = torch.randint(
+                    0, num_dst, (pos_dst_b.size(0), args.num_neg_train), device=device
+                )
 
             n_id = torch.cat([src_b, pos_dst_b, neg_dst_b.reshape(-1)]).unique()
             n_id, edge_index, e_id = neighbor_loader(n_id)
@@ -934,7 +1119,7 @@ def main() -> None:
             memory.detach()
 
             total_loss += float(loss.detach()) * (end - start)
-            total_events += (end - start)
+            total_events += end - start
 
         return total_loss / max(total_events, 1)
 
@@ -982,7 +1167,9 @@ def main() -> None:
     best_state = None
     for epoch in range(1, args.epochs + 1):
         loss = train_epoch()
-        val_pred, val_table = build_pred_at(val_ts, split="val", max_rows=int(args.max_val_rows))
+        val_pred, val_table = build_pred_at(
+            val_ts, split="val", max_rows=int(args.max_val_rows)
+        )
         val_metrics = task.evaluate(val_pred, val_table)
         tune = "link_prediction_map"
         print(f"Epoch {epoch:02d} | loss={loss:.4f} | val={val_metrics}")
@@ -992,22 +1179,32 @@ def main() -> None:
             if run_dir is not None:
                 torch.save(best_state, run_dir / "best.pt")
         if run_dir is not None and args.save_every_epoch:
-            torch.save({"memory": memory.state_dict(), "gnn": gnn.state_dict()}, run_dir / f"epoch_{epoch:02d}.pt")
+            torch.save(
+                {"memory": memory.state_dict(), "gnn": gnn.state_dict()},
+                run_dir / f"epoch_{epoch:02d}.pt",
+            )
             with (run_dir / "metrics.jsonl").open("a", encoding="utf-8") as f:
-                f.write(json.dumps({"epoch": epoch, "loss": loss, "val": val_metrics}) + "\n")
+                f.write(
+                    json.dumps({"epoch": epoch, "loss": loss, "val": val_metrics})
+                    + "\n"
+                )
 
     if best_state is not None:
         memory.load_state_dict(best_state["memory"])
         gnn.load_state_dict(best_state["gnn"])
 
-    val_pred, val_table = build_pred_at(val_ts, split="val", max_rows=int(args.max_val_rows))
+    val_pred, val_table = build_pred_at(
+        val_ts, split="val", max_rows=int(args.max_val_rows)
+    )
     val_metrics = task.evaluate(val_pred, val_table)
 
     test_table = task.get_table("test", mask_input_cols=False)
     if len(test_table.df) == 0:
         test_metrics = "<skipped: empty test split>"
     else:
-        test_pred, test_table = build_pred_at(test_ts, split="test", max_rows=int(args.max_test_rows))
+        test_pred, test_table = build_pred_at(
+            test_ts, split="test", max_rows=int(args.max_test_rows)
+        )
         test_metrics = task.evaluate(test_pred, test_table)
 
     print(f"Best val:  {val_metrics}")

@@ -8,7 +8,7 @@ from torch_geometric.data import Data, FeatureStore, GraphStore, HeteroData
 from torch_geometric.loader import NodeLoader
 from torch_geometric.sampler import NeighborSampler, NodeSamplerInput
 from torch_geometric.sampler.base import SubgraphType
-from torch_geometric.typing import EdgeType, NodeType, OptTensor, WITH_PYG_LIB
+from torch_geometric.typing import WITH_PYG_LIB, EdgeType, NodeType, OptTensor
 
 
 def batched_arange(count: Tensor) -> Tuple[Tensor, Tensor]:

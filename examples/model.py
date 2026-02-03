@@ -8,7 +8,12 @@ from torch_geometric.data import HeteroData
 from torch_geometric.nn import MLP
 from torch_geometric.typing import NodeType
 
-from relbench.modeling.nn import HeteroEncoder, HeteroGAT, HeteroGraphSAGE, HeteroTemporalEncoder
+from relbench.modeling.nn import (
+    HeteroEncoder,
+    HeteroGAT,
+    HeteroGraphSAGE,
+    HeteroTemporalEncoder,
+)
 
 
 class Model(torch.nn.Module):

@@ -65,7 +65,9 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 dataset: Dataset = get_dataset(args.dataset, download=bool(args.download))
-task: RecommendationTask = get_task(args.dataset, args.task, download=bool(args.download))
+task: RecommendationTask = get_task(
+    args.dataset, args.task, download=bool(args.download)
+)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
@@ -257,7 +259,9 @@ for epoch in range(1, args.epochs + 1):
 if state_dict is not None:
     model.load_state_dict(state_dict)
 else:
-    warnings.warn("No best checkpoint was selected (state_dict is None); evaluating with current model weights.")
+    warnings.warn(
+        "No best checkpoint was selected (state_dict is None); evaluating with current model weights."
+    )
 val_pred = test(*eval_loaders_dict["val"])
 val_metrics = task.evaluate(val_pred, task.get_table("val"))
 print(f"Best Val metrics: {val_metrics}")
