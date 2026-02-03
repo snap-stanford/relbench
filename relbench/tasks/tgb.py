@@ -20,7 +20,9 @@ from relbench.metrics import (
 
 def _to_unix_seconds(ts: pd.Series) -> np.ndarray:
     ts = pd.to_datetime(ts, utc=True)
-    return (ts.astype("int64").to_numpy(copy=False) // 1_000_000_000).astype(np.int64, copy=False)
+    return (ts.astype("int64").to_numpy(copy=False) // 1_000_000_000).astype(
+        np.int64, copy=False
+    )
 
 
 def _tgb_eval_hits_and_mrr(
@@ -109,9 +111,15 @@ class TGBOneVsManyLinkPredTask(BaseTask):
 
     def filter_dangling_entities(self, table: Table) -> Table:
         if self.src_entity_table:
-            table.df = table.df[table.df[self.src_entity_col] < len(self.dataset.get_db().table_dict[self.src_entity_table])]
+            table.df = table.df[
+                table.df[self.src_entity_col]
+                < len(self.dataset.get_db().table_dict[self.src_entity_table])
+            ]
         if self.dst_entity_table:
-            table.df = table.df[table.df[self.dst_entity_col] < len(self.dataset.get_db().table_dict[self.dst_entity_table])]
+            table.df = table.df[
+                table.df[self.dst_entity_col]
+                < len(self.dataset.get_db().table_dict[self.dst_entity_table])
+            ]
         table.df = table.df.reset_index(drop=True)
         return table
 
@@ -169,13 +177,19 @@ class TGBOneVsManyLinkPredTask(BaseTask):
             )
         node_type = np.load(node_type_path)
         local_id = np.load(local_id_path)
-        return node_type.astype(np.int64, copy=False), local_id.astype(np.int64, copy=False)
+        return node_type.astype(np.int64, copy=False), local_id.astype(
+            np.int64, copy=False
+        )
 
     @lru_cache(maxsize=None)
     def _load_local_to_global(self, node_type_id: int) -> np.ndarray:
         if self.dataset.cache_dir is None:
             raise RuntimeError("Dataset has no cache_dir; cannot locate mapping files.")
-        p = Path(self.dataset.cache_dir) / "mappings" / f"globals_type_{int(node_type_id)}.npy"
+        p = (
+            Path(self.dataset.cache_dir)
+            / "mappings"
+            / f"globals_type_{int(node_type_id)}.npy"
+        )
         if not p.exists():
             raise RuntimeError(
                 f"Missing mapping file {p}. This is required to map local ids "
@@ -188,7 +202,10 @@ class TGBOneVsManyLinkPredTask(BaseTask):
         return int(m.group(1)) if m else None
 
     def _bipartite_offset(self) -> Optional[int]:
-        if self.src_entity_table == "src_nodes" and self.dst_entity_table == "dst_nodes":
+        if (
+            self.src_entity_table == "src_nodes"
+            and self.dst_entity_table == "dst_nodes"
+        ):
             return len(self.dataset.get_db().table_dict["src_nodes"])
         return None
 
@@ -208,20 +225,26 @@ class TGBOneVsManyLinkPredTask(BaseTask):
             dst_global = dst_global.astype(np.int64, copy=False)
             out = dst_global - int(offset)
             if (out < 0).any():
-                raise RuntimeError("Bipartite negatives contain ids outside destination range.")
+                raise RuntimeError(
+                    "Bipartite negatives contain ids outside destination range."
+                )
             return out.astype(np.int64, copy=False)
         node_type, local_id = self._load_global_to_local()
         dst_global = dst_global.astype(np.int64, copy=False)
         bad = node_type[dst_global] != dst_type
         if bad.any():
-            raise RuntimeError("Negative samples contain destination nodes of unexpected type.")
+            raise RuntimeError(
+                "Negative samples contain destination nodes of unexpected type."
+            )
         return local_id[dst_global].astype(np.int64, copy=False)
 
-    def get_negative_dsts_local(self, *, split: str, table: Optional[Table] = None) -> list[np.ndarray]:
+    def get_negative_dsts_local(
+        self, *, split: str, table: Optional[Table] = None
+    ) -> list[np.ndarray]:
         r"""Return negative destination ids (local to dst entity table) for each row.
 
-        This is intended to help users reproduce the TGB evaluation protocol,
-        i.e., score the true destination vs the provided negatives.
+        This is intended to help users reproduce the TGB evaluation protocol, i.e.,
+        score the true destination vs the provided negatives.
         """
         if split not in ["val", "test"]:
             raise ValueError("Negatives are only defined for val/test splits.")
@@ -365,14 +388,20 @@ class TGBNextLinkPredTask(RecommendationTask):
         self.dst_entity_table = str(dst_table)
 
         if dataset.cache_dir is None:
-            raise RuntimeError("TGBNextLinkPredTask requires dataset.cache_dir to validate entity tables.")
+            raise RuntimeError(
+                "TGBNextLinkPredTask requires dataset.cache_dir to validate entity tables."
+            )
         db_dir = Path(dataset.cache_dir) / "db"
         src_path = db_dir / f"{self.src_entity_table}.parquet"
         dst_path = db_dir / f"{self.dst_entity_table}.parquet"
         if not src_path.exists():
-            raise ValueError(f"src_entity_table='{self.src_entity_table}' not found in dataset db at {src_path}.")
+            raise ValueError(
+                f"src_entity_table='{self.src_entity_table}' not found in dataset db at {src_path}."
+            )
         if not dst_path.exists():
-            raise ValueError(f"dst_entity_table='{self.dst_entity_table}' not found in dataset db at {dst_path}.")
+            raise ValueError(
+                f"dst_entity_table='{self.dst_entity_table}' not found in dataset db at {dst_path}."
+            )
 
         super().__init__(dataset, cache_dir=cache_dir)
 
@@ -435,7 +464,10 @@ def _tgb_nodeprop_ndcg_at_k(
 
         rel_map = {int(l): float(w) for l, w in zip(ids.tolist(), rel.tolist())}
         pred_ids = topk_label_ids[i, :k]
-        gains = np.fromiter((np.exp2(rel_map.get(int(l), 0.0)) - 1.0 for l in pred_ids.tolist()), dtype=np.float64)
+        gains = np.fromiter(
+            (np.exp2(rel_map.get(int(l), 0.0)) - 1.0 for l in pred_ids.tolist()),
+            dtype=np.float64,
+        )
         dcg = (gains * discounts[: gains.shape[0]]).sum()
         ndcgs.append(float(dcg / idcg))
 
@@ -510,9 +542,17 @@ class TGBNodePropNDCGTask(BaseTask):
     def _label_csr(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Return CSR arrays over label_event_id -> (label_id, label_weight)."""
         db = self.dataset.get_db(upto_test_timestamp=False)
-        items = db.table_dict[self.spec.label_items_table].df[
-            [self.spec.label_event_id_col, self.spec.label_id_col, self.spec.label_weight_col]
-        ].copy()
+        items = (
+            db.table_dict[self.spec.label_items_table]
+            .df[
+                [
+                    self.spec.label_event_id_col,
+                    self.spec.label_id_col,
+                    self.spec.label_weight_col,
+                ]
+            ]
+            .copy()
+        )
 
         event_ids = items[self.spec.label_event_id_col].astype("int64").to_numpy()
         order = np.argsort(event_ids, kind="mergesort")
@@ -521,13 +561,17 @@ class TGBNodePropNDCGTask(BaseTask):
         label_w = items[self.spec.label_weight_col].astype("float64").to_numpy()[order]
 
         num_events = len(db.table_dict[self.spec.label_events_table])
-        counts = np.bincount(event_ids, minlength=num_events).astype(np.int64, copy=False)
+        counts = np.bincount(event_ids, minlength=num_events).astype(
+            np.int64, copy=False
+        )
         indptr = np.empty(num_events + 1, dtype=np.int64)
         indptr[0] = 0
         np.cumsum(counts, out=indptr[1:])
         return indptr, label_ids, label_w
 
-    def _truth_for_events(self, label_event_ids: np.ndarray) -> tuple[list[np.ndarray], list[np.ndarray]]:
+    def _truth_for_events(
+        self, label_event_ids: np.ndarray
+    ) -> tuple[list[np.ndarray], list[np.ndarray]]:
         indptr, label_ids, label_w = self._label_csr()
         true_ids: list[np.ndarray] = []
         true_w: list[np.ndarray] = []
@@ -556,16 +600,22 @@ class TGBNodePropNDCGTask(BaseTask):
         if y_pred.ndim != 2:
             raise ValueError("Expected predictions with shape (N, num_labels).")
         if y_pred.shape[0] != len(target_table):
-            raise ValueError(f"Prediction rows {y_pred.shape[0]} != target rows {len(target_table)}.")
+            raise ValueError(
+                f"Prediction rows {y_pred.shape[0]} != target rows {len(target_table)}."
+            )
 
         k = int(self.k)
-        topk = np.argpartition(-y_pred, kth=min(k - 1, y_pred.shape[1] - 1), axis=1)[:, :k]
+        topk = np.argpartition(-y_pred, kth=min(k - 1, y_pred.shape[1] - 1), axis=1)[
+            :, :k
+        ]
         topk_scores = np.take_along_axis(y_pred, topk, axis=1)
         order = np.argsort(-topk_scores, axis=1, kind="mergesort")
         topk = np.take_along_axis(topk, order, axis=1)
         topk_scores = np.take_along_axis(topk_scores, order, axis=1)
 
-        label_event_ids = target_table.df[self.label_event_id_col].astype("int64").to_numpy()
+        label_event_ids = (
+            target_table.df[self.label_event_id_col].astype("int64").to_numpy()
+        )
         true_ids, true_w = self._truth_for_events(label_event_ids)
         ndcg = _tgb_nodeprop_ndcg_at_k(
             topk_label_ids=topk,

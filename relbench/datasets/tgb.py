@@ -19,11 +19,15 @@ _TGB_CUTOFFS: dict[str, TGBCutoffs] = {
     "tgbl-wiki": TGBCutoffs(val_timestamp_s=1862653, test_timestamp_s=2218300),
     "tgbl-wiki-v2": TGBCutoffs(val_timestamp_s=1862653, test_timestamp_s=2218300),
     "tgbl-review": TGBCutoffs(val_timestamp_s=1464912000, test_timestamp_s=1488844800),
-    "tgbl-review-v2": TGBCutoffs(val_timestamp_s=1464912000, test_timestamp_s=1488844800),
+    "tgbl-review-v2": TGBCutoffs(
+        val_timestamp_s=1464912000, test_timestamp_s=1488844800
+    ),
     "tgbl-coin": TGBCutoffs(val_timestamp_s=1662096249, test_timestamp_s=1664482319),
     "tgbl-comment": TGBCutoffs(val_timestamp_s=1282869285, test_timestamp_s=1288838725),
     "tgbl-flight": TGBCutoffs(val_timestamp_s=1638162000, test_timestamp_s=1653796800),
-    "thgl-software": TGBCutoffs(val_timestamp_s=1706003880, test_timestamp_s=1706315669),
+    "thgl-software": TGBCutoffs(
+        val_timestamp_s=1706003880, test_timestamp_s=1706315669
+    ),
     "thgl-forum": TGBCutoffs(val_timestamp_s=1390426563, test_timestamp_s=1390838358),
     "thgl-github": TGBCutoffs(val_timestamp_s=1711075987, test_timestamp_s=1711482874),
     "thgl-myket": TGBCutoffs(val_timestamp_s=1603724860, test_timestamp_s=1606341312),
@@ -47,8 +51,12 @@ class TGBDataset(Dataset):
         self.tgb_name = str(tgb_name)
 
         cutoffs = _TGB_CUTOFFS[self.tgb_name]
-        self.val_timestamp = pd.to_datetime(int(cutoffs.val_timestamp_s), unit="s", utc=True)
-        self.test_timestamp = pd.to_datetime(int(cutoffs.test_timestamp_s), unit="s", utc=True)
+        self.val_timestamp = pd.to_datetime(
+            int(cutoffs.val_timestamp_s), unit="s", utc=True
+        )
+        self.test_timestamp = pd.to_datetime(
+            int(cutoffs.test_timestamp_s), unit="s", utc=True
+        )
 
         super().__init__(cache_dir=cache_dir)
 
