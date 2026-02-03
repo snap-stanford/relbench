@@ -35,10 +35,14 @@ parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
+parser.add_argument("--gnn", type=str, default="sage", choices=["sage", "gat"])
+parser.add_argument("--gat_heads", type=int, default=4)
+parser.add_argument("--gat_dropout", type=float, default=0.0)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
+parser.add_argument("--download", action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument(
     "--include_task_tables",
     type=str,
@@ -60,8 +64,8 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: Dataset = get_dataset(args.dataset, download=True)
-task: EntityTask = get_task(args.dataset, args.task, download=True)
+dataset: Dataset = get_dataset(args.dataset, download=bool(args.download))
+task: EntityTask = get_task(args.dataset, args.task, download=bool(args.download))
 
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
@@ -247,6 +251,9 @@ model = Model(
     out_channels=out_channels,
     aggr=args.aggr,
     norm="batch_norm",
+    gnn=args.gnn,
+    gat_heads=args.gat_heads,
+    gat_dropout=args.gat_dropout,
 ).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 state_dict = None

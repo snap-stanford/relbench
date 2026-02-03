@@ -8,7 +8,7 @@ from torch_geometric.data import Data, FeatureStore, GraphStore, HeteroData
 from torch_geometric.loader import NodeLoader
 from torch_geometric.sampler import NeighborSampler, NodeSamplerInput
 from torch_geometric.sampler.base import SubgraphType
-from torch_geometric.typing import EdgeType, NodeType, OptTensor
+from torch_geometric.typing import WITH_PYG_LIB, EdgeType, NodeType, OptTensor
 
 
 def batched_arange(count: Tensor) -> Tuple[Tensor, Tensor]:
@@ -201,7 +201,10 @@ class LinkNeighborLoader(DataLoader):
             data,
             num_neighbors=num_neighbors,
             subgraph_type=subgraph_type,
-            disjoint=True,
+            # PyG only supports `disjoint=True` sampling with `pyg-lib`
+            # (as of torch_geometric==2.7.*). Fall back to `disjoint=False` to
+            # keep RelBench functional in environments without `pyg-lib`.
+            disjoint=WITH_PYG_LIB,
             temporal_strategy=temporal_strategy,
             time_attr=time_attr,
             share_memory=kwargs.get("num_workers", 0) > 0,

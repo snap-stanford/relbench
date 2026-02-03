@@ -84,6 +84,11 @@ class Table:
         # Read the Parquet file using pyarrow
         table = pa.parquet.read_table(path)
         df = table.to_pandas()
+        # DuckDB currently cannot ingest pandas StringDtype columns reliably.
+        # Convert them to plain object dtype on load.
+        for col in df.columns:
+            if isinstance(df[col].dtype, pd.StringDtype):
+                df[col] = df[col].astype(object)
 
         # Extract metadata
         metadata_bytes = table.schema.metadata
