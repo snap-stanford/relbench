@@ -518,7 +518,7 @@ register_task("rel-ratebeer", "user-beer-favorite", ratebeer.UserFavoriteBeerTas
 
 register_task(
     "rel-ratebeer",
-    "user-beer-rating",
+    "beer_ratings-total_score",
     AutoCompleteTask,
     task_type=TaskType.REGRESSION,
     entity_table="beer_ratings",
