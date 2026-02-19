@@ -25,7 +25,7 @@ Alongside our paper, we also integrate the [Temporal Graph Benchmark](https://tg
 **January 12, 2026: RelBench v2 is now released!**
 - Introducing Autocomplete tasks: new task paradigm to predict existing columns in the database.
 - 4 new databases: [SALT](https://relbench.stanford.edu/datasets/rel-salt), [RateBeer](https://relbench.stanford.edu/datasets/rel-ratebeer), [arXiv](https://relbench.stanford.edu/datasets/rel-arxiv), and [MIMIC-IV](https://relbench.stanford.edu/datasets/rel-mimic).
-- 40 new predictive tasks, including 28 Autocomplete tasks across new and existing databases.
+- 36 new predictive tasks, including 23 Autocomplete tasks across new and existing databases.
 - CTU integration: 70+ relational datasets from the CTU repository via [ReDeLEx](https://github.com/jakubpeleska/redelex).
 - Direct SQL database connectivity via [ReDeLEx](https://github.com/jakubpeleska/redelex).
 - 4DBInfer integration: 7 relational datasets from the [4DBInfer](https://github.com/awslabs/multi-table-benchmark) repository in RelBench format.
@@ -49,7 +49,7 @@ Alongside our paper, we also integrate the [Temporal Graph Benchmark](https://tg
 
 Relational Deep Learning is a new approach for end-to-end representation learning on data spread across multiple tables, such as in a _relational database_ (see our [position paper](https://relbench.stanford.edu/paper.pdf)). Relational databases are the world's most widely used data management system, and are used for industrial and scientific purposes across many domains. RelBench is a benchmark designed to facilitate efficient, robust and reproducible research on end-to-end deep learning over relational databases.
 
-RelBench v1 contains 7 realistic, large-scale, and diverse relational databases spanning domains including medical, social networks, e-commerce and sport. RelBench v2 adds 4 more, now totaling 11 databases. Each database has multiple predictive tasks (70 in total) defined, each carefully scoped to be both challenging and of domain-specific importance. It provides full support for data downloading, task specification and standardized evaluation in an ML-framework-agnostic manner.
+RelBench v1 contains 7 realistic, large-scale, and diverse relational databases spanning domains including medical, social networks, e-commerce and sport. RelBench v2 adds 4 more, now totaling 11 databases. Each database has multiple predictive tasks (66 in total) defined, each carefully scoped to be both challenging and of domain-specific importance. It provides full support for data downloading, task specification and standardized evaluation in an ML-framework-agnostic manner.
 
 Additionally, RelBench provides a first open-source implementation of a Graph Neural Network based approach to relational deep learning. This implementation uses [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) to load the data as a graph and train GNN models, and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame) for modeling tabular data. Finally, there is an open [leaderboard](https://huggingface.co/relbench) for tracking progress.
 
@@ -72,7 +72,7 @@ This paper outlines our proposal for how to do end-to-end deep learning on relat
 <p align="center"><img src="https://relbench.stanford.edu/img/relbench-fig.png" alt="logo" width="900px" /></p>
 
 RelBench has the following main components:
-1. 11 databases with a total of 70 tasks; both of these automatically downloadable for ease of use
+1. 11 databases with a total of 66 tasks; both of these automatically downloadable for ease of use
 2. Easy data loading, and graph construction from pkey-fkey links
 3. Your own model, which can use any deep learning stack since RelBench is framework-agnostic. We provide a first model implementation using PyTorch Geometric and PyTorch Frame.
 4. Standardized evaluators - all you need to do is produce a list of predictions for test samples, and RelBench computes metrics to ensure standardized evaluation
