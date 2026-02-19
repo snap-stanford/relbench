@@ -16,6 +16,12 @@
 
 # News
 
+**February 13, 2026: RelBench v2 paper + Temporal Graph Benchmark integration**
+
+The RelBench v2 paper is now accessible as a preprint! Please see the paper on [arXiv](https://arxiv.org/abs/2602.12606).
+
+Alongside our paper, we also integrate the [Temporal Graph Benchmark](https://tgb.complexdatalab.com/) (TGB) into RelBench. TGB integration includes translating time-stamped event streams into normalized relational schemas, which enables direct comparison between temporal graph models and relational deep learning models.
+
 **January 12, 2026: RelBench v2 is now released!**
 - Introducing Autocomplete tasks: new task paradigm to predict existing columns in the database.
 - 4 new databases: [SALT](https://relbench.stanford.edu/datasets/rel-salt), [RateBeer](https://relbench.stanford.edu/datasets/rel-ratebeer), [arXiv](https://relbench.stanford.edu/datasets/rel-arxiv), and [MIMIC-IV](https://relbench.stanford.edu/datasets/rel-mimic).
@@ -259,5 +265,18 @@ If you use RelBench in your work, please cite our position and benchmark papers:
       archivePrefix={arXiv},
       primaryClass={cs.LG},
       url={https://arxiv.org/abs/2407.20060},
+}
+```
+
+If you use RelBench v2 in your work, please cite:
+```
+@misc{gu2026relbenchv2,
+      title={{RelBench} v2: A Large-Scale Benchmark and Repository for Relational Data},
+      author={Justin Gu and Rishabh Ranjan and Charilaos Kanatsoulis and Haiming Tang and Martin Jurkovic and Valter Hudovernik and Mark Znidar and Pranshu Chaturvedi and Parth Shroff and Fengyu Li and Jure Leskovec},
+      year={2026},
+      eprint={2602.12606},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2602.12606},
 }
 ```
