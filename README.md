@@ -269,7 +269,7 @@ If you use RelBench in your work, please cite our position and benchmark papers:
 ```
 
 If you use RelBench v2 in your work, please cite:
-```
+```bibtex
 @misc{gu2026relbenchv2,
       title={{RelBench} v2: A Large-Scale Benchmark and Repository for Relational Data},
       author={Justin Gu and Rishabh Ranjan and Charilaos Kanatsoulis and Haiming Tang and Martin Jurkovic and Valter Hudovernik and Mark Znidar and Pranshu Chaturvedi and Parth Shroff and Fengyu Li and Jure Leskovec},
