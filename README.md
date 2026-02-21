@@ -12,7 +12,7 @@
 
 
 <!-- [<img align="center" src="https://relbench.stanford.edu/img/favicon.png" width="20px" />   -->
-[**Website**](https://relbench.stanford.edu) | [**Position Paper**](https://proceedings.mlr.press/v235/fey24a.html) |  [**Benchmark Paper**](https://arxiv.org/abs/2407.20060) | [**Mailing List**](https://groups.google.com/forum/#!forum/relbench/join)
+[**Website**](https://relbench.stanford.edu) | [**Position Paper**](https://proceedings.mlr.press/v235/fey24a.html) |  [**RelBench v1 Paper**](https://arxiv.org/abs/2407.20060) | [**RelBench v2 Paper**](https://arxiv.org/abs/2602.12606) | [**Mailing List**](https://groups.google.com/forum/#!forum/relbench/join)
 
 # News
 
