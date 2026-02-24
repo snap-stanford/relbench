@@ -143,15 +143,7 @@ Then, to run a script:
 git clone https://github.com/snap-stanford/relbench
 cd relbench/examples
 python gnn_entity.py --dataset rel-f1 --task driver-position
-```
-
-## Offline / local-cache example runs
-
-Most `examples/*.py` scripts accept `--download/--no-download`. Use `--no-download` to run purely from a pre-populated `RELBENCH_CACHE_DIR` (e.g., when working with locally prepared artifacts).
-
-New example: temporal recommendation with TGN + attention:
-```bash
-python examples/tgn_attention_recommendation.py --dataset rel-f1 --task driver-race-compete --download
+python tgn_attention_recommendation.py --dataset rel-f1 --task driver-race-compete
 ```
 
 

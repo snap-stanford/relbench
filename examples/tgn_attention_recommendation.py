@@ -20,6 +20,7 @@ import argparse
 import copy
 import json
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -745,10 +746,18 @@ def main() -> None:
     if device.type == "cuda":
         torch.set_num_threads(1)
 
-    dataset: Dataset = get_dataset(args.dataset, download=bool(args.download))
-    task: RecommendationTask = get_task(
-        args.dataset, args.task, download=bool(args.download)
-    )
+    try:
+        dataset: Dataset = get_dataset(args.dataset, download=bool(args.download))
+        task: RecommendationTask = get_task(
+            args.dataset, args.task, download=bool(args.download)
+        )
+    except Exception:
+        if bool(args.download):
+            print(
+                "Download failed. If you already have the dataset cached, re-run with --no-download.",
+                file=sys.stderr,
+            )
+        raise
     if task.task_type != TaskType.LINK_PREDICTION:
         raise ValueError(
             f"Task {args.dataset}/{args.task} is not a link prediction task."

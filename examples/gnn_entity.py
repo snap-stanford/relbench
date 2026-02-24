@@ -3,6 +3,7 @@ import copy
 import json
 import math
 import os
+import sys
 from pathlib import Path
 from typing import Dict
 
@@ -64,8 +65,16 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: Dataset = get_dataset(args.dataset, download=bool(args.download))
-task: EntityTask = get_task(args.dataset, args.task, download=bool(args.download))
+try:
+    dataset: Dataset = get_dataset(args.dataset, download=bool(args.download))
+    task: EntityTask = get_task(args.dataset, args.task, download=bool(args.download))
+except Exception:
+    if bool(args.download):
+        print(
+            "Download failed. If you already have the dataset cached, re-run with --no-download.",
+            file=sys.stderr,
+        )
+    raise
 
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
@@ -91,7 +100,7 @@ else:
 db = dataset.get_db()
 # add (time-censored) labels tables to the db
 for task_name in tasks_to_add:
-    t = get_task(args.dataset, task_name)
+    t = get_task(args.dataset, task_name, download=bool(args.download))
     if not isinstance(t, EntityTask):
         continue
     labels_table_name = f"{task_name}_labels"
