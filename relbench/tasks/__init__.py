@@ -551,13 +551,13 @@ register_task("dbinfer-outbrain-small", "ctr", dbinfer.OutbrainCTRTask)
 
 # Temporal Graph Benchmark (TGB)
 for dataset_name in [
-    "rel-tgb-tgbl-wiki",
-    "rel-tgb-tgbl-wiki-v2",
-    "rel-tgb-tgbl-review",
-    "rel-tgb-tgbl-review-v2",
-    "rel-tgb-tgbl-coin",
-    "rel-tgb-tgbl-comment",
-    "rel-tgb-tgbl-flight",
+    "tgbl-wiki",
+    "tgbl-wiki-v2",
+    "tgbl-review",
+    "tgbl-review-v2",
+    "tgbl-coin",
+    "tgbl-comment",
+    "tgbl-flight",
 ]:
     register_task(
         dataset_name,
@@ -579,16 +579,16 @@ def _register_thgl_edge_type_tasks(dataset_name: str, edge_types: list[int]) -> 
         )
 
 
-_register_thgl_edge_type_tasks("rel-tgb-thgl-software", list(range(14)))
-_register_thgl_edge_type_tasks("rel-tgb-thgl-github", list(range(14)))
-_register_thgl_edge_type_tasks("rel-tgb-thgl-forum", [0, 1])
-_register_thgl_edge_type_tasks("rel-tgb-thgl-myket", [0, 1])
+_register_thgl_edge_type_tasks("thgl-software", list(range(14)))
+_register_thgl_edge_type_tasks("thgl-github", list(range(14)))
+_register_thgl_edge_type_tasks("thgl-forum", [0, 1])
+_register_thgl_edge_type_tasks("thgl-myket", [0, 1])
 
 for dataset_name in [
-    "rel-tgb-tgbn-trade",
-    "rel-tgb-tgbn-genre",
-    "rel-tgb-tgbn-reddit",
-    "rel-tgb-tgbn-token",
+    "tgbn-trade",
+    "tgbn-genre",
+    "tgbn-reddit",
+    "tgbn-token",
 ]:
     register_task(
         dataset_name,
