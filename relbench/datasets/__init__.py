@@ -150,7 +150,7 @@ register_dataset("rel-arxiv", arxiv.ArxivDataset)
 register_dataset("rel-salt", salt.SALTDataset)
 register_dataset("rel-ratebeer", ratebeer.RateBeerDataset)
 register_dataset("dbinfer-avs", dbinfer.DBInferAVSDataset)
-register_dataset("dbinfer-mag", dbinfer.DBInferMAGDataset)
+# register_dataset("dbinfer-mag", dbinfer.DBInferMAGDataset)    # Experimental dataset: dbinfer-mag
 register_dataset("dbinfer-diginetica", dbinfer.DBInferDigineticaDataset)
 register_dataset("dbinfer-retailrocket", dbinfer.DBInferRetailRocketDataset)
 register_dataset("dbinfer-seznam", dbinfer.DBInferSeznamDataset)

@@ -74,7 +74,7 @@ def convert_dtypes(df: pd.DataFrame) -> pd.DataFrame:
             or "time" in col.lower()
         ):
             try:
-                df[col] = pd.to_datetime(df[col], errors="coerce")
+                df[col] = pd.to_datetime(df[col], errors="coerce").astype("datetime64[ns]")
             except Exception:
                 print("WARNING ")
                 pass
@@ -110,6 +110,10 @@ class MimicDataset(Dataset):
 
     The dataset is anchored around ICU stays (`icustays`) and patients (`patients`) and constructs all other
     tables with respect to these entities.
+
+    Note: MIMIC-IV applies date shifting for patient privacy. Timestamps are offset by a
+    random amount (typically decades) while preserving relative ordering. Expect dates
+    in the 2110-2200 range rather than the original 2008-2012 collection period.
 
     If certain parameters are not provided, default values will be used.
 
