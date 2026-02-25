@@ -83,7 +83,9 @@ def convert_dtypes(df: pd.DataFrame) -> pd.DataFrame:
             or "time" in col.lower()
         ):
             try:
-                df[col] = pd.to_datetime(df[col], errors="coerce").astype("datetime64[ns]")
+                df[col] = pd.to_datetime(df[col], errors="coerce").astype(
+                    "datetime64[ns]"
+                )
             except Exception:
                 print("WARNING ")
                 pass

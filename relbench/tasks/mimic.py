@@ -67,7 +67,9 @@ class ICULengthOfStayTask(EntityTask):
 
         # Ensure time column is datetime64[ns] for to_unix_time
         if self.time_col in df.columns:
-            df[self.time_col] = pd.to_datetime(df[self.time_col], errors="coerce").astype("datetime64[ns]")
+            df[self.time_col] = pd.to_datetime(
+                df[self.time_col], errors="coerce"
+            ).astype("datetime64[ns]")
 
         return Table(
             df=df,

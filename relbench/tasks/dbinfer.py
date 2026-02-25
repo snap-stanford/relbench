@@ -63,6 +63,7 @@ class DBInferTaskBase(EntityTask):
             # Infer task metadata from the cached parquet so the task is usable
             # without the adapter.
             from relbench.base.table import Table as _Table
+
             train_table = _Table.load(os.path.join(cache_dir, "train.parquet"))
             self.time_col = train_table.time_col or SYNTHETIC_TIME_COL
             fkeys = train_table.fkey_col_to_pkey_table

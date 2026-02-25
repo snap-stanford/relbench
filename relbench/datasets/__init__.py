@@ -73,6 +73,7 @@ def download_dataset(name: str) -> None:
 
     if name == "rel-mimic":
         from relbench.datasets.mimic import verify_mimic_access
+
         verify_mimic_access()
 
     DOWNLOAD_REGISTRY.fetch(
@@ -117,7 +118,7 @@ def get_dataset(name: str, download=True) -> Dataset:
     # Handle lazy import for mimic dataset
     if name == "rel-mimic":
         from relbench.datasets import mimic
-        
+
         mimic.verify_mimic_access()
 
         cls, args, kwargs = (
