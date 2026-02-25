@@ -70,17 +70,9 @@ def download_dataset(name: str) -> None:
     The downloaded database will be automatically picked up by the dataset object, when
     `dataset.get_db()` is called.
     """
-    if name.startswith("dbinfer-"):
-        print(
-            f"Dataset '{name}' is derived from 4DBInfer and must be generated "
-            "locally; skipping download."
-        )
-        return
 
     if name == "rel-mimic":
-        print("Downloading Mimic dataset...")
         from relbench.datasets.mimic import verify_mimic_access
-
         verify_mimic_access()
 
     DOWNLOAD_REGISTRY.fetch(
@@ -125,6 +117,8 @@ def get_dataset(name: str, download=True) -> Dataset:
     # Handle lazy import for mimic dataset
     if name == "rel-mimic":
         from relbench.datasets import mimic
+        
+        mimic.verify_mimic_access()
 
         cls, args, kwargs = (
             mimic.MimicDataset,

@@ -75,13 +75,6 @@ def download_task(dataset_name: str, task_name: str) -> None:
     `task.get_table(split)` is called.
     """
 
-    if dataset_name.startswith("dbinfer-"):
-        print(
-            f"Task '{dataset_name}/{task_name}' is derived from 4DBInfer and must be "
-            "generated locally; skipping download."
-        )
-        return
-
     DOWNLOAD_REGISTRY.fetch(
         f"{dataset_name}/tasks/{task_name}.zip",
         processor=pooch.Unzip(extract_dir="."),

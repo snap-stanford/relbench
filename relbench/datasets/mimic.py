@@ -26,6 +26,15 @@ def verify_mimic_access() -> None:
     except Exception as e:
         raise RuntimeError(
             f"\nACCESS FAILED - BigQuery credential check encountered an error: {e}"
+            "\n\nTo gain access to MIMIC-IV via RelBench:"
+            "\n  1. Request access at https://physionet.org/content/mimiciv/"
+            "\n     and complete the 'Request access using Google BigQuery' step."
+            "\n  2. Install the Google Cloud SDK: https://cloud.google.com/sdk/docs/install"
+            "\n  3. Authenticate:  gcloud auth application-default login"
+            "\n  4. Set quota project:  gcloud auth application-default set-quota-project YOUR_PROJECT_ID"
+            "\n  5. Export your project ID:  export PROJECT_ID=YOUR_PROJECT_ID"
+            "\n  6. If credentials are not at the default path, set:"
+            "\n       export GOOGLE_APPLICATION_CREDENTIALS=/path/to/application_default_credentials.json"
         )
 
 
