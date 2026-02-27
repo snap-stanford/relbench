@@ -109,7 +109,7 @@ python gnn_entity.py --dataset rel-f1 --task driver-position
 ```
 
 
-# Using External Integrations
+## Using External Integrations
 
 **Using CTU datasets**
 
