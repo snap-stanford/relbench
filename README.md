@@ -88,7 +88,30 @@ pip install relbench
 
 This will allow usage of the core RelBench data and task loading functionality.
 
-<details markdown="1"><summary>Including CTU datasets</summary>
+
+To additionally use `relbench.modeling`, which requires [PyTorch](https://pytorch.org/), [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame), install these dependencies manually or do:
+
+```bash
+pip install relbench[full]
+```
+
+
+For the scripts in the `examples` directory, use:
+```bash
+pip install relbench[example]
+```
+
+Then, to run a script:
+```bash
+git clone https://github.com/snap-stanford/relbench
+cd relbench/examples
+python gnn_entity.py --dataset rel-f1 --task driver-position
+```
+
+
+# Using External Integrations
+
+**Using CTU datasets**
 
 To use datasets from the CTU repository, use:
 ```bash
@@ -109,9 +132,9 @@ If you use the CTU datasets in your work, please cite [ReDeLEx](https://github.c
 }
 ```
 
-</details>
 
-<details markdown="1"><summary>Including 4DBInfer datasets</summary>
+
+**Using 4DBInfer datasets**
 
 To use datasets from the 4DBInfer repository, use:
 ```bash
@@ -128,28 +151,6 @@ If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://gi
 }
 ```
 
-</details>
-<br>
-
-
-To additionally use `relbench.modeling`, which requires [PyTorch](https://pytorch.org/), [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame), install these dependencies manually or do:
-
-```bash
-pip install relbench[full]
-```
-
-
-For the scripts in the `examples` directory, use:
-```bash
-pip install relbench[example]
-```
-
-Then, to run a script:
-```bash
-git clone https://github.com/snap-stanford/relbench
-cd relbench/examples
-python gnn_entity.py --dataset rel-f1 --task driver-position
-```
 
 
 # Package Usage

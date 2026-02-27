@@ -44,6 +44,7 @@ dev=[
 ]
 dbinfer=[
 	"dbinfer-relbench-adapter",
+	"db-dtypes",
 ]
 ctu=[
 	"redelex",
