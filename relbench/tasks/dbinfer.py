@@ -49,7 +49,44 @@ class DBInferTaskBase(EntityTask):
         if adapter_cache_dir is None:
             adapter_cache_dir = DEFAULT_DBINFER_ADAPTER_CACHE
         self._adapter_cache_dir = adapter_cache_dir
-        from dbinfer_relbench_adapter.loader import load_dbinfer_data
+        self._dataset_adapter = None
+        self._task_adapter = None
+
+        # Only load the adapter if task tables are not already cached as parquet.
+        # When downloaded via get_task(..., download=True), parquet files exist and
+        # the adapter (which requires dgl) is not needed.
+        splits_cached = cache_dir is not None and all(
+            os.path.exists(os.path.join(cache_dir, f"{split}.parquet"))
+            for split in ["train", "val", "test"]
+        )
+        if splits_cached:
+            # Infer task metadata from the cached parquet so the task is usable
+            # without the adapter.
+            from relbench.base.table import Table as _Table
+
+            train_table = _Table.load(os.path.join(cache_dir, "train.parquet"))
+            self.time_col = train_table.time_col or SYNTHETIC_TIME_COL
+            fkeys = train_table.fkey_col_to_pkey_table
+            if fkeys:
+                self.entity_col, self.entity_table = next(iter(fkeys.items()))
+        else:
+            self._load_adapter()
+
+        super().__init__(dataset, cache_dir=cache_dir)
+
+    def _load_adapter(self):
+        try:
+            from dbinfer_relbench_adapter.loader import load_dbinfer_data
+        except ImportError:
+            raise ImportError(
+                "dbinfer-relbench-adapter is not installed. "
+                "Please install it with:\n"
+                "  pip install dbinfer-relbench-adapter\n"
+                "  pip install dgl --force-reinstall -f https://data.dgl.ai/wheels/torch-2.3/cu121/repo.html\n"
+                "Note: dgl may conflict with other dependencies. We recommend building "
+                "dbinfer datasets in a separate virtual environment and using the cached "
+                "datasets in your main working environment."
+            ) from None
 
         dataset_adapter, task_adapter = load_dbinfer_data(
             dataset_name=self.dbinfer_dataset_name,
@@ -73,8 +110,6 @@ class DBInferTaskBase(EntityTask):
             task_adapter.dbinfer_task.metadata, "time_column", None
         )
         self.time_col = metadata_time_col or SYNTHETIC_TIME_COL
-
-        super().__init__(dataset, cache_dir=cache_dir)
 
     def _get_table(self, split):
         if split not in SYNTHETIC_TIMESTAMPS:
