@@ -75,13 +75,6 @@ def download_task(dataset_name: str, task_name: str) -> None:
     `task.get_table(split)` is called.
     """
 
-    if dataset_name.startswith("dbinfer-"):
-        print(
-            f"Task '{dataset_name}/{task_name}' is derived from 4DBInfer and must be "
-            "generated locally; skipping download."
-        )
-        return
-
     DOWNLOAD_REGISTRY.fetch(
         f"{dataset_name}/tasks/{task_name}.zip",
         processor=pooch.Unzip(extract_dir="."),
@@ -139,15 +132,16 @@ register_task(
     ],
 )
 
-register_task(
-    "rel-amazon",
-    "review-verified",
-    AutoCompleteTask,
-    task_type=TaskType.BINARY_CLASSIFICATION,
-    entity_table="review",
-    target_col="verified",
-    remove_columns=[],
-)
+# Experimental task: review-verified
+# register_task(
+#     "rel-amazon",
+#     "review-verified",
+#     AutoCompleteTask,
+#     task_type=TaskType.BINARY_CLASSIFICATION,
+#     entity_table="review",
+#     target_col="verified",
+#     remove_columns=[],
+# )
 
 register_task("rel-avito", "ad-ctr", avito.AdCTRTask)
 register_task("rel-avito", "user-visits", avito.UserVisitsTask)
@@ -238,28 +232,30 @@ register_task(
     remove_columns=[],
 )
 
-register_task(
-    "rel-f1",
-    "constructor_results-points",
-    AutoCompleteTask,
-    task_type=TaskType.REGRESSION,
-    entity_table="constructor_results",
-    target_col="points",
-    remove_columns=[],
-)
+# Experimental task: constructor_results-points
+# register_task(
+#     "rel-f1",
+#     "constructor_results-points",
+#     AutoCompleteTask,
+#     task_type=TaskType.REGRESSION,
+#     entity_table="constructor_results",
+#     target_col="points",
+#     remove_columns=[],
+# )
 
-register_task(
-    "rel-f1",
-    "constructor_standings-position",
-    AutoCompleteTask,
-    task_type=TaskType.REGRESSION,
-    entity_table="constructor_standings",
-    target_col="position",
-    remove_columns=[
-        ("constructor_standings", "wins"),
-        ("constructor_standings", "points"),
-    ],
-)
+# Experimental task: constructor_standings-position
+# register_task(
+#     "rel-f1",
+#     "constructor_standings-position",
+#     AutoCompleteTask,
+#     task_type=TaskType.REGRESSION,
+#     entity_table="constructor_standings",
+#     target_col="position",
+#     remove_columns=[
+#         ("constructor_standings", "wins"),
+#         ("constructor_standings", "points"),
+#     ],
+# )
 
 register_task("rel-hm", "user-item-purchase", hm.UserItemPurchaseTask)
 register_task("rel-hm", "user-churn", hm.UserChurnTask)
@@ -290,15 +286,16 @@ register_task(
     remove_columns=[("badges", "TagBased"), ("badges", "Name")],
 )
 
-register_task(
-    "rel-stack",
-    "postlinks-linktypeid",
-    AutoCompleteTask,
-    task_type=TaskType.BINARY_CLASSIFICATION,
-    entity_table="postLinks",
-    target_col="LinkTypeId",
-    remove_columns=[],
-)
+# Experimental task: postlinks-linktypeid
+# register_task(
+#     "rel-stack",
+#     "postlinks-linktypeid",
+#     AutoCompleteTask,
+#     task_type=TaskType.BINARY_CLASSIFICATION,
+#     entity_table="postLinks",
+#     target_col="LinkTypeId",
+#     remove_columns=[],
+# )
 
 
 register_task("rel-trial", "study-outcome", trial.StudyOutcomeTask)
@@ -518,7 +515,7 @@ register_task("rel-ratebeer", "user-beer-favorite", ratebeer.UserFavoriteBeerTas
 
 register_task(
     "rel-ratebeer",
-    "user-beer-rating",
+    "beer_ratings-total_score",
     AutoCompleteTask,
     task_type=TaskType.REGRESSION,
     entity_table="beer_ratings",

@@ -26,6 +26,15 @@ def verify_mimic_access() -> None:
     except Exception as e:
         raise RuntimeError(
             f"\nACCESS FAILED - BigQuery credential check encountered an error: {e}"
+            "\n\nTo gain access to MIMIC-IV via RelBench:"
+            "\n  1. Request access at https://physionet.org/content/mimiciv/"
+            "\n     and complete the 'Request access using Google BigQuery' step."
+            "\n  2. Install the Google Cloud SDK: https://cloud.google.com/sdk/docs/install"
+            "\n  3. Authenticate:  gcloud auth application-default login"
+            "\n  4. Set quota project:  gcloud auth application-default set-quota-project YOUR_PROJECT_ID"
+            "\n  5. Export your project ID:  export PROJECT_ID=YOUR_PROJECT_ID"
+            "\n  6. If credentials are not at the default path, set:"
+            "\n       export GOOGLE_APPLICATION_CREDENTIALS=/path/to/application_default_credentials.json"
         )
 
 
@@ -74,7 +83,9 @@ def convert_dtypes(df: pd.DataFrame) -> pd.DataFrame:
             or "time" in col.lower()
         ):
             try:
-                df[col] = pd.to_datetime(df[col], errors="coerce")
+                df[col] = pd.to_datetime(df[col], errors="coerce").astype(
+                    "datetime64[ns]"
+                )
             except Exception:
                 print("WARNING ")
                 pass
@@ -110,6 +121,10 @@ class MimicDataset(Dataset):
 
     The dataset is anchored around ICU stays (`icustays`) and patients (`patients`) and constructs all other
     tables with respect to these entities.
+
+    Note: MIMIC-IV applies date shifting for patient privacy. Timestamps are offset by a
+    random amount (typically decades) while preserving relative ordering. Expect dates
+    in the 2110-2200 range rather than the original 2008-2012 collection period.
 
     If certain parameters are not provided, default values will be used.
 
