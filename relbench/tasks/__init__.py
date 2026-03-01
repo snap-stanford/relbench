@@ -20,6 +20,7 @@ from relbench.tasks import (
     mimic,
     ratebeer,
     stack,
+    tgb,
     trial,
 )
 from relbench.utils import get_relbench_cache_dir
@@ -544,3 +545,52 @@ register_task("dbinfer-amazon", "churn", dbinfer.AmazonChurnTask)
 register_task("dbinfer-stackexchange", "churn", dbinfer.StackExchangeChurnTask)
 register_task("dbinfer-stackexchange", "upvote", dbinfer.StackExchangeUpvoteTask)
 register_task("dbinfer-outbrain-small", "ctr", dbinfer.OutbrainCTRTask)
+
+# Temporal Graph Benchmark (TGB)
+for dataset_name in [
+    "tgbl-wiki",
+    "tgbl-wiki-v2",
+    "tgbl-review",
+    "tgbl-review-v2",
+    "tgbl-coin",
+    "tgbl-comment",
+    "tgbl-flight",
+]:
+    register_task(
+        dataset_name,
+        "src-dst-mrr",
+        tgb.TGBOneVsManyLinkPredTask,
+        spec=tgb.TGBLinkPredSpec(event_table="events"),
+        k_value=10,
+    )
+
+
+def _register_thgl_edge_type_tasks(dataset_name: str, edge_types: list[int]) -> None:
+    for et in edge_types:
+        register_task(
+            dataset_name,
+            f"edge-type-{int(et)}-mrr",
+            tgb.TGBOneVsManyLinkPredTask,
+            spec=tgb.TGBLinkPredSpec(event_table=f"events_edge_type_{int(et)}"),
+            k_value=10,
+        )
+
+
+_register_thgl_edge_type_tasks("thgl-software", list(range(14)))
+_register_thgl_edge_type_tasks("thgl-github", list(range(14)))
+_register_thgl_edge_type_tasks("thgl-forum", [0, 1])
+_register_thgl_edge_type_tasks("thgl-myket", [0, 1])
+
+for dataset_name in [
+    "tgbn-trade",
+    "tgbn-genre",
+    "tgbn-reddit",
+    "tgbn-token",
+]:
+    register_task(
+        dataset_name,
+        "node-label-ndcg",
+        tgb.TGBNodePropNDCGTask,
+        spec=tgb.TGBNodePropSpec(),
+        k=10,
+    )

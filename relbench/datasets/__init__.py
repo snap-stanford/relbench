@@ -18,6 +18,7 @@ from relbench.datasets import (
     ratebeer,
     salt,
     stack,
+    tgb,
     trial,
 )
 from relbench.utils import get_relbench_cache_dir
@@ -152,3 +153,22 @@ register_dataset("dbinfer-seznam", dbinfer.DBInferSeznamDataset)
 register_dataset("dbinfer-amazon", dbinfer.DBInferAmazonDataset)
 register_dataset("dbinfer-stackexchange", dbinfer.DBInferStackExchangeDataset)
 register_dataset("dbinfer-outbrain-small", dbinfer.DBInferOutbrainSmallDataset)
+
+# Temporal Graph Benchmark (TGB)
+register_dataset("tgbl-wiki", tgb.TGBDataset, tgb_name="tgbl-wiki")
+register_dataset("tgbl-wiki-v2", tgb.TGBDataset, tgb_name="tgbl-wiki-v2")
+register_dataset("tgbl-review", tgb.TGBDataset, tgb_name="tgbl-review")
+register_dataset("tgbl-review-v2", tgb.TGBDataset, tgb_name="tgbl-review-v2")
+register_dataset("tgbl-coin", tgb.TGBDataset, tgb_name="tgbl-coin")
+register_dataset("tgbl-comment", tgb.TGBDataset, tgb_name="tgbl-comment")
+register_dataset("tgbl-flight", tgb.TGBDataset, tgb_name="tgbl-flight")
+
+register_dataset("thgl-software", tgb.TGBDataset, tgb_name="thgl-software")
+register_dataset("thgl-forum", tgb.TGBDataset, tgb_name="thgl-forum")
+register_dataset("thgl-github", tgb.TGBDataset, tgb_name="thgl-github")
+register_dataset("thgl-myket", tgb.TGBDataset, tgb_name="thgl-myket")
+
+register_dataset("tgbn-trade", tgb.TGBDataset, tgb_name="tgbn-trade")
+register_dataset("tgbn-genre", tgb.TGBDataset, tgb_name="tgbn-genre")
+register_dataset("tgbn-reddit", tgb.TGBDataset, tgb_name="tgbn-reddit")
+register_dataset("tgbn-token", tgb.TGBDataset, tgb_name="tgbn-token")
