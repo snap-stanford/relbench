@@ -106,6 +106,7 @@ Then, to run a script:
 git clone https://github.com/snap-stanford/relbench
 cd relbench/examples
 python gnn_entity.py --dataset rel-f1 --task driver-position
+python tgn_attention_recommendation.py --dataset rel-f1 --task driver-race-compete
 ```
 
 
