@@ -12,14 +12,20 @@
 
 
 <!-- [<img align="center" src="https://relbench.stanford.edu/img/favicon.png" width="20px" />   -->
-[**Website**](https://relbench.stanford.edu) | [**Position Paper**](https://proceedings.mlr.press/v235/fey24a.html) |  [**Benchmark Paper**](https://arxiv.org/abs/2407.20060) | [**Mailing List**](https://groups.google.com/forum/#!forum/relbench/join)
+[**Website**](https://relbench.stanford.edu) | [**Position Paper**](https://proceedings.mlr.press/v235/fey24a.html) |  [**RelBench v1 Paper**](https://arxiv.org/abs/2407.20060) | [**RelBench v2 Paper**](https://arxiv.org/abs/2602.12606) | [**Mailing List**](https://groups.google.com/forum/#!forum/relbench/join)
 
 # News
+
+**February 13, 2026: RelBench v2 paper + Temporal Graph Benchmark integration**
+
+The RelBench v2 paper is now accessible as a preprint! Please see the paper on [arXiv](https://arxiv.org/abs/2602.12606).
+
+Alongside our paper, we also integrate the [Temporal Graph Benchmark](https://tgb.complexdatalab.com/) (TGB) into RelBench. TGB integration includes translating time-stamped event streams into normalized relational schemas, which enables direct comparison between temporal graph models and relational deep learning models.
 
 **January 12, 2026: RelBench v2 is now released!**
 - Introducing Autocomplete tasks: new task paradigm to predict existing columns in the database.
 - 4 new databases: [SALT](https://relbench.stanford.edu/datasets/rel-salt), [RateBeer](https://relbench.stanford.edu/datasets/rel-ratebeer), [arXiv](https://relbench.stanford.edu/datasets/rel-arxiv), and [MIMIC-IV](https://relbench.stanford.edu/datasets/rel-mimic).
-- 40 new predictive tasks, including 28 Autocomplete tasks across new and existing databases.
+- 36 new predictive tasks, including 23 Autocomplete tasks across new and existing databases.
 - CTU integration: 70+ relational datasets from the CTU repository via [ReDeLEx](https://github.com/jakubpeleska/redelex).
 - Direct SQL database connectivity via [ReDeLEx](https://github.com/jakubpeleska/redelex).
 - 4DBInfer integration: 7 relational datasets from the [4DBInfer](https://github.com/awslabs/multi-table-benchmark) repository in RelBench format.
@@ -43,7 +49,7 @@
 
 Relational Deep Learning is a new approach for end-to-end representation learning on data spread across multiple tables, such as in a _relational database_ (see our [position paper](https://relbench.stanford.edu/paper.pdf)). Relational databases are the world's most widely used data management system, and are used for industrial and scientific purposes across many domains. RelBench is a benchmark designed to facilitate efficient, robust and reproducible research on end-to-end deep learning over relational databases.
 
-RelBench v1 contains 7 realistic, large-scale, and diverse relational databases spanning domains including medical, social networks, e-commerce and sport. RelBench v2 adds 4 more, now totaling 11 databases. Each database has multiple predictive tasks (70 in total) defined, each carefully scoped to be both challenging and of domain-specific importance. It provides full support for data downloading, task specification and standardized evaluation in an ML-framework-agnostic manner.
+RelBench v1 contains 7 realistic, large-scale, and diverse relational databases spanning domains including medical, social networks, e-commerce and sport. RelBench v2 adds 4 more, now totaling 11 databases. Each database has multiple predictive tasks (66 in total) defined, each carefully scoped to be both challenging and of domain-specific importance. It provides full support for data downloading, task specification and standardized evaluation in an ML-framework-agnostic manner.
 
 Additionally, RelBench provides a first open-source implementation of a Graph Neural Network based approach to relational deep learning. This implementation uses [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) to load the data as a graph and train GNN models, and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame) for modeling tabular data. Finally, there is an open [leaderboard](https://huggingface.co/relbench) for tracking progress.
 
@@ -66,7 +72,7 @@ This paper outlines our proposal for how to do end-to-end deep learning on relat
 <p align="center"><img src="https://relbench.stanford.edu/img/relbench-fig.png" alt="logo" width="900px" /></p>
 
 RelBench has the following main components:
-1. 11 databases with a total of 70 tasks; both of these automatically downloadable for ease of use
+1. 11 databases with a total of 66 tasks; both of these automatically downloadable for ease of use
 2. Easy data loading, and graph construction from pkey-fkey links
 3. Your own model, which can use any deep learning stack since RelBench is framework-agnostic. We provide a first model implementation using PyTorch Geometric and PyTorch Frame.
 4. Standardized evaluators - all you need to do is produce a list of predictions for test samples, and RelBench computes metrics to ensure standardized evaluation
@@ -82,7 +88,31 @@ pip install relbench
 
 This will allow usage of the core RelBench data and task loading functionality.
 
-<details markdown="1"><summary>Including CTU datasets</summary>
+
+To additionally use `relbench.modeling`, which requires [PyTorch](https://pytorch.org/), [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame), install these dependencies manually or do:
+
+```bash
+pip install relbench[full]
+```
+
+
+For the scripts in the `examples` directory, use:
+```bash
+pip install relbench[example]
+```
+
+Then, to run a script:
+```bash
+git clone https://github.com/snap-stanford/relbench
+cd relbench/examples
+python gnn_entity.py --dataset rel-f1 --task driver-position
+python tgn_attention_recommendation.py --dataset rel-f1 --task driver-race-compete
+```
+
+
+## Using External Integrations
+
+**Using CTU datasets**
 
 To use datasets from the CTU repository, use:
 ```bash
@@ -103,9 +133,9 @@ If you use the CTU datasets in your work, please cite [ReDeLEx](https://github.c
 }
 ```
 
-</details>
 
-<details markdown="1"><summary>Including 4DBInfer datasets</summary>
+
+**Using 4DBInfer datasets**
 
 To use datasets from the 4DBInfer repository, use:
 ```bash
@@ -122,28 +152,6 @@ If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://gi
 }
 ```
 
-</details>
-<br>
-
-
-To additionally use `relbench.modeling`, which requires [PyTorch](https://pytorch.org/), [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) and [PyTorch Frame](https://github.com/pyg-team/pytorch-frame), install these dependencies manually or do:
-
-```bash
-pip install relbench[full]
-```
-
-
-For the scripts in the `examples` directory, use:
-```bash
-pip install relbench[example]
-```
-
-Then, to run a script:
-```bash
-git clone https://github.com/snap-stanford/relbench
-cd relbench/examples
-python gnn_entity.py --dataset rel-f1 --task driver-position
-```
 
 
 # Package Usage
@@ -259,5 +267,18 @@ If you use RelBench in your work, please cite our position and benchmark papers:
       archivePrefix={arXiv},
       primaryClass={cs.LG},
       url={https://arxiv.org/abs/2407.20060},
+}
+```
+
+If you use RelBench v2 in your work, please cite:
+```bibtex
+@misc{gu2026relbenchv2,
+      title={{RelBench} v2: A Large-Scale Benchmark and Repository for Relational Data},
+      author={Justin Gu and Rishabh Ranjan and Charilaos Kanatsoulis and Haiming Tang and Martin Jurkovic and Valter Hudovernik and Mark Znidar and Pranshu Chaturvedi and Parth Shroff and Fengyu Li and Jure Leskovec},
+      year={2026},
+      eprint={2602.12606},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2602.12606},
 }
 ```

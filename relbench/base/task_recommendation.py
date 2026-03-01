@@ -83,6 +83,9 @@ class RecommendationTask(BaseTask):
                 f"{pred.shape} given."
             )
 
+        if len(target_table) == 0:
+            return {fn.__name__: float("nan") for fn in metrics}
+
         pred_isin_list = []
         dst_count_list = []
         for true_dst_nodes, pred_dst_nodes in zip(

@@ -38,7 +38,18 @@ class DBInferDatasetBase(Dataset):
         self._adapter_cache_dir = adapter_cache_dir
 
     def _load_dataset_adapter(self):
-        from dbinfer_relbench_adapter.loader import load_dbinfer_data
+        try:
+            from dbinfer_relbench_adapter.loader import load_dbinfer_data
+        except ImportError:
+            raise ImportError(
+                "dbinfer-relbench-adapter is not installed. "
+                "Please install it with:\n"
+                "  pip install dbinfer-relbench-adapter\n"
+                "  pip install dgl --force-reinstall -f https://data.dgl.ai/wheels/torch-2.3/cu121/repo.html\n"
+                "Note: dgl may conflict with other dependencies. We recommend building "
+                "dbinfer datasets in a separate virtual environment and using the cached "
+                "datasets in your main working environment."
+            ) from None
 
         dataset_adapter, _ = load_dbinfer_data(
             dataset_name=self.dbinfer_name,

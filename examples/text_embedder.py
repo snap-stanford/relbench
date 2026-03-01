@@ -15,4 +15,21 @@ class GloveTextEmbedding:
         )
 
     def __call__(self, sentences: List[str]) -> Tensor:
-        return self.model.encode(sentences, convert_to_tensor=True)
+        # Some RelBench datasets can contain missing values in text columns.
+        # SentenceTransformers tokenizers expect strings.
+        cleaned: List[str] = []
+        for s in sentences:
+            if s is None:
+                cleaned.append("")
+            elif isinstance(s, str):
+                cleaned.append(s)
+            else:
+                # Handle NaN/float/other scalars.
+                try:
+                    if isinstance(s, float) and s != s:  # NaN
+                        cleaned.append("")
+                    else:
+                        cleaned.append(str(s))
+                except Exception:
+                    cleaned.append("")
+        return self.model.encode(cleaned, convert_to_tensor=True)

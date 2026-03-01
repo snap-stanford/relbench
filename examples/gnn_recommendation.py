@@ -2,6 +2,7 @@ import argparse
 import copy
 import json
 import os
+import sys
 import warnings
 from pathlib import Path
 from typing import Dict, Tuple
@@ -36,6 +37,9 @@ parser.add_argument("--channels", type=int, default=128)
 parser.add_argument("--aggr", type=str, default="sum")
 parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
+parser.add_argument("--gnn", type=str, default="sage", choices=["sage", "gat"])
+parser.add_argument("--gat_heads", type=int, default=4)
+parser.add_argument("--gat_dropout", type=float, default=0.0)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 # Use the same seed time across the mini-batch and share the negatives
 parser.add_argument("--share_same_time", action="store_true", default=True)
@@ -48,6 +52,7 @@ parser.add_argument("--no-use_shallow", dest="use_shallow", action="store_false"
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
+parser.add_argument("--download", action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument(
     "--cache_dir",
     type=str,
@@ -60,8 +65,18 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: Dataset = get_dataset(args.dataset, download=True)
-task: RecommendationTask = get_task(args.dataset, args.task, download=True)
+try:
+    dataset: Dataset = get_dataset(args.dataset, download=bool(args.download))
+    task: RecommendationTask = get_task(
+        args.dataset, args.task, download=bool(args.download)
+    )
+except Exception:
+    if bool(args.download):
+        print(
+            "Download failed. If you already have the dataset cached, re-run with --no-download.",
+            file=sys.stderr,
+        )
+    raise
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
@@ -111,6 +126,9 @@ for split in ["val", "test"]:
     timestamp = dataset.val_timestamp if split == "val" else dataset.test_timestamp
     seed_time = int(timestamp.timestamp())
     target_table = task.get_table(split)
+    if target_table.df.shape[0] == 0:
+        warnings.warn(f"Split '{split}' table is empty; skipping {split} evaluation.")
+        continue
     src_node_indices = torch.from_numpy(target_table.df[task.src_entity_col].values)
     src_loader = NeighborLoader(
         data,
@@ -147,6 +165,9 @@ model = Model(
     aggr=args.aggr,
     norm="layer_norm",
     shallow_list=[task.dst_entity_table] if args.use_shallow else [],
+    gnn=args.gnn,
+    gat_heads=args.gat_heads,
+    gat_dropout=args.gat_dropout,
 ).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
@@ -221,6 +242,8 @@ def test(src_loader: NeighborLoader, dst_loader: NeighborLoader) -> np.ndarray:
         emb = model(batch, task.src_entity_table)
         _, pred_index_mat = torch.topk(emb @ dst_emb.t(), k=task.eval_k, dim=1)
         pred_index_mat_list.append(pred_index_mat.cpu())
+    if len(pred_index_mat_list) == 0:
+        return np.empty((0, task.eval_k), dtype=np.int64)
     pred = torch.cat(pred_index_mat_list, dim=0).numpy()
     return pred
 
@@ -242,11 +265,19 @@ for epoch in range(1, args.epochs + 1):
             state_dict = copy.deepcopy(model.state_dict())
 
 
-model.load_state_dict(state_dict)
+if state_dict is not None:
+    model.load_state_dict(state_dict)
+else:
+    warnings.warn(
+        "No best checkpoint was selected (state_dict is None); evaluating with current model weights."
+    )
 val_pred = test(*eval_loaders_dict["val"])
 val_metrics = task.evaluate(val_pred, task.get_table("val"))
 print(f"Best Val metrics: {val_metrics}")
 
-test_pred = test(*eval_loaders_dict["test"])
-test_metrics = task.evaluate(test_pred)
-print(f"Best test metrics: {test_metrics}")
+if "test" in eval_loaders_dict:
+    test_pred = test(*eval_loaders_dict["test"])
+    test_metrics = task.evaluate(test_pred, task.get_table("test"))
+    print(f"Best test metrics: {test_metrics}")
+else:
+    print("Best test metrics: <skipped: empty test split>")
