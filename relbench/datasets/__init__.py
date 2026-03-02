@@ -18,6 +18,7 @@ from relbench.datasets import (
     ratebeer,
     salt,
     stack,
+    tabarena,
     tgb,
     trial,
 )
@@ -71,6 +72,13 @@ def download_dataset(name: str) -> None:
     The downloaded database will be automatically picked up by the dataset object, when
     `dataset.get_db()` is called.
     """
+
+    if name.startswith("tabarena-"):
+        print(
+            f"Dataset '{name}' is derived from TabArena OpenML tasks and must be "
+            "generated locally; skipping download."
+        )
+        return
 
     if name == "rel-mimic":
         from relbench.datasets.mimic import verify_mimic_access
@@ -172,3 +180,10 @@ register_dataset("tgbn-trade", tgb.TGBDataset, tgb_name="tgbn-trade")
 register_dataset("tgbn-genre", tgb.TGBDataset, tgb_name="tgbn-genre")
 register_dataset("tgbn-reddit", tgb.TGBDataset, tgb_name="tgbn-reddit")
 register_dataset("tgbn-token", tgb.TGBDataset, tgb_name="tgbn-token")
+
+for dataset_slug in tabarena.get_tabarena_dataset_slugs():
+    register_dataset(
+        f"tabarena-{dataset_slug}",
+        tabarena.TabArenaDataset,
+        dataset_slug=dataset_slug,
+    )

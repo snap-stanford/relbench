@@ -36,6 +36,9 @@ example=[
 	"torch_geometric",
 	"tqdm",
 ]
+tabarena=[
+	"openml",
+]
 test=[
 	"pytest",
 ]

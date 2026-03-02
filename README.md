@@ -152,6 +152,17 @@ If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://gi
 ```
 
 
+**Using TabArena datasets**
+
+RelBench includes an optional integration for TabArena: a collection of single-table OpenML tasks. TabArena datasets are exposed under names like `tabarena-credit-g`, with per-fold tasks named `fold-0`, `fold-1`, etc.
+
+To use TabArena datasets, install the optional dependency:
+```bash
+pip install relbench[tabarena]
+```
+
+TabArena datasets are generated locally (from OpenML) and cached under `~/.cache/relbench/tabarena-*/`. Passing `download=True` will skip the RelBench server download step for these datasets/tasks.
+
 
 # Package Usage
 
