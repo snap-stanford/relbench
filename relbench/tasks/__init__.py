@@ -9,6 +9,7 @@ import pooch
 
 from relbench.base import AutoCompleteTask, BaseTask, TaskType
 from relbench.datasets import get_dataset
+from relbench.datasets.tabarena import TABARENA_DATASETS
 from relbench.tasks import (
     amazon,
     arxiv,
@@ -20,6 +21,7 @@ from relbench.tasks import (
     mimic,
     ratebeer,
     stack,
+    tabarena,
     tgb,
     trial,
 )
@@ -75,6 +77,13 @@ def download_task(dataset_name: str, task_name: str) -> None:
     The downloaded task tables will be automatically picked up by the task object, when
     `task.get_table(split)` is called.
     """
+
+    if dataset_name.startswith("tabarena-"):
+        print(
+            f"Task '{dataset_name}/{task_name}' is derived from TabArena OpenML tasks "
+            "and must be generated locally; skipping download."
+        )
+        return
 
     DOWNLOAD_REGISTRY.fetch(
         f"{dataset_name}/tasks/{task_name}.zip",
@@ -594,3 +603,13 @@ for dataset_name in [
         spec=tgb.TGBNodePropSpec(),
         k=10,
     )
+
+for dataset_slug, spec in TABARENA_DATASETS.items():
+    dataset_name = f"tabarena-{dataset_slug}"
+    for fold in range(spec.fold_count):
+        register_task(
+            dataset_name,
+            f"fold-{fold}",
+            tabarena.TabArenaFoldEntityTask,
+            fold=fold,
+        )
