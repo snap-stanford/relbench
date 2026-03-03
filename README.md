@@ -120,7 +120,7 @@ pip install relbench[ctu]
 
 If you use the CTU datasets in your work, please cite [ReDeLEx](https://github.com/jakubpeleska/redelex) as below:
 
-```
+```bibtex
 @misc{peleska2025redelex,
   title={REDELEX: A Framework for Relational Deep Learning Exploration},
   author={Jakub Peleška and Gustav Šír},
@@ -142,11 +142,34 @@ pip install relbench[dbinfer]
 ```
 
 If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://github.com/awslabs/multi-table-benchmark) as below:
-```
+```bibtex
 @article{dbinfer,
   title={4DBInfer: A 4D Benchmarking Toolbox for Graph-Centric Predictive Modeling on Relational DBs},
   author={Wang, Minjie and Gan, Quan and Wipf, David and Cai, Zhenkun and Li, Ning and Tang, Jianheng and Zhang, Yanlin and Zhang, Zizhao and Mao, Zunyao and Song, Yakun and Wang, Yanbo and Li, Jiahang and Zhang, Han and Yang, Guang and Qin, Xiao and Lei, Chuan and Zhang, Muhan and Zhang, Weinan and Faloutsos, Christos and Zhang, Zheng},
   journal={arXiv preprint arXiv:2404.18209},
+  year={2024}
+}
+```
+
+**Using TGB datasets**
+
+[TGB](https://tgb.complexdatalab.com/) datasets and tasks can be loaded in the RelBench format, and they cover bipartite link prediction (`tgbl-*`), heterogeneous link prediction (`thgl-*`), and node property prediction (`tgbn-*`). See `relbench/tasks/tgb.py` for the official TGB evaluation protocols (one-vs-many MRR / Hits@10 for link prediction, NDCG@10 for node property prediction). Standard RelBench style evaluation works as it is.
+
+If you use the TGB datasets in your work, please cite [TGB](https://tgb.complexdatalab.com/) as below:
+```bibtex
+@article{huang2023temporal,
+  title={Temporal graph benchmark for machine learning on temporal graphs},
+  author={Huang, Shenyang and Poursafaei, Farimah and Danovitch, Jacob and Fey, Matthias and Hu, Weihua and Rossi, Emanuele and Leskovec, Jure and Bronstein, Michael and Rabusseau, Guillaume and Rabbany, Reihaneh},
+  journal={Advances in Neural Information Processing Systems},
+  year={2023}
+}
+```
+
+```bibtex
+@article{huang2024tgb2,
+  title={TGB 2.0: A Benchmark for Learning on Temporal Knowledge Graphs and Heterogeneous Graphs},
+  author={Gastinger, Julia and Huang, Shenyang and Galkin, Mikhail and Loghmani, Erfan and Parviz, Ali and Poursafaei, Farimah and Danovitch, Jacob and Rossi, Emanuele and Koutis, Ioannis and Stuckenschmidt, Heiner and      Rabbany, Reihaneh and Rabusseau, Guillaume},
+  journal={Advances in Neural Information Processing Systems},
   year={2024}
 }
 ```
