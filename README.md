@@ -153,11 +153,7 @@ If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://gi
 
 **Using TGB datasets**
 
-[TGB](https://tgb.complexdatalab.com/) datasets and tasks can be loaded in the RelBench format, and they cover bipartite link prediction (`tgbl-*`), heterogeneous link prediction (`thgl-*`), and node property prediction (`tgbn-*`).
-
-TGB tasks use official TGB evaluation protocols (one-vs-many MRR / Hits@10 for link prediction, NDCG@10 for node property prediction) rather than the standard RelBench metrics. See `relbench/tasks/tgb.py` for the evaluation API.
-
-For training scripts and the TGB-to-RelBench export pipeline, see the companion repository: [TGB2](https://github.com/pc0618/TGB2).
+[TGB](https://tgb.complexdatalab.com/) datasets and tasks can be loaded in the RelBench format, and they cover bipartite link prediction (`tgbl-*`), heterogeneous link prediction (`thgl-*`), and node property prediction (`tgbn-*`). See `relbench/tasks/tgb.py` for the official TGB evaluation protocols (one-vs-many MRR / Hits@10 for link prediction, NDCG@10 for node property prediction). Standard RelBench style evaluation works as it is.
 
 If you use the TGB datasets in your work, please cite [TGB](https://tgb.complexdatalab.com/) as below:
 ```bibtex
