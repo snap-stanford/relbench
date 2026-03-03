@@ -120,7 +120,7 @@ pip install relbench[ctu]
 
 If you use the CTU datasets in your work, please cite [ReDeLEx](https://github.com/jakubpeleska/redelex) as below:
 
-```
+```bibtex
 @misc{peleska2025redelex,
   title={REDELEX: A Framework for Relational Deep Learning Exploration},
   author={Jakub Peleška and Gustav Šír},
@@ -142,7 +142,7 @@ pip install relbench[dbinfer]
 ```
 
 If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://github.com/awslabs/multi-table-benchmark) as below:
-```
+```bibtex
 @article{dbinfer,
   title={4DBInfer: A 4D Benchmarking Toolbox for Graph-Centric Predictive Modeling on Relational DBs},
   author={Wang, Minjie and Gan, Quan and Wipf, David and Cai, Zhenkun and Li, Ning and Tang, Jianheng and Zhang, Yanlin and Zhang, Zizhao and Mao, Zunyao and Song, Yakun and Wang, Yanbo and Li, Jiahang and Zhang, Han and Yang, Guang and Qin, Xiao and Lei, Chuan and Zhang, Muhan and Zhang, Weinan and Faloutsos, Christos and Zhang, Zheng},
@@ -151,6 +151,22 @@ If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://gi
 }
 ```
 
+**Using TGB datasets**
+
+[TGB](https://tgb.complexdatalab.com/) datasets and tasks can be loaded in the RelBench format, and they cover bipartite link prediction (`tgbl-*`), heterogeneous link prediction (`thgl-*`), and node property prediction (`tgbn-*`).
+
+TGB tasks use official TGB evaluation protocols (one-vs-many MRR / Hits@10 for link prediction, NDCG@10 for node property prediction) rather than the standard RelBench metrics. See `relbench/tasks/tgb.py` for the evaluation API.
+
+For training scripts and the TGB-to-RelBench export pipeline, see the companion repository: [TGB2](https://github.com/pc0618/TGB2).
+
+If you use the TGB datasets in your work, please cite [TGB](https://tgb.complexdatalab.com/) as below:
+```bibtex
+@article{huang2023temporal,
+  title={Temporal Graph Benchmark for Machine Learning on Temporal Graphs},
+  journal={NeurIPS Datasets and Benchmarks},
+  year={2023}
+}
+```
 
 
 # Package Usage
