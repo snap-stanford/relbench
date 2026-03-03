@@ -158,11 +158,22 @@ If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://gi
 If you use the TGB datasets in your work, please cite [TGB](https://tgb.complexdatalab.com/) as below:
 ```bibtex
 @article{huang2023temporal,
-  title={Temporal Graph Benchmark for Machine Learning on Temporal Graphs},
-  journal={NeurIPS Datasets and Benchmarks},
+  title={Temporal graph benchmark for machine learning on temporal graphs},
+  author={Huang, Shenyang and Poursafaei, Farimah and Danovitch, Jacob and Fey, Matthias and Hu, Weihua and Rossi, Emanuele and Leskovec, Jure and Bronstein, Michael and Rabusseau, Guillaume and Rabbany, Reihaneh},
+  journal={Advances in Neural Information Processing Systems},
   year={2023}
 }
 ```
+
+```bibtex
+@article{huang2024tgb2,
+  title={TGB 2.0: A Benchmark for Learning on Temporal Knowledge Graphs and Heterogeneous Graphs},
+  author={Gastinger, Julia and Huang, Shenyang and Galkin, Mikhail and Loghmani, Erfan and Parviz, Ali and Poursafaei, Farimah and Danovitch, Jacob and Rossi, Emanuele and Koutis, Ioannis and Stuckenschmidt, Heiner and      Rabbany, Reihaneh and Rabusseau, Guillaume},
+  journal={Advances in Neural Information Processing Systems},
+  year={2024}
+}
+```
+
 
 
 # Package Usage
