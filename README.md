@@ -175,6 +175,20 @@ If you use the TGB datasets in your work, please cite [TGB](https://tgb.complexd
 ```
 
 
+**Using TabArena datasets**
+
+RelBench includes an optional integration for TabArena: a collection of single-table OpenML tasks. TabArena datasets are exposed under names like `tabarena-credit-g`, with per-split tasks named `split-0`, `split-1`, etc.
+
+To use TabArena datasets, install the optional dependency:
+```bash
+pip install relbench[tabarena]
+```
+
+TabArena datasets are generated locally (from OpenML) and cached under `~/.cache/relbench/tabarena-*/`. Passing `download=True` will skip the RelBench server download step for these datasets/tasks.
+
+For an end-to-end PluRel-16B TabArena inference runbook (including `split-*` task naming, random sampling behavior, and `seq_len=2048/4096` commands), see:
+[`examples/tabarena_plurel16b_inference.md`](examples/tabarena_plurel16b_inference.md)
+
 
 # Package Usage
 
