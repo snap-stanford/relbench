@@ -270,9 +270,10 @@ class TabArenaSplitEntityTask(EntityTask):
         test_uniques = set(
             self.get_table("test", mask_input_cols=False).df[self.entity_col].unique()
         )
-        res["total"]["ratio_train_test_entity_overlap"] = len(
-            train_uniques.intersection(test_uniques)
-        ) / len(test_uniques)
+        overlap = len(train_uniques.intersection(test_uniques))
+        res["total"]["ratio_train_test_entity_overlap"] = (
+            overlap / len(test_uniques) if test_uniques else float("nan")
+        )
         return res
 
 
