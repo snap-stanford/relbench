@@ -214,8 +214,7 @@ class TabArenaSplitEntityTask(EntityTask):
     def _get_table(self, split: str) -> Table:
         if split not in {"train", "val", "test"}:
             raise ValueError(
-                "Unknown split="
-                f"{split!r}. Expected one of ['test', 'train', 'val']."
+                "Unknown split=" f"{split!r}. Expected one of ['test', 'train', 'val']."
             )
 
         train_idx, val_idx, test_idx = self._split_indices()
