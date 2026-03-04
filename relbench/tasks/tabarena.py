@@ -240,9 +240,20 @@ class TabArenaSplitEntityTask(EntityTask):
 
         return Table(
             df=df,
-            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            # Keep task tables edge-free so single-table TabArena contexts stay single-node
+            # in external context samplers (e.g., RT rustler).
+            fkey_col_to_pkey_table={},
             pkey_col=None,
             time_col=None,
+        )
+
+    def _mask_input_cols(self, table: Table) -> Table:
+        # Keep entity ids visible for inference while preserving edge-free task tables.
+        return Table(
+            df=table.df[[self.entity_col]],
+            fkey_col_to_pkey_table={},
+            pkey_col=table.pkey_col,
+            time_col=table.time_col,
         )
 
     def stats(self) -> Dict[str, Dict[str, Any]]:

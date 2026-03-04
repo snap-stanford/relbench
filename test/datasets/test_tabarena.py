@@ -118,8 +118,10 @@ def test_tabarena_dataset_and_task_binary(monkeypatch):
     task = TabArenaSplitEntityTask(dataset, split=0, cache_dir=None)
     train_table = task.get_table("train")
     assert set(train_table.df.columns) == {"record_id", "target"}
+    assert train_table.fkey_col_to_pkey_table == {}
     test_table = task.get_table("test")
     assert set(test_table.df.columns) == {"record_id"}
+    assert test_table.fkey_col_to_pkey_table == {}
 
     # Perfect predictions yield AUC=1.0 => metric_error=0.0.
     full_test = task.get_table("test", mask_input_cols=False)
