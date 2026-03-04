@@ -154,7 +154,7 @@ If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://gi
 
 **Using TabArena datasets**
 
-RelBench includes an optional integration for TabArena: a collection of single-table OpenML tasks. TabArena datasets are exposed under names like `tabarena-credit-g`, with per-fold tasks named `fold-0`, `fold-1`, etc.
+RelBench includes an optional integration for TabArena: a collection of single-table OpenML tasks. TabArena datasets are exposed under names like `tabarena-credit-g`, with per-split tasks named `split-0`, `split-1`, etc.
 
 To use TabArena datasets, install the optional dependency:
 ```bash

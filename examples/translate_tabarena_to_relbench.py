@@ -26,10 +26,10 @@ def _parse_args() -> argparse.Namespace:
         default="results/tabarena_relbench_translation.csv",
     )
     parser.add_argument(
-        "--include_fold_examples",
+        "--include_split_examples",
         action="store_true",
         default=False,
-        help="If set, writes one sample record for fold-0 per dataset.",
+        help="If set, writes one sample record for split-0 per dataset.",
     )
     return parser.parse_args()
 
@@ -59,7 +59,7 @@ def _summarize_dataset(dataset_name: str) -> dict:
         "target_col": spec.target,
         "problem_type": spec.task_type,
         "num_classes": spec.num_classes,
-        "fold_count": spec.fold_count,
+        "split_count": spec.fold_count,
         "records_rows": int(len(records.df)),
         "records_columns": int(len(records.df.columns)),
         "entity_table": "records",
@@ -69,23 +69,23 @@ def _summarize_dataset(dataset_name: str) -> dict:
     return row
 
 
-def _summarize_fold_example(dataset_name: str) -> list[dict]:
+def _summarize_split_example(dataset_name: str) -> list[dict]:
     from relbench.tasks import get_task
 
     rows: list[dict] = []
-    for fold in [0]:
-        task = get_task(dataset_name, f"fold-{fold}")
+    for split in [0]:
+        task = get_task(dataset_name, f"split-{split}")
         train = task.get_table("train", mask_input_cols=False)
         val = task.get_table("val", mask_input_cols=False)
         test = task.get_table("test", mask_input_cols=False)
         rows.append(
             {
                 "dataset_name": dataset_name,
-                "fold": int(fold),
+                "split": int(split),
                 "task_type": str(task.task_type.value),
-                "fold_train_rows": int(len(train)),
-                "fold_val_rows": int(len(val)),
-                "fold_test_rows": int(len(test)),
+                "split_train_rows": int(len(train)),
+                "split_val_rows": int(len(val)),
+                "split_test_rows": int(len(test)),
                 "train_columns": int(len(train.df.columns)),
                 "time_col": str(train.time_col),
             }
@@ -105,17 +105,17 @@ def main() -> None:
         dataset_name = f"tabarena-{slug}"
         print(f"[Inspect] {dataset_name}")
         dataset_rows.append(_summarize_dataset(dataset_name))
-        if args.include_fold_examples:
-            split_rows.extend(_summarize_fold_example(dataset_name))
+        if args.include_split_examples:
+            split_rows.extend(_summarize_split_example(dataset_name))
 
     df = pd.DataFrame(dataset_rows)
     df.to_csv(output_path, index=False)
 
     if split_rows:
-        split_path = output_path.with_name(f"{output_path.stem}_fold_samples.csv")
+        split_path = output_path.with_name(f"{output_path.stem}_split_samples.csv")
         pd.DataFrame(split_rows).to_csv(split_path, index=False)
         print(f"[Done] dataset summary: {output_path}")
-        print(f"[Done] fold sample summary: {split_path}")
+        print(f"[Done] split sample summary: {split_path}")
     else:
         print(f"[Done] dataset summary: {output_path}")
 

@@ -606,10 +606,10 @@ for dataset_name in [
 
 for dataset_slug, spec in TABARENA_DATASETS.items():
     dataset_name = f"tabarena-{dataset_slug}"
-    for fold in range(spec.fold_count):
+    for split in range(spec.fold_count):
         register_task(
             dataset_name,
-            f"fold-{fold}",
-            tabarena.TabArenaFoldEntityTask,
-            fold=fold,
+            f"split-{split}",
+            tabarena.TabArenaSplitEntityTask,
+            split=split,
         )

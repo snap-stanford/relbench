@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -11,12 +11,6 @@ from sklearn.model_selection import train_test_split
 
 from relbench.base import EntityTask, Table, TaskType
 from relbench.datasets.tabarena import TabArenaDataset
-
-_SPLIT_TIMESTAMPS = {
-    "train": pd.Timestamp("2000-01-01"),
-    "val": pd.Timestamp("2000-01-02"),
-    "test": pd.Timestamp("2000-01-03"),
-}
 
 
 def _binary_metric_error(true: np.ndarray, pred: np.ndarray) -> float:
@@ -117,12 +111,12 @@ _multiclass_metric_error.__name__ = "metric_error"
 _regression_metric_error.__name__ = "metric_error"
 
 
-class TabArenaFoldEntityTask(EntityTask):
-    r"""Single-table TabArena task for a specific OpenML fold index."""
+class TabArenaSplitEntityTask(EntityTask):
+    r"""Single-table TabArena task for a specific OpenML split index."""
 
     entity_col = "record_id"
     entity_table = "records"
-    time_col = "timestamp"
+    time_col = None
     target_col = "target"
     timedelta = pd.Timedelta(days=1)
     num_eval_timestamps = 1
@@ -131,27 +125,36 @@ class TabArenaFoldEntityTask(EntityTask):
         self,
         dataset,
         *,
-        fold: int,
+        split: Optional[int] = None,
+        fold: Optional[int] = None,
         val_frac: float = 0.2,
         random_state: Optional[int] = None,
         cache_dir: Optional[str] = None,
     ):
         if not isinstance(dataset, TabArenaDataset):
             raise TypeError(
-                "TabArenaFoldEntityTask expects a TabArenaDataset instance. "
+                "TabArenaSplitEntityTask expects a TabArenaDataset instance. "
                 f"Got {type(dataset)}"
             )
 
-        self.fold = int(fold)
+        if split is None and fold is None:
+            raise ValueError("Exactly one of `split` or `fold` must be provided.")
+        if split is not None and fold is not None and int(split) != int(fold):
+            raise ValueError(
+                f"Received conflicting split={split} and fold={fold}; please provide one index."
+            )
+
+        self.split = int(split if split is not None else fold)
+        self.fold = self.split  # Backward-compatible alias.
         self.val_frac = float(val_frac)
         if not (0.0 < self.val_frac < 1.0):
             raise ValueError(f"val_frac must be in (0, 1), got {self.val_frac}")
-        self.random_state = self.fold if random_state is None else int(random_state)
+        self.random_state = self.split if random_state is None else int(random_state)
 
-        if self.fold not in dataset.available_folds:
+        if self.split not in dataset.available_splits:
             raise ValueError(
-                f"Fold={self.fold} is unavailable for {dataset.name}. "
-                f"Available folds: {dataset.available_folds}"
+                f"Split={self.split} is unavailable for {dataset.name}. "
+                f"Available splits: {dataset.available_splits}"
             )
 
         self.problem_type = dataset.problem_type
@@ -174,12 +177,12 @@ class TabArenaFoldEntityTask(EntityTask):
 
     def make_table(self, db, timestamps):  # pragma: no cover
         raise RuntimeError(
-            "TabArenaFoldEntityTask uses precomputed OpenML fold indices and overrides _get_table()."
+            "TabArenaSplitEntityTask uses precomputed OpenML split indices and overrides _get_table()."
         )
 
     @lru_cache(maxsize=None)
     def _split_indices(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        train_idx, test_idx = self.dataset.get_openml_fold_indices(self.fold)
+        train_idx, test_idx = self.dataset.get_openml_split_indices(self.split)
         y = self.dataset.get_target_array()
 
         stratify = (
@@ -209,9 +212,10 @@ class TabArenaFoldEntityTask(EntityTask):
         )
 
     def _get_table(self, split: str) -> Table:
-        if split not in _SPLIT_TIMESTAMPS:
+        if split not in {"train", "val", "test"}:
             raise ValueError(
-                f"Unknown split={split!r}. Expected one of {sorted(_SPLIT_TIMESTAMPS.keys())}."
+                "Unknown split="
+                f"{split!r}. Expected one of ['test', 'train', 'val']."
             )
 
         train_idx, val_idx, test_idx = self._split_indices()
@@ -227,7 +231,6 @@ class TabArenaFoldEntityTask(EntityTask):
 
         df = pd.DataFrame(
             {
-                self.time_col: _SPLIT_TIMESTAMPS[split],
                 self.entity_col: idx.astype(np.int64, copy=False),
                 self.target_col: target,
             }
@@ -240,8 +243,42 @@ class TabArenaFoldEntityTask(EntityTask):
             df=df,
             fkey_col_to_pkey_table={self.entity_col: self.entity_table},
             pkey_col=None,
-            time_col=self.time_col,
+            time_col=None,
         )
+
+    def stats(self) -> Dict[str, Dict[str, Any]]:
+        r"""Get split-level statistics for tasks without a time column."""
+        res: Dict[str, Dict[str, Any]] = {}
+        for split in ["train", "val", "test"]:
+            table = self.get_table(split, mask_input_cols=False)
+            stats: Dict[str, Any] = {
+                "num_rows": len(table.df),
+                "num_unique_entities": table.df[self.entity_col].nunique(),
+            }
+            self._set_stats(table.df, stats)
+            res[split] = {"total": stats}
+
+        total_df = pd.concat(
+            [
+                self.get_table(split, mask_input_cols=False).df
+                for split in ["train", "val", "test"]
+            ]
+        )
+        res["total"] = {}
+        self._set_stats(total_df, res["total"])
+
+        train_uniques = set(self.get_table("train").df[self.entity_col].unique())
+        test_uniques = set(
+            self.get_table("test", mask_input_cols=False).df[self.entity_col].unique()
+        )
+        res["total"]["ratio_train_test_entity_overlap"] = len(
+            train_uniques.intersection(test_uniques)
+        ) / len(test_uniques)
+        return res
+
+
+# Backward-compatible alias.
+TabArenaFoldEntityTask = TabArenaSplitEntityTask
 
 
 def _make_multiclass_metric_error_with_num_classes(

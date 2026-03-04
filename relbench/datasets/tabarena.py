@@ -593,8 +593,13 @@ class TabArenaDataset(Dataset):
         super().__init__(cache_dir=cache_dir)
 
     @property
-    def available_folds(self) -> list[int]:
+    def available_splits(self) -> list[int]:
         return list(range(int(self.spec.fold_count)))
+
+    @property
+    def available_folds(self) -> list[int]:
+        # Backward-compatible alias.
+        return self.available_splits
 
     def _load_task_with_retry(self, task_id: int, retries: int = 4):
         openml = _import_openml()
@@ -665,20 +670,20 @@ class TabArenaDataset(Dataset):
         assert self._y_encoded is not None
         return self._y_encoded
 
-    def get_openml_fold_indices(self, fold: int) -> tuple[np.ndarray, np.ndarray]:
-        fold = int(fold)
-        if fold < 0 or fold >= int(self.spec.fold_count):
+    def get_openml_split_indices(self, split: int) -> tuple[np.ndarray, np.ndarray]:
+        split = int(split)
+        if split < 0 or split >= int(self.spec.fold_count):
             raise ValueError(
-                f"Invalid fold={fold} for {self.name}. Valid folds are 0..{int(self.spec.fold_count) - 1}."
+                f"Invalid split={split} for {self.name}. Valid splits are 0..{int(self.spec.fold_count) - 1}."
             )
 
         task = self.get_openml_task()
         n_repeats, n_folds, _n_samples = task.get_split_dimensions()
-        repeat = fold // int(n_folds)
-        fold_in_repeat = fold % int(n_folds)
+        repeat = split // int(n_folds)
+        fold_in_repeat = split % int(n_folds)
         if repeat >= int(n_repeats):
             raise ValueError(
-                f"Fold index {fold} exceeds OpenML split dimensions for {self.name}: repeats={n_repeats}, folds={n_folds}."
+                f"Split index {split} exceeds OpenML split dimensions for {self.name}: repeats={n_repeats}, folds={n_folds}."
             )
 
         train_idx, test_idx = task.get_train_test_split_indices(
@@ -690,6 +695,10 @@ class TabArenaDataset(Dataset):
             np.asarray(train_idx, dtype=np.int64),
             np.asarray(test_idx, dtype=np.int64),
         )
+
+    def get_openml_fold_indices(self, fold: int) -> tuple[np.ndarray, np.ndarray]:
+        # Backward-compatible alias.
+        return self.get_openml_split_indices(split=fold)
 
     def make_db(self) -> Database:
         self._ensure_openml_loaded()

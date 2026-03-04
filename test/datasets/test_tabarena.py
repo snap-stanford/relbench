@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from relbench.datasets.tabarena import TabArenaDataset
-from relbench.tasks.tabarena import TabArenaFoldEntityTask
+from relbench.tasks.tabarena import TabArenaSplitEntityTask
 
 
 class _FakeOpenMLDataset:
@@ -110,16 +110,16 @@ def test_tabarena_dataset_and_task_binary(monkeypatch):
     assert records.time_col is None
     assert len(records) == 90
 
-    train_idx, test_idx = dataset.get_openml_fold_indices(0)
+    train_idx, test_idx = dataset.get_openml_split_indices(0)
     assert train_idx.dtype == np.int64
     assert test_idx.dtype == np.int64
     assert set(train_idx).isdisjoint(set(test_idx))
 
-    task = TabArenaFoldEntityTask(dataset, fold=0, cache_dir=None)
+    task = TabArenaSplitEntityTask(dataset, split=0, cache_dir=None)
     train_table = task.get_table("train")
-    assert set(train_table.df.columns) == {"timestamp", "record_id", "target"}
+    assert set(train_table.df.columns) == {"record_id", "target"}
     test_table = task.get_table("test")
-    assert set(test_table.df.columns) == {"timestamp", "record_id"}
+    assert set(test_table.df.columns) == {"record_id"}
 
     # Perfect predictions yield AUC=1.0 => metric_error=0.0.
     full_test = task.get_table("test", mask_input_cols=False)
@@ -132,7 +132,7 @@ def test_tabarena_dataset_and_task_regression(monkeypatch):
     _install_fake_openml(monkeypatch)
 
     dataset = TabArenaDataset(dataset_slug="diamonds", cache_dir=None)
-    task = TabArenaFoldEntityTask(dataset, fold=0, cache_dir=None)
+    task = TabArenaSplitEntityTask(dataset, split=0, cache_dir=None)
 
     full_test = task.get_table("test", mask_input_cols=False)
     y_true = full_test.df["target"].to_numpy()
@@ -144,7 +144,7 @@ def test_tabarena_task_multiclass(monkeypatch):
     _install_fake_openml(monkeypatch)
 
     dataset = TabArenaDataset(dataset_slug="splice", cache_dir=None)
-    task = TabArenaFoldEntityTask(dataset, fold=0, cache_dir=None)
+    task = TabArenaSplitEntityTask(dataset, split=0, cache_dir=None)
 
     full_test = task.get_table("test", mask_input_cols=False)
     y_true = full_test.df["target"].to_numpy()
