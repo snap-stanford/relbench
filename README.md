@@ -161,10 +161,17 @@ To use TabArena datasets, install the optional dependency:
 pip install relbench[tabarena]
 ```
 
-TabArena datasets are generated locally (from OpenML) and cached under `~/.cache/relbench/tabarena-*/`. Passing `download=True` will skip the RelBench server download step for these datasets/tasks.
+See [`examples/translate_tabarena_to_relbench.py`](examples/translate_tabarena_to_relbench.py) for a comparison between the original OpenML task and the relbenchified `records` and `split-*` tables, and [`examples/validate_tabarena_baseline.py`](examples/validate_tabarena_baseline.py) for a public-baseline validation script that checks inference consistency between the original and relbenchified views.
 
-For an end-to-end PluRel-16B TabArena inference runbook (including `split-*` task naming, random sampling behavior, and `seq_len=2048/4096` commands), see:
-[`examples/tabarena_plurel16b_inference.md`](examples/tabarena_plurel16b_inference.md)
+If you use the TabArena datasets in your work, please cite TabArena as below:
+```
+@inproceedings{erickson2025tabarena,
+  title={TabArena: A Living Benchmark for Machine Learning on Tabular Data},
+  author={Erickson, Nick and Purucker, Lennart and Tschalzev, Andrej and Holzm{\"u}ller, David and Mutalik Desai, Prateek and Salinas, David and Hutter, Frank},
+  booktitle={Advances in Neural Information Processing Systems},
+  year={2025}
+}
+```
 
 
 # Package Usage

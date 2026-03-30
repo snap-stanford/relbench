@@ -236,7 +236,7 @@ class TabArenaSplitEntityTask(EntityTask):
         )
 
         if self.task_type != TaskType.REGRESSION:
-            df[self.target_col] = df[self.target_col].astype(np.int64, copy=False)
+            df[self.target_col] = df[self.target_col].astype(np.int64)
 
         return Table(
             df=df,
