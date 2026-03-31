@@ -1,9 +1,9 @@
 """Validate the TabArena RelBench wrapper with a public baseline.
 
-The script trains a baseline on the original OpenML rows selected by a RelBench
-task split, then runs inference on both the original and relbenchified views of
-the same validation and test rows. Matching predictions and metrics confirm that
-the RelBench wrapper preserves the original single-table task semantics.
+The script trains a baseline on the original OpenML rows selected by a RelBench task
+split, then runs inference on both the original and relbenchified views of the same
+validation and test rows. Matching predictions and metrics confirm that the RelBench
+wrapper preserves the original single-table task semantics.
 """
 
 from __future__ import annotations
@@ -66,7 +66,9 @@ def _load_openml_frame(dataset: TabArenaDataset) -> pd.DataFrame:
     return X_df
 
 
-def _join_records(records_df: pd.DataFrame, task_df: pd.DataFrame) -> tuple[pd.DataFrame, np.ndarray]:
+def _join_records(
+    records_df: pd.DataFrame, task_df: pd.DataFrame
+) -> tuple[pd.DataFrame, np.ndarray]:
     joined = task_df.merge(records_df, on="record_id", how="left", validate="1:1")
     X_df = joined.drop(columns=["record_id", "target"])
     y = joined["target"].to_numpy()
@@ -87,9 +89,7 @@ def _build_preprocessor(X_df: pd.DataFrame) -> ColumnTransformer:
         transformers=[
             (
                 "numeric",
-                Pipeline(
-                    [("imputer", SimpleImputer(strategy="median"))]
-                ),
+                Pipeline([("imputer", SimpleImputer(strategy="median"))]),
                 numeric_cols,
             ),
             (
@@ -180,7 +180,9 @@ def _predict(
         return np.asarray(model.predict(X_df), dtype=np.float64)
     proba = model.predict_proba(X_df)
     if proba.ndim != 2 or proba.shape[1] != 2:
-        raise RuntimeError(f"Expected binary predict_proba output, got shape={proba.shape}")
+        raise RuntimeError(
+            f"Expected binary predict_proba output, got shape={proba.shape}"
+        )
     return np.asarray(proba[:, 1], dtype=np.float64)
 
 
@@ -205,7 +207,9 @@ def main() -> None:
     task = TabArenaSplitEntityTask(dataset, split=args.split)
     records_df = dataset.get_db().table_dict["records"].df.reset_index(drop=True)
     openml_X = _load_openml_frame(dataset)
-    openml_y = pd.Series(dataset.get_target_array(), name="target").reset_index(drop=True)
+    openml_y = pd.Series(dataset.get_target_array(), name="target").reset_index(
+        drop=True
+    )
 
     relbench_train = task.get_table("train", mask_input_cols=False).df
     relbench_val = task.get_table("val", mask_input_cols=False).df
@@ -215,11 +219,17 @@ def main() -> None:
     X_val_rb, y_val_rb = _join_records(records_df, relbench_val)
     X_test_rb, y_test_rb = _join_records(records_df, relbench_test)
 
-    X_train_orig = openml_X.iloc[relbench_train["record_id"].to_numpy()].reset_index(drop=True)
+    X_train_orig = openml_X.iloc[relbench_train["record_id"].to_numpy()].reset_index(
+        drop=True
+    )
     y_train_orig = openml_y.iloc[relbench_train["record_id"].to_numpy()].to_numpy()
-    X_val_orig = openml_X.iloc[relbench_val["record_id"].to_numpy()].reset_index(drop=True)
+    X_val_orig = openml_X.iloc[relbench_val["record_id"].to_numpy()].reset_index(
+        drop=True
+    )
     y_val_orig = openml_y.iloc[relbench_val["record_id"].to_numpy()].to_numpy()
-    X_test_orig = openml_X.iloc[relbench_test["record_id"].to_numpy()].reset_index(drop=True)
+    X_test_orig = openml_X.iloc[relbench_test["record_id"].to_numpy()].reset_index(
+        drop=True
+    )
     y_test_orig = openml_y.iloc[relbench_test["record_id"].to_numpy()].to_numpy()
 
     print("[data equality checks]")
@@ -244,14 +254,20 @@ def main() -> None:
     test_pred_orig = _predict(model, task, X_test_orig)
     test_pred_rb = _predict(model, task, X_test_rb)
 
-    metric_name, val_metric_orig = _metric_name_and_value(task, y_val_orig, val_pred_orig)
+    metric_name, val_metric_orig = _metric_name_and_value(
+        task, y_val_orig, val_pred_orig
+    )
     _, val_metric_rb = _metric_name_and_value(task, y_val_rb, val_pred_rb)
     _, test_metric_orig = _metric_name_and_value(task, y_test_orig, test_pred_orig)
     _, test_metric_rb = _metric_name_and_value(task, y_test_rb, test_pred_rb)
 
     print("[prediction consistency]")
-    print(f"val max |orig - relbench|:  {_max_prediction_delta(val_pred_orig, val_pred_rb):.6g}")
-    print(f"test max |orig - relbench|: {_max_prediction_delta(test_pred_orig, test_pred_rb):.6g}")
+    print(
+        f"val max |orig - relbench|:  {_max_prediction_delta(val_pred_orig, val_pred_rb):.6g}"
+    )
+    print(
+        f"test max |orig - relbench|: {_max_prediction_delta(test_pred_orig, test_pred_rb):.6g}"
+    )
     print()
 
     print(f"[{metric_name}]")

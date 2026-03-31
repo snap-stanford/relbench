@@ -63,7 +63,9 @@ def _check_translation(
     task: TabArenaSplitEntityTask,
 ) -> dict[str, object]:
     X_df, _y_ser = _load_openml_frame(dataset)
-    y_encoded = pd.Series(dataset.get_target_array(), name="target").reset_index(drop=True)
+    y_encoded = pd.Series(dataset.get_target_array(), name="target").reset_index(
+        drop=True
+    )
     records_df = dataset.get_db().table_dict["records"].df.reset_index(drop=True)
 
     openml_train_idx, openml_test_idx = dataset.get_openml_split_indices(task.split)
@@ -83,7 +85,9 @@ def _check_translation(
         "test": test_table.df,
     }.items():
         relbench_target = split_df["target"].reset_index(drop=True)
-        source_target = y_encoded.iloc[split_df["record_id"].to_numpy()].reset_index(drop=True)
+        source_target = y_encoded.iloc[split_df["record_id"].to_numpy()].reset_index(
+            drop=True
+        )
         if not relbench_target.equals(source_target):
             target_matches = False
             print(f"[check] target mismatch on {split_name}")
@@ -109,10 +113,10 @@ def _check_translation(
             records_df["record_id"].to_numpy(),
             np.arange(len(records_df), dtype=np.int64),
         ),
-        "relbench_test_matches_openml_test": set(relbench_test_ids) == set(openml_test_idx),
-        "relbench_train_val_partition_openml_train": relbench_trainval_ids == set(
-            openml_train_idx
-        ),
+        "relbench_test_matches_openml_test": set(relbench_test_ids)
+        == set(openml_test_idx),
+        "relbench_train_val_partition_openml_train": relbench_trainval_ids
+        == set(openml_train_idx),
         "relbench_train_val_are_disjoint": set(relbench_train_ids).isdisjoint(
             relbench_val_ids
         ),
