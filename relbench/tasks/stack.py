@@ -36,8 +36,7 @@ class UserEngagementTask(EntityTask):
         posts = db.table_dict["posts"].df
         users = db.table_dict["users"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             WITH
             ALL_ENGAGEMENT AS (
                 SELECT
@@ -93,8 +92,7 @@ class UserEngagementTask(EntityTask):
                     u.timestamp, u.id
             ;
 
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -121,8 +119,7 @@ class PostVotesTask(EntityTask):
         votes = db.table_dict["votes"].df
         posts = db.table_dict["posts"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 p.id AS PostId,
@@ -148,8 +145,7 @@ class PostVotesTask(EntityTask):
                 p.id
             ;
 
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -175,8 +171,7 @@ class UserBadgeTask(EntityTask):
         users = db.table_dict["users"].df
         badges = db.table_dict["badges"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 u.Id as UserId,
@@ -197,8 +192,7 @@ class UserBadgeTask(EntityTask):
             GROUP BY
                 t.timestamp,
                 u.Id
-            """
-        ).df()
+            """).df()
 
         # remove any IderId rows that are NaN
         df = df.dropna(subset=["UserId"])
@@ -239,8 +233,7 @@ class UserPostCommentTask(RecommendationTask):
         posts = db.table_dict["posts"].df
         comments = db.table_dict["comments"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 c.UserId as UserId,
@@ -264,8 +257,7 @@ class UserPostCommentTask(RecommendationTask):
             GROUP BY
                 t.timestamp,
                 c.UserId
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -299,8 +291,7 @@ class PostPostRelatedTask(RecommendationTask):
         posts = db.table_dict["posts"].df
         postLinks = db.table_dict["postLinks"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
                 SELECT
                     t.timestamp,
                     pl.PostId as PostId,
@@ -328,8 +319,7 @@ class PostPostRelatedTask(RecommendationTask):
                 GROUP BY
                     t.timestamp,
                     pl.PostId;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,

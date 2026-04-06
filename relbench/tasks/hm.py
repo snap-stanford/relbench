@@ -35,8 +35,7 @@ class UserItemPurchaseTask(RecommendationTask):
         transactions = db.table_dict["transactions"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 transactions.customer_id,
@@ -51,8 +50,7 @@ class UserItemPurchaseTask(RecommendationTask):
             GROUP BY
                 t.timestamp,
                 transactions.customer_id
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -81,8 +79,7 @@ class UserChurnTask(EntityTask):
         transactions = db.table_dict["transactions"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 timestamp,
                 customer_id,
@@ -108,8 +105,7 @@ class UserChurnTask(EntityTask):
                         t_dat > timestamp - INTERVAL '{self.timedelta}' AND
                         t_dat <= timestamp
                 )
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -136,8 +132,7 @@ class ItemSalesTask(EntityTask):
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         article = db.table_dict["article"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 timestamp,
                 article_id,
@@ -155,8 +150,7 @@ class ItemSalesTask(EntityTask):
                         t_dat > timestamp AND
                         t_dat <= timestamp + INTERVAL '{self.timedelta}'
                 )
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,

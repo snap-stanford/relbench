@@ -34,8 +34,7 @@ class UserChurnTask(EntityTask):
         review = db.table_dict["review"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 timestamp,
                 customer_id,
@@ -61,8 +60,7 @@ class UserChurnTask(EntityTask):
                         review_time > timestamp - INTERVAL '{self.timedelta}' AND
                         review_time <= timestamp
                 )
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -90,8 +88,7 @@ class UserLTVTask(EntityTask):
         review = db.table_dict["review"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 timestamp,
                 customer_id,
@@ -120,8 +117,7 @@ class UserLTVTask(EntityTask):
                         review_time > timestamp - INTERVAL '{self.timedelta}' AND
                         review_time <= timestamp
                 )
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -149,8 +145,7 @@ class ItemChurnTask(EntityTask):
         review = db.table_dict["review"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 timestamp,
                 product_id,
@@ -176,8 +171,7 @@ class ItemChurnTask(EntityTask):
                         review_time > timestamp - INTERVAL '{self.timedelta}' AND
                         review_time <= timestamp
                 )
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -205,8 +199,7 @@ class ItemLTVTask(EntityTask):
         review = db.table_dict["review"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 timestamp,
                 product.product_id,
@@ -222,8 +215,7 @@ class ItemLTVTask(EntityTask):
             GROUP BY
                 timestamp,
                 product.product_id
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -252,8 +244,7 @@ class UserItemPurchaseTask(RecommendationTask):
         review = db.table_dict["review"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 review.customer_id,
@@ -270,8 +261,7 @@ class UserItemPurchaseTask(RecommendationTask):
             GROUP BY
                 t.timestamp,
                 review.customer_id
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -303,8 +293,7 @@ class UserItemRateTask(RecommendationTask):
         review = db.table_dict["review"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
                 SELECT
                     t.timestamp,
                     review.customer_id,
@@ -323,8 +312,7 @@ class UserItemRateTask(RecommendationTask):
                 GROUP BY
                     t.timestamp,
                     review.customer_id
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -360,8 +348,7 @@ class UserItemReviewTask(RecommendationTask):
             300  # minimum length of review to be considered as detailed review
         )
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
                 SELECT
                     t.timestamp,
                     review.customer_id,
@@ -380,8 +367,7 @@ class UserItemReviewTask(RecommendationTask):
                 GROUP BY
                     t.timestamp,
                     review.customer_id
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,

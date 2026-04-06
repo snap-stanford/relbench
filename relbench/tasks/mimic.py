@@ -39,8 +39,7 @@ class ICULengthOfStayTask(EntityTask):
         icu = db.table_dict["icustays"].df
         patients = db.table_dict["patients"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp as intime,
                 p.subject_id,
@@ -62,8 +61,7 @@ class ICULengthOfStayTask(EntityTask):
                 AND i.intime IS NOT NULL
                 AND i.los_icu IS NOT NULL
 
-        """
-        ).df()
+        """).df()
 
         # Ensure time column is datetime64[ns] for to_unix_time
         if self.time_col in df.columns:

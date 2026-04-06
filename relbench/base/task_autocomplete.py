@@ -173,8 +173,7 @@ class AutoCompleteTask(EntityTask):
         min_timestamp = timestamp_df["timestamp"].min()
         max_timestamp = timestamp_df["timestamp"].max()
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 entity_table.{self.time_col},
                 entity_table.{entity_col},
@@ -188,8 +187,7 @@ class AutoCompleteTask(EntityTask):
             WHERE
                 entity_table.{self.time_col} > '{min_timestamp}' AND
                 entity_table.{self.time_col} <= '{max_timestamp}'
-            """
-        ).df()
+            """).df()
 
         if self.task_type == TaskType.MULTICLASS_CLASSIFICATION:
             df[self.target_col] = self.transform_target(df[self.target_col])

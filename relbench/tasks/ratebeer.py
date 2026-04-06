@@ -60,8 +60,7 @@ class BeerRatingChurnTask(EntityTask):
         beer_ratings = db.table_dict["beer_ratings"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 b.beer_id AS beer_id,
@@ -90,8 +89,7 @@ class BeerRatingChurnTask(EntityTask):
             GROUP BY
                 t.timestamp,
                 b.beer_id
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -117,8 +115,7 @@ class UserRatingChurnTask(EntityTask):
         beer_ratings = db.table_dict["beer_ratings"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 u.user_id AS user_id,
@@ -147,8 +144,7 @@ class UserRatingChurnTask(EntityTask):
             GROUP BY
                 t.timestamp,
                 u.user_id
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -174,8 +170,7 @@ class BrewerDormantTask(EntityTask):
         beers = db.table_dict["beers"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 brew.brewer_id AS brewer_id,
@@ -204,8 +199,7 @@ class BrewerDormantTask(EntityTask):
             GROUP BY
                 t.timestamp,
                 brew.brewer_id
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -234,8 +228,7 @@ class UserRatingCountTask(EntityTask):
         beer_ratings = db.table_dict["beer_ratings"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 u.user_id,
@@ -256,8 +249,7 @@ class UserRatingCountTask(EntityTask):
                     AND br2.created_at > t.timestamp - INTERVAL '{self.timedelta}'
                     AND br2.created_at <= t.timestamp
                 )
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -296,8 +288,7 @@ class UserFavoriteBeerTask(RecommendationTask):
         beer_ratings = db.table_dict["beer_ratings"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 f.user_id,
@@ -321,8 +312,7 @@ class UserFavoriteBeerTask(RecommendationTask):
             GROUP BY
                 t.timestamp,
                 f.user_id
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -361,8 +351,7 @@ class UserLikedPlaceTask(RecommendationTask):
         beer_ratings = db.table_dict["beer_ratings"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 pr.user_id,
@@ -393,8 +382,7 @@ class UserLikedPlaceTask(RecommendationTask):
             GROUP BY
                 t.timestamp,
                 pr.user_id
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -432,8 +420,7 @@ class UserLikedBeerTask(RecommendationTask):
         beer_ratings = db.table_dict["beer_ratings"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 br.user_id,
@@ -457,8 +444,7 @@ class UserLikedBeerTask(RecommendationTask):
             GROUP BY
                 t.timestamp,
                 br.user_id
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,

@@ -33,8 +33,7 @@ class PaperCitationTask(EntityTask):
         papers = db.table_dict["papers"].df
         citations = db.table_dict["citations"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             WITH paper_citations AS (
                 SELECT
                     t.timestamp AS date,
@@ -54,8 +53,7 @@ class PaperCitationTask(EntityTask):
                 Paper_ID,
                 CASE WHEN citation_count > 0 THEN 1 ELSE 0 END AS cited
             FROM paper_citations;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -88,8 +86,7 @@ class AuthorCategoryTask(EntityTask):
         paperCategories = db.table_dict["paperCategories"].df
         categories = db.table_dict["categories"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             WITH author_pubs AS (
                 SELECT
                     t.timestamp AS date,
@@ -127,8 +124,7 @@ class AuthorCategoryTask(EntityTask):
             LEFT JOIN categories c ON r.Primary_Category_ID = c.Category_ID
             WHERE r.rn = 1
             ;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -154,8 +150,7 @@ class AuthorPublicationTask(EntityTask):
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         paperAuthors = db.table_dict["paperAuthors"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             WITH author_pubs AS (
                 SELECT
                     t.timestamp AS date,
@@ -168,8 +163,7 @@ class AuthorPublicationTask(EntityTask):
                 GROUP BY t.timestamp, pa.Author_ID
             )
             SELECT date, Author_ID, publication_count FROM author_pubs;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -199,8 +193,7 @@ class CoCitationTask(RecommendationTask):
         papers = db.table_dict["papers"].df
         citations = db.table_dict["citations"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             WITH paper_co_citations AS (
                 SELECT
                     t.timestamp AS date,
@@ -226,8 +219,7 @@ class CoCitationTask(RecommendationTask):
             FROM paper_co_citations
             GROUP BY date, Paper_ID
             ;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
