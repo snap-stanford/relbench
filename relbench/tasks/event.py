@@ -24,8 +24,7 @@ class UserAttendanceTask(EntityTask):
         event_interest = db.table_dict["event_interest"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""SELECT
+        df = duckdb.sql(f"""SELECT
                 t.timestamp,
                 event_attendees.user_id AS user,
                 SUM(CASE WHEN event_attendees.status IN ('yes', 'maybe') THEN 1 ELSE 0 END) AS target
@@ -39,8 +38,7 @@ class UserAttendanceTask(EntityTask):
             GROUP BY
                 t.timestamp,
                 event_attendees.user_id
-            """
-        ).df()
+            """).df()
         df = df.dropna(subset=["user"])
         df["user"] = df["user"].astype(int)
         df = df.reset_index()
@@ -86,8 +84,7 @@ class UserRepeatTask(EntityTask):
             )
             timestamp_df = pd.concat([new_row, timestamp_df], ignore_index=True)
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             WITH tb AS(
                 SELECT
                     t.timestamp AS timestamp,
@@ -113,8 +110,7 @@ class UserRepeatTask(EntityTask):
                 tb
             WHERE
                 prev_target = 1;
-            """
-        ).df()
+            """).df()
 
         if eval_timestamp_len == 1:
             df = df[df.timestamp == df.timestamp.max()]
@@ -152,8 +148,7 @@ class UserIgnoreTask(EntityTask):
         event_interest = db.table_dict["event_interest"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""SELECT
+        df = duckdb.sql(f"""SELECT
                     t.timestamp AS timestamp,
                     event_attendees.user_id AS user,
                     CASE
@@ -170,8 +165,7 @@ class UserIgnoreTask(EntityTask):
                 GROUP BY
                     t.timestamp,
                     event_attendees.user_id
-            """
-        ).df()
+            """).df()
 
         df = df.dropna(subset=["user"])
         df["user"] = df["user"].astype(int)

@@ -33,8 +33,7 @@ class StudyOutcomeTask(EntityTask):
         outcomes = db.table_dict["outcomes"].df
         outcome_analyses = db.table_dict["outcome_analyses"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             WITH TRIAL_INFO AS (
                 SELECT
                     oa.nct_id,
@@ -66,8 +65,7 @@ class StudyOutcomeTask(EntityTask):
                 and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
             WHERE tr.nct_id is not null
             GROUP BY t.timestamp, tr.nct_id;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -94,8 +92,7 @@ class StudyAdverseTask(EntityTask):
         reported_event_totals = db.table_dict["reported_event_totals"].df
         studies = db.table_dict["studies"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             WITH TRIAL_INFO AS (
                 SELECT
                     r.nct_id,
@@ -121,8 +118,7 @@ class StudyAdverseTask(EntityTask):
                 and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
             WHERE tr.nct_id is not null and tr.subjects_affected is not null
             GROUP BY t.timestamp, tr.nct_id;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -151,8 +147,7 @@ class SiteSuccessTask(EntityTask):
         studies = db.table_dict["studies"].df
         outcomes = db.table_dict["outcomes"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             WITH TRIAL_INFO AS (
                 SELECT
                     oa.nct_id,
@@ -179,8 +174,7 @@ class SiteSuccessTask(EntityTask):
                 and tr.date <= t.timestamp + INTERVAL '{self.timedelta}'
             WHERE fs.facility_id is not null
             GROUP BY t.timestamp, fs.facility_id;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -208,8 +202,7 @@ class ConditionSponsorRunTask(RecommendationTask):
         sponsors_studies = db.table_dict["sponsors_studies"].df
         condition_study = db.table_dict["conditions_studies"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 cs.condition_id,
@@ -220,8 +213,7 @@ class ConditionSponsorRunTask(RecommendationTask):
             ON cs.date > t.timestamp
                 and cs.date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, cs.condition_id;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -252,8 +244,7 @@ class SiteSponsorRunTask(RecommendationTask):
         sponsors_studies = db.table_dict["sponsors_studies"].df
         facility_study = db.table_dict["facilities_studies"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 t.timestamp,
                 fs.facility_id,
@@ -264,8 +255,7 @@ class SiteSponsorRunTask(RecommendationTask):
             ON fs.date > t.timestamp
                 and fs.date <= t.timestamp + INTERVAL '{self.timedelta}'
             GROUP BY t.timestamp, fs.facility_id;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,

@@ -34,8 +34,7 @@ class DriverPositionTask(EntityTask):
 
         results = db.table_dict["results"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
                 SELECT
                     t.timestamp as date,
                     re.driverId as driverId,
@@ -56,8 +55,7 @@ class DriverPositionTask(EntityTask):
                 GROUP BY t.timestamp, re.driverId
 
             ;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -84,8 +82,7 @@ class DriverDNFTask(EntityTask):
 
         results = db.table_dict["results"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
                 SELECT
                     t.timestamp as date,
                     re.driverId as driverId,
@@ -106,8 +103,7 @@ class DriverDNFTask(EntityTask):
                 GROUP BY t.timestamp, re.driverId
 
             ;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -135,8 +131,7 @@ class DriverTop3Task(EntityTask):
 
         qualifying = db.table_dict["qualifying"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
                 SELECT
                     t.timestamp as date,
                     qu.driverId as driverId,
@@ -160,8 +155,7 @@ class DriverTop3Task(EntityTask):
                 GROUP BY t.timestamp, qu.driverId
 
             ;
-            """
-        ).df()
+            """).df()
 
         df["qualifying"] = df["qualifying"].astype("int64")
 
@@ -195,8 +189,7 @@ class DriverCircuitCompeteTask(RecommendationTask):
         results = db.table_dict["results"].df
         races = db.table_dict["races"].df
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
                 SELECT
                     t.timestamp as date,
                     re.driverId as driverId,
@@ -214,8 +207,7 @@ class DriverCircuitCompeteTask(RecommendationTask):
                     re.raceId = race.raceId
                 GROUP BY t.timestamp, re.driverId
             ;
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,

@@ -32,8 +32,7 @@ class AdCTRTask(EntityTask):
         ads_info = db.table_dict["AdsInfo"].df
         search_stream = db.table_dict["SearchStream"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 search_ads.AdID,
                 t.timestamp,
@@ -55,8 +54,7 @@ class AdCTRTask(EntityTask):
                 search_ads.AdID
             HAVING
                 SUM(search_ads.isClick) > 0
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -81,8 +79,7 @@ class UserVisitsTask(EntityTask):
         user_info = db.table_dict["UserInfo"].df
         visits_stream = db.table_dict["VisitStream"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 visit_ads.UserID,
                 t.timestamp,
@@ -103,8 +100,7 @@ class UserVisitsTask(EntityTask):
             GROUP BY
                 t.timestamp,
                 visit_ads.UserID
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -131,8 +127,7 @@ class UserClicksTask(EntityTask):
         search_info = db.table_dict["SearchInfo"].df
         search_stream = db.table_dict["SearchStream"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 search_ads.UserID,
                 t.timestamp,
@@ -160,8 +155,7 @@ class UserClicksTask(EntityTask):
             GROUP BY
                 t.timestamp,
                 search_ads.UserID
-            """
-        ).df()
+            """).df()
 
         return Table(
             df=df,
@@ -191,8 +185,7 @@ class UserAdVisitTask(RecommendationTask):
         visits_stream = db.table_dict["VisitStream"].df
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
 
-        df = duckdb.sql(
-            f"""
+        df = duckdb.sql(f"""
             SELECT
                 visit_ads.UserID,
                 t.timestamp,
@@ -213,8 +206,7 @@ class UserAdVisitTask(RecommendationTask):
             GROUP BY
                 t.timestamp,
                 visit_ads.UserID
-            """
-        ).df()
+            """).df()
         return Table(
             df=df,
             fkey_col_to_pkey_table={
