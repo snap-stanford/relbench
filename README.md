@@ -175,6 +175,27 @@ If you use the TGB datasets in your work, please cite [TGB](https://tgb.complexd
 ```
 
 
+**Using TabArena datasets**
+
+RelBench includes an optional integration for TabArena: a collection of single-table OpenML tasks. TabArena datasets are exposed under names like `tabarena-credit-g`, with per-split tasks named `split-0`, `split-1`, etc.
+
+To use TabArena datasets, install the optional dependency:
+```bash
+pip install relbench[tabarena]
+```
+
+See [`examples/translate_tabarena_to_relbench.py`](examples/translate_tabarena_to_relbench.py) for a comparison between the original OpenML task and the relbenchified `records` and `split-*` tables, and [`examples/validate_tabarena_baseline.py`](examples/validate_tabarena_baseline.py) for a public-baseline validation script that checks inference consistency between the original and relbenchified views.
+
+If you use the TabArena datasets in your work, please cite TabArena as below:
+```
+@inproceedings{erickson2025tabarena,
+  title={TabArena: A Living Benchmark for Machine Learning on Tabular Data},
+  author={Erickson, Nick and Purucker, Lennart and Tschalzev, Andrej and Holzm{\"u}ller, David and Mutalik Desai, Prateek and Salinas, David and Hutter, Frank},
+  booktitle={Advances in Neural Information Processing Systems},
+  year={2025}
+}
+```
+
 
 # Package Usage
 
