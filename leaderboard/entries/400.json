@@ -7,24 +7,6 @@
  "author": "ShantanuAnant",
  "issue": 400,
  "boards": {
-  "binary_classification": {
-   "results": {
-    "rel-amazon/user-churn": 0.6227390057672905,
-    "rel-amazon/item-churn": 0.7557044407562314,
-    "rel-avito/user-visits": 0.6261601571074699,
-    "rel-avito/user-clicks": 0.655804553919079,
-    "rel-event/user-repeat": 0.7080882352941177,
-    "rel-event/user-ignore": 0.8844300139315856,
-    "rel-f1/driver-dnf": 0.7016395842482799,
-    "rel-f1/driver-top3": 0.7962936350334449,
-    "rel-hm/user-churn": 0.6751297842471082,
-    "rel-stack/user-engagement": 0.8854209605317717,
-    "rel-stack/user-badge": 0.8587403034432513,
-    "rel-trial/study-outcome": 0.6705168718898695
-   },
-   "mean": 0.736722295514125,
-   "cov": 1.0
-  },
   "regression": {
    "results": {
     "rel-amazon/user-ltv": 0.26354720194761583,
