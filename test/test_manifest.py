@@ -38,6 +38,22 @@ def test_dataset_manifest_roundtrip(tmp_path):
     assert DatasetManifest.load(tmp_path / "manifest.yaml") == manifest
 
 
+def test_manifest_io_is_utf8(tmp_path):
+    # Manifests are UTF-8 regardless of the platform's locale encoding (cp1252 on
+    # Windows), so non-ASCII descriptions round-trip and hosted files read back intact.
+    description = "Café transfers → merchants, ڈیٹا"
+    manifest = DatasetManifest(
+        name="x",
+        val_timestamp="2020-01-01",
+        test_timestamp="2021-01-01",
+        description=description,
+    )
+    path = tmp_path / "manifest.yaml"
+    manifest.save(path)
+    assert description in path.read_text(encoding="utf-8")
+    assert DatasetManifest.load(path) == manifest
+
+
 def test_from_dict_ignores_unknown_keys(churn_manifest):
     d = {**churn_manifest.to_dict(), "metrics": ["roc_auc"]}
     assert TaskManifest.from_dict(d) == churn_manifest
