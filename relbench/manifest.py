@@ -96,7 +96,7 @@ _Dumper.add_representer(str, _represent_str)
 
 def _dump_yaml(d: dict, path: Union[str, Path]) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         yaml.dump(
             d,
             f,
@@ -109,7 +109,7 @@ def _dump_yaml(d: dict, path: Union[str, Path]) -> None:
 
 
 def _load_yaml(path: Union[str, Path]) -> dict:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 

@@ -50,7 +50,7 @@ def load_core_regression_stds(revision: Optional[str] = None) -> dict[str, float
         repo_type="dataset",
         revision=revision,
     )
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return dict(json.load(f).get("stds", {}))
 
 
