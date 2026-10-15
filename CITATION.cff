@@ -4,7 +4,7 @@ title: RelBench
 type: software
 repository-code: https://github.com/stanford-star/relbench
 url: https://star-project.stanford.edu/relbench
-license: MIT
+license: Apache-2.0
 authors:
   - name: RelBench Team
     email: relbench@cs.stanford.edu

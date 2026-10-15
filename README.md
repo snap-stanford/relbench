@@ -7,7 +7,7 @@
   <a href="https://github.com/stanford-star/relbench/actions/workflows/testing.yml"><img src="https://github.com/stanford-star/relbench/actions/workflows/testing.yml/badge.svg" alt="Tests" /></a>
   <a href="https://arxiv.org/abs/2407.20060"><img src="https://img.shields.io/badge/arXiv-2407.20060%20(RelBench)-b31b1b.svg" alt="arXiv: RelBench" /></a>
   <a href="https://arxiv.org/abs/2602.12606"><img src="https://img.shields.io/badge/arXiv-2602.12606%20(RelBench%20v2)-b31b1b.svg" alt="arXiv: RelBench v2" /></a>
-  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-3f9e78.svg" alt="License: MIT" /></a>
+  <a href="https://www.apache.org/licenses/LICENSE-2.0"><img src="https://img.shields.io/badge/License-Apache--2.0-3f9e78.svg" alt="License: Apache-2.0" /></a>
 </p>
 
 <p align="center">
