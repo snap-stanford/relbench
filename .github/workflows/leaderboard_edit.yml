@@ -64,7 +64,8 @@ jobs:
             [ "$status" = applied ] || exit 0
             git add leaderboard/
             git commit -q -m "Leaderboard entry edit from #${{ github.event.issue.number }}"
-            git push && exit 0
+            git push 2>/tmp/push.log && exit 0
+            cat /tmp/push.log >&2
             sleep $((i * 3 + RANDOM % 5))
           done
           echo "push to main failed after 6 attempts" >&2
@@ -83,4 +84,6 @@ jobs:
           fi
           if [ "${{ steps.apply.outputs.status }}" = applied ] && [ "${{ steps.apply.outcome }}" = success ]; then
             gh issue close $N --repo $R --comment "Applied: https://star-project.stanford.edu/relbench/leaderboard/"
+          elif [ "${{ steps.apply.outputs.status }}" = applied ]; then
+            gh issue comment $N --repo $R --body "Applying the edit failed — it is valid but could not be pushed to \`main\`: \`$(grep -m1 -i error /tmp/push.log 2>/dev/null || echo unknown error)\`. A maintainer should check the branch protection on \`main\` and the [workflow run]($GITHUB_SERVER_URL/$R/actions/runs/$GITHUB_RUN_ID)." || true
           fi
