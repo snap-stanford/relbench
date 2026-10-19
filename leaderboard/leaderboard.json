@@ -896,7 +896,7 @@
   }
  },
  {
-  "name": "RT-PluRel (fine-tuned)",
+  "name": "RT-PluRel",
   "in_context": false,
   "url": "https://github.com/stanford-star/relational-transformer",
   "repro_link": "https://github.com/stanford-star/relational-transformer/blob/main/examples/finetune/README.md",
