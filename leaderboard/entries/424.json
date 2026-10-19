@@ -1,0 +1,30 @@
+{
+ "name": "RDB-PFN",
+ "in_context": true,
+ "url": "https://arxiv.org/abs/2603.03805",
+ "repro_link": "https://github.com/MuLabPKU/RDBPFN",
+ "note": "RDB-PFN was developed for in-context learning with a fixed, relatively small context, without a dedicated mechanism for using the full training set, such as query-specific local sampling. For this leaderboard evaluation, we extend the released model to use more training examples through a simple ensemble of up to 8 disjoint 4,096-example contexts, averaging their predictions without retraining.",
+ "date": "2026-10-19T15:52:03Z",
+ "author": "yanxwb",
+ "issue": 424,
+ "boards": {
+  "binary_classification": {
+   "results": {
+    "rel-amazon/user-churn": 0.6596218911342073,
+    "rel-amazon/item-churn": 0.8015189340913611,
+    "rel-avito/user-visits": 0.662798802150427,
+    "rel-avito/user-clicks": 0.6446815276424216,
+    "rel-event/user-repeat": 0.7620989304812834,
+    "rel-event/user-ignore": 0.8832049554995222,
+    "rel-f1/driver-dnf": 0.7271556141121359,
+    "rel-f1/driver-top3": 0.8167589882943145,
+    "rel-hm/user-churn": 0.6745343558225729,
+    "rel-stack/user-engagement": 0.8872790841632121,
+    "rel-stack/user-badge": 0.842295926780664,
+    "rel-trial/study-outcome": 0.6452726017943409
+   },
+   "mean": 0.7506018009972052,
+   "cov": 1.0
+  }
+ }
+}
