@@ -1,5 +1,5 @@
 {
- "name": "RT-J (in-context)",
+ "name": "RT-J (few-shot)",
  "in_context": true,
  "url": "https://huggingface.co/stanford-star/rt-j",
  "repro_link": "https://github.com/stanford-star/relational-transformer/blob/main/examples/icl/README.md",
