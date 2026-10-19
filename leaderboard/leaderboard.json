@@ -851,7 +851,7 @@
   }
  },
  {
-  "name": "RT-PluRel (in-context)",
+  "name": "RT-PluRel (few-shot)",
   "in_context": true,
   "url": "https://huggingface.co/stanford-star/rt-plurel",
   "repro_link": "https://github.com/stanford-star/relational-transformer/blob/main/examples/icl/README.md",
